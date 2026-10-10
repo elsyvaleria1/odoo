@@ -189,15 +189,15 @@ class MixinSpreadsheet(models.AbstractModel):
                 type=message["type"],
                 commands=len(message.get("commands", ())),
             ) as span:
-                is_accepted = self.sudo()._save_concurrent_revision(
+                revision = self.sudo()._save_concurrent_revision(
                     message["nextRevisionId"],
                     message["serverRevisionId"],
                     self._prepare_spreadsheet_revision_data(message),
                 )
-                span.set(accepted=is_accepted)
-            if is_accepted:
-                self._broadcast_spreadsheet_message(message)
-            return is_accepted
+                span.set(accepted=bool(revision))
+            if revision:
+                self._broadcast_spreadsheet_message(message, revision)
+            return bool(revision)
         elif message["type"] == "SNAPSHOT":
             self._check_collaborative_spreadsheet_access("write", access_token)
             return self.sudo()._snapshot_spreadsheet(
@@ -295,11 +295,12 @@ class MixinSpreadsheet(models.AbstractModel):
             )
             raise ValueError("The snapshot revision id does not match the revision id")
 
-        is_accepted = self._save_concurrent_revision(
+        revision = self._save_concurrent_revision(
             snapshot_revision_uuid,
             revision_uuid,
             {"type": "SNAPSHOT_CREATED", "version": 1},
         )
+        is_accepted = bool(revision)
         _debug.logic(
             "spreadsheet_snapshot_committed",
             records=self,
@@ -323,7 +324,8 @@ class MixinSpreadsheet(models.AbstractModel):
                     "type": "SNAPSHOT_CREATED",
                     "serverRevisionId": revision_uuid,
                     "nextRevisionId": snapshot_revision_uuid,
-                }
+                },
+                revision,
             )
         return is_accepted
 
@@ -349,7 +351,14 @@ class MixinSpreadsheet(models.AbstractModel):
             serialized_revisions = "[%s]" % ",".join(revisions)
             body = extend_serialized_json(
                 serialized_metadata,
-                [("data", serialized_snapshot), ("revisions", serialized_revisions)],
+                [
+                    ("data", serialized_snapshot),
+                    ("revisions", serialized_revisions),
+                    (
+                        "revisionSequence",
+                        str(spreadsheet_sudo._get_revision_sequence()),
+                    ),
+                ],
             )
             span.set(
                 snapshot_chars=len(serialized_snapshot),
@@ -358,6 +367,23 @@ class MixinSpreadsheet(models.AbstractModel):
                 readonly=metadata["isReadonly"],
             )
         return body
+
+    def _get_revision_sequence(self) -> int:
+        # A revision is inserted only once its parent is committed, so along
+        # one spreadsheet's chain the row id only grows: the highest one this
+        # transaction sees is the state the data it serves holds.
+        self.check_singleton()
+        return (
+            self.env["spreadsheet.revision"]
+            .with_context(active_test=False)
+            .search(
+                [("res_model", "=", self._name), ("res_id", "=", self.id)],
+                order="id desc",
+                limit=1,
+            )
+            .id
+            or 0
+        )
 
     def _get_spreadsheet_serialized_snapshot(self):
         snapshot_attachment = (
@@ -402,7 +428,7 @@ class MixinSpreadsheet(models.AbstractModel):
         :param next_revision_uuid: the new revision id
         :param parent_revision_uuid: the revision on which the commands are based
         :param commands: revisions commands
-        :return: True if the revision was saved, False otherwise
+        :return: the saved revision, or an empty recordset when it was refused
         """
         self.check_singleton()
         parent_revision_id = self._get_revision_by_uuid(parent_revision_uuid)
@@ -415,7 +441,7 @@ class MixinSpreadsheet(models.AbstractModel):
         )
         try:
             with mute_logger("odoo.db.cursor"), self.env.cr.savepoint():
-                self.env["spreadsheet.revision"].create(
+                return self.env["spreadsheet.revision"].create(
                     {
                         "res_model": self._name,
                         "res_id": self.id,
@@ -425,7 +451,6 @@ class MixinSpreadsheet(models.AbstractModel):
                         "create_date": fields.Datetime.now(),
                     }
                 )
-            return True
         except psycopg.IntegrityError:
             # If the creation failed with a unique violation error, it is because the parent_revision_id has already
             # been used. This means that at the same (relative) time, another user has made a modification to the
@@ -440,7 +465,7 @@ class MixinSpreadsheet(models.AbstractModel):
                 parent_revision=parent_revision_uuid,
                 next_revision=next_revision_uuid,
             )
-            return False
+            return self.env["spreadsheet.revision"]
 
     def _prepare_spreadsheet_revision_data(self, message: CollaborationMessage) -> dict:
         """Prepare revision data to save in the database from
@@ -497,8 +522,12 @@ class MixinSpreadsheet(models.AbstractModel):
         """
         self.check_access(operation)
 
-    def _broadcast_spreadsheet_message(self, message: CollaborationMessage) -> None:
-        """Send the message to the spreadsheet channel"""
+    def _broadcast_spreadsheet_message(
+        self, message: CollaborationMessage, revision=None
+    ) -> None:
+        """Send the message to the spreadsheet channel. A message that saved a
+        revision carries its row id as ``revisionSequence``: a client drops the
+        ones its loaded data already holds (``_get_revision_sequence``)."""
         self.check_singleton()
         _debug.pipeline(
             "spreadsheet_message_broadcast",
@@ -506,7 +535,10 @@ class MixinSpreadsheet(models.AbstractModel):
             type=message.get("type"),
             next_revision=message.get("nextRevisionId"),
         )
-        self._bus_send("spreadsheet", dict(message, id=self.id))
+        payload = dict(message, id=self.id, model=self._name)
+        if revision:
+            payload["revisionSequence"] = revision.id
+        self._bus_send("spreadsheet", payload)
 
     def _remove_collaborative_data(self) -> None:
         _debug.lifecycle("spreadsheet_collaborative_data_removed", records=self)

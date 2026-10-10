@@ -11,12 +11,13 @@ const spreadsheetCollaborativeService = {
     dependencies: SpreadsheetCollaborativeChannel.dependencies,
     start(env, dependencies) {
         return {
-            makeCollaborativeChannel(resModel, resId, accessToken) {
+            makeCollaborativeChannel(resModel, resId, accessToken, revisionSequence) {
                 return new SpreadsheetCollaborativeChannel(
                     env,
                     resModel,
                     resId,
                     accessToken,
+                    revisionSequence,
                 );
             },
         };

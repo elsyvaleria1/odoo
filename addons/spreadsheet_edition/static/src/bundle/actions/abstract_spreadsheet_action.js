@@ -257,6 +257,7 @@ export class AbstractSpreadsheetAction extends Component {
             this.resModel,
             this.resId,
             this.accessToken,
+            this.data?.revisionSequence,
         );
         const odooDataProvider = new OdooDataProvider(this.appContext);
         odooDataProvider.addEventListener("data-source-updated", () => {

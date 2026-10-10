@@ -25,13 +25,15 @@ export class SpreadsheetCollaborativeChannel {
      * @param {string} resModel model linked to the spreadsheet
      * @param {number} resId Id of the spreadsheet
      * @param {string} [accessToken] sharing token
+     * @param {number} [revisionSequence] the last revision the loaded data holds
      */
-    constructor(env, resModel, resId, accessToken) {
+    constructor(env, resModel, resId, accessToken, revisionSequence = 0) {
         this.env = env;
         this.orm = env.services.orm.silent;
         this.resId = resId;
         this.resModel = resModel;
         this.accessToken = accessToken;
+        this.revisionSequence = revisionSequence;
         /**
          * A callback function called to handle messages when they are received.
          */
@@ -49,9 +51,17 @@ export class SpreadsheetCollaborativeChannel {
         }));
         this.env.services.bus_service.addChannel(this._channel);
         this.env.services.bus_service.subscribe("spreadsheet", (payload) => {
-            if (payload.id === this.resId) {
-                this._handleNotification(payload);
+            // Every tab of the browser receives what any of them subscribed
+            // to, and spreadsheets of two models share ids.
+            if (payload.id !== this.resId || payload.model !== this.resModel) {
+                return;
             }
+            // Sent before the data this session was loaded from was read, and
+            // delivered after: the data holds it already.
+            if (payload.revisionSequence <= this.revisionSequence) {
+                return;
+            }
+            this._handleNotification(payload);
         });
     }
 

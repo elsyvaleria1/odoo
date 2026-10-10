@@ -7,6 +7,7 @@ class SpreadsheetTestCase(TransactionCase):
     def new_revision_data(self, spreadsheet, **kwargs):
         return {
             "id": spreadsheet.id,
+            "model": spreadsheet._name,
             "type": "REMOTE_REVISION",
             "clientId": "john",
             "commands": [{"type": "A_COMMAND"}],

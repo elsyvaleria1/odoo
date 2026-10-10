@@ -1,3 +1,4 @@
+from odoo.libs.json import loads as json_loads
 from odoo.tests.common import new_test_user
 
 from .common import SpreadsheetTestCommon
@@ -29,6 +30,11 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
         notifs = self.poll(external_channel)
         return [m["message"]["payload"] for m in notifs]
 
+    def broadcast(self, spreadsheet, message):
+        return dict(
+            message, revisionSequence=spreadsheet.sudo()._get_revision_sequence()
+        )
+
     def test_simple_bus_message_still_works(self):
         self.env["bus.bus"]._sendone("a-channel", "message-type", "a message")
         message = self.poll("a-channel")
@@ -40,7 +46,7 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
         spreadsheet.dispatch_spreadsheet_message(commands)
         self.assertEqual(
             self.poll_spreadsheet(spreadsheet.id),
-            [commands],
+            [self.broadcast(spreadsheet, commands)],
             "It should have received the revision",
         )
 
@@ -51,7 +57,7 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
         spreadsheet.dispatch_spreadsheet_message(commands)
         self.assertEqual(
             self.poll_spreadsheet(spreadsheet.id),
-            [commands],
+            [self.broadcast(spreadsheet, commands)],
             "It should have received the revision",
         )
 
@@ -95,12 +101,31 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
                 {
                     "type": "SNAPSHOT_CREATED",
                     "id": spreadsheet.id,
+                    "model": spreadsheet._name,
                     "serverRevisionId": current_revision_id,
                     "nextRevisionId": "snapshot-revision-id",
+                    "revisionSequence": spreadsheet._get_revision_sequence(),
                 }
             ],
             "It should have notified the snapshot",
         )
+
+    def test_the_served_data_holds_the_sequence_its_revisions_were_sent_with(self):
+        spreadsheet = self.create_spreadsheet()
+        first = self.new_revision_data(spreadsheet)
+        spreadsheet.dispatch_spreadsheet_message(first)
+        second = self.new_revision_data(spreadsheet)
+        spreadsheet.dispatch_spreadsheet_message(second)
+
+        sent = [
+            payload["revisionSequence"]
+            for payload in self.poll_spreadsheet(spreadsheet.id)
+        ]
+        served = json_loads(spreadsheet._get_serialized_spreadsheet_data_body())
+
+        self.assertEqual(len(sent), 2)
+        self.assertLess(sent[0], sent[1])
+        self.assertEqual(served["revisionSequence"], sent[1])
 
     def test_poll_access(self):
         spreadsheet = self.create_spreadsheet()
@@ -129,7 +154,7 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
         with self.with_user("Raoul"):
             self.assertEqual(
                 self.poll_spreadsheet(spreadsheet.id),
-                [commands],
+                [self.broadcast(spreadsheet, commands)],
                 "He should be able to poll the spreadsheet",
             )
 
@@ -157,6 +182,6 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
         with self.with_user("raoul"):
             self.assertEqual(
                 self.poll_spreadsheet(spreadsheet.id, spreadsheet.access_token),
-                [revision],
+                [self.broadcast(spreadsheet, revision)],
                 "He should have received the revision",
             )

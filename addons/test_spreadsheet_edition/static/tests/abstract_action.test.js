@@ -125,6 +125,7 @@ test("receives collaborative messages when action is restored", async function (
     await waitFor(".o_list_renderer");
     const revisionWebSocketMessage = {
         id: spreadsheetId,
+        model: "spreadsheet.test",
         type: "REMOTE_REVISION",
         version: 1,
         serverRevisionId: "START_REVISION",

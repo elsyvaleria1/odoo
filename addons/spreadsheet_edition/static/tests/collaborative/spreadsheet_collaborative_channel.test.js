@@ -36,7 +36,7 @@ async function setupEnvWithMockBus({ mockRPC } = {}) {
                 const [documentId, message] = params.args;
                 busService.notify({
                     type: "spreadsheet",
-                    payload: { id: documentId, ...message },
+                    payload: { id: documentId, model: params.model, ...message },
                 });
                 return true;
             }
@@ -101,6 +101,51 @@ test("the channel does not care about other bus messages", async function () {
     await animationFrame();
     // The message should not have been received
     expect.verifySteps([]);
+});
+
+test("a spreadsheet of another model with the same id is not this one", async function () {
+    const env = await setupEnvWithMockBus();
+    const channel = new SpreadsheetCollaborativeChannel(env, "my.model", 5);
+    channel.onNewMessage("anId", (message) => expect.step(message.model));
+    env.services.bus_service.notify({
+        type: "spreadsheet",
+        payload: { id: 5, model: "other.model", type: "CLIENT_MOVED" },
+    });
+    env.services.bus_service.notify({
+        type: "spreadsheet",
+        payload: { id: 5, model: "my.model", type: "CLIENT_MOVED" },
+    });
+    await animationFrame();
+    expect.verifySteps(["my.model"]);
+});
+
+test("a revision the loaded data already holds is not delivered again", async function () {
+    const env = await setupEnvWithMockBus();
+    const channel = new SpreadsheetCollaborativeChannel(
+        env,
+        "my.model",
+        5,
+        undefined,
+        7,
+    );
+    channel.onNewMessage("anId", (message) => expect.step(message.type));
+    for (const revisionSequence of [6, 7, 8]) {
+        env.services.bus_service.notify({
+            type: "spreadsheet",
+            payload: {
+                id: 5,
+                model: "my.model",
+                type: `REVISION_${revisionSequence}`,
+                revisionSequence,
+            },
+        });
+    }
+    env.services.bus_service.notify({
+        type: "spreadsheet",
+        payload: { id: 5, model: "my.model", type: "CLIENT_MOVED" },
+    });
+    await animationFrame();
+    expect.verifySteps(["REVISION_8", "CLIENT_MOVED"]);
 });
 
 test("Message accepted by the server is immediately handled", async function () {

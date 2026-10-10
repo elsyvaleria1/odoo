@@ -40,6 +40,7 @@ class SpreadsheetCollaborative(SpreadsheetTestCommon):
             {
                 "commands": commands["commands"],
                 "id": spreadsheet.id,
+                "model": spreadsheet._name,
                 "type": commands["type"],
             },
             "It should have saved the revision data",
@@ -403,6 +404,7 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
             {
                 "commands": commands["commands"],
                 "id": self.spreadsheet.id,
+                "model": self.spreadsheet._name,
                 "type": commands["type"],
             },
         )

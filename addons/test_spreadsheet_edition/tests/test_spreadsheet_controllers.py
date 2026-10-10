@@ -71,10 +71,10 @@ class SpreadsheetMixinControllerTest(SpreadsheetTestCase, HttpCase):
         company_B = self.env["res.company"].create({"name": "company B"})
         self.raoul.company_ids |= company_A | company_B
         self.opener.cookies["cids"] = f"{company_A.id}-{company_B.id}"
-        company_A.primary_color = "#aa0000"
-        company_B.primary_color = "#bb0000"
-        company_A.secondary_color = "#aa1111"
-        company_B.secondary_color = "#bb1111"
+        company_A.report_config_id.primary_color = "#aa0000"
+        company_B.report_config_id.primary_color = "#bb0000"
+        company_A.report_config_id.secondary_color = "#aa1111"
+        company_B.report_config_id.secondary_color = "#bb1111"
         response = self.url_open(f"/spreadsheet/data/spreadsheet.test/{spreadsheet.id}")
         data = response.json()
         self.assertEqual(
