@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.70
+:Version: 7.71
 :Date: 2026-10-09
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -242,6 +242,9 @@ Rule                               Code       Catches
 ``empty-recordset-mutation``       ``E8543``  ``unlink`` / ``write`` / archive
                                               on a bare ``env["model"]``,
                                               which changes nothing (§2.9.2)
+``isdigit-guards-int``             ``E8545``  ``isdigit()`` guarding ``int()``
+                                              of the same string; use
+                                              ``isdecimal()`` (§10.3)
 ``noqa-rationale``                 none       ``# noqa`` without a rationale
                                               (*Suppressing a rule*);
                                               unsuppressable
@@ -5090,6 +5093,22 @@ because the ORM uses ``assert`` for invariants.
    if access_mode not in ("read", "write", "create", "unlink"):
        raise ValueError(f"Invalid access mode: {access_mode!r}")
 
+**A string is a number when ``int()`` takes it: check it with
+``isdecimal()``** ``[ruff E8545]``. ``str.isdigit()`` is true for 128
+characters ``int()`` rejects (superscripts such as ``²``, circled digits such as
+``①``: Unicode category No), so a guard written with it passes and the
+conversion behind it raises ``ValueError``. On a route that is a 500 from one
+query parameter (``/shop/compare?products=²``, 49b3da9fd823). ``isdecimal()``
+is exactly the set ``int()`` accepts. Where only ASCII digits will do,
+``isascii() and isdigit()`` says so.
+
+.. code-block:: python
+
+   # Don't
+   ids = [int(part) for part in raw.split(",") if part.isdigit()]
+   # Do
+   ids = [int(part) for part in raw.split(",") if part.isdecimal()]
+
 10.4 SQL injection
 ------------------
 
@@ -6208,6 +6227,10 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.71
+     - 2026-10-10
+     - §10.3: a string is checked with ``isdecimal()`` before ``int()``, not
+       ``isdigit()`` (``E8545``).
    * - 7.70
      - 2026-10-09
      - §10.6: a receiver runs as its gate's service principal, without su,
