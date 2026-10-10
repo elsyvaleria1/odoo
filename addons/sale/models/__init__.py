@@ -14,6 +14,7 @@ from . import (
     product_pricelist_item,
     product_product,
     product_attribute_custom_value,
+    product_combo_item,
     product_template,
     res_company,
     sale_config,

@@ -18,9 +18,9 @@
         "sale_team",
     ],
     "data": [
+        "security/res_groups.xml",
         "security/ir.access.csv",
         "security/ir_access.xml",
-        "security/res_groups.xml",
         "data/data.xml",
         "data/mail_template_data.xml",
         "data/product_snippet_template_data.xml",

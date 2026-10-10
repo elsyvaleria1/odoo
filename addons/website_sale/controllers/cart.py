@@ -287,21 +287,25 @@ class Cart(PaymentPortal):
 
     @route(
         route="/shop/cart/quick_add",
-        type="jsonrpc",
+        type="http",
         auth="user",
         methods=["POST"],
         website=True,
     )
-    def quick_add(
-        self, product_template_id, product_id, quantity=1.0, **kwargs
-    ) -> FragmentResponse:
-        values = self.add_to_cart(
-            product_template_id, product_id, quantity=quantity, **kwargs
-        )
+    def quick_add(self, line_id, quantity="1", **kwargs):
+        line = self._get_reorderable_line(line_id)
+        try:
+            quantity = float(quantity)
+        except ValueError:
+            quantity = 0
+        if quantity <= 0:
+            raise UserError(request.env._("Choose a quantity to add."))
+        values = self.add_to_cart(**line._prepare_reorder_cart_values(quantity))
         order_sudo = request.cart
         values["cart_ready"] = order_sudo._is_cart_ready()
-        return render_fragments(
+        return fragments_or_redirect(
             request.env,
+            "/shop/cart",
             self._get_cart_lines_fragment(order_sudo),
             Fragment(
                 "website_sale.shorter_cart_summary",
@@ -316,6 +320,31 @@ class Cart(PaymentPortal):
             events=self._cart_updated_events(order_sudo, quick_reorder=True),
             data=values,
         )
+
+    def _get_reorderable_line(self, line_id):
+        try:
+            line_id = int(line_id)
+        except ValueError:
+            raise NotFound from None
+        # one of the user's own past orders on this website, as the history lists them
+        line = (
+            request.env["sale.order.line"]
+            .with_privilege(
+                "website_sale.privilege_reorder_past_line",
+                reason="a shopper adds back a line of their own past order",
+            )
+            .search(
+                [
+                    ("id", "=", line_id),
+                    ("order_id.partner_id", "=", request.env.user.partner_id.id),
+                    ("order_id.state", "=", "done"),
+                    ("order_id.website_id", "=", request.website.id),
+                ]
+            )
+        )
+        if not line:
+            raise NotFound
+        return line
 
     def _get_cart_lines_fragment(self, order_sudo) -> Fragment:
         return get_cart_lines_fragment(order_sudo)

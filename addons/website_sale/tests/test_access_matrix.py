@@ -3,6 +3,11 @@ from odoo.tests import tagged
 
 from odoo.addons.base.tests.access_matrix import AccessMatrixCase, Cell, Persona
 
+REORDER = (
+    "a shopper reads it to add back a line of their own past order only "
+    "through website_sale.privilege_reorder_past_line, which no user holds"
+)
+
 
 @tagged("post_install", "-at_install", "access_matrix")
 class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
@@ -143,6 +148,29 @@ class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
         Cell(
             "product.feed",
             "feed",
+        ),
+        Cell(
+            "product.combo",
+            "combo",
+            note=REORDER,
+            employee_a="r",
+            salesman_a="r",
+            manager_a="r",
+        ),
+        Cell(
+            "product.combo.item",
+            "combo_item",
+            note=REORDER,
+            employee_a="r",
+            salesman_a="r",
+            manager_a="r",
+        ),
+        Cell(
+            "sale.order.line",
+            "order_line_c",
+            note=REORDER,
+            portal_c="r",
+            manager_a="rwcd",
         ),
         Cell(
             "product.image",
@@ -349,6 +377,23 @@ class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
                 }
             )
 
+        combo = env["product.combo"].create(
+            {
+                "name": "matrix combo",
+                "combo_item_ids": [Command.create({"product_id": product.id})],
+            }
+        )
+        past_order_c = env["sale.order"].create(
+            {
+                "partner_id": customer_c.id,
+                "company_id": a.id,
+                "line_ids": [
+                    Command.create({"product_id": product.id, "product_qty": 1})
+                ],
+            }
+        )
+        past_order_c.action_confirm()
+
         def one(model, domain=()):
             found = (
                 env[model].with_context(active_test=False).search(list(domain), limit=1)
@@ -373,6 +418,9 @@ class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
             "attribute": attribute,
             "attribute_value": attribute.value_ids,
             "category": one("product.category"),
+            "combo": combo,
+            "combo_item": combo.combo_item_ids,
+            "order_line_c": past_order_c.line_ids,
             "feed": env["product.feed"].create(
                 {"name": "matrix feed", "website_id": one("website").id}
             ),

@@ -47,3 +47,6 @@ access_website_checkout_step_website_designer,access_website_checkout_step websi
 access_product_feed_website_group_website_designer,access_product_feed website_group_website_designer,model_product_feed,website.group_website_designer,permission,crud,,,
 product_pricelist_comp_rule,product pricelist company rule,product.model_product_pricelist,base.group_everyone,guard,crud,,,"['|', ('company_id', 'in', [False, website.company_id.id]), ('company_id', 'in', company_ids)]"
 product_pricelist_item_comp_rule,product pricelist item company rule,product.model_product_pricelist_item,base.group_everyone,guard,crud,,,"['|', ('company_id', 'in', [False, website.company_id.id]), ('company_id', 'in', company_ids)]"
+privilege_reorder_past_line_order_line,sale.order.line: a shopper adds back a line of a confirmed order,sale.model_sale_order_line,privilege_reorder_past_line,permission,r,,,"[('order_id.state', '=', 'done')]"
+privilege_reorder_past_line_combo,product.combo: a past combo comes back as the shop offers it today,product.model_product_combo,privilege_reorder_past_line,permission,r,,,
+privilege_reorder_past_line_combo_item,product.combo.item: a past combo's choices as the shop offers them today,product.model_product_combo_item,privilege_reorder_past_line,permission,r,,,

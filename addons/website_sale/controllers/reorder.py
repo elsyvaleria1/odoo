@@ -37,45 +37,8 @@ class CustomerPortal(sale_portal.CustomerPortal):
             "tracking_info": [],
         }
         for line in lines_to_reorder:
-            linked_products = []
-            if line.product_id.type == "combo":
-                for linked_line in line.linked_line_ids.filtered("combo_item_id"):
-                    combination = (
-                        linked_line.product_id.product_template_attribute_value_ids
-                        | linked_line.product_no_variant_attribute_value_ids
-                    )
-                    linked_products.append(
-                        {
-                            "product_template_id": linked_line.product_id.product_tmpl_id.id,
-                            "product_id": linked_line.product_id.id,
-                            "combination": combination.ids,
-                            "no_variant_attribute_value_ids": linked_line.product_no_variant_attribute_value_ids.ids,
-                            "product_custom_attribute_values": [
-                                {
-                                    "custom_product_template_attribute_value_id": pcav.custom_product_template_attribute_value_id.id,
-                                    "custom_value": pcav.custom_value,
-                                }
-                                for pcav in linked_line.product_custom_attribute_value_ids
-                            ],
-                            "quantity": linked_line.product_qty,
-                            "combo_item_id": linked_line.combo_item_id.id,
-                            "parent_product_template_id": line.product_id.product_tmpl_id.id,
-                        }
-                    )
-
             cart_values = Cart_controller.add_to_cart(
-                product_id=line.product_id.id,
-                product_template_id=line.product_id.product_tmpl_id.id,
-                quantity=line.product_qty,
-                product_custom_attribute_values=[
-                    {
-                        "custom_product_template_attribute_value_id": pcav.custom_product_template_attribute_value_id.id,
-                        "custom_value": pcav.custom_value,
-                    }
-                    for pcav in line.product_custom_attribute_value_ids
-                ],
-                no_variant_attribute_value_ids=line.product_no_variant_attribute_value_ids.ids,
-                linked_products=linked_products,
+                **line._prepare_reorder_cart_values(line.product_qty)
             )
             if not cart_values["quantity"]:
                 warnings_to_aggregate.add(order_sudo.shop_warning)

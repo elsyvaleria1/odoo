@@ -238,25 +238,6 @@ class TestWebsiteSaleCart(ProductVariantsCommon, WebsiteSaleCommon):
             self.assertEqual(emptied["events"][0]["name"], "website_sale:cart_updated")
             self.assertEqual(emptied["events"][0]["detail"]["cart_quantity"], 0)
 
-    def test_quick_add_answers_with_the_lines_summary_and_history(self):
-        website = self.website.with_user(self.user_portal)
-        with MockRequest(website.env, website=website):
-            response = self.WebsiteSaleCartController.quick_add(
-                product_template_id=self.product.product_tmpl_id.id,
-                product_id=self.product.id,
-                quantity=2,
-            )
-        self.assertEqual(
-            [f["key"] for f in response["fragments"]],
-            [
-                "website_sale.cart_lines",
-                "website_sale.shorter_cart_summary",
-                "website_sale.quick_reorder_history",
-            ],
-        )
-        self.assertEqual(response["data"]["cart_quantity"], 2)
-        self.assertTrue(response["data"]["cart_ready"])
-
     def test_a_zero_quantity_and_price_reach_the_rendered_inputs(self):
         self.product.lst_price = 0.0
         line = self._create_so(
@@ -288,10 +269,13 @@ class TestWebsiteSaleCart(ProductVariantsCommon, WebsiteSaleCommon):
         )
         self.assertEqual(reorder_qty.get("value"), "0")
         self.assertEqual(reorder_qty.get("data-price-unit"), "0.0")
-        [reorder_button] = reorder.xpath(
-            "//button[contains(@class, 'o_wsale_quick_reorder_product_button')]"
+        [reorder_form] = reorder.xpath(
+            "//form[contains(@class, 'o_wsale_quick_reorder_line')]"
         )
-        self.assertEqual(reorder_button.get("data-quantity"), "0.0")
+        self.assertEqual(
+            reorder_form.xpath("input[@name='line_id']/@value"), [str(line.id)]
+        )
+        self.assertEqual(reorder_qty.get("name"), "quantity")
 
     def test_unpublished_accessory_product_visibility(self):
         accessory_product = self.env["product.product"].create(

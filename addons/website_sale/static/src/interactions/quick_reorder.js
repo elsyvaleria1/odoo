@@ -1,51 +1,40 @@
 /** @odoo-module native */
-import { ProductCombo } from "@sale/js/models/product_combo";
-import { serializeComboItem } from "@sale/js/sale_utils";
-import { now, serializeDateTime } from "@web/core/l10n/dates";
-import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
-import { TAB_HEADER, TAB_ID } from "@web/public/tab_id";
 
 export class QuickReorder extends Interaction {
     static selector = "#quick_reorder_sidebar";
     dynamicContent = {
+        _document: {
+            "t-on-website_sale:cart_updated": this.focusNextQuantityInput,
+        },
+        ".o_wsale_quick_reorder_line": {
+            "t-on-submit": this.rememberLine,
+        },
         ".o_wsale_quick_reorder_qty_input": {
             "t-on-input": this.updateQuantityAndPrice,
-            "t-on-keydown": this.triggerReorderOnEnter,
         },
-        ".o_wsale_quick_reorder_product_button": { "t-on-click": this.reorderProduct },
     };
+
+    setup() {
+        this.submittedLineIndex = null;
+    }
 
     /**
      * @param {Event} ev
      * @return {void}
      */
-    async updateQuantityAndPrice(ev) {
+    updateQuantityAndPrice(ev) {
         const qtyInput = ev.currentTarget;
         const priceUnit = parseFloat(qtyInput.dataset.priceUnit);
         const digits = parseInt(qtyInput.dataset.currencyDigits, 10);
         const qty = parseInt(qtyInput.value, 10) || 0;
-        this._updateAddButton(qtyInput, qty);
+        // a disabled default button also keeps Enter from submitting the line
+        qtyInput
+            .closest(".o_wsale_quick_reorder_line")
+            .querySelector(".o_wsale_quick_reorder_product_button").disabled = qty <= 0;
         if (qty > 0) {
             this._updateTotalPrice(qtyInput, qty, priceUnit, digits);
-        }
-    }
-
-    /**
-     * @private
-     * @param {Element} qtyInput
-     * @param {number} qty
-     * @return {void}
-     */
-    _updateAddButton(qtyInput, qty) {
-        const addButton = qtyInput
-            .closest(".o_wsale_quick_reorder_line")
-            .querySelector(".o_wsale_quick_reorder_product_button");
-        const isDisabled = qty <= 0;
-        addButton.classList.toggle("disabled", isDisabled);
-        if (qty > 0) {
-            addButton.dataset.quantity = String(qty);
         }
     }
 
@@ -62,96 +51,31 @@ export class QuickReorder extends Interaction {
             .closest(".o_wsale_quick_reorder_line")
             .querySelector(".o_wsale_quick_reorder_product_price .oe_currency_value");
         if (priceEl) {
-            const totalPrice = (qty * priceUnit).toFixed(digits);
-            priceEl.textContent = totalPrice;
+            priceEl.textContent = (qty * priceUnit).toFixed(digits);
         }
     }
 
+    /** @param {SubmitEvent} ev */
+    rememberLine(ev) {
+        this.submittedLineIndex = [
+            ...this.el.querySelectorAll(".o_wsale_quick_reorder_line"),
+        ].indexOf(/** @type {HTMLFormElement} */ (ev.currentTarget));
+    }
+
     /**
-     * @param {Event} ev
-     * @return {void}
+     * The added line leaves the history, so the line now at its place is the
+     * next one.
+     *
+     * @param {CustomEvent<{ quick_reorder?: boolean }>} ev
      */
-    async triggerReorderOnEnter(ev) {
-        if (ev.key !== "Enter") {
+    focusNextQuantityInput(ev) {
+        if (!ev.detail?.quick_reorder || this.submittedLineIndex === null) {
             return;
         }
-
-        const addButton = ev.currentTarget
-            .closest(".o_wsale_quick_reorder_line")
-            .querySelector(".o_wsale_quick_reorder_product_button");
-        if (addButton && !addButton.classList.contains("disabled")) {
-            addButton.click();
-        }
-    }
-
-    /**
-     * @param {Event} ev
-     * @return {void}
-     */
-    async reorderProduct(ev) {
-        const addButtonDataset = ev.currentTarget.dataset;
-        const productTemplateId = parseInt(addButtonDataset.productTemplateId, 10);
-        const productId = parseInt(addButtonDataset.productId, 10);
-        let quantity = parseInt(addButtonDataset.quantity);
-        const isCombo = addButtonDataset.productType === "combo";
-        const selectedComboItems = JSON.parse(
-            addButtonDataset.selectedComboItems || "[]",
-        );
-
-        const allButtons = document.querySelectorAll(
-            ".o_wsale_quick_reorder_product_button",
-        );
-        const currentButtonIndex = Array.from(allButtons).indexOf(ev.currentTarget);
-
-        let linkedProducts = [];
-        if (isCombo) {
-            const { quantity: updatedQty, combos } = await rpc(
-                "/website_sale/combo_configurator/get_data",
-                {
-                    product_tmpl_id: productTemplateId,
-                    quantity: quantity,
-                    date: serializeDateTime(now()),
-                    selected_combo_items: selectedComboItems,
-                },
-            );
-            quantity = updatedQty;
-            linkedProducts = combos
-                .map((combo) => new ProductCombo(combo).selectedComboItem)
-                .filter(Boolean)
-                .map((comboItem) => ({
-                    product_template_id: comboItem.product.product_tmpl_id,
-                    parent_product_template_id: productTemplateId,
-                    quantity: quantity,
-                    ...serializeComboItem(comboItem),
-                }));
-        }
-
-        const response = await this.waitFor(
-            rpc(
-                "/shop/cart/quick_add",
-                {
-                    product_template_id: productTemplateId,
-                    product_id: productId,
-                    quantity: quantity,
-                    ...(isCombo && { linked_products: linkedProducts }),
-                },
-                { headers: { [TAB_HEADER]: TAB_ID } },
-            ),
-        );
-        this.swapFragments(response);
-
-        this._focusNextQuantityInput(currentButtonIndex);
-    }
-
-    /**
-     * @param {number} buttonIndex
-     * @return {void}
-     */
-    _focusNextQuantityInput(buttonIndex) {
-        const allQuantityInputs = document.querySelectorAll(
-            ".o_wsale_quick_reorder_qty_input",
-        );
-        const nextInput = allQuantityInputs[buttonIndex];
+        const nextInput = this.el.querySelectorAll(".o_wsale_quick_reorder_qty_input")[
+            this.submittedLineIndex
+        ];
+        this.submittedLineIndex = null;
         if (nextInput) {
             nextInput.focus();
             nextInput.select();

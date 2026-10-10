@@ -25,4 +25,12 @@
             eval="[             Command.link(ref('website.group_website_restricted_editor')),         ]" />
     </record>
 
+    <record id="privilege_reorder_past_line" model="res.groups">
+        <field
+            name="name">Privilege: a shopper adds back a line of their own past order</field>
+        <field
+            name="comment">The cart's quick reorder and a portal order's "Order again" read the past order's line, and the combos of a combo product with their choices, to add it back as the shop offers it today. Nothing else of the orders or the catalog is theirs.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
 </odoo>

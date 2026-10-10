@@ -1059,6 +1059,7 @@ msgstr "Knop Toevoegen aan winkelmandje"
 #. odoo-javascript
 #: code:addons/website_sale/static/src/js/product_configurator_dialog/product_configurator_dialog.xml:0
 #: model_terms:ir.ui.view,arch_db:website_sale.shop_product_buttons
+#: model_terms:ir.ui.view,arch_db:website_sale.quick_reorder_history
 msgid "Add to cart"
 msgstr "Toevoegen aan winkelmandje"
 
@@ -4669,6 +4670,7 @@ msgstr "Naar boven duwen"
 #. module: website_sale
 #. odoo-javascript
 #: code:addons/website_sale/static/src/website_builder/product_page_option.xml:0
+#: model_terms:ir.ui.view,arch_db:website_sale.quick_reorder_history
 msgid "Quantity"
 msgstr "Aantal"
 

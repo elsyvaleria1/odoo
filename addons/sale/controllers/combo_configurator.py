@@ -117,14 +117,8 @@ class SaleComboConfiguratorController(Controller):
         pricelist,
         **kwargs,
     ):
-        is_configurable = any(
-            ptal.attribute_id.create_variant == "no_variant" and ptal._is_configurable()
-            for ptal in combo_item.product_id.attribute_line_ids
-        ) or any(
-            ptav.is_custom
-            for ptav in combo_item.product_id.product_template_attribute_value_ids
-        )
-        is_preselected = len(combo.combo_item_ids) == 1 and not is_configurable
+        is_configurable = combo_item._is_configurable()
+        is_preselected = combo_item._is_preselected()
         _debug.logic(
             "combo_item_data",
             combo=combo,

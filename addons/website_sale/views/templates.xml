@@ -3382,10 +3382,21 @@
                         <h6
                             t-out="order_line_group['label']"
                             class="mt-1 mb-3 text-muted" />
-                        <div
+                        <form
                             t-foreach="order_line_group['lines']"
                             t-as="order_line"
+                            method="post"
+                            action="/shop/cart/quick_add"
+                            data-fragment-form=""
                             t-att-class="'o_wsale_quick_reorder_line d-flex flex-column flex-sm-row justify-content-between gap-3 '                                       + ('align-items-start' if order_line.product_type == 'combo' else '')">
+                            <input
+                                type="hidden"
+                                name="csrf_token"
+                                t-att-value="request.csrf_token()" />
+                            <input
+                                type="hidden"
+                                name="line_id"
+                                t-att-value="order_line.id" />
                             <div
                                 t-att-class="'d-flex gap-2 ' + ('align-items-start' if order_line.product_type == 'combo' else 'align-items-center')">
                                 <div class="o_cart_product_image">
@@ -3425,23 +3436,22 @@
                                     style="white-space: nowrap;" />
                                 <input
                                     type="text"
+                                    inputmode="numeric"
+                                    name="quantity"
+                                    aria-label="Quantity"
                                     t-attf-value="{{int(order_line.product_qty)}}"
                                     class="o_wsale_quick_reorder_qty_input form-control text-center"
                                     t-attf-data-price-unit="{{combination_info['price']}}"
                                     t-attf-data-currency-digits="{{combination_info['currency'].decimal_places}}" />
                                 <button
-                                    type="button"
+                                    type="submit"
                                     title="Press 'Enter' to add to cart"
-                                    class="o_wsale_quick_reorder_product_button btn btn-outline-primary"
-                                    t-attf-data-quantity="{{order_line.product_qty}}"
-                                    t-att-data-product-id="order_line.product_id.id"
-                                    t-att-data-product-template-id="order_line.product_id.product_tmpl_id.id"
-                                    t-att-data-product-type="order_line.product_id.type"
-                                    t-att-data-selected-combo-items="json.dumps(order_line._get_selected_combo_items())">
+                                    aria-label="Add to cart"
+                                    class="o_wsale_quick_reorder_product_button btn btn-outline-primary">
                                     <i class="fa-solid fa-cart-plus" />
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
