@@ -344,3 +344,35 @@ class TestAccountMergeWizard(TestAccountMergeCommon):
                 company
             ).property_account_payable_id.exists()
             self.assertEqual(partner_payable_account, payable_accounts)
+
+    def test_merging_a_branch_account_keeps_the_destination_code(self):
+        branch = self.env["res.company"].create(
+            {"name": "Merge branch", "parent_id": self.company_1.id}
+        )
+        self.env.user.company_ids |= branch
+        Account = self.env["account.account"].with_context(
+            allowed_company_ids=(self.company_1 | branch).ids
+        )
+        root_account = Account.create(
+            {
+                "code": "999971",
+                "name": "Merge root",
+                "account_type": "asset_current",
+                "company_ids": [Command.set(self.company_1.ids)],
+            }
+        )
+        branch_account = Account.create(
+            {
+                "code": "999972",
+                "name": "Merge branch",
+                "account_type": "asset_current",
+                "company_ids": [Command.set(branch.ids)],
+            }
+        )
+
+        self._create_account_merge_wizard(root_account | branch_account).action_merge()
+
+        self.assertFalse(branch_account.exists())
+        self.assertEqual(root_account.company_ids, self.company_1 | branch)
+        self.assertEqual(root_account.with_company(self.company_1).code, "999971")
+        self.assertEqual(root_account.with_company(branch).code, "999971")

@@ -489,12 +489,15 @@ class MixinCompanySplit(models.AbstractModel):
                 migrate_fields=SQL(", ").join(
                     SQL(
                         """
-                    %(field)s = (
-                        SELECT jsonb_object_agg(value.key, value.value)
-                          FROM jsonb_each(old.%(field)s) value
-                          JOIN new_record_company
-                            ON new_record_company.company_id = value.key
-                         WHERE new_record_company.record_id = new.id
+                    %(field)s = COALESCE(
+                        (
+                            SELECT jsonb_object_agg(value.key, value.value)
+                              FROM jsonb_each(old.%(field)s) value
+                              JOIN new_record_company
+                                ON new_record_company.company_id = value.key
+                             WHERE new_record_company.record_id = new.id
+                        ),
+                        new.%(field)s
                     )
                     """,
                         field=SQL.identifier(field_name),

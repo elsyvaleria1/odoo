@@ -1,4 +1,5 @@
 from odoo import Command
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -264,3 +265,62 @@ class TestMarinUnmergeBranches(AccountTestInvoicingCommon):
         self.assertEqual(tax.company_ids, self.company_a)
         self.assertEqual(split.company_ids, self.company_b)
         self._assert_xmlids("unmerge_branch_tax", expected_by_company, tax)
+
+    def test_an_account_shared_by_a_root_and_its_branch_cannot_be_unmerged(self):
+        account = self.env["account.account"].create(
+            {
+                "code": "121980",
+                "name": "Unmerge root and branch",
+                "account_type": "asset_current",
+                "company_ids": [Command.set((self.company_a | self.branch_a1).ids)],
+            }
+        )
+        with self.assertRaisesRegex(UserError, "share the code"):
+            account.with_context(account_unmerge_confirm=True).action_unmerge()
+        self.assertEqual(self._code_store(account), {str(self.company_a.id): "121980"})
+
+    def test_an_account_split_off_to_a_branch_keeps_its_code(self):
+        account = self.env["account.account"].create(
+            {
+                "code": "121970",
+                "name": "Unmerge root and other branch",
+                "account_type": "asset_current",
+                "company_ids": [Command.set(self.company_a.ids)],
+            }
+        )
+        account.write(
+            {
+                "company_ids": [Command.link(self.branch_b1.id)],
+                "code_mapping_ids": [
+                    Command.create({"company_id": self.branch_b1.id, "code": "121971"})
+                ],
+            }
+        )
+        self.assertEqual(account.with_company(self.branch_b1).code, "121971")
+
+        split = self._unmerge(account, self.company_a)
+
+        self.assertEqual(split.company_ids, self.branch_b1)
+        self.assertEqual(split.with_company(self.branch_b1).code, "121971")
+        self.assertEqual(self._code_store(split), {str(self.company_b.id): "121971"})
+        self.assertEqual(self._code_store(account), {str(self.company_a.id): "121970"})
+
+    def test_an_account_split_off_to_a_root_missing_from_its_codes_keeps_a_code(self):
+        account = self._shared_account()
+        base_company = account.company_ids[0]
+        other_root = self.company_a + self.company_b - base_company
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE account_account SET code_store = code_store - %s WHERE id = %s",
+            [str(other_root.id), account.id],
+        )
+        self.env.invalidate_all()
+        self.assertFalse(account.with_company(other_root).code)
+
+        split = self._unmerge(account, base_company)
+
+        self.assertEqual(split.company_ids, other_root)
+        self.assertEqual(
+            split.with_company(other_root).code,
+            account.with_company(base_company).code,
+        )

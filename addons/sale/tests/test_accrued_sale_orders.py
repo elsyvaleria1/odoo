@@ -149,7 +149,7 @@ class TestAccruedSaleOrders(TestSaleCommon):
                     "account_id": self.account_expense.id,
                     "debit": 0,
                     "credit": 6000 / 2,
-                    "amount_currency": 0.0,
+                    "amount_currency": -6000.0,
                 },
                 {
                     "account_id": self.account_revenue.id,
@@ -167,7 +167,7 @@ class TestAccruedSaleOrders(TestSaleCommon):
                     "account_id": self.account_expense.id,
                     "debit": 6000 / 2,
                     "credit": 0,
-                    "amount_currency": 0.0,
+                    "amount_currency": 6000.0,
                 },
             ],
         )

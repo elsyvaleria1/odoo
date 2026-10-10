@@ -13,6 +13,7 @@ _debug = DebugLog(__name__)
 class WizardAccountMoveCreateRevaluation(models.TransientModel):
     _name = "wizard.account.move.create.revaluation"
     _description = "Multicurrency Revaluation Wizard"
+    _check_company_auto = True
 
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -28,6 +29,7 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
         readonly=False,
         required=True,
         domain=[("type", "=", "general")],
+        check_company=True,
     )
     date = fields.Date(
         default=lambda self: self.env.context[
@@ -46,6 +48,7 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
         store=True,
         readonly=False,
         required=True,
+        check_company=True,
     )
     income_provision_account_id = fields.Many2one(
         comodel_name="account.account",
@@ -57,6 +60,7 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
         store=True,
         readonly=False,
         required=True,
+        check_company=True,
     )
     adjustment_vals = fields.Json()
     preview_data = fields.Text(compute="_compute_preview_data")
@@ -166,26 +170,31 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
             record.income_provision_account_id = record.company_id.account_config_id.account_revaluation_income_provision_account_id
 
     def _inverse_journal_id(self) -> None:
-        for record in self:
-            config = record.company_id.account_config_id
-            if config.has_access("write"):
-                config.account_revaluation_journal_id = record.journal_id
+        self._remember_choice("journal_id", "account_revaluation_journal_id")
 
     def _inverse_expense_provision_account_id(self) -> None:
-        for record in self:
-            config = record.company_id.account_config_id
-            if config.has_access("write"):
-                config.account_revaluation_expense_provision_account_id = (
-                    record.expense_provision_account_id
-                )
+        self._remember_choice(
+            "expense_provision_account_id",
+            "account_revaluation_expense_provision_account_id",
+        )
 
     def _inverse_income_provision_account_id(self) -> None:
+        self._remember_choice(
+            "income_provision_account_id",
+            "account_revaluation_income_provision_account_id",
+        )
+
+    def _remember_choice(self, fname, config_fname) -> None:
         for record in self:
             config = record.company_id.account_config_id
-            if config.has_access("write"):
-                config.account_revaluation_income_provision_account_id = (
-                    record.income_provision_account_id
+            if config[config_fname] != record[fname] and config.has_access("write"):
+                _debug.logic(
+                    "revaluation_choice_remembered",
+                    revaluation=record,
+                    field=config_fname,
+                    value=record[fname],
                 )
+                config[config_fname] = record[fname]
 
     def _get_adjustment_vals(self):
         if self[:1].adjustment_vals:
@@ -322,6 +331,11 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
     @_debug.perf.timed
     def create_entries(self) -> dict:
         self.check_singleton()
+        if self.reversal_date <= self.date:
+            _debug.logic(
+                "revaluation_rejected", revaluation=self, reason="reversal_date"
+            )
+            raise UserError(self.env._("Reversal date must be posterior to date."))
         move_vals = self._prepare_move_vals()
         _debug.pipeline(
             "create_entries_reversal",
@@ -340,10 +354,10 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
                 default_values_list=[
                     {
                         "ref": self.env._("Reversal of: %s", move.ref),
+                        "date": self.reversal_date,
                     }
                 ]
             )
-            reverse_move.date = self.reversal_date
             reverse_move.action_post()
 
             form = self.env.ref("account.view_move_form", False)

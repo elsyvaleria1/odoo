@@ -31,8 +31,8 @@ class DigestDigest(models.Model):
                 aggregates=["balance:sum"],
                 domain=[
                     ("company_id", "in", companies.ids),
-                    ("date", ">", start),
-                    ("date", "<=", end),
+                    ("date", ">=", start),
+                    ("date", "<", end),
                     ("account_id.internal_group", "=", "income"),
                     ("parent_state", "=", "posted"),
                 ],

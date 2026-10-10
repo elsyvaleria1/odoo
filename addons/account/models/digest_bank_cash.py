@@ -2,6 +2,8 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError
 from odoo.libs.debug_log import DebugLog
 
+from odoo.addons.account.models.account_journal import LIQUIDITY_TYPES
+
 _debug = DebugLog(__name__)
 
 
@@ -26,7 +28,8 @@ class DigestDigest(models.Model):
             [
                 ("date", ">=", start),
                 ("date", "<", end),
-                ("journal_id.type", "in", ("cash", "bank")),
+                ("journal_id.type", "in", LIQUIDITY_TYPES),
+                ("state", "=", "posted"),
                 ("company_id", "in", companies.ids),
             ],
             ["company_id"],

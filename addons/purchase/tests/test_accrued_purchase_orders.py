@@ -180,7 +180,7 @@ class TestAccruedPurchaseOrders(AccountTestInvoicingCommon):
                     "account_id": self.account_revenue.id,
                     "debit": 6000 / 2,
                     "credit": 0,
-                    "amount_currency": 0.0,
+                    "amount_currency": 6000.0,
                 },
                 {
                     "account_id": self.account_expense.id,
@@ -198,9 +198,52 @@ class TestAccruedPurchaseOrders(AccountTestInvoicingCommon):
                     "account_id": self.account_revenue.id,
                     "debit": 0,
                     "credit": 6000 / 2,
-                    "amount_currency": 0.0,
+                    "amount_currency": -6000.0,
                 },
             ],
+        )
+
+    def test_multi_currency_manual_accrual_is_balanced_in_the_order_currency(self):
+        purchase_order = (
+            self.env["purchase.order"]
+            .with_context(tracking_disable=True)
+            .create(
+                {
+                    "partner_id": self.partner_a.id,
+                    "currency_id": self.other_currency.id,
+                    "line_ids": [
+                        Command.create(
+                            {
+                                "name": self.product_a.name,
+                                "product_id": self.product_a.id,
+                                "product_qty": 10.0,
+                                "product_uom_id": self.product_a.uom_id.id,
+                                "price_unit": self.product_a.list_price,
+                                "tax_ids": False,
+                            }
+                        ),
+                    ],
+                }
+            )
+        )
+        purchase_order.action_confirm()
+        purchase_order.line_ids.qty_transferred = 5
+        wizard = (
+            self.env["wizard.account.move.create.accrual"]
+            .with_context(
+                {"active_model": "purchase.order", "active_ids": purchase_order.ids}
+            )
+            .create({"account_id": self.account_revenue.id, "amount": 100.0})
+        )
+
+        moves = self.env["account.move"].search(wizard.create_entries()["domain"])
+
+        for move in moves:
+            self.assertEqual(move.currency_id, self.other_currency)
+            self.assertEqual(sum(move.line_ids.mapped("amount_currency")), 0.0)
+        self.assertEqual(
+            sorted(moves.line_ids.mapped(lambda l: (l.balance, l.amount_currency))),
+            [(-100.0, -200.0), (-100.0, -200.0), (100.0, 200.0), (100.0, 200.0)],
         )
 
     def test_multi_currency_accrual_uses_the_rate_of_its_date(self):

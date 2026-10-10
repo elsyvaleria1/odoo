@@ -1,4 +1,5 @@
 import logging
+from unittest.mock import patch
 
 from odoo.exceptions import UserError
 from odoo.fields import Command
@@ -426,3 +427,56 @@ class TestAuditTrailAttachment(AccountTestInvoicingHttpCommon):
         invoice.message_post(
             message_type="comment", attachment_ids=another_attachment.ids
         )
+
+
+@tagged("post_install", "-at_install")
+class TestAuditTrailAttachmentCompany(AccountTestInvoicingCommon):
+    PDF = b"%PDF-1.4\n%audit trail\n"
+
+    def _attach(self, invoice, company, **vals):
+        return self.env["ir.attachment"].create(
+            {
+                "name": "invoice.pdf",
+                "raw": self.PDF,
+                "res_model": "account.move",
+                "res_id": invoice.id,
+                "company_id": company.id,
+                **vals,
+            }
+        )
+
+    def test_the_invoice_pdf_follows_the_audit_trail_of_its_move_company(self):
+        company_a = self.env.company
+        company_a.account_config_id.restrictive_audit_trail = False
+        company_data_b = self.setup_other_company(name="audit_company_b")
+        company_b = company_data_b["company"]
+        company_b.account_config_id.restrictive_audit_trail = True
+        invoice = self.init_invoice(
+            "out_invoice", amounts=[100], post=True, company=company_b
+        )
+        pdf = self._attach(invoice, company_a, res_field="invoice_pdf_report_file")
+
+        pdf.unlink()
+
+        self.assertTrue(pdf.exists(), "the PDF of a restricted move is detached")
+        self.assertFalse(pdf.res_field)
+
+    def test_an_unrestricted_company_never_reads_the_attachment_content(self):
+        self.env.company.account_config_id.restrictive_audit_trail = False
+        invoice = self.init_invoice("out_invoice", amounts=[100], post=True)
+        attachments = self.env["ir.attachment"].union(
+            *(self._attach(invoice, self.env.company) for _ in range(20))
+        )
+        self.env.invalidate_all()
+        Attachment = type(self.env["ir.attachment"])
+        original = Attachment._get_stored_content
+        reads = []
+
+        def counted(attachment):
+            reads.append(attachment)
+            return original(attachment)
+
+        with patch.object(Attachment, "_get_stored_content", counted):
+            attachments.unlink()
+        self.assertFalse(attachments.exists())
+        self.assertEqual(reads, [])

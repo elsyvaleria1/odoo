@@ -1,6 +1,5 @@
 import re
 from collections import defaultdict
-from functools import cache
 from typing import NamedTuple
 from urllib.parse import urlencode
 
@@ -10,6 +9,7 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.web import urls
 from odoo.tools import (
+    SQL,
     email_normalize,
     email_normalize_all,
     frozendict,
@@ -104,11 +104,6 @@ JOURNAL_TYPES = {
 }
 
 
-@cache
-def _generated_code_pattern(prefixes):
-    return re.compile(rf"({'|'.join(re.escape(prefix) for prefix in prefixes)})\d*")
-
-
 def _types_where(**criteria):
     return tuple(
         journal_type
@@ -121,6 +116,7 @@ class JournalBatchReservations(NamedTuple):
     codes: dict
     alias_names: dict
     companies_read: set
+    default_account_ids: set
 
 
 class JournalPaymentMethods(NamedTuple):
@@ -871,8 +867,19 @@ class AccountJournal(models.Model):
     def _is_generated_code(self, code) -> bool:
         if not code:
             return True
-        prefixes = tuple(spec["code_prefix"] for spec in JOURNAL_TYPES.values())
-        return bool(_generated_code_pattern(prefixes).fullmatch(code))
+        prefixes = {spec["code_prefix"] for spec in JOURNAL_TYPES.values()}
+        if code in prefixes:
+            return True
+        digits = re.search(r"[1-9]\d*$", code)
+        return bool(digits) and any(
+            self._format_generated_code(prefix, int(digits.group())) == code
+            for prefix in prefixes
+        )
+
+    @api.model
+    def _format_generated_code(self, prefix, number) -> str:
+        suffix = str(number)
+        return f"{prefix[: self._fields['code'].size - len(suffix)]}{suffix}"
 
     @api.model
     def _prepare_type_defaults(self, journal_type, company):
@@ -1606,8 +1613,7 @@ class AccountJournal(models.Model):
         used = used_codes | set(codes_to_avoid)
         prefix = re.sub(r"\d+", "", prefix or "").strip() or "J"
         for num in range(1, 10**size):
-            suffix = str(num)
-            candidate = f"{prefix[: size - len(suffix)]}{suffix}"
+            candidate = self._format_generated_code(prefix, num)
             if candidate not in used:
                 _debug.logic(
                     "journal_code_generated",
@@ -1664,32 +1670,51 @@ class AccountJournal(models.Model):
         return self._prepare_account_vals(company, code, vals, "liability_credit_card")
 
     @api.model
-    def _find_or_create_default_account(self, company, journal_type, vals):
+    def _find_or_create_default_account(
+        self, company, journal_type, vals, taken_account_ids=()
+    ):
         if journal_type == "credit":
-            existing = (
-                self.env["account.account"]
-                .with_company(company)
-                .search(
-                    [
-                        *self.env["account.account"]._check_company_domain(company),
-                        (
-                            "account_type",
-                            "in",
-                            JOURNAL_TYPES[journal_type]["account_types"],
-                        ),
-                    ],
-                    limit=1,
+            candidates = self._get_credit_card_accounts(company)
+            used_ids = {
+                account_id
+                for (account_id,) in self.env.execute_query(
+                    SQL(
+                        "SELECT DISTINCT default_account_id FROM account_journal"
+                        " WHERE default_account_id = ANY(%(account_ids)s)",
+                        account_ids=candidates.ids,
+                        to_flush=self._fields["default_account_id"],
+                    )
                 )
-            )
-            if existing:
+            }
+            if free := candidates.filtered(
+                lambda account: (
+                    account.id not in used_ids and account.id not in taken_account_ids
+                )
+            )[:1]:
                 _debug.logic(
                     "default_account_reused",
                     company=company,
                     type=journal_type,
-                    account=existing,
+                    account=free,
                 )
-                return existing.id
+                return free.id
+            _debug.logic(
+                "default_account_all_taken",
+                company=company,
+                type=journal_type,
+                candidates=candidates,
+            )
         return self._create_default_account(company, journal_type, vals)
+
+    @api.model
+    def _get_credit_card_accounts(self, company):
+        Account = self.env["account.account"].with_company(company)
+        return Account.search(
+            [
+                *Account._check_company_domain(company),
+                ("account_type", "in", JOURNAL_TYPES["credit"]["account_types"]),
+            ]
+        )
 
     @api.model
     @_debug.perf.timed
@@ -1718,7 +1743,12 @@ class AccountJournal(models.Model):
             from_existing=bool(random_account),
         )
 
-        if journal_type == "cash":
+        credit_card_account = (
+            journal_type == "credit" and self._get_credit_card_accounts(company)[:1]
+        )
+        if credit_card_account:
+            account_prefix = credit_card_account.code
+        elif journal_type == "cash":
             account_prefix = (
                 company.account_config_id.cash_account_code_prefix
                 or company.account_config_id.bank_account_code_prefix
@@ -1772,7 +1802,7 @@ class AccountJournal(models.Model):
 
     @api.model
     def _reserve_batch(self, vals_list):
-        reservations = JournalBatchReservations({}, {}, set())
+        reservations = JournalBatchReservations({}, {}, set(), set())
         for vals in vals_list:
             company_id = vals.get("company_id") or self.env.company.id
             reservations.codes.setdefault(company_id, set())
@@ -1827,8 +1857,12 @@ class AccountJournal(models.Model):
 
         if journal_type in LIQUIDITY_TYPES and not vals.get("default_account_id"):
             vals["default_account_id"] = self._find_or_create_default_account(
-                company, journal_type, vals
+                company,
+                journal_type,
+                vals,
+                taken_account_ids=reservations.default_account_ids,
             )
+            reservations.default_account_ids.add(vals["default_account_id"])
 
         if is_import:
             self._update_code(vals, journal_type, company, reservations)

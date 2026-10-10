@@ -48,8 +48,8 @@ class AccountJournal(models.Model):
         string="Color Index",
         default=0,
     )
-    current_statement_balance = fields.Monetary(compute="_compute_bank_running_balance")
-    has_statement_lines = fields.Boolean(compute="_compute_bank_running_balance")
+    current_statement_balance = fields.Monetary(compute="_compute_bank_position")
+    has_statement_lines = fields.Boolean(compute="_compute_bank_position")
     has_posted_entries = fields.Boolean(compute="_compute_entry_presence")
     has_entries = fields.Boolean(compute="_compute_entry_presence")
     has_sequence_holes = fields.Boolean(compute="_compute_has_sequence_holes")
@@ -59,7 +59,7 @@ class AccountJournal(models.Model):
     )
     last_statement_id = fields.Many2one(
         comodel_name="account.bank.statement",
-        compute="_compute_last_statement_id",
+        compute="_compute_bank_position",
     )
 
     def _dashboard_currency(self):
@@ -69,31 +69,21 @@ class AccountJournal(models.Model):
         )
 
     @api.depends_context("allowed_company_ids")
-    def _compute_bank_running_balance(self) -> None:
+    def _compute_bank_position(self) -> None:
         bank_cash_journals = self.filtered(
             lambda journal: journal.type in BANK_CASH_TYPES
         )
         other_journals = self - bank_cash_journals
         other_journals.has_statement_lines = False
         other_journals.current_statement_balance = 0.0
+        other_journals.last_statement_id = False
         positions = bank_cash_journals._get_bank_positions()
+        Statement = self.env["account.bank.statement"]
         for journal in bank_cash_journals:
             position = positions[journal.id]
             journal.has_statement_lines = position.has_statement_lines
             journal.current_statement_balance = position.running_balance
-
-    @api.depends_context("allowed_company_ids")
-    def _compute_last_statement_id(self) -> None:
-        bank_cash_journals = self.filtered(
-            lambda journal: journal.type in BANK_CASH_TYPES
-        )
-        (self - bank_cash_journals).last_statement_id = False
-        positions = bank_cash_journals._get_bank_positions()
-        Statement = self.env["account.bank.statement"]
-        for journal in bank_cash_journals:
-            journal.last_statement_id = Statement.browse(
-                positions[journal.id].last_statement_id
-            )
+            journal.last_statement_id = Statement.browse(position.last_statement_id)
 
     @api.depends_context("allowed_company_ids", "company")
     def _compute_kanban_dashboard(self) -> None:
@@ -310,10 +300,15 @@ class AccountJournal(models.Model):
               JOIN account_move move ON move.id = st_line.move_id
              WHERE move.journal_id = ANY(%s)
                AND move.date > %s
+               AND move.state != 'cancel'
                AND move.company_id = ANY(%s)
           GROUP BY move.date, move.journal_id
           ORDER BY move.date DESC
         """
+        self.env["account.bank.statement.line"].flush_model(["amount", "move_id"])
+        self.env["account.move"].flush_model(
+            ["date", "state", "journal_id", "company_id"]
+        )
         self.env.cr.execute(query, (self.ids, last_month, self.env.companies.ids))
         query_result = group_by_journal(self.env.cr.dictfetchall())
         _debug.pipeline(
@@ -328,7 +323,12 @@ class AccountJournal(models.Model):
         for journal in self:
             graph_title, graph_key = journal._graph_title_and_key()
             currency = journal._dashboard_currency()
-            journal_result = query_result[journal.id]
+            journal_result = [
+                row for row in query_result[journal.id] if row["date"] <= today
+            ]
+            future_amount = sum(
+                row["amount"] for row in query_result[journal.id] if row["date"] > today
+            )
 
             is_sample_data = not journal_result and not journal.has_statement_lines
 
@@ -344,7 +344,13 @@ class AccountJournal(models.Model):
                         )
                     )
             else:
-                last_balance = journal.current_statement_balance
+                last_balance = journal.current_statement_balance - future_amount
+                if _debug.logic.enabled and future_amount:
+                    _debug.logic(
+                        "bank_cash_graph_future_lines_excluded",
+                        journal=journal,
+                        future_amount=future_amount,
+                    )
                 if not journal_result or journal_result[0]["date"] < today:
                     data.append(prepare_graph_point(today, last_balance, currency))
                 date = today
@@ -1094,6 +1100,7 @@ class AccountJournal(models.Model):
         _debug.pipeline("bank_positions_query", journals=self)
         self.env["account.bank.statement.line"].flush_model()
         self.env["account.bank.statement"].flush_model()
+        self.env["account.move"].flush_model(["state"])
         self.env.cr.execute(
             """
             SELECT journal.id AS journal_id,

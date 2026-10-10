@@ -1384,6 +1384,72 @@ class TestAccountJournalCodeAndCopy(AccountTestInvoicingCommon):
         self.env.flush_all()
         self.assertEqual(len(set(journals.mapped("alias_name"))), 3)
 
+    def test_every_generated_code_is_recognised_as_generated(self):
+        Journal = self.env["account.journal"]
+        for prefix in ("INV", "BILL", "CSH", "BNK", "CCD", "MISC"):
+            for number in (1, 9, 10, 99, 100):
+                code = Journal._format_generated_code(prefix, number)
+                with self.subTest(code=code):
+                    self.assertTrue(Journal._is_generated_code(code))
+        for code in ("BNK01", "ZS1", "BIL", "BILLX"):
+            with self.subTest(code=code):
+                self.assertFalse(Journal._is_generated_code(code))
+
+    def test_a_tenth_generated_code_is_refreshed_on_a_type_change(self):
+        journal = self.env["account.journal"].create(
+            {"name": "Tenth bill", "type": "purchase", "code": "BIL10"}
+        )
+        values = journal.onchange(
+            {"id": journal.id, "name": "Tenth bill", "type": "sale", "code": "BIL10"},
+            ["type"],
+            {"type": {}, "code": {}, "name": {}},
+        ).get("value", {})
+        self.assertTrue(values.get("code", "").startswith("INV"))
+
+    def test_credit_card_journals_get_their_own_default_account(self):
+        journals = self.env["account.journal"].create(
+            [{"name": "Visa", "type": "credit"}, {"name": "Amex", "type": "credit"}]
+        )
+        journals |= self.env["account.journal"].create(
+            {"name": "Diners", "type": "credit"}
+        )
+        accounts = journals.default_account_id
+        self.assertEqual(len(accounts), 3, "every credit card needs its own account")
+        self.assertEqual(
+            set(accounts.mapped("account_type")), {"liability_credit_card"}
+        )
+        template_codes = (
+            self.env["account.account"]
+            .search(
+                [
+                    *self.env["account.account"]._check_company_domain(
+                        self.env.company
+                    ),
+                    ("account_type", "=", "liability_credit_card"),
+                    ("id", "not in", accounts.ids),
+                ]
+            )
+            .mapped("code")
+        )
+        bank_prefix = self.env.company.account_config_id.bank_account_code_prefix
+        for account in accounts:
+            with self.subTest(code=account.code):
+                self.assertFalse(
+                    bank_prefix and account.code.startswith(bank_prefix),
+                    "a credit card account is not numbered in the bank range",
+                )
+                self.assertNotIn(account.code, template_codes)
+
+    def test_a_credit_card_journal_converted_later_gets_its_own_account(self):
+        visa = self.env["account.journal"].create({"name": "Visa", "type": "credit"})
+        converted = self.env["account.journal"].create(
+            {"name": "Converted", "type": "general", "code": "CNV1"}
+        )
+        self.env.flush_all()
+        converted.write({"type": "credit", "default_account_id": False})
+        self.assertTrue(converted.default_account_id)
+        self.assertNotEqual(converted.default_account_id, visa.default_account_id)
+
 
 @tagged("post_install", "-at_install")
 class TestAccountJournalTypeMetadata(AccountTestInvoicingCommon):

@@ -849,7 +849,7 @@ class AccountAccount(models.Model):
                 .search_fetch(  # noqa: E8507  one search per company, which a single query cannot scope
                     [
                         ("code", "in", list(accounts_by_code)),
-                        ("id", "not in", self.ids),
+                        ("id", "not in", accounts.ids),
                         "|",
                         ("company_ids", "parent_of", company.ids),
                         ("company_ids", "child_of", company.ids),
@@ -1104,66 +1104,49 @@ class AccountAccount(models.Model):
 
     @api.constrains("account_type")
     @_debug.perf.timed
-    def _check_account_type_sales_purchase_journal(self) -> None:
-        if not self:
+    def _check_account_type_journal_default_account(self) -> None:
+        journal = (
+            self.env["account.journal"]
+            .sudo()
+            .search_fetch(
+                [
+                    ("default_account_id", "in", self.ids),
+                    (
+                        "default_account_id.account_type",
+                        "in",
+                        ("asset_receivable", "liability_payable"),
+                    ),
+                ],
+                ["type", "name"],
+                limit=1,
+            )
+        )
+        if not journal:
             return
-
-        used = (
-            self.env["account.journal"]
-            .sudo()
-            .search_count(
-                [
-                    ("type", "in", ("sale", "purchase")),
-                    ("default_account_id", "in", self.ids),
-                    (
-                        "default_account_id.account_type",
-                        "in",
-                        ("asset_receivable", "liability_payable"),
-                    ),
-                ],
-                limit=1,
-            )
+        _debug.logic(
+            "account_type_rejected",
+            accounts=self,
+            reason="journal_default_account",
+            journal=journal,
         )
-        if used:
-            _debug.logic(
-                "account_type_rejected", accounts=self, reason="sale_purchase_journal"
+        if journal.type in ("sale", "purchase"):
+            message = self.env._(
+                "The account is already in use in a 'sale' or 'purchase' "
+                "journal. This means that the account's type couldn't be "
+                "'receivable' or 'payable'.",
             )
-            raise ValidationError(
-                self.env._(
-                    "The account is already in use in a 'sale' or 'purchase' "
-                    "journal. This means that the account's type couldn't be "
-                    "'receivable' or 'payable'.",
-                )
+        elif journal.type in ("bank", "cash", "credit"):
+            message = self.env._(
+                "You cannot change the type of an account set as Bank "
+                "Account on a journal to Receivable or Payable.",
             )
-
-    @api.constrains("account_type")
-    @_debug.perf.timed
-    def _check_account_is_bank_journal_bank_account(self) -> None:
-        used = (
-            self.env["account.journal"]
-            .sudo()
-            .search_count(
-                [
-                    ("default_account_id", "in", self.ids),
-                    (
-                        "default_account_id.account_type",
-                        "in",
-                        ("asset_receivable", "liability_payable"),
-                    ),
-                ],
-                limit=1,
+        else:
+            message = self.env._(
+                "The account is the default account of journal %s, so its "
+                "type cannot be Receivable or Payable.",
+                journal.name,
             )
-        )
-        if used:
-            _debug.logic(
-                "account_type_rejected", accounts=self, reason="bank_journal_account"
-            )
-            raise ValidationError(
-                self.env._(
-                    "You cannot change the type of an account set as Bank "
-                    "Account on a journal to Receivable or Payable.",
-                )
-            )
+        raise ValidationError(message)
 
     @api.model
     @api.readonly
@@ -1861,3 +1844,41 @@ class AccountAccount(models.Model):
 
     def _unmerge_copy_defaults(self) -> dict:
         return {"name": self.name}
+
+    def _check_action_unmerge_possible(self) -> None:
+        super()._check_action_unmerge_possible()
+        for account in self:
+            companies_by_root = account.company_ids.grouped("root_id")
+            if sharing := next(
+                (
+                    companies
+                    for companies in companies_by_root.values()
+                    if len(companies) > 1
+                ),
+                None,
+            ):
+                _debug.logic(
+                    "unmerge_rejected",
+                    records=account,
+                    reason="companies_share_root",
+                    companies=sharing,
+                )
+                raise UserError(
+                    self.env._(
+                        "Account %(account)s cannot be unmerged: %(companies)s share "
+                        "the code of their root company %(root)s, so they cannot "
+                        "get separate accounts.",
+                        account=account.display_name,
+                        companies=", ".join(sharing.mapped("name")),
+                        root=sharing.root_id.name,
+                    )
+                )
+
+    def _unmerge_migrate_company_dependent_fields(
+        self, new_records, new_id_by_company_id
+    ) -> None:
+        super()._unmerge_migrate_company_dependent_fields(
+            new_records,
+            new_id_by_company_id
+            | {str(record.company_ids.root_id.id): record.id for record in new_records},
+        )

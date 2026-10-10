@@ -655,3 +655,48 @@ class TestMarinRevaluationWizardChoice(TestAccountReportsCommon):
         self.assertEqual(
             self.config.account_revaluation_journal_id, self.chosen_journal
         )
+
+    def _wizard_env(self):
+        options = self._generate_options(self.report, "2023-01-01", "2023-01-31")
+        return self.env(
+            context={
+                **self.env.context,
+                "multicurrency_revaluation_report_options": {
+                    **options,
+                    "unfold_all": False,
+                },
+            },
+        )
+
+    def test_the_reversal_is_created_on_the_reversal_date(self):
+        wizard = self._wizard_env()["wizard.account.move.create.revaluation"].create(
+            {"reversal_date": "2023-02-05"}
+        )
+        move = self.env["account.move"].browse(wizard.create_entries()["res_id"])
+        reversal = move.reversal_move_ids
+        self.assertEqual(str(move.date), "2023-01-31")
+        self.assertRecordValues(reversal, [{"date": move.date.replace(month=2, day=5)}])
+        self.assertEqual(reversal.state, "posted")
+
+    def test_a_reversal_on_or_before_the_entry_date_is_refused(self):
+        wizard = self._wizard_env()["wizard.account.move.create.revaluation"].create(
+            {"reversal_date": "2023-01-31"}
+        )
+        with self.assertRaisesRegex(UserError, "Reversal date"):
+            wizard.create_entries()
+
+    def test_a_journal_of_another_company_is_refused(self):
+        other_journal = self.setup_other_company(name="revaluation_other")[
+            "default_journal_misc"
+        ]
+        accountant = new_test_user(
+            self.env,
+            login="marin_reval_other_company",
+            groups="account.group_account_user",
+            company_id=self.company.id,
+        )
+        accountant.company_ids |= other_journal.company_id
+        with self.assertRaises(UserError):
+            self._wizard_env()(user=accountant)[
+                "wizard.account.move.create.revaluation"
+            ].create({"journal_id": other_journal.id})

@@ -61,17 +61,24 @@ class WizardAccountAccountMerge(models.TransientModel):
 
     @api.model
     def _prepare_merge(self, accounts):
-        return self.env.execute_query(
-            SQL(
-                """
-            SELECT jsonb_object_agg(key, value)
-              FROM account_account, jsonb_each_text(account_account.code_store)
-             WHERE account_account.id IN %(account_ids)s
-            """,
-                account_ids=tuple(accounts.ids),
-                to_flush=accounts._fields["code_store"],
+        code_store_by_id = dict(
+            self.env.execute_query(
+                SQL(
+                    "SELECT id, code_store FROM account_account WHERE id IN %(account_ids)s",
+                    account_ids=tuple(accounts.ids),
+                    to_flush=accounts._fields["code_store"],
+                )
             )
-        )[0][0]
+        )
+        code_by_company = {}
+        for account_id in reversed(accounts.ids):
+            code_by_company.update(code_store_by_id[account_id] or {})
+        _debug.logic(
+            "merged_account_codes_resolved",
+            destination=accounts[:1],
+            codes=code_by_company,
+        )
+        return code_by_company
 
     @api.model
     def _finalize_merge(self, account, companies, code_by_company) -> None:

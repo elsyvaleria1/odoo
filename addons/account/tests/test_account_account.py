@@ -1520,3 +1520,57 @@ class TestAccountAccount(TestAccountMergeCommon):
             1,
             "Branch user should have access to the accounts of the parent company",
         )
+
+    def test_a_batch_cannot_give_a_root_and_its_branch_the_same_code(self):
+        root = self.company_data["company"]
+        branch = self.env["res.company"].create(
+            {"name": "Duplicate code branch", "parent_id": root.id}
+        )
+        self.env.user.company_ids |= branch
+        with self.assertRaisesRegex(ValidationError, "999991"):
+            self.env["account.account"].with_context(
+                allowed_company_ids=(root | branch).ids
+            ).create(
+                [
+                    {
+                        "code": "999991",
+                        "name": "Duplicate in root",
+                        "account_type": "asset_current",
+                        "company_ids": [Command.set(root.ids)],
+                    },
+                    {
+                        "code": "999991",
+                        "name": "Duplicate in branch",
+                        "account_type": "asset_current",
+                        "company_ids": [Command.set(branch.ids)],
+                    },
+                ]
+            )
+
+    def test_the_default_account_of_a_journal_cannot_become_receivable(self):
+        cases = (
+            ("sale", "already in use in a 'sale' or 'purchase' journal"),
+            ("bank", "set as Bank Account on a journal"),
+            ("general", "default account of journal"),
+        )
+        for index, (journal_type, message) in enumerate(cases):
+            with self.subTest(journal_type=journal_type):
+                account = self.env["account.account"].create(
+                    {
+                        "code": f"99980{index}",
+                        "name": f"Default of {journal_type}",
+                        "account_type": "income"
+                        if journal_type != "bank"
+                        else "asset_cash",
+                    }
+                )
+                self.env["account.journal"].create(
+                    {
+                        "name": f"Default account {journal_type}",
+                        "code": f"DAJ{index}",
+                        "type": journal_type,
+                        "default_account_id": account.id,
+                    }
+                )
+                with self.assertRaisesRegex(ValidationError, message):
+                    account.account_type = "asset_receivable"

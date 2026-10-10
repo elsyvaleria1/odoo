@@ -1,4 +1,8 @@
-from odoo import Command
+from datetime import datetime, time
+
+from dateutil.relativedelta import relativedelta
+
+from odoo import Command, fields
 from odoo.tests import tagged
 from odoo.tools import mute_logger
 
@@ -98,3 +102,75 @@ class TestAccountDigest(TestDigestCommon):
             -2,
             msg="When no company is set, the KPI must be computed based on the current company",
         )
+
+    def test_account_kpis_read_the_same_days(self):
+        self.env.user.group_ids = [
+            Command.link(self.env.ref("account.group_account_user").id)
+        ]
+        today = fields.Date.today()
+        yesterday = today - relativedelta(days=1)
+        income = self.env["account.account"].search(
+            [
+                ("internal_group", "=", "income"),
+                ("company_ids", "=", self.company_1.id),
+            ],
+            limit=1,
+        )
+        receivable = self.env["account.account"].search(
+            [
+                ("account_type", "=", "asset_receivable"),
+                ("company_ids", "=", self.company_1.id),
+            ],
+            limit=1,
+        )
+        for date, amount in ((yesterday, 40.0), (today, 7.0)):
+            self.env["account.move"].create(
+                {
+                    "date": date,
+                    "line_ids": [
+                        Command.create({"account_id": income.id, "balance": -amount}),
+                        Command.create(
+                            {"account_id": receivable.id, "balance": amount}
+                        ),
+                    ],
+                }
+            ).action_post()
+
+        bank = self.env["account.journal"].search(
+            [("type", "=", "bank"), ("company_id", "=", self.company_1.id)], limit=1
+        )
+        credit = self.env["account.journal"].create(
+            {"name": "Digest card", "type": "credit", "company_id": self.company_1.id}
+        )
+        Line = self.env["account.bank.statement.line"]
+        for journal, date, amount in (
+            (bank, yesterday, 100.0),
+            (credit, yesterday, 30.0),
+            (bank, today, 7.0),
+        ):
+            Line.create(
+                {
+                    "journal_id": journal.id,
+                    "date": date,
+                    "payment_ref": "digest",
+                    "amount": amount,
+                }
+            )
+        cancelled = Line.create(
+            {
+                "journal_id": bank.id,
+                "date": yesterday,
+                "payment_ref": "cancelled",
+                "amount": 1000.0,
+            }
+        )
+        cancelled.move_id.action_draft()
+        cancelled.move_id.action_cancel()
+
+        digest = self.digest_1.with_context(
+            start_datetime=datetime.combine(yesterday, time(10)),
+            end_datetime=datetime.combine(today, time(10)),
+        )
+        digest.invalidate_recordset()
+        self.assertEqual(digest.kpi_account_total_revenue_value, 40.0)
+        self.assertEqual(digest.kpi_account_bank_cash_value, 130.0)

@@ -247,19 +247,24 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
             )
         return orders, lines, is_purchase
 
+    def _to_order_currency(self, orders, amount):
+        return self.company_id.currency_id._convert(
+            amount, orders.currency_id, self.company_id, self.date
+        )
+
     def _prepare_manual_accrual_aml_vals(self, order, order_line, is_purchase):
         account = self._get_computed_account(order, order_line.product_id, is_purchase)
         return self._prepare_aml_vals(
             order,
             self.amount,
-            0,
+            self._to_order_currency(order, self.amount),
             account.id,
             is_purchase,
             label=self.env._("Manual entry"),
             analytic_distribution=order_line.analytic_distribution or {},
         )
 
-    def _get_accrual_order_lines(self, order, lines):
+    def _get_accrual_order_lines(self, lines):
         accrual_entry_date = self.env.context.get("accrual_entry_date")
         accrual_entry_date = (
             fields.Date.from_string(accrual_entry_date)
@@ -270,10 +275,9 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
             accrual_entry_date=accrual_entry_date,
             uom_reconcile_strict=True,
         ).filtered(
-            lambda l, order=order: (
+            lambda l: (
                 not l.display_type
                 and not l.is_downpayment
-                and l.id in order.line_ids.ids
                 and fields.Float.compare(
                     l.amount_to_invoice_at_date,
                     0,
@@ -366,7 +370,8 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
     ) -> tuple:
         values = []
         total = 0.0
-        for order_line in self._get_accrual_order_lines(order, lines):
+        total_currency = 0.0
+        for order_line in self._get_accrual_order_lines(lines):
             if is_purchase:
                 amount, amount_currency, account, label = (
                     self._get_purchase_accrual_line_amounts(order, order_line)
@@ -389,7 +394,8 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
                 )
             )
             total += amount
-        return values, total
+            total_currency += amount_currency
+        return values, total, total_currency
 
     def _get_accrual_analytic_distribution(self, orders):
         analytic_distribution = {}
@@ -422,11 +428,12 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
                 label = self.env._(
                     "(*) Goods Invoiced not Delivered (perpetual valuation)"
                 )
+            amount_currency = self._to_order_currency(orders, amount)
             values.append(
                 self._prepare_aml_vals(
                     orders,
                     amount,
-                    0.0,
+                    amount_currency,
                     stock_variation_account.id,
                     is_purchase,
                     label=label,
@@ -434,7 +441,12 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
             )
             values.append(
                 self._prepare_aml_vals(
-                    orders, -amount, 0.0, expense_account.id, is_purchase, label=label
+                    orders,
+                    -amount,
+                    -amount_currency,
+                    expense_account.id,
+                    is_purchase,
+                    label=label,
                 )
             )
         _debug.pipeline(
@@ -452,6 +464,7 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
         move_lines = []
         orders_with_entries = orders.browse()
         total_balance = 0.0
+        total_amount_currency = 0.0
         amounts_by_perpetual_account = defaultdict(float)
 
         if _debug.logic.enabled:
@@ -466,6 +479,7 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
         for order, product_lines in lines.grouped("order_id").items():
             if len(orders) == 1 and product_lines and self.amount and order.line_ids:
                 total_balance = self.amount
+                total_amount_currency = self._to_order_currency(order, self.amount)
                 move_lines.append(
                     Command.create(
                         self._prepare_manual_accrual_aml_vals(
@@ -475,12 +489,15 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
                 )
                 orders_with_entries |= order
             else:
-                order_vals, order_balance = self._prepare_order_accrual_aml_vals(
-                    order, lines, is_purchase, amounts_by_perpetual_account
+                order_vals, order_balance, order_amount_currency = (
+                    self._prepare_order_accrual_aml_vals(
+                        order, product_lines, is_purchase, amounts_by_perpetual_account
+                    )
                 )
                 if order_vals:
                     move_lines += [Command.create(vals) for vals in order_vals]
                     total_balance += order_balance
+                    total_amount_currency += order_amount_currency
                     orders_with_entries |= order
 
         _debug.pipeline(
@@ -497,7 +514,7 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
                     self._prepare_aml_vals(
                         orders,
                         -total_balance,
-                        0.0,
+                        -total_amount_currency,
                         self.account_id.id,
                         is_purchase,
                         label=self.env._("Accrued total"),

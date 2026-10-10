@@ -23,34 +23,44 @@ class IrAttachment(models.Model):
                 zipfile_obj.writestr(attachment.display_name, attachment.raw)
         return buffer.getvalue()
 
+    def _filter_restricted_audit_trail(self):
+        move_attachments = self.filtered(
+            lambda attachment: (
+                attachment.res_model == "account.move" and attachment.res_id
+            )
+        )
+        if not move_attachments:
+            return move_attachments
+        restricted_move_ids = set(
+            self.env["account.move"]
+            .browse(set(move_attachments.mapped("res_id")))
+            .exists()
+            .filtered(
+                lambda move: (
+                    move.posted_before
+                    and move.company_id.account_config_id.restrictive_audit_trail
+                )
+            )
+            .ids
+        )
+        _debug.logic(
+            "audit_trail_moves_restricted",
+            attachments=move_attachments,
+            restricted_moves=len(restricted_move_ids),
+        )
+        return move_attachments.filtered(
+            lambda attachment: attachment.res_id in restricted_move_ids
+        )
+
     @api.ondelete(at_uninstall=True)
     @_debug.perf.timed
     def _except_audit_trail(self) -> None:
         _debug.lifecycle("_except_audit_trail", records=self)
-        audit_trail_attachments = self.filtered(
-            lambda attachment: (
-                attachment.res_model == "account.move"
-                and attachment.res_id
-                and attachment.raw
-                and guess_mimetype(attachment.raw)
-                in (
-                    "application/pdf",
-                    "application/xml",
-                )
-            )
-        )
-        id2move = (
-            self.env["account.move"]
-            .browse(set(audit_trail_attachments.mapped("res_id")))
-            .exists()
-            .grouped("id")
-        )
-        for attachment in audit_trail_attachments:
-            move = id2move.get(attachment.res_id)
-            if (
-                move
-                and move.posted_before
-                and move.company_id.account_config_id.restrictive_audit_trail
+        restricted = self._filter_restricted_audit_trail()
+        for attachment in restricted.with_prefetch(restricted._ids):
+            if attachment.raw and guess_mimetype(attachment.raw) in (
+                "application/pdf",
+                "application/xml",
             ):
                 ue = UserError(
                     self.env._("You cannot remove parts of a restricted audit trail.")
@@ -91,13 +101,9 @@ class IrAttachment(models.Model):
         _debug.lifecycle("unlink", unlink=self)
         invoice_pdf_attachments = self.filtered(
             lambda attachment: (
-                attachment.res_model == "account.move"
-                and attachment.res_id
-                and attachment.res_field
-                in ("invoice_pdf_report_file", "ubl_cii_xml_file")
-                and attachment.company_id.account_config_id.restrictive_audit_trail
+                attachment.res_field in ("invoice_pdf_report_file", "ubl_cii_xml_file")
             )
-        )
+        )._filter_restricted_audit_trail()
         _debug.logic(
             "audit_pdfs_detached",
             detached=invoice_pdf_attachments,

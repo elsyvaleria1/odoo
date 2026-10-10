@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
 
@@ -933,3 +935,134 @@ class TestAccountJournalEntryPresence(TestAccountJournalDashboardCommon):
 
     def test_entry_presence_on_an_empty_recordset(self):
         self.assertEqual(self.env["account.journal"].browse().mapped("has_entries"), [])
+
+
+@tagged("post_install", "-at_install")
+class TestAccountJournalBankGraph(TestAccountJournalDashboardCommon):
+    @freeze_time("2019-01-22")
+    def test_the_bank_graph_ignores_cancelled_and_future_lines(self):
+        journal = self.company_data["default_journal_bank"]
+        Line = self.env["account.bank.statement.line"]
+        Line.create(
+            {
+                "journal_id": journal.id,
+                "date": "2019-01-17",
+                "payment_ref": "kept",
+                "amount": 100.0,
+            }
+        )
+        cancelled = Line.create(
+            {
+                "journal_id": journal.id,
+                "date": "2019-01-20",
+                "payment_ref": "cancelled",
+                "amount": 1000.0,
+            }
+        )
+        cancelled.move_id.action_draft()
+        cancelled.move_id.action_cancel()
+        Line.create(
+            {
+                "journal_id": journal.id,
+                "date": "2019-01-25",
+                "payment_ref": "future",
+                "amount": 50.0,
+            }
+        )
+        journal.invalidate_recordset()
+
+        self.assertEqual(journal.current_statement_balance, 150.0)
+        graph = journal._prepare_bank_cash_graph_data()[journal.id][0]
+        self.assertEqual(
+            [(point["name"], point["y"]) for point in graph["values"]],
+            [
+                ("23 December 2018", 0.0),
+                ("17 January 2019", 100.0),
+                ("22 January 2019", 100.0),
+            ],
+        )
+
+    def test_the_bank_position_is_read_once_for_its_three_fields(self):
+        journals = self.env["account.journal"].search(
+            [("company_id", "=", self.env.company.id)]
+        )
+        Journal = type(self.env["account.journal"])
+        original = Journal._get_bank_positions
+        calls = []
+
+        def counted(records):
+            calls.append(records)
+            return original(records)
+
+        journals.invalidate_recordset()
+        with patch.object(Journal, "_get_bank_positions", counted):
+            journals.read(
+                [
+                    "current_statement_balance",
+                    "has_statement_lines",
+                    "last_statement_id",
+                ]
+            )
+        self.assertEqual(len(calls), 1)
+
+    @freeze_time("2019-01-22")
+    def test_the_bank_position_ignores_a_cancellation_not_yet_flushed(self):
+        journal = self.company_data["default_journal_bank"]
+        Line = self.env["account.bank.statement.line"]
+        Line.create(
+            {
+                "journal_id": journal.id,
+                "date": "2019-01-17",
+                "payment_ref": "kept",
+                "amount": 100.0,
+            }
+        )
+        cancelled = Line.create(
+            {
+                "journal_id": journal.id,
+                "date": "2019-01-20",
+                "payment_ref": "cancelled",
+                "amount": 1000.0,
+            }
+        )
+        self.env.flush_all()
+        cancelled.move_id.state = "cancel"
+        journal.invalidate_recordset()
+
+        self.assertEqual(journal.current_statement_balance, 100.0)
+        graph = journal._prepare_bank_cash_graph_data()[journal.id][0]
+        self.assertEqual(graph["values"][0]["y"], 0.0)
+
+    @freeze_time("2019-01-22")
+    def test_the_bank_graph_reads_a_cancellation_not_yet_flushed(self):
+        journal = self.company_data["default_journal_bank"]
+        Line = self.env["account.bank.statement.line"]
+        Line.create(
+            {
+                "journal_id": journal.id,
+                "date": "2019-01-17",
+                "payment_ref": "kept",
+                "amount": 100.0,
+            }
+        )
+        cancelled = Line.create(
+            {
+                "journal_id": journal.id,
+                "date": "2019-01-20",
+                "payment_ref": "cancelled",
+                "amount": 1000.0,
+            }
+        )
+        self.env.flush_all()
+        cancelled.move_id.state = "cancel"
+        journal.invalidate_recordset()
+
+        graph = journal._prepare_bank_cash_graph_data()[journal.id][0]
+        self.assertEqual(
+            [(point["name"], point["y"]) for point in graph["values"]],
+            [
+                ("23 December 2018", 0.0),
+                ("17 January 2019", 100.0),
+                ("22 January 2019", 100.0),
+            ],
+        )
