@@ -6,7 +6,7 @@ registry.category("web_tour.tours").add("invited_on_payment_course_logged", {
             trigger: 'a:contains("Add to Cart")',
             content: "Check that the course can be bought but not joined",
             run: function () {
-                if (document.querySelector(".o_wslides_js_course_join_link")) {
+                if (document.querySelector(".o_wslides_course_join_button")) {
                     console.error("The course should not be joinable before buying");
                 }
             },

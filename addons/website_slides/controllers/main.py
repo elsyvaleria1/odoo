@@ -1116,12 +1116,29 @@ class WebsiteSlides(WebsiteProfile):
                 ._get_signup_invitation_scope()
                 == "b2c",
             }
-        channel = request.env["slide.channel"].browse(channel_id)
+        return {} if self._join_channel(channel_id) else {"error": "join_done"}
+
+    @http.route(
+        "/slides/channel/<int:channel_id>/join",
+        type="http",
+        auth="public",
+        methods=["POST"],
+        website=True,
+    )
+    def slide_channel_join_form(self, channel_id, redirect=None, **kwargs):
+        back = redirect or f"/slides/{channel_id}"
+        if request.website.is_public_user():
+            return request.redirect("/web/login?" + urlencode({"redirect": back}))
+        # a member already, or a course the user may not join: the page they
+        # come back to shows which
+        self._join_channel(channel_id)
+        return request.redirect(back)
+
+    def _join_channel(self, channel_id):
+        channel = self._browse_existing("slide.channel", channel_id)
         if channel.is_member_invited and channel.enroll == "invite":
-            success = channel.sudo()._action_add_members(request.env.user.partner_id)
-        else:
-            success = channel._action_add_members(request.env.user.partner_id)
-        return {} if success else {"error": "join_done"}
+            return channel.sudo()._action_add_members(request.env.user.partner_id)
+        return channel._action_add_members(request.env.user.partner_id)
 
     @http.route(["/slides/channel/leave"], type="jsonrpc", auth="user", website=True)
     def slide_channel_leave(self, channel_id):

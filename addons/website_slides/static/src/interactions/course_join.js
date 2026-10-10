@@ -1,10 +1,8 @@
 /** @odoo-module native */
 import { rpc } from "@web/core/network";
-import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { renderToElement } from "@web/core/utils/render";
 import { Popover } from "@web/libs/bootstrap";
-import { Interaction } from "@web/public/interaction";
 
 export class CourseJoinBehavior {
     /**
@@ -14,10 +12,6 @@ export class CourseJoinBehavior {
      * @param {Object} options.channel
      * @param {boolean} options.isMember
      * @param {boolean} options.isMemberOrInvited
-     * @param {string} options.inviteHash
-     * @param {integer} options.invitePartnerId
-     * @param {boolean} options.invitePreview
-     * @param {boolean} options.isPartnerWithoutUser
      * @param {boolean} options.publicUser
      * @param {string} [options.joinMessage]
      * @param {Function} [options.beforeJoin]
@@ -29,10 +23,6 @@ export class CourseJoinBehavior {
         this.channel = options.channel;
         this.isMember = options.isMember;
         this.isMemberOrInvited = options.isMemberOrInvited;
-        this.inviteHash = options.inviteHash;
-        this.invitePartnerId = options.invitePartnerId;
-        this.invitePreview = options.invitePreview;
-        this.isPartnerWithoutUser = options.isPartnerWithoutUser;
         this.publicUser = options.publicUser;
         this.joinMessage = options.joinMessage || _t("Join this Course");
         this.beforeJoin =
@@ -64,10 +54,7 @@ export class CourseJoinBehavior {
     _onClickJoin(ev) {
         ev.preventDefault();
 
-        if (
-            this.invitePreview ||
-            (this.channel.channelEnroll === "invite" && this.isMemberOrInvited)
-        ) {
+        if (this.channel.channelEnroll === "invite" && this.isMemberOrInvited) {
             this.joinChannel(this.channel.channelId);
             return;
         }
@@ -151,34 +138,10 @@ export function attachCourseJoin(host, targetEl, options) {
                 channel: options.channel,
                 joinMessage: options.joinMessage || _t("Join this Course"),
                 isMemberOrInvited: options.isMemberOrInvited,
+                publicUser: options.publicUser,
             },
         },
         targetEl,
     );
     return new CourseJoinBehavior(host, el, options);
 }
-
-export class CourseJoin extends Interaction {
-    static selector = ".o_wslides_js_course_join_link";
-
-    start() {
-        const data = this.el.dataset;
-        const options = {
-            channel: {
-                channelEnroll: data.channelEnroll,
-                channelId: parseInt(data.channelId),
-            },
-            inviteHash: data.inviteHash,
-            invitePartnerId: data.invitePartnerId,
-            invitePreview: data.invitePreview,
-            isMemberOrInvited: data.isMemberOrInvited,
-            isPartnerWithoutUser: data.isPartnerWithoutUser,
-        };
-        const wrapperEl = this.el.closest(".o_wslides_js_course_join");
-        if (wrapperEl) {
-            new CourseJoinBehavior(this, wrapperEl, options);
-        }
-    }
-}
-
-registry.category("public.interactions").add("website_slides.course_join", CourseJoin);

@@ -43,7 +43,7 @@ registry.category("web_tour.tours").add("invite_check_channel_preview_as_public"
             run: "click",
         },
         {
-            trigger: 'a:contains("Join this Course")',
+            trigger: '.o_wslides_course_join_button:contains("Join this Course")',
             run: "click",
             expectUnloadPage: true,
         },

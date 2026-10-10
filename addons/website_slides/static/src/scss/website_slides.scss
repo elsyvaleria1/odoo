@@ -710,3 +710,10 @@ li.o_wslides_fs_sidebar_list_item.active {
 .oe_show_footer {
     z-index: $MAX-Z-INDEX;
 }
+
+// a join form inside a sentence reads as a link of that sentence
+.o_wslides_course_join_button.btn-link {
+    font-size: inherit;
+    line-height: inherit;
+    vertical-align: baseline;
+}

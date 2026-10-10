@@ -22,7 +22,7 @@ registry.category("web_tour.tours").add("course_member", {
             run: "click",
         },
         {
-            trigger: 'a:contains("Join this Course")',
+            trigger: '.o_wslides_course_join_button:contains("Join this Course")',
             run: "click",
             expectUnloadPage: true,
         },

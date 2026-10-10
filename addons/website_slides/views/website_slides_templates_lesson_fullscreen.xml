@@ -273,6 +273,9 @@
                                             <i class="fa-solid fa-download me-1" />
                                             <t t-call="website_slides.join_course_link">
                                                 <t t-set="for_resources" t-value="1" />
+                                                <t
+                                                    t-set="join_redirect"
+                                                    t-value="'/slides/slide/%s?fullscreen=1' % slug(slide)" />
                                             </t>
                                         </li>
                                     </div>

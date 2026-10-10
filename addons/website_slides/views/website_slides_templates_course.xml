@@ -398,45 +398,61 @@
             </small>
             <small>
             or
-            <a
-                role="button"
-                class="o_wslides_js_course_join_link"
+            <form
+                class="d-inline"
+                method="post"
+                t-attf-action="/slides/channel/#{channel.id}/join">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+            <input
+                type="hidden"
+                name="redirect"
+                t-att-value="request.httprequest.full_path.rstrip('?')" />
+            <button
+                type="submit"
+                class="btn btn-link p-0 o_wslides_course_join_button"
                 title="Start Course"
-                aria-label="Start Course"
-                href="#"
-                t-att-data-channel-id="channel.id"
-                t-att-data-channel-enroll="channel.enroll"
-                t-att-data-invite-hash="invite_hash"
-                t-att-data-invite-partner-id="invite_partner_id"
-                t-att-data-invite-preview="invite_preview"
-                t-att-data-is-member-or-invited="channel.is_member or channel.is_member_invited"
-                t-att-data-is-partner-without-user="is_partner_without_user">
+                aria-label="Start Course">
             <t t-if="channel.channel_type == 'documentation'">start</t>
             <t t-else="">join</t>
-            </a> anyway
+            </button>
+            </form> anyway
             </small>
             </div>
             </div>
             </div>
             <a
-                t-else=""
+                t-elif="invite_preview"
                 role="button"
-                class="btn btn-primary btn-block o_wslides_js_course_join_link"
+                class="btn btn-primary btn-block o_wslides_course_join_button"
                 title="Start Course"
                 aria-label="Start Course"
-                href="#"
-                t-att-data-channel-id="channel.id"
-                t-att-data-channel-enroll="channel.enroll"
-                t-att-data-invite-hash="invite_hash"
-                t-att-data-invite-partner-id="invite_partner_id"
-                t-att-data-invite-preview="invite_preview"
-                t-att-data-is-member-or-invited="channel.is_member or channel.is_member_invited"
-                t-att-data-is-partner-without-user="is_partner_without_user">
+                t-attf-href="/slides/#{channel.id}/identify?#{keep_query('invite_partner_id', 'invite_hash')}">
             <span class="cta-title text_small_caps">
             <t t-if="channel.channel_type == 'documentation'">Start this Course</t>
             <t t-else="">Join this Course</t>
             </span>
             </a>
+            <form
+                t-else=""
+                class="d-grid"
+                method="post"
+                t-attf-action="/slides/channel/#{channel.id}/join">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+            <input
+                type="hidden"
+                name="redirect"
+                t-att-value="request.httprequest.full_path.rstrip('?')" />
+            <button
+                type="submit"
+                class="btn btn-primary btn-block o_wslides_course_join_button"
+                title="Start Course"
+                aria-label="Start Course">
+            <span class="cta-title text_small_caps">
+            <t t-if="channel.channel_type == 'documentation'">Start this Course</t>
+            <t t-else="">Join this Course</t>
+            </span>
+            </button>
+            </form>
             </t>
             <div
                 t-elif="not invite_preview and channel.enroll == 'invite' and not channel.is_member and not channel.is_member_invited"

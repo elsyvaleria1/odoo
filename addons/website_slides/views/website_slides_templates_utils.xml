@@ -175,7 +175,20 @@
             </div>
         </template>
         <template id="join_course_link" name="Join Course Link">
-            <a class="o_wslides_js_course_join_link" href="#" t-att-data-channel-enroll="slide.channel_id.enroll" t-att-data-channel-id="slide.channel_id.id">Join this Course</a><t t-if="for_resources"> to access resources</t>
+            <form
+                class="d-inline"
+                method="post"
+                t-attf-action="/slides/channel/#{slide.channel_id.id}/join">
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    t-att-value="request.csrf_token()" />
+                <input
+                    type="hidden"
+                    name="redirect"
+                    t-att-value="join_redirect or request.httprequest.full_path.rstrip('?')" />
+                <button type="submit" class="btn btn-link p-0 o_wslides_course_join_button">Join this Course</button>
+            </form><t t-if="for_resources"> to access resources</t>
         </template>
         <template id="slide_sidebar_done_button" name="Sidebar Done Button">
             <t

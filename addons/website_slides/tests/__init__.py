@@ -24,3 +24,4 @@ from . import test_slide_channel_enroll_on_create
 from . import test_course_access_request
 from . import test_invitation_links
 from . import test_message_post_hooks
+from . import test_course_join_form

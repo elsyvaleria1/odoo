@@ -40,8 +40,9 @@ registry.category("web_tour.tours").add("course_member_youtube", {
             run: "click",
         },
         {
-            trigger: 'a:contains("Join this Course")',
+            trigger: '.o_wslides_course_join_button:contains("Join this Course")',
             run: "click",
+            expectUnloadPage: true,
         },
         {
             trigger: '.o_wslides_js_course_join:contains("You\'re enrolled")',
