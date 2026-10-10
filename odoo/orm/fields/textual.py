@@ -9,7 +9,7 @@ from odoo.exceptions import AccessError, UserError
 from odoo.libs.collections import OrderedSet
 from odoo.libs.colors import DEFAULT, GREEN, RED, colorize
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.iteration import SENTINEL, Sentinel
+from odoo.libs.iteration import PENDING, SENTINEL, Sentinel
 from odoo.libs.sql import (
     SQL,
     pattern_to_translated_trigram_patterns,
@@ -271,6 +271,10 @@ class BaseString(Field[str | typing.Literal[False]]):
         if isinstance(value, dict):
             lang = self.get_translation_lang(record.env)
             value = value[lang]
+            if value is PENDING:
+                raise KeyError(lang)
+            if value is None:
+                return False
         field_ = self
         record_: typing.Any = record
         while not field_.store and field_.related and field_.related_field is not None:

@@ -288,7 +288,7 @@ def insert_cache(
         )
         for id_, val in zip(records._ids, values, strict=True):
             if val is None:
-                field_cache.setdefault(id_, None)
+                field_cache[id_] = None
             else:
                 if u_langs:
                     val.update(
@@ -306,12 +306,12 @@ def insert_cache(
     else:
         lang = get_translation_lang(field, env)
         for id_, val in zip(records._ids, values, strict=True):
-            if val is None:
-                field_cache.setdefault(id_, None)
-            else:
-                cache_value = field_cache.setdefault(id_, {})
-                if cache_value is not None:
-                    cache_value.setdefault(lang, val)
+            # a NULL row still answers the language read: a slot holding other
+            # languages, or none left (a PENDING marker dropped from it), would
+            # otherwise stay a miss for it after the fetch meant to fill it
+            cache_value = field_cache.setdefault(id_, None if val is None else {})
+            if cache_value is not None:
+                cache_value.setdefault(lang, val)
 
 
 def update_cache(

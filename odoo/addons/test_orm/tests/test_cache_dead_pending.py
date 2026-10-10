@@ -99,3 +99,31 @@ class TestDeadPendingMarkers(TransactionCase):
         self.env.flush_all()
         self.assertEqual(self._queries(lambda: [record.alpha for record in records]), 1)
         self.assertEqual(records.mapped("alpha"), [0, 1] * 5)
+
+    def test_a_term_translated_field_left_unassigned_reads_its_null_row(self):
+        record = self.env["test_orm.partial.compute"].create({"mode": "leave"})
+        self.assertFalse(record.notes)
+        self.env.flush_all()
+        self.assertFalse(record.notes)
+
+    def test_a_term_translated_field_read_by_its_own_compute(self):
+        record = self.env["test_orm.partial.compute"].create({"mode": "reread"})
+        self.assertFalse(record.notes)
+        forced = self.env["test_orm.partial.compute"].create({"mode": "force"})
+        self.assertEqual(forced.notes, "<p>forced</p>")
+
+    def test_a_term_translated_field_left_unassigned_reads_in_every_language(self):
+        record = self.env["test_orm.partial.compute"].create({"mode": "leave"})
+        self.env.flush_all()
+        self.assertIs(record.with_context(prefetch_langs=True).notes, False)
+        self.assertFalse(record.notes)
+        read = self.env["test_orm.partial.compute"].create({"mode": "leave"})
+        self.assertFalse(read.notes)
+        self.assertIs(read.with_context(prefetch_langs=True).notes, False)
+
+    def test_the_translations_of_a_term_translated_field_left_unassigned(self):
+        unread = self.env["test_orm.partial.compute"].create({"mode": "leave"})
+        self.assertEqual(unread.get_field_translations("notes")[0], [])
+        read = self.env["test_orm.partial.compute"].create({"mode": "leave"})
+        self.assertFalse(read.notes)
+        self.assertEqual(read.get_field_translations("notes")[0], [])

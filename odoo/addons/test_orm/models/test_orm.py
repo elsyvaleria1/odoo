@@ -3089,6 +3089,9 @@ class TestOrmPartialCompute(models.Model):
     mode = fields.Char()
     alpha = fields.Integer(compute="_compute_alpha", store=True, readonly=False)
     beta = fields.Integer(compute="_compute_beta", store=True, readonly=False)
+    notes = fields.Html(
+        compute="_compute_notes", store=True, readonly=False, translate=True
+    )
 
     @api.depends("mode")
     def _compute_alpha(self):
@@ -3097,6 +3100,14 @@ class TestOrmPartialCompute(models.Model):
     @api.depends("mode")
     def _compute_beta(self):
         self.filtered(lambda record: record.mode == "force").beta = 2
+
+    @api.depends("mode")
+    def _compute_notes(self):
+        self.filtered(lambda record: record.mode == "force").notes = "<p>forced</p>"
+        rereads = self.filtered(lambda record: record.mode == "reread")
+        rereads.invalidate_recordset(["mode"])
+        rereads.mapped("mode")
+        rereads.mapped("notes")
 
 
 class TestOrmCountTag(models.Model):
