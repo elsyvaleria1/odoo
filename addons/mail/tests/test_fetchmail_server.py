@@ -52,13 +52,16 @@ class MockedConnection:
         self.quarantined = []
         self.disconnected = False
 
-    def count_unread_messages(self):
+    def count_unread_messages(self, set_aside_ids=()):
         if self.announces is not None:
             return self.announces
         return len(self.mock_messages)
 
     def get_unread_messages(self):
         yield from list(self.mock_messages.items())
+
+    def message_unique_id(self, num):
+        return None
 
     def mark_message_handled(self, num):
         if self.fail_ack:
@@ -1355,7 +1358,7 @@ class TestFetchmailProgress(FetchmailCommon):
         server = self._server(name="broken")
 
         class Broken:
-            def count_unread_messages(self):
+            def count_unread_messages(self, set_aside_ids=()):
                 return 100
 
             def get_unread_messages(self):
@@ -1517,6 +1520,53 @@ class TestFetchmailPoisonMessages(FetchmailCommon):
             self._poll_repeatedly(server, connection, polls=1, poisoned=b"never"),
             [_message(1) + b"poison\r\n"],
         )
+
+    @mute_logger("odoo.addons.mail.models.fetchmail_server")
+    def test_pop_does_not_download_a_message_set_aside_again(self):
+
+        def message_process(obj, model, message, **kw):
+            if b"poison" in message:
+                raise ValueError("unroutable")
+
+        for uidl, retrieved in ((True, 3), (False, 5)):
+            with (
+                self.subTest(uidl=uidl),
+                FakeMailServer(
+                    "pop", [(1, _message(1) + b"poison\r\n", []), (2, _message(2), [])]
+                ) as pop,
+            ):
+                pop.mailbox.uidl = uidl
+                server = self._server(
+                    name=f"pop set aside {uidl}",
+                    server_type="pop",
+                    server="127.0.0.1",
+                    port=pop.port,
+                    encryption="none",
+                )
+                for _poll in range(5):
+                    with (
+                        self.sync_env_with_side_cursors(),
+                        self.registry.cursor() as cr,
+                        patch.object(
+                            type(self.env["ir.egress"]),
+                            "check_host",
+                            return_value=_LOOPBACK,
+                        ),
+                        patch.object(
+                            self.registry["mixin.mail.thread"],
+                            "message_process",
+                            side_effect=message_process,
+                            autospec=True,
+                        ),
+                    ):
+                        server.with_env(server.env(cr=cr)).sudo()._poll_mailboxes()
+                self.assertEqual(pop.mailbox.log.count("RETR 1"), retrieved)
+                self.assertEqual(pop.mailbox.deleted, {2})
+                server.invalidate_recordset()
+                self.assertTrue(server.failure_ids.is_quarantined)
+                self.assertEqual(
+                    server.failure_ids.mailbox_unique_id, "uid-1" if uidl else False
+                )
 
 
 class TestLocalConfigurationNamesNoReader(FetchmailCommon):

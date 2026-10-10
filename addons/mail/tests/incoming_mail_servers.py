@@ -13,6 +13,7 @@ class _Mailbox:
         self.credentials: dict[str, str] = {}
         self.quit_received = False
         self.literal_less: set[int] = set()
+        self.uidl = True
 
     @property
     def uids(self) -> list[int]:
@@ -189,6 +190,11 @@ class _POP3Handler(socketserver.StreamRequestHandler):
                 self._send("+OK\r\n")
                 for number, message in sorted(live.items()):
                     self._send(f"{number} {len(message[1])}\r\n")
+                self._send(".\r\n")
+            elif command == b"UIDL" and mailbox.uidl:
+                self._send("+OK\r\n")
+                for number, message in sorted(live.items()):
+                    self._send(f"{number} uid-{message[0]}\r\n")
                 self._send(".\r\n")
             elif command == b"RETR":
                 message = live.get(int(parts[1]))

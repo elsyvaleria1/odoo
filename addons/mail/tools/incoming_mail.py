@@ -3,7 +3,7 @@ import logging
 import poplib
 import socket
 import ssl
-from collections.abc import Iterator, Sequence
+from collections.abc import Collection, Iterator, Sequence
 from imaplib import IMAP4, IMAP4_SSL
 from poplib import POP3, POP3_SSL
 from typing import Literal, Protocol
@@ -55,10 +55,13 @@ def default_port(server_type: str, encryption: Encryption) -> int:
 
 
 class IncomingMailConnection(Protocol):
-    def count_unread_messages(self) -> int:
+    def count_unread_messages(self, set_aside_ids: Collection[str] = ()) -> int:
         pass
 
     def get_unread_messages(self) -> Iterator[tuple[MessageRef, bytes]]:
+        pass
+
+    def message_unique_id(self, num: MessageRef) -> str | None:
         pass
 
     def mark_message_handled(self, num: MessageRef) -> None:
@@ -91,7 +94,7 @@ class OdooIMAP4(IMAP4):
             raise IMAP4.error(f"{command} failed: {typ} {data!r}")
         return data
 
-    def count_unread_messages(self) -> int:
+    def count_unread_messages(self, set_aside_ids: Collection[str] = ()) -> int:
         typ, data = self.select()
         self._check(typ, data, "SELECT")
         typ, data = self.uid("SEARCH", None, "(UNSEEN)")
@@ -114,6 +117,9 @@ class OdooIMAP4(IMAP4):
                 continue
             _debug.perf.count("imap_fetched", uid=num, size=len(data[0][1]))
             yield num, data[0][1]
+
+    def message_unique_id(self, num: bytes) -> None:
+        return None
 
     def mark_message_handled(self, num: bytes) -> None:
         typ, data = self.uid("STORE", num, "+FLAGS", "(\\Seen)")
@@ -145,14 +151,39 @@ class OdooPOP3(POP3):
         self.netguard_addresses = tuple(addresses)
         super().__init__(*args, **kwargs)
         self._unread_messages: list[int] | None = None
+        self._unique_ids: dict[int, str] = {}
 
     def _create_socket(self, timeout: float | None) -> socket.socket:
         return netguard.dial(self.netguard_addresses, self.port, timeout=timeout)
 
-    def count_unread_messages(self) -> int:
+    def _read_unique_ids(self) -> dict[int, str]:
+        try:
+            _response, lines, _octets = self.uidl()
+        except poplib.error_proto:
+            _debug.logic("pop_uidl_unsupported")
+            return {}
+        unique_ids = {}
+        for line in lines:
+            num, _sep, unique_id = line.decode(errors="replace").partition(" ")
+            if num.isdecimal() and unique_id.strip():
+                unique_ids[int(num)] = unique_id.strip()
+        return unique_ids
+
+    def count_unread_messages(self, set_aside_ids: Collection[str] = ()) -> int:
         (num_messages, _total_size) = self.stat()
-        self._unread_messages = list(range(num_messages, 0, -1))
-        return num_messages
+        self._unique_ids = self._read_unique_ids() if num_messages else {}
+        self._unread_messages = [
+            num
+            for num in range(num_messages, 0, -1)
+            if self._unique_ids.get(num) not in set_aside_ids
+        ]
+        _debug.logic(
+            "pop_listed",
+            messages=num_messages,
+            with_unique_id=len(self._unique_ids),
+            set_aside=num_messages - len(self._unread_messages),
+        )
+        return len(self._unread_messages)
 
     def get_unread_messages(self) -> Iterator[tuple[int, bytes]]:
         if self._unread_messages is None:
@@ -163,11 +194,16 @@ class OdooPOP3(POP3):
             _debug.perf.count("pop_fetched", num=num, size=_octets)
             yield num, b"\r\n".join(lines)
 
+    def message_unique_id(self, num: int) -> str | None:
+        return self._unique_ids.get(num)
+
     def mark_message_handled(self, num: int) -> None:
         self.dele(num)
 
     def quarantine_message(self, num: int) -> None:
-        _debug.logic("pop_message_left_in_place", num=num)
+        _debug.logic(
+            "pop_message_left_in_place", num=num, unique_id=self._unique_ids.get(num)
+        )
 
     def disconnect(self) -> None:
         self.quit()

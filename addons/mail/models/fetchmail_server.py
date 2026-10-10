@@ -15,10 +15,10 @@ from typing import Any, Literal, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
 from odoo.api import ValuesType
-from odoo.exceptions import ConcurrencyError, UserError
+from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.service.transaction import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.service.transaction import is_retryable
 from odoo.tools import SQL, frozendict
 
 from ..tools.inbound_delivery import INBOUND_MAIL_PURPOSE, InboundDelivery
@@ -94,6 +94,7 @@ class _FailureState(typing.NamedTuple):
     failure_id: int
     attempt_count: int
     is_quarantined: bool
+    mailbox_unique_id: str | None
 
 
 def _message_fingerprint(message: bytes) -> str:
@@ -750,7 +751,13 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
             sink = self._prepare_message_sink(message_cr)
             failures = self._get_failure_states(sink)
             commit_progress = self.env(cr=message_cr)["ir.cron"]._commit_progress
-            announced = connection.count_unread_messages()
+            announced = connection.count_unread_messages(
+                frozenset(
+                    state.mailbox_unique_id
+                    for state in failures.values()
+                    if state.is_quarantined and state.mailbox_unique_id
+                )
+            )
             _debug.pipeline(
                 "mailbox_opened",
                 server=self.id,
@@ -852,7 +859,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
         self.check_singleton()
         rows = self.env(cr=sink.cr).execute_query(
             SQL(
-                "SELECT fingerprint, id, attempt_count, is_quarantined"
+                "SELECT fingerprint, id, attempt_count, is_quarantined, mailbox_unique_id"
                 "  FROM fetchmail_server_failure WHERE server_id = %s",
                 self.id,
             )
@@ -884,9 +891,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
                 sink.cr.commit()
         except Exception as exc:
             sink.cr.rollback()
-            if isinstance(exc, ConcurrencyError) or (
-                getattr(exc, "sqlstate", None) in PG_CONCURRENCY_ERRORS_TO_RETRY
-            ):
+            if is_retryable(exc):
                 _debug.logic(
                     "message_deferred", server=self.id, error=type(exc).__name__
                 )
@@ -900,7 +905,14 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
             _logger.info(
                 "Failed to process mail from %s server %s.", *label, exc_info=True
             )
-            self._update_message_failure(sink, message, fingerprint, exc, failures)
+            self._update_message_failure(
+                sink,
+                message,
+                fingerprint,
+                connection.message_unique_id(num),
+                exc,
+                failures,
+            )
             state = failures[fingerprint]
             if not state.is_quarantined:
                 return _MessageOutcome.REFUSED
@@ -937,6 +949,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
         sink: _MessageSink,
         message: bytes,
         fingerprint: str,
+        mailbox_unique_id: str | None,
         exc: Exception,
         failures: dict[str, _FailureState],
     ) -> None:
@@ -949,6 +962,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
         vals = {
             "attempt_count": attempt_count,
             "is_quarantined": attempt_count >= MAX_PROCESSING_ATTEMPTS,
+            "mailbox_unique_id": mailbox_unique_id,
             "error_message": (str(exc) or repr(exc))[:4096],
             "last_attempt_date": fields.Datetime.now(),
         }
@@ -972,7 +986,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
             quarantined=vals["is_quarantined"],
         )
         failures[fingerprint] = _FailureState(
-            failure.id, attempt_count, vals["is_quarantined"]
+            failure.id, attempt_count, vals["is_quarantined"], mailbox_unique_id
         )
 
     def _quarantine_message(
@@ -1028,6 +1042,11 @@ class FetchmailServerFailure(models.Model):
         readonly=True,
         required=True,
         help="SHA-256 of the raw message, which identifies it across polls.",
+    )
+    mailbox_unique_id = fields.Char(
+        readonly=True,
+        help="The mailbox's own id for the message (POP's UIDL), which lets a "
+        "message set aside be skipped without downloading it again.",
     )
     message_id = fields.Char(
         string="Message-Id",
