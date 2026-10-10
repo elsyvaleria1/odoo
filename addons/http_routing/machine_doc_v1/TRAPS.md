@@ -123,12 +123,14 @@ directly instead.
 
 ## 10. Log-flood shapes
 
-`_is_multilang_url` swallows any routing-probe failure with a `warning(...,
-exc_info=True)`. It runs **once per generated link**, so a broken routing map
-means one full traceback per href on the page. Left as-is (the condition is
-genuinely exceptional and diagnosability wins), but it is the reason
-`_pre_dispatch`'s equivalent guard logs a one-line message with the exception
-instead of a traceback.
+`_is_multilang_url` runs **once per generated link**. It used to swallow any
+routing-probe failure with a `warning(..., exc_info=True)` and answer "not
+multilang": one full traceback per href, and links silently left unprefixed.
+`_url_rewrite` already answers every `HTTPException` and redirect loop itself,
+and nothing else raised over 3,012 fuzzed paths, so the guard is gone: a real
+failure now fails the render once, at the first link. `_pre_dispatch`'s guard
+still logs one line with the exception, because the request it protects can be
+served without the slug redirect.
 
 ## 11. `request.render("http_routing.http_error")` off the frontend is a 500 with `portal` or `website`
 

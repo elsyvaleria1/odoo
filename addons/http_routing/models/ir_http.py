@@ -312,20 +312,8 @@ class IrHttp(models.AbstractModel):
             )
             return False
 
-        try:
-            _, func = self.env["ir.http"].url_rewrite(path)
-
-            return not func or self._is_multilang_routing(func.routing)
-        except Exception:
-            _logger.warning(
-                "Could not determine multilang status for %r, assuming False",
-                local_url,
-                exc_info=True,
-            )
-            _debug.logic(
-                "multilang_url", verdict=False, reason="rewrite_failed", url=local_url
-            )
-            return False
+        _, func = self.env["ir.http"].url_rewrite(path)
+        return not func or self._is_multilang_routing(func.routing)
 
     @api.model
     @tools.ormcache()
