@@ -412,6 +412,9 @@ class ImDispatch(threading.Thread):
         self._channels_to_ws = {}
         self._lock = threading.Lock()
         self._ever_started = False
+        # Alive is not enough: between a lost connection and the next LISTEN
+        # the thread waits out its backoff and delivers nothing.
+        self._listening = False
         self._poll_round = 0
         self._poll_memo = {}
         self._poll_memo_lock = threading.Lock()
@@ -452,7 +455,8 @@ class ImDispatch(threading.Thread):
     @property
     def is_healthy(self) -> bool:
         return bool(
-            not stop_event.is_set() and (not self._ever_started or self.is_alive())
+            not stop_event.is_set()
+            and (not self._ever_started or (self.is_alive() and self._listening))
         )
 
     def _start_if_stopped(self) -> None:
@@ -505,6 +509,7 @@ class ImDispatch(threading.Thread):
         ):
             _keep_session_alive_while_idle(conn)
             conn.execute("LISTEN imbus")
+            self._listening = True
             _debug.lifecycle("listening", channels=len(self._channels_to_ws))
             sel.register(conn, selectors.EVENT_READ)
             # Whatever committed before LISTEN -- the first subscriber's poll
@@ -565,6 +570,7 @@ class ImDispatch(threading.Thread):
             try:
                 self.loop()
             except Exception as exc:
+                self._listening = False
                 if (
                     isinstance(exc, (InterfaceError, psycopg.OperationalError))
                     and stop_event.is_set()

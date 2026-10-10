@@ -411,9 +411,10 @@ class Websocket:
         self._on_loop(self._dispatch_requested)
 
     def _adopt(self, sock, buffered, addr) -> None:
-        self._adopted = True
         self._hub = _hub
         _hub.adopt(self, buffered)
+        # Only once the hub holds it: before that, _abandon gives the slot back.
+        self._adopted = True
 
     def _abandon(self) -> None:
         if not self._adopted:
@@ -600,6 +601,8 @@ class Websocket:
         if not self._reading and len(self._lane) < self.LANE_DEPTH:
             self._reading = True
             self._timeout_manager.postpone_responses()
+            if self._frame_started_at is not None:
+                self._frame_started_at = self._clock()
             self._update_events()
 
     def _start_next_job(self, hub) -> None:
@@ -623,7 +626,10 @@ class Websocket:
             self._job_serves_message = False
 
     def _drop_messages(self) -> None:
-        self._lane = deque(item for item in self._lane if isinstance(item, Frame))
+        # In place: _pump may be draining this very lane.
+        frames = [item for item in self._lane if isinstance(item, Frame)]
+        self._lane.clear()
+        self._lane.extend(frames)
         self._dispatch_pending = False
 
     def _dispatch_held(self) -> bool:
@@ -788,12 +794,14 @@ class Websocket:
         if manager.has_keep_alive_timed_out() and self.state is ConnectionState.OPEN:
             self._disconnect(CloseCode.KEEP_ALIVE_TIMEOUT)
             return
-        # While the lane holds the socket unread, the answer to a ping waits
-        # unread too: that wait is this server's, not the client's.
+        # While the lane holds the socket unread, the answer to a ping and the
+        # rest of a frame wait unread too: that wait is this server's, not the
+        # client's.
         if self._reading and manager.has_frame_response_timed_out():
             self._terminate()
             return
-        self._check_frame_deadline()
+        if self._reading:
+            self._check_frame_deadline()
 
     def _reschedule(self) -> None:
         hub = self._hub
@@ -808,7 +816,7 @@ class Websocket:
                     pinging=self.state is ConnectionState.OPEN
                 )
             )
-        if self._frame_started_at is not None:
+        if self._frame_started_at is not None and self._reading:
             deadlines.append(self._frame_started_at + self.FRAME_RECEIVE_TIMEOUT)
         if self._outbuf and self._write_progress_at is not None:
             deadlines.append(self._write_progress_at + self.WRITE_STALL_TIMEOUT)
@@ -920,6 +928,10 @@ class Websocket:
             _logger.warning("Error during websocket teardown cleanup", exc_info=True)
 
     def _handle_control_frame(self, frame) -> None:
+        # The close handshake ends the conversation: a frame read after the
+        # peer's close is neither answered nor taken for a second close.
+        if self._close_received or self.state is ConnectionState.CLOSED:
+            return
         if frame.opcode is Opcode.PING:
             self._send_pong_frame(frame.payload)
         elif frame.opcode is Opcode.CLOSE:
@@ -1097,7 +1109,6 @@ class TimeoutManager:
     PING_JITTER = 0.1
 
     def __init__(self, clock=None) -> None:
-        super().__init__()
         self._clock = clock if clock is not None else time.monotonic
         self._expiration_time_by_opcode = {}
         self._keep_alive_timeout = self.KEEP_ALIVE_TIMEOUT + random.uniform(
@@ -1117,8 +1128,11 @@ class TimeoutManager:
         self._expiration_time_by_opcode.pop(frame.opcode, None)
 
     def acknowledge_frame_sent(self, frame) -> None:
+        # Only the peer's silence calls for a ping: what this side sends says
+        # nothing of whether anyone still reads it.
         now = self._clock()
-        self._next_ping_time = now + self._inactivity_timeout()
+        if frame.opcode is Opcode.PING:
+            self._next_ping_time = now + self._inactivity_timeout()
         if frame.opcode in (Opcode.PING, Opcode.CLOSE):
             self._expiration_time_by_opcode[
                 Opcode.PONG if frame.opcode is Opcode.PING else Opcode.CLOSE
@@ -1249,7 +1263,6 @@ class WebsocketRequest:
 
         try:
             self.registry = Registry(self.db).check_signaling()
-            threading.current_thread().dbname = self.registry.db_name
         except (
             AttributeError,
             psycopg.OperationalError,

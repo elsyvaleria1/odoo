@@ -1083,3 +1083,23 @@ test("the backoff starts over only once a connection stayed open", async () => {
     await advanceTime(worker.STABLE_CONNECTION_DELAY);
     expect(worker.connectRetryDelay).toBe(worker.INITIAL_RECONNECT_DELAY);
 });
+
+test("each database and user logs to a store of their own", async () => {
+    // the logs hold notification payloads: the next user of the browser must
+    // not download them
+    const worker = await startWebSocketWorker();
+    const client = { postMessage() {}, addEventListener() {} };
+    worker.registerClient(client);
+    const init = (db, uid, startTs) =>
+        worker._initializeConnection(client, {
+            db,
+            uid,
+            websocketURL: worker.websocketURL,
+            startTs,
+        });
+    init("db1", 7, 1);
+    const first = worker.logger._name;
+    init("db1", 8, 2);
+    expect(worker.logger._name).not.toBe(first);
+    expect(worker.logger._name).toInclude("db1");
+});

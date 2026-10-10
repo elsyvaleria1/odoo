@@ -1,8 +1,12 @@
 import threading
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+
+import psycopg
 
 from odoo.tests import BaseCase, HttpCase, tagged
+from odoo.tools import mute_logger
 
+from ..models import bus as bus_module
 from ..models.bus import ImDispatch
 
 
@@ -28,6 +32,33 @@ class TestDispatcherHealth(HttpCase):
         dispatch._ever_started = True
         self.assertFalse(dispatch.is_alive())
         self.assertFalse(dispatch.is_healthy)
+
+    def test_a_dispatcher_between_two_listens_is_unhealthy(self):
+        dispatch = ImDispatch()
+        dispatch._ever_started = True
+        with patch.object(ImDispatch, "is_alive", return_value=True):
+            dispatch._listening = True
+            self.assertTrue(dispatch.is_healthy)
+            dispatch._listening = False
+            self.assertFalse(dispatch.is_healthy)
+
+    def test_a_lost_listen_is_reported_until_the_next_one(self):
+        dispatch = ImDispatch()
+
+        def failing_loop():
+            dispatch._listening = True
+            raise psycopg.OperationalError("server closed the connection")
+
+        stopped = iter([False])
+        stop_event = MagicMock()
+        stop_event.is_set.side_effect = lambda: next(stopped, True)
+        with (
+            patch.object(dispatch, "loop", failing_loop),
+            patch.object(bus_module, "stop_event", stop_event),
+            mute_logger("odoo.addons.bus.models.bus"),
+        ):
+            dispatch.run()
+        self.assertFalse(dispatch._listening)
 
     def test_health_endpoint_reports_a_dead_dispatcher(self):
         with patch("odoo.addons.bus.controllers.websocket.dispatch") as mock_dispatch:

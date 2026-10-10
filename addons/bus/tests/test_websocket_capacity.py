@@ -1,6 +1,6 @@
 import os
 import time
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 try:
     from websocket import WebSocketBadStatusException
@@ -12,7 +12,8 @@ from odoo.service.metrics import render_prometheus_exposition
 from odoo.tests import BaseCase, tagged
 
 from .. import websocket as websocket_module
-from ..websocket import CloseCode, ConnectionGauge
+from ..tools.websocket_hub import WebsocketHub
+from ..websocket import CloseCode, ConnectionGauge, Websocket
 from .common import WebsocketCase
 
 
@@ -70,6 +71,40 @@ class TestConnectionGauge(BaseCase):
 
 
 @tagged("-at_install", "post_install")
+@tagged("-at_install", "post_install")
+class TestSlotRelease(BaseCase):
+    def _reserved(self):
+        gauge = ConnectionGauge(limit=1)
+        self.assertTrue(gauge.reserve())
+        return gauge
+
+    def test_a_failed_adopt_gives_the_slot_back(self):
+        gauge = self._reserved()
+        ws = Websocket(MagicMock(), MagicMock(db="db"), {}, gauge=gauge)
+        with patch.object(websocket_module, "_hub") as hub:
+            hub.adopt.side_effect = RuntimeError("can't start new thread")
+            with self.assertRaises(RuntimeError):
+                ws._adopt(None, b"", None)
+        ws._abandon()
+        self.assertEqual(gauge.count, 0)
+
+    def test_a_connection_gone_before_its_attach_gives_its_socket_and_slot_back(self):
+        gauge = self._reserved()
+        sock = MagicMock()
+        sock.fileno.side_effect = OSError("Bad file descriptor")
+        ws = Websocket(sock, MagicMock(db="db"), {}, gauge=gauge)
+        hub = WebsocketHub(db_threads=lambda: 1)
+        ws._hub = hub
+        with (
+            patch.object(websocket_module, "dispatch"),
+            self.assertLogs("odoo.addons.bus.tools.websocket_hub", "INFO"),
+        ):
+            hub._attach(ws, b"")
+        self.assertEqual(gauge.count, 0)
+        sock.close.assert_called()
+        self.assertEqual(hub.connections, {})
+
+
 class TestWebsocketCapacity(WebsocketCase):
     def _wait_for_count(self, gauge, count):
         deadline = time.monotonic() + 5

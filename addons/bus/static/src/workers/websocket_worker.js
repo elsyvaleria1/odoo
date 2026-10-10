@@ -20,7 +20,8 @@ import {
 
 const MAXIMUM_RECONNECT_DELAY = 60000;
 const UUID = Date.now().toString(36) + Math.random().toString(36).substring(2);
-const logger = new Logger("bus_websocket_worker");
+// Until a tab says whose bus this is, logs have no owner.
+const LOGGER_NAME = "bus_websocket_worker";
 
 // Client actions that (re)establish an evicted/departed client's participation
 // in the bus, and so may re-register it in `channelsByClient`. An allowlist
@@ -137,6 +138,10 @@ export class WebsocketWorker {
         // is a reconnect, whatever closed the previous one.
         this.hasConnected = false;
         this.loggingEnabled = null;
+        // The logs hold notification payloads: each database and user has a
+        // store of their own, so a user logging in after another on the same
+        // browser cannot download the previous one's.
+        this.logger = new Logger(LOGGER_NAME);
         // Current WebSocket connection (socket + its subscribe gate and
         // subscription cache), or null when no socket is live. See `Connection`.
         this._connection = null;
@@ -334,7 +339,7 @@ export class WebsocketWorker {
                 this.loggingEnabled = data;
                 break;
             case "BUS:REQUEST_LOGS":
-                logger
+                this.logger
                     .getLogs()
                     // IndexedDB can be unavailable (private browsing, quota):
                     // still answer with the worker info instead of leaving an
@@ -589,6 +594,18 @@ export class WebsocketWorker {
             this.lastNotificationId = lastNotificationId ?? 0;
             this.seenNotificationIds.clear();
             this.pendingMessages.clear();
+        }
+        const loggerName = `${LOGGER_NAME}.${this.currentDB}.${this.currentUID}`;
+        if (this.logger._name !== loggerName) {
+            if (this.logger._name === LOGGER_NAME) {
+                // the ownerless store, and the one every user shared before
+                try {
+                    indexedDB.deleteDatabase(LOGGER_NAME);
+                } catch {
+                    // no IndexedDB here: nothing was stored either
+                }
+            }
+            this.logger = new Logger(loggerName);
         }
         this._finishClientInitialization(client);
     }
@@ -880,7 +897,7 @@ export class WebsocketWorker {
 
     _logDebug(title, ...args) {
         if (this.loggingEnabled) {
-            logger
+            this.logger
                 .log({ dt: new Date().toISOString(), event: title, args, worker: UUID })
                 .catch((e) => console.error(e));
         }

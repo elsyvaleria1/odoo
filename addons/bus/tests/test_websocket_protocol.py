@@ -596,6 +596,12 @@ class TestFrameParser(BaseCase):
             frames.extend(parser.feed(chunk))
         return frames
 
+    def test_a_64_bit_length_with_its_top_bit_set_is_a_protocol_error(self):
+        # RFC 6455 5.2: not a frame too big, a frame no endpoint may send
+        header = struct.pack("!BBQ", 0x82, 0x80 | 127, 1 << 63) + b"\x00\x00\x00\x00"
+        with self.assertRaises(ProtocolError):
+            FrameParser(2**20).feed(header)
+
     def test_header_is_announced_once_per_frame_wherever_it_is_cut(self):
         data = _client_frame(Opcode.TEXT, b"ab") + _client_frame(
             Opcode.PING, b"", fin=True
@@ -1127,3 +1133,55 @@ class TestUpgradeAdoption(WebsocketCase):
             self.assertEqual(opcode, Opcode.CLOSE)
             self.assertEqual(struct.unpack("!H", payload[:2])[0], CloseCode.CLEAN)
         self.wait_remaining_websocket_connections()
+
+
+def _server_opcodes(data):
+    opcodes = []
+    while data:
+        opcode, payload = _parse_server_frame(data)
+        opcodes.append(opcode)
+        header = 2 + (2 if len(payload) >= 126 else 0)
+        data = data[header + len(payload) :]
+    return opcodes
+
+
+@tagged("-at_install", "post_install")
+class TestFramesAfterClose(BaseCase):
+    def test_nothing_after_the_peer_s_close_is_answered_or_torn_down_twice(self):
+        close = struct.pack("!H", CloseCode.CLEAN)
+        ws, sock = _make_receiving_ws(
+            [
+                _client_frame(Opcode.CLOSE, close)
+                + _client_frame(Opcode.PING, b"late")
+                + _client_frame(Opcode.CLOSE, close)
+            ]
+        )
+        sock.shutdown = sock.close = lambda *args: None
+        hub = MagicMock()
+        hub.in_loop.return_value = True
+        submitted = []
+        hub.submit.side_effect = lambda job: submitted.append(job) or True
+        ws._hub = hub
+        with patch("odoo.addons.bus.websocket.dispatch") as dispatch_mock:
+            ws._deliver(ws._read_messages())
+        self.assertEqual(_server_opcodes(bytes(sock.sent)), [Opcode.CLOSE])
+        self.assertIs(ws.state, ConnectionState.CLOSED)
+        dispatch_mock.unsubscribe.assert_called_once_with(ws)
+        self.assertEqual(len(submitted), 1, "one teardown, one _on_websocket_closed")
+
+
+@tagged("-at_install", "post_install")
+class TestFrameDeadlineWhileNotReading(BaseCase):
+    def test_a_frame_the_server_stopped_reading_is_not_the_peer_s_delay(self):
+        clock = _ManualClock()
+        ws, _sock = _make_receiving_ws(clock=clock)
+        ws._frame_started_at = clock.now
+        ws._reading = False
+        clock.now += Websocket.FRAME_RECEIVE_TIMEOUT * 3
+        ws._check_deadlines()
+        ws._hub = MagicMock()
+        ws._hub.in_loop.return_value = True
+        ws._job = object()
+        ws._pump()
+        self.assertTrue(ws._reading)
+        self.assertEqual(ws._frame_started_at, clock.now)

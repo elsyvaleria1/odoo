@@ -163,7 +163,6 @@ class WebsocketHub:
     def __init__(self, *, db_threads, clock=time.monotonic) -> None:
         self._db_threads = db_threads
         self._clock = clock
-        self._lock = threading.Lock()
         self._reset()
         os.register_at_fork(after_in_child=self._reset)
 
@@ -245,11 +244,18 @@ class WebsocketHub:
         self.call_soon(self._attach, conn, buffered)
 
     def _attach(self, conn, buffered) -> None:
-        conn.sock.setblocking(False)
-        conn.fd = conn.sock.fileno()
-        self.connections[conn.fd] = conn
-        conn.events = 0
-        self.set_events(conn, selectors.EVENT_READ)
+        try:
+            conn.sock.setblocking(False)
+            conn.fd = conn.sock.fileno()
+            self.connections[conn.fd] = conn
+            conn.events = 0
+            self.set_events(conn, selectors.EVENT_READ)
+        except Exception:
+            # A client gone between its 101 and here: its socket and its slot
+            # are given back, not left to a hub that never registered them.
+            _logger.info("Websocket could not be attached; closing it", exc_info=True)
+            conn.abort()
+            return
         conn.on_attached(buffered)
 
     def detach(self, conn) -> None:
@@ -389,9 +395,17 @@ class WebsocketHub:
             self._exit = True
 
         self.call_and_wait(finish, timeout=1.0)
+        # finish may never have run on a blocked loop: the flag is what makes
+        # it end, not the callback.
+        self._exit = True
         self.executor.wait_idle(max(deadline, self._clock() + 0.1))
         self.executor.close()
         self._thread.join(1.0)
+        if self._thread.is_alive():
+            # Closing its selector under it would make every iteration fail
+            # and the loop spin; the process is going away anyway.
+            _logger.warning("Websocket hub loop did not stop; leaving it to exit")
+            return remaining
         for resource in (self._selector, self._wake_r, self._wake_w):
             with contextlib.suppress(OSError):
                 resource.close()

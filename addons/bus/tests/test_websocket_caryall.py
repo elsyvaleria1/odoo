@@ -101,6 +101,18 @@ class TestWebsocketCaryall(WebsocketCase):
             [ws for ws in subscribed if ws.state is not ConnectionState.OPEN], []
         )
 
+    def test_what_the_server_sends_does_not_postpone_its_ping(self):
+        # a peer gone without a reset reads nothing; only a ping it fails to
+        # answer finds that out
+        clock = ManualClock()
+        timeout_manager = TimeoutManager(clock=clock)
+        clock.tick(TimeoutManager.INACTIVITY_TIMEOUT * 0.8)
+        timeout_manager.acknowledge_frame_sent(Frame(Opcode.TEXT, b"notification"))
+        clock.tick(TimeoutManager.INACTIVITY_TIMEOUT * 0.4)
+        self.assertTrue(timeout_manager.is_ping_frame_required())
+        timeout_manager.acknowledge_frame_sent(Frame(Opcode.PING))
+        self.assertFalse(timeout_manager.is_ping_frame_required())
+
     def test_timeout_manager_no_response_timeout(self):
         clock = ManualClock()
         timeout_manager = TimeoutManager(clock=clock)

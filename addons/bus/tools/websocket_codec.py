@@ -46,7 +46,8 @@ HEARTBEAT_OP = {Opcode.PING, Opcode.PONG}
 VALID_CLOSE_CODES = {
     code for code in CloseCode if code is not CloseCode.ABNORMAL_CLOSURE
 }
-RESERVED_CLOSE_CODES = range(3000, 5000)
+# 3000-3999 registered with IANA, 4000-4999 private use (RFC 6455 7.4.2)
+APPLICATION_CLOSE_CODES = range(3000, 5000)
 
 MAX_CONTROL_PAYLOAD = 125
 
@@ -90,7 +91,7 @@ class CloseFrame(Frame):
     MAX_REASON_LENGTH = MAX_CONTROL_PAYLOAD - 2
 
     def __init__(self, code, reason) -> None:
-        if code not in VALID_CLOSE_CODES and code not in RESERVED_CLOSE_CODES:
+        if code not in VALID_CLOSE_CODES and code not in APPLICATION_CLOSE_CODES:
             raise InvalidCloseCodeError(code)
         payload = struct.pack("!H", code)
         if reason:
@@ -109,7 +110,7 @@ class CloseFrame(Frame):
 def parse_close_payload(payload) -> tuple[int, str | None]:
     if len(payload) >= 2:
         code = struct.unpack("!H", payload[:2])[0]
-        if code not in VALID_CLOSE_CODES and code not in RESERVED_CLOSE_CODES:
+        if code not in VALID_CLOSE_CODES and code not in APPLICATION_CLOSE_CODES:
             return CloseCode.PROTOCOL_ERROR, "Invalid close code"
         try:
             return code, bytes(payload[2:]).decode("utf-8")
@@ -130,14 +131,14 @@ def unmask(payload: bytearray, mask) -> bytearray:
 
 
 def encode_frame(frame: Frame) -> bytes:
-    if frame.opcode in CTRL_OP and len(frame.payload) > MAX_CONTROL_PAYLOAD:
-        raise ProtocolError(
-            "Control frames should have a payload length smaller than 126"
-        )
     if isinstance(frame.payload, str):
         frame.payload = frame.payload.encode("utf-8")
     elif not isinstance(frame.payload, (bytes, bytearray)):
         frame.payload = orjson.dumps(frame.payload)
+    if frame.opcode in CTRL_OP and len(frame.payload) > MAX_CONTROL_PAYLOAD:
+        raise ProtocolError(
+            "Control frames should have a payload length smaller than 126"
+        )
     first_byte = (
         (0b10000000 if frame.fin else 0)
         | (0b01000000 if frame.rsv1 else 0)
@@ -215,6 +216,8 @@ class FrameParser:
             if len(buffer) < 10:
                 return None
             length = struct.unpack_from("!Q", buffer, 2)[0]
+            if length >> 63:
+                raise ProtocolError("The most significant bit of a length must be 0")
             offset = 10
         if length > self.max_size:
             raise PayloadTooLargeError

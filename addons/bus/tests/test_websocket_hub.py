@@ -658,3 +658,19 @@ class TestWebsocketMetricsAndLimits(BaseCase):
         cancel.assert_called_once()
         self.assertIs(cancel.call_args.args[0], job)
         self.assertEqual(server._overruns_cancelled, 1)
+
+
+@tagged("-at_install", "post_install")
+class TestHubStopOverABlockedLoop(BaseCase):
+    def test_the_loop_ends_once_unblocked_instead_of_spinning(self):
+        hub = WebsocketHub(db_threads=lambda: 1)
+        hub.start()
+        release = threading.Event()
+        self.addCleanup(release.set)
+        hub.call_soon(lambda: release.wait(5))
+        with self.assertLogs("odoo.addons.bus.tools.websocket_hub", "WARNING") as logs:
+            hub.stop(0.1, CloseCode.GOING_AWAY)
+            release.set()
+            hub._thread.join(5)
+        self.assertFalse(hub._thread.is_alive())
+        self.assertFalse([line for line in logs.output if "iteration failed" in line])
