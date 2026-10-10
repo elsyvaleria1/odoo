@@ -199,7 +199,7 @@ class AccountPayment(models.Model):
                 )
                 has_exchange_diff = (
                     has_exchange_diff
-                    or not payment_move_line.currency_id.is_zero(exchange_diff_balance)
+                    or not st_line.company_currency_id.is_zero(exchange_diff_balance)
                 )
                 line_vals = payment_move_line._prepare_aml_values(
                     balance=-(

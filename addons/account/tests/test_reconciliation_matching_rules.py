@@ -2230,14 +2230,6 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                         {
                             "account_id": self.current_assets_account.id,
                             "amount_type": "regex",
-                            "amount_string": r"missing parentheses: \d+",
-                            "label": "Should raise a (caught) IndexError",
-                        }
-                    ),
-                    Command.create(
-                        {
-                            "account_id": self.current_assets_account.id,
-                            "amount_type": "regex",
                             "amount_string": r"does not capture a float value: ([a-z]+)",
                             "label": "Should raise a (caught) AttributeError",
                         }
@@ -2254,16 +2246,6 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
             }
         )
 
-        bank_line_1 = self.env["account.bank.statement.line"].create(
-            [
-                {
-                    "journal_id": self.bank_journal.id,
-                    "date": "2020-01-01",
-                    "payment_ref": "missing parentheses: 1234",
-                    "amount": 1234,
-                },
-            ]
-        )
         bank_line_2 = self.env["account.bank.statement.line"].create(
             [
                 {
@@ -2285,10 +2267,6 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
             ]
         )
 
-        with self.assertRaises(
-            RedirectWarning, msg="The regex has to capture the amount in parenthesis"
-        ):
-            bad_regex_model._trigger_reconciliation_model(bank_line_1)
         with self.assertRaises(
             RedirectWarning, msg="The regex has to capture a float value"
         ):

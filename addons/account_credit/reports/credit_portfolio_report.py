@@ -116,7 +116,7 @@ class CreditPortfolioReport(models.Model):
                   JOIN account_account a ON a.id = l.account_id
                  WHERE a.account_type = 'asset_receivable'
                    AND l.parent_state = 'posted'
-                   AND NOT l.reconciled
+                   AND l.reconciled IS NOT TRUE
                  GROUP BY p.id
             ),
             facility AS (

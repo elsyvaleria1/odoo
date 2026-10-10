@@ -127,15 +127,16 @@ class AccountBankStatementLine(models.Model):
                     "_cron_try_auto_reconcile_statement_lines will rollback the cursor"
                 )
                 self.env.cr.rollback()
-            retired = st_lines._auto_reconcile_isolating_failures(company_id=company_id)
+            given_up = st_lines._auto_reconcile_isolating_failures(
+                company_id=company_id
+            )
             _debug.pipeline(
                 "cron_batch_retried_per_line",
                 automatch=st_lines,
                 error=type(exc).__name__,
                 rolled_back=not isinstance(exc, UserError) and can_commit,
-                retired=retired,
+                given_up=given_up,
             )
-            return retired
 
         barren_rounds = 0
 
@@ -153,16 +154,23 @@ class AccountBankStatementLine(models.Model):
                     "automatch_cron_batch", cr=self.env.cr, st_lines_count=len(st_lines)
                 ):
                     st_lines._try_auto_reconcile_statement_lines(company_id=company_id)
+                st_lines.cron_last_check = self.env.cr.now()
                 barren_rounds = 0
             except Exception as e:
-                if rollback_and_retire(st_lines, e):
+                rollback_and_retire(st_lines, e)
+                if st_lines:
                     barren_rounds = 0
                 else:
                     barren_rounds += 1
+                    _debug.logic(
+                        "cron_barren_round",
+                        barren_rounds=barren_rounds,
+                        error=type(e).__name__,
+                    )
                     if barren_rounds >= MAX_BARREN_CRON_ROUNDS:
                         _logger.error(
                             "_cron_try_auto_reconcile_statement_lines gave up after %s "
-                            "rounds that retired no statement line; last error: %s",
+                            "rounds that processed no statement line; last error: %s",
                             barren_rounds,
                             e,
                         )
@@ -220,7 +228,8 @@ class AccountBankStatementLine(models.Model):
         `_try_auto_reconcile_statement_lines` works on the whole recordset and
         aborts the run on the first line that raises. The CRON therefore falls
         back to this loop whenever a batch blew up, stamping `cron_last_check`
-        on the lines that keep failing so the same run stops picking them up.
+        on every line it visits, failing or not, so the same run stops picking
+        them up.
 
         `retire=False` gives the same isolation without that bookkeeping, for an
         on-demand run: the accountant asking for one extra pass must not
@@ -240,9 +249,9 @@ class AccountBankStatementLine(models.Model):
                     line_exc,
                     exc_info=True,
                 )
-                if retire:
-                    st_line.cron_last_check = self.env.cr.now()
                 given_up += 1
+            if retire:
+                st_line.cron_last_check = self.env.cr.now()
         return given_up
 
     def _update_auto_reconcile_rule(self, rule) -> None:
@@ -399,7 +408,7 @@ class AccountBankStatementLine(models.Model):
                        %s
                  WHERE st_line.partner_id IS NOT NULL
                    AND aml.move_id != ALL(%s)
-                   AND aml.reconciled = false
+                   AND aml.reconciled IS NOT TRUE
                    AND aml.account_id = ANY(%s)
                    AND (aml.parent_state IN ('draft', 'posted'))
                    AND st_line.id = ANY(%s)
@@ -499,134 +508,134 @@ class AccountBankStatementLine(models.Model):
         self.env["account.payment"].flush_model(["move_id", "journal_id", "memo"])
 
     @_debug.perf.timed
-    def _try_auto_reconcile_statement_lines(self, company_id=None) -> None:
+    def _try_auto_reconcile_statement_lines(
+        self, company_id=None, detect_partner=True
+    ) -> None:
         settled_elsewhere = self.filtered_domain(self._get_domain_settled_elsewhere())
         if settled_elsewhere:
             if remaining := self - settled_elsewhere:
-                remaining._try_auto_reconcile_statement_lines(company_id=company_id)
+                remaining._try_auto_reconcile_statement_lines(
+                    company_id=company_id, detect_partner=detect_partner
+                )
             return
         st_move_ids = self.mapped("move_id").ids
         self.lock_for_update()
 
-        try:
-            domain = []
-            if company_id is not None:
-                domain = Domain(
-                    self.env["account.reconcile.model"]._check_company_domain(
-                        company_id
-                    )
-                )
-            reco_models = self.env["account.reconcile.model"].search(domain)
+        domain = []
+        if company_id is not None:
+            domain = Domain(
+                self.env["account.reconcile.model"]._check_company_domain(company_id)
+            )
+        reco_models = self.env["account.reconcile.model"].search(domain)
 
-            # Not only on import: the transactions that teach a partner are
-            # settled while this one waits.
+        # Not only on import: the transactions that teach a partner are
+        # settled while this one waits.
+        if detect_partner:
             self._set_partner_from_transaction()
-            self._partner_mapping(reco_models)
-            self._flush_before_matching_queries()
+        self._partner_mapping(reco_models)
+        self._flush_before_matching_queries()
 
-            account_ids = self._get_matchable_account_ids()
-            _debug.pipeline(
-                "start_model_account",
-                automatch=self,
-                reco_models_count=len(reco_models),
-                account_ids_count=len(account_ids),
-            )
+        account_ids = self._get_matchable_account_ids()
+        _debug.pipeline(
+            "start_model_account",
+            automatch=self,
+            reco_models_count=len(reco_models),
+            account_ids_count=len(account_ids),
+        )
 
-            matched_ids = self._end_to_end_uuid(st_move_ids, account_ids)
-            self.browse(matched_ids)._update_auto_reconcile_rule("end_to_end")
-            remaining_st_line_ids = set(self.ids) - matched_ids
-            _debug.pipeline(
-                "after_end_end_uuid",
-                automatch=self,
-                remaining_st_line_ids_count=len(remaining_st_line_ids),
-            )
-            if not remaining_st_line_ids:
-                return
+        matched_ids = self._match_end_to_end_uuid(st_move_ids, account_ids)
+        self.browse(matched_ids)._update_auto_reconcile_rule("end_to_end")
+        remaining_st_line_ids = set(self.ids) - matched_ids
+        _debug.pipeline(
+            "after_end_end_uuid",
+            automatch=self,
+            remaining_st_line_ids_count=len(remaining_st_line_ids),
+        )
+        if not remaining_st_line_ids:
+            return
 
-            outstanding_accounts = self._get_outstanding_payment_accounts()
-            if outstanding_accounts:
-                candidate_ids = set(remaining_st_line_ids)
-                remaining_st_line_ids = self._match_outstanding_accounts(
-                    st_move_ids, outstanding_accounts, remaining_st_line_ids
-                )
-                self.browse(
-                    candidate_ids - remaining_st_line_ids
-                )._update_auto_reconcile_rule("outstanding")
-                _debug.pipeline(
-                    "after_outstanding_accounts",
-                    automatch=self,
-                    outstanding_accounts=outstanding_accounts,
-                    remaining_st_line_ids_count=len(remaining_st_line_ids),
-                )
-
-            account_ids = list(set(account_ids) - set(outstanding_accounts.ids))
-            if not (remaining_st_line_ids and account_ids):
-                return
-
+        outstanding_accounts = self._get_outstanding_payment_accounts()
+        if outstanding_accounts:
             candidate_ids = set(remaining_st_line_ids)
-            remaining_st_line_ids = self._match_payment_references(
-                st_move_ids, account_ids, remaining_st_line_ids
+            remaining_st_line_ids = self._match_outstanding_accounts(
+                st_move_ids, outstanding_accounts, remaining_st_line_ids
             )
             self.browse(
                 candidate_ids - remaining_st_line_ids
-            )._update_auto_reconcile_rule("reference")
+            )._update_auto_reconcile_rule("outstanding")
             _debug.pipeline(
-                "after_payment_references",
+                "after_outstanding_accounts",
                 automatch=self,
+                outstanding_accounts=outstanding_accounts,
                 remaining_st_line_ids_count=len(remaining_st_line_ids),
             )
-            if not remaining_st_line_ids:
-                return
 
-            matched_ids = self._handle_reconciliation_matching_amount(
-                st_move_ids, account_ids, remaining_st_line_ids
-            )
-            self.browse(matched_ids)._update_auto_reconcile_rule("amount")
-            remaining_st_line_ids -= matched_ids
-            _debug.pipeline(
-                "after_amount_matching",
-                automatch=self,
-                remaining_st_line_ids_count=len(remaining_st_line_ids),
-            )
-            if not remaining_st_line_ids:
-                return
+        account_ids = list(set(account_ids) - set(outstanding_accounts.ids))
+        if not (remaining_st_line_ids and account_ids):
+            return
 
-            matched_ids = self._match_period_charges(remaining_st_line_ids)
-            self.browse(matched_ids)._update_auto_reconcile_rule("charges")
-            remaining_st_line_ids -= matched_ids
-            _debug.pipeline(
-                "after_period_charges",
-                automatch=self,
-                remaining_st_line_ids_count=len(remaining_st_line_ids),
-            )
-            if not remaining_st_line_ids:
-                return
+        candidate_ids = set(remaining_st_line_ids)
+        remaining_st_line_ids = self._match_payment_references(
+            st_move_ids, account_ids, remaining_st_line_ids
+        )
+        self.browse(candidate_ids - remaining_st_line_ids)._update_auto_reconcile_rule(
+            "reference"
+        )
+        _debug.pipeline(
+            "after_payment_references",
+            automatch=self,
+            remaining_st_line_ids_count=len(remaining_st_line_ids),
+        )
+        if not remaining_st_line_ids:
+            return
 
-            matched_ids = self._match_amount_alone(account_ids, remaining_st_line_ids)
-            self.browse(matched_ids)._update_auto_reconcile_rule("amount_alone")
-            remaining_st_line_ids -= matched_ids
-            _debug.pipeline(
-                "after_amount_alone",
-                automatch=self,
-                remaining_st_line_ids_count=len(remaining_st_line_ids),
-            )
-            if not remaining_st_line_ids:
-                return
+        matched_ids = self._handle_reconciliation_matching_amount(
+            st_move_ids, account_ids, remaining_st_line_ids
+        )
+        self.browse(matched_ids)._update_auto_reconcile_rule("amount")
+        remaining_st_line_ids -= matched_ids
+        _debug.pipeline(
+            "after_amount_matching",
+            automatch=self,
+            remaining_st_line_ids_count=len(remaining_st_line_ids),
+        )
+        if not remaining_st_line_ids:
+            return
 
-            remaining_st_lines = self.browse(list(remaining_st_line_ids)).with_prefetch(
-                self._prefetch_ids
-            )
-            reco_models._apply_reconcile_models(remaining_st_lines)
-            remaining_st_lines.filtered("is_reconciled")._update_auto_reconcile_rule(
-                "model"
-            )
-            _logger.info(
-                "try_auto_reconcile - apply reco models - st_lines: %s - reco models %s",
-                remaining_st_lines.ids,
-                reco_models.ids,
-            )
-        finally:
-            self.write({"cron_last_check": self.env.cr.now()})
+        matched_ids = self._match_period_charges(remaining_st_line_ids)
+        self.browse(matched_ids)._update_auto_reconcile_rule("charges")
+        remaining_st_line_ids -= matched_ids
+        _debug.pipeline(
+            "after_period_charges",
+            automatch=self,
+            remaining_st_line_ids_count=len(remaining_st_line_ids),
+        )
+        if not remaining_st_line_ids:
+            return
+
+        matched_ids = self._match_amount_alone(account_ids, remaining_st_line_ids)
+        self.browse(matched_ids)._update_auto_reconcile_rule("amount_alone")
+        remaining_st_line_ids -= matched_ids
+        _debug.pipeline(
+            "after_amount_alone",
+            automatch=self,
+            remaining_st_line_ids_count=len(remaining_st_line_ids),
+        )
+        if not remaining_st_line_ids:
+            return
+
+        remaining_st_lines = self.browse(list(remaining_st_line_ids)).with_prefetch(
+            self._prefetch_ids
+        )
+        reco_models._apply_reconcile_models(remaining_st_lines)
+        remaining_st_lines.filtered("is_reconciled")._update_auto_reconcile_rule(
+            "model"
+        )
+        _logger.info(
+            "try_auto_reconcile - apply reco models - st_lines: %s - reco models %s",
+            remaining_st_lines.ids,
+            reco_models.ids,
+        )
 
 
 class AccountMove(models.Model):

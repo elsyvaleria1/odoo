@@ -158,7 +158,6 @@ class AccountReconcileModelLine(models.Model):
     def _get_amount_currency_by_regex(
         self, st_line, residual_amount_currency, amount_string
     ):
-        sign = 1 if residual_amount_currency > 0.0 else -1
         transaction_details = (
             json_dumps(st_line.transaction_details)
             if st_line.transaction_details
@@ -186,7 +185,7 @@ class AccountReconcileModelLine(models.Model):
                         extracted_balance = float(f"{int_part}.{dec_part}")
                     else:
                         extracted_match_group = re.search(
-                            r"\d[\d\s.,'\xa0]*", match.group(1)
+                            r"\d[\d\s.,'\xa0]*", match.group(1) or ""
                         )
                         int_part, dec_part = split_amount_str(
                             extracted_match_group.group()
@@ -198,7 +197,7 @@ class AccountReconcileModelLine(models.Model):
                         groups=len(groups),
                         extracted=extracted_balance,
                     )
-                    return copysign(extracted_balance * sign, residual_amount_currency)
+                    return copysign(extracted_balance, residual_amount_currency)
                 except IndexError:
                     raise RedirectWarning(
                         self.env._(

@@ -326,6 +326,7 @@ class AccountReconcileModel(models.Model):
                     WHERE %(match)s
                       AND reco_model.id = ANY(%(reco_models)s)
                       AND reco_model.can_be_proposed IS TRUE
+                      AND reco_model.is_bank_fee_model IS NOT TRUE
                  ORDER BY reco_model.created_automatically ASC NULLS FIRST, reco_model.sequence ASC, reco_model.id ASC
                     LIMIT 1
                  ) AS reco_model ON TRUE
@@ -515,7 +516,7 @@ class AccountReconcileModel(models.Model):
         suspense_lines.reconcile_model_id = False
         return suspense_lines.move_id.statement_line_id
 
-    def _refresh_statement_line_proposals(self) -> None:
+    def _refresh_statement_line_proposals(self, auto_reconcile=True) -> None:
         statement_lines = self._get_unreconciled_statement_lines()
         if not statement_lines:
             return
@@ -527,19 +528,56 @@ class AccountReconcileModel(models.Model):
             company_models=company_models,
             statement_lines_count=len(statement_lines),
             freed_lines_count=len(freed_lines),
+            auto_reconcile=auto_reconcile,
         )
-        company_models._apply_reconcile_models(freed_lines, auto_reconcile_models=self)
         company_models._apply_reconcile_models(
-            statement_lines - freed_lines, winners=self.filtered("active")
+            freed_lines,
+            auto_reconcile_models=self if auto_reconcile else self.browse(),
         )
+        company_models._apply_reconcile_models(
+            statement_lines - freed_lines,
+            winners=self.filtered("active"),
+            auto_reconcile_models=None if auto_reconcile else self.browse(),
+        )
+
+    def _get_proposal_order(self, companies) -> list:
+        return self.search(
+            self._check_company_domain(companies),
+            order="created_automatically ASC NULLS FIRST, sequence ASC, id ASC",
+        ).ids
+
+    def _refresh_after_reorder(self, companies, order_before) -> None:
+        reordered = self._get_proposal_order(companies) != order_before
+        _debug.logic("reco_model_reordered", models=self, reordered=reordered)
+        if reordered:
+            self._refresh_statement_line_proposals(auto_reconcile=False)
 
     @_debug.perf.timed
     def write(self, vals):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
+        match_fields = MATCH_FIELDS.intersection(vals)
+        if not match_fields or self.env.context.get("defer_proposal_refresh"):
+            return super().write(vals)
+        if match_fields == {"sequence"}:
+            companies = self.company_id
+            order_before = self._get_proposal_order(companies)
+            res = super().write(vals)
+            self._refresh_after_reorder(companies, order_before)
+            return res
         res = super().write(vals)
-        if MATCH_FIELDS.intersection(vals):
-            self._refresh_statement_line_proposals()
+        self._refresh_statement_line_proposals()
         return res
+
+    def web_resequence(self, specification, field_name="sequence", offset=0):
+        if field_name != "sequence":
+            return super().web_resequence(specification, field_name, offset)
+        companies = self.company_id
+        order_before = self._get_proposal_order(companies)
+        result = super(
+            AccountReconcileModel, self.with_context(defer_proposal_refresh=True)
+        ).web_resequence(specification, field_name, offset)
+        self._refresh_after_reorder(companies, order_before)
+        return result
 
     @api.model_create_multi
     @_debug.perf.timed

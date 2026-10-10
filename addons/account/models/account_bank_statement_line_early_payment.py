@@ -61,7 +61,7 @@ class AccountBankStatementLine(models.Model):
             epd=epd_amount_currency,
         )
         if eligible:
-            if not move_line.currency_id.is_zero(exchange_diff_balance):
+            if not self.company_currency_id.is_zero(exchange_diff_balance):
                 payment_with_move = self._create_payment_with_move_from_invoice(
                     move_line.move_id
                 )
@@ -319,6 +319,7 @@ class AccountBankStatementLine(models.Model):
         )
         transaction_currency_id = self.foreign_currency_id or self.currency_id
         origin_balance = amounts_in_st_curr["balance"]
+        rate_noise = 0.0
         if (
             currency_id == self.company_currency_id
             and transaction_currency_id != self.company_currency_id
@@ -331,11 +332,30 @@ class AccountBankStatementLine(models.Model):
             origin_balance = currency_id._convert(
                 amount_currency, transaction_currency_id, self.company_id, self.date
             )
+        elif transaction_amount := self._get_accounting_amounts_and_currencies()[0]:
+            # The statement line's rate is its rounded company amount over its
+            # transaction amount, so applying it to a residual larger than the
+            # transaction scales that rounding error up with the ratio.
+            rate_noise = (
+                self.company_currency_id.rounding
+                / 2
+                * abs(amounts_in_st_curr["amount_currency"] / transaction_amount)
+            )
 
-        if currency_id.is_zero(origin_balance - amount):
+        # Compare the rounded difference with the unrounded noise: rounding the
+        # noise too turns the half cent of a full payment into a whole cent and
+        # swallows a genuine one-cent difference.
+        exchange_diff = self.company_currency_id.round(origin_balance - amount)
+        if abs(exchange_diff) <= rate_noise:
+            _debug.logic(
+                "exchange_diff_within_rounding",
+                stline=self,
+                exchange_diff=exchange_diff,
+                rate_noise=rate_noise,
+            )
             return 0.0
 
-        return self.company_currency_id.round(origin_balance - amount)
+        return exchange_diff
 
     @api.model
     def _qualifies_for_early_payment(

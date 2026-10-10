@@ -165,7 +165,8 @@ class AccountBankStatementLine(models.Model):
                 fields=sorted({key for vals in vals_list for key in vals}),
             )
         statement_lines = super().create(vals_list)
-        if not self.env.context.get("no_retrieve_partner"):
+        retrieve_partner = not self.env.context.get("no_retrieve_partner")
+        if retrieve_partner:
             statement_lines._set_partner_from_transaction()
         statement_lines.move_id._message_log_batch(
             bodies={
@@ -185,7 +186,11 @@ class AccountBankStatementLine(models.Model):
             ):
                 statement_lines[
                     index : index + AUTO_STATEMENT_PROCESSING_BATCH_SIZE
-                ]._try_auto_reconcile_statement_lines()
+                ]._try_auto_reconcile_statement_lines(
+                    # A later batch can learn a partner from an earlier one's
+                    # matches; only the first would repeat the lookup above.
+                    detect_partner=index > 0 or not retrieve_partner
+                )
         return statement_lines
 
     @_debug.perf.timed

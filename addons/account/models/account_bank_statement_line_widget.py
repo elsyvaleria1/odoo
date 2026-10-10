@@ -246,7 +246,7 @@ class AccountBankStatementLine(models.Model):
                 move_line.amount_residual,
             )
 
-            has_exchange_diff = has_exchange_diff or not move_line.currency_id.is_zero(
+            has_exchange_diff = has_exchange_diff or not company_currency.is_zero(
                 exchange_diff_balance
             )
             open_balance += current_balance

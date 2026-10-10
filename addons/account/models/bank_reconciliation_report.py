@@ -460,24 +460,15 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         )
 
         if from_last_statement:
-            last_statement_id = self._get_last_bank_statement(journal, options).id
-            _debug.logic(
-                "last_statement_resolved",
-                report=report,
-                journal=journal,
-                last_statement=last_statement_id,
-                empty_section=not last_statement_id,
+            last_st_line_query = self.env["account.bank.statement.line"]._search(
+                self._get_domain_last_bank_statement_line(journal, options),
+                order="date desc, id desc",
+                limit=1,
             )
-            if last_statement_id:
-                last_statement_id_condition = SQL(
-                    "st_line.statement_id = %s", last_statement_id
-                )
-            else:
-                # If there is no last statement, the last statement section must be empty and the other must have all
-                # transaction
-                return self._get_grouped_result(
-                    [], current_groupby, prepare_result_dict
-                )
+            last_statement_id_condition = SQL(
+                "st_line.statement_id = %s",
+                last_st_line_query.subselect("statement_id"),
+            )
         else:
             last_statement_id_condition = SQL("st_line.statement_id IS NULL")
 
@@ -577,16 +568,8 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                 convert = not (
                     journal_currency and res["currency_id"] == journal_currency.id
                 )
-                amount_currency = (
-                    res["amount_residual_currency"]
-                    if res["is_account_reconcile"]
-                    else res["amount_currency"]
-                )
-                balance = (
-                    res["amount_residual"]
-                    if res["is_account_reconcile"]
-                    else res["balance"]
-                )
+                amount_currency = res["amount_residual_currency"]
+                balance = res["amount_residual"]
                 foreign_currency = self.env["res.currency"].browse(res["currency_id"])
 
                 return self._prepare_custom_engine_result(
@@ -614,23 +597,14 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                         journal_currency and res["currency_id"] == journal_currency.id
                     )
                     if convert:
-                        balance = (
-                            res["amount_residual"]
-                            if res["is_account_reconcile"]
-                            else res["balance"]
-                        )
                         amount += company_currency._convert(
-                            balance,
+                            res["amount_residual"],
                             journal_currency,
                             journal.company_id,
                             options["date"]["date_to"],
                         )
                     else:
-                        amount += (
-                            res["amount_residual_currency"]
-                            if res["is_account_reconcile"]
-                            else res["amount_currency"]
-                        )
+                        amount += res["amount_residual_currency"]
 
                 return self._prepare_custom_engine_result(
                     amount=amount,
@@ -672,13 +646,9 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                   account_move_line.move_name AS name,
                   account_move_line.ref,
                   account_move_line.date,
-                  account.reconcile AS is_account_reconcile,
                   SUM(account_move_line.amount_residual) AS amount_residual,
-                  SUM(account_move_line.balance) AS balance,
-                  SUM(account_move_line.amount_residual_currency) AS amount_residual_currency,
-                  SUM(account_move_line.amount_currency) AS amount_currency
+                  SUM(account_move_line.amount_residual_currency) AS amount_residual_currency
              FROM %(table_references)s
-             JOIN account_account account ON account.id = account_move_line.account_id
             WHERE %(search_condition)s
               AND %(is_receipt)s
          GROUP BY %(group_by)s,
@@ -688,8 +658,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                   account_move_line.currency_id,
                   account_move_line.move_name,
                   account_move_line.ref,
-                  account_move_line.date,
-                  account.reconcile
+                  account_move_line.date
            """,
             select_from_groupby=SQL("%s AS grouping_key", groupby_field_sql),
             table_references=query.from_clause,
@@ -943,16 +912,19 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         :param options: The report options, providing the upper bound date.
         :return:        An account.bank.statement record or an empty recordset.
         """
-        report_date = fields.Date.from_string(options["date"]["date_to"])
-        last_statement_domain = [
-            ("journal_id", "=", journal.id),
-            ("statement_id", "!=", False),
-            ("date", "<=", report_date),
-        ]
         last_st_line = self.env["account.bank.statement.line"].search(
-            last_statement_domain, order="date desc, id desc", limit=1
+            self._get_domain_last_bank_statement_line(journal, options),
+            order="date desc, id desc",
+            limit=1,
         )
         return last_st_line.statement_id
+
+    def _get_domain_last_bank_statement_line(self, journal, options) -> list:
+        return [
+            ("journal_id", "=", journal.id),
+            ("statement_id", "!=", False),
+            ("date", "<=", fields.Date.from_string(options["date"]["date_to"])),
+        ]
 
     def _get_inconsistent_statements(self, options, journal):
         """Retrieve the statements up to the report date whose starting balance does not match the
@@ -962,13 +934,16 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         :param journal: The account.journal from which this report has been opened.
         :return:        An account.bank.statement recordset.
         """
-        return self.env["account.bank.statement"].search(
+        statements = self.env["account.bank.statement"].search(
             [
                 ("journal_id", "=", journal.id),
                 ("date", "<=", options["date"]["date_to"]),
-                ("is_valid", "=", False),
             ]
         )
+        if not statements:
+            return statements
+        invalid_ids = set(statements._get_invalid_statement_ids())
+        return statements.filtered(lambda statement: statement.id in invalid_ids)
 
     def _get_domain_bank_miscellaneous_move_lines(self, options, journal):
         """Get the domain retrieving the journal items affecting the bank account but not linked to a

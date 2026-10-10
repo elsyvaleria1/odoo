@@ -105,7 +105,7 @@ class AccountReconcileModelLine(models.Model):
         for record in self:
             if record.amount_type == "regex":
                 try:
-                    re.compile(record.amount_string)
+                    pattern = re.compile(record.amount_string)
                 except re.error as err:
                     _debug.logic(
                         "reco_model_line_rejected",
@@ -118,6 +118,19 @@ class AccountReconcileModelLine(models.Model):
                             model=record.model_id.display_name,
                         )
                     ) from err
+                if not pattern.groups:
+                    _debug.logic(
+                        "reco_model_line_rejected",
+                        reco_model_line=record,
+                        reason="regex_without_group",
+                    )
+                    raise ValidationError(
+                        self.env._(
+                            "%(model)s: the amount regex must capture the amount in "
+                            "parentheses, for example BRT: ([\\d,.]+).",
+                            model=record.model_id.display_name,
+                        )
+                    )
                 continue
 
             if parse_amount(record.amount_string) is None:

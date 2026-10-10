@@ -125,18 +125,12 @@ def is_valid_structured_reference_si(reference: str) -> bool:
         _debug.logic("si_prefix_rejected", reason="prefix")
         return False
 
-    if sanitized_reference.count("-") > 2:
-        return False
-
     match = re.match(r"^(\d+)-(\d+)-(\d+)$", sanitized_reference)
     if not match:
         _debug.logic("si_shape_rejected", reason="groups")
         return False
 
     core = sanitized_reference.replace("-", "")
-    if not core.isdigit() or len(core) < 2:
-        return False
-
     digits, given_check_digit = core[:-1], core[-1]
 
     weights = list(range(2, 14))
@@ -158,20 +152,16 @@ def is_valid_structured_reference_si(reference: str) -> bool:
 
 
 def is_valid_structured_reference(reference: str | Literal[False] | None) -> bool:
-    reference = normalize_structured_reference(reference or "")
-
+    if not reference:
+        return False
     return (
-        (
-            is_valid_structured_reference_be(reference)
-            or is_valid_structured_reference_dk(reference)
-            or is_valid_structured_reference_fi(reference)
-            or is_valid_structured_reference_no_se(reference)
-            or is_valid_structured_reference_si(reference)
-            or is_valid_structured_reference_nl(reference)
-            or is_valid_structured_reference_iso(reference)
-        )
-        if reference
-        else False
+        is_valid_structured_reference_be(reference)
+        or is_valid_structured_reference_dk(reference)
+        or is_valid_structured_reference_fi(reference)
+        or is_valid_structured_reference_no_se(reference)
+        or is_valid_structured_reference_si(reference)
+        or is_valid_structured_reference_nl(reference)
+        or is_valid_structured_reference_iso(reference)
     )
 
 
@@ -187,7 +177,7 @@ def is_valid_structured_reference_for_country(
         "SI": is_valid_structured_reference_si,
     }
 
-    reference = normalize_structured_reference(reference or "")
+    reference = reference or ""
     if check := check_per_country.get(country_code.upper()):
         return bool(check(reference))
     return bool(is_valid_structured_reference_iso(reference))

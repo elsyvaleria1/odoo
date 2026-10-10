@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 
 from odoo import api, fields, models
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 
@@ -11,6 +12,9 @@ _DIGIT_RUN = re.compile(r"\d+")
 # One earlier transaction is an anecdote; the label of a transfer between
 # strangers repeats that often by chance.
 COUNTERPARTY_KEY_MIN_PRECEDENTS = 2
+# The bank names the counterparty outright, so one reviewed transaction with that
+# name is as strong as the name lookup that runs before it.
+PARTNER_NAME_MIN_PRECEDENTS = 1
 COUNTERPARTY_KEY_PRECEDENTS_READ = 3
 
 
@@ -132,78 +136,32 @@ class AccountBankStatementLine(models.Model):
             if (partner_id := self._first_unambiguous_partner(row, ranks))
         }
 
-    @_debug.perf.timed
-    def _partners_by_earlier_transactions(self) -> dict:
-        lines = self.filtered("partner_name")
+    def _partners_by_precedents(self, key_field, min_precedents) -> dict:
+        lines = self.filtered(key_field)
         _debug.pipeline(
-            "earlier_transactions_lookup_started",
+            "precedents_lookup_started",
             stline=self,
-            with_partner_name=len(lines),
+            key_field=key_field,
+            with_key=len(lines),
         )
         if not lines:
             return {}
-        query = SQL(
-            """
-            WITH st_lines AS (
-                SELECT st_line.partner_id AS partner_id,
-                       st_line.partner_name AS partner_name,
-                       st_line.company_id AS company_id,
-                       ROW_NUMBER() OVER (PARTITION BY st_line.partner_name ORDER BY st_line.id DESC) AS row_number
-                  FROM account_bank_statement_line st_line
-                  JOIN res_partner partner ON partner.id = st_line.partner_id
-                 WHERE st_line.is_reconciled = TRUE
-                   AND st_line.partner_name = ANY(%(partner_names)s)
-                   AND st_line.company_id = ANY(%(company_ids)s)
-                   AND partner.active
-            )
-            -- MIN() rather than a GROUP BY on the column: the HAVING already restricts
-            -- each group to a single distinct partner, so any aggregate names it.
-            SELECT MIN(partner_id) AS partner_id,
-                   ARRAY_AGG(DISTINCT company_id) AS company_ids,
-                   partner_name
-              FROM st_lines
-             WHERE st_lines.row_number <= 3
-          GROUP BY partner_name
-            HAVING COUNT(DISTINCT partner_id) = 1
-        """,
-            partner_names=lines.mapped("partner_name"),
-            company_ids=lines.company_id.ids,
-        )
-        by_name = {
-            row["partner_name"]: row for row in self.env.execute_query_dict(query)
-        }
-        _debug.pipeline(
-            "earlier_transactions_names_resolved",
-            stline=self,
-            unambiguous_names=len(by_name),
-        )
-        return {
-            line.id: match["partner_id"]
-            for line in lines
-            if (match := by_name.get(line.partner_name))
-            and line.company_id.id in match["company_ids"]
-        }
-
-    @_debug.perf.timed
-    def _partners_by_counterparty_key(self) -> dict:
-        lines = self.filtered("counterparty_key")
-        if not lines:
-            return {}
+        key = SQL.identifier("st_line", key_field)
         query = SQL(
             """
             WITH precedents AS (
                 SELECT st_line.partner_id,
                        st_line.company_id,
-                       st_line.counterparty_key,
+                       %(key)s AS key,
                        ROW_NUMBER() OVER (
-                           PARTITION BY st_line.company_id, st_line.counterparty_key
+                           PARTITION BY st_line.company_id, %(key)s
                                ORDER BY st_line.id DESC
                        ) AS row_number
                   FROM account_bank_statement_line st_line
                   JOIN res_partner partner ON partner.id = st_line.partner_id
                   JOIN account_move move ON move.id = st_line.move_id
                  WHERE st_line.is_reconciled = TRUE
-                   AND st_line.counterparty_key = ANY(%(keys)s)
+                   AND %(key)s = ANY(%(keys)s)
                    AND st_line.company_id = ANY(%(company_ids)s)
                    AND partner.active
                    -- a match still awaiting review is a guess, not a precedent
@@ -211,33 +169,44 @@ class AccountBankStatementLine(models.Model):
             )
             SELECT MIN(partner_id) AS partner_id,
                    company_id,
-                   counterparty_key
+                   key
               FROM precedents
              WHERE row_number <= %(read)s
-          GROUP BY company_id, counterparty_key
+          GROUP BY company_id, key
             HAVING COUNT(DISTINCT partner_id) = 1
                AND COUNT(*) >= %(minimum)s
         """,
-            keys=list(set(lines.mapped("counterparty_key"))),
+            key=key,
+            keys=list(set(lines.mapped(key_field))),
             company_ids=lines.company_id.ids,
             read=COUNTERPARTY_KEY_PRECEDENTS_READ,
-            minimum=COUNTERPARTY_KEY_MIN_PRECEDENTS,
+            minimum=min_precedents,
         )
         by_key = {
-            (row["company_id"], row["counterparty_key"]): row["partner_id"]
+            (row["company_id"], row["key"]): row["partner_id"]
             for row in self.env.execute_query_dict(query)
         }
         _debug.pipeline(
-            "counterparty_keys_resolved",
+            "precedents_resolved",
             stline=self,
-            with_key=len(lines),
+            key_field=key_field,
             unanimous_keys=len(by_key),
         )
         return {
             line.id: partner_id
             for line in lines
-            if (partner_id := by_key.get((line.company_id.id, line.counterparty_key)))
+            if (partner_id := by_key.get((line.company_id.id, line[key_field])))
         }
+
+    @_debug.perf.timed
+    def _partners_by_earlier_transactions(self) -> dict:
+        return self._partners_by_precedents("partner_name", PARTNER_NAME_MIN_PRECEDENTS)
+
+    @_debug.perf.timed
+    def _partners_by_counterparty_key(self) -> dict:
+        return self._partners_by_precedents(
+            "counterparty_key", COUNTERPARTY_KEY_MIN_PRECEDENTS
+        )
 
     def _get_partner_lookups(self) -> list:
         """Return the names of the partner lookups, most trusted first.
@@ -293,14 +262,17 @@ class AccountBankStatementLine(models.Model):
 
     def set_partner_bank_statement_line(self, partner_id) -> None:
         all_statement_lines = self
-        if partner_names := [line.partner_name for line in self if line.partner_name]:
+        same_name_domains = [
+            Domain("journal_id", "=", journal.id)
+            & Domain("partner_name", "in", partner_names)
+            for journal, lines in self.grouped("journal_id").items()
+            if (partner_names := lines.filtered("partner_name").mapped("partner_name"))
+        ]
+        if same_name_domains:
             all_statement_lines |= self.search(
-                [
-                    ("journal_id", "=", self.journal_id.id),
-                    ("partner_name", "in", partner_names),
-                    ("is_reconciled", "=", False),
-                    ("partner_id", "=", False),
-                ]
+                Domain.OR(same_name_domains)
+                & Domain("is_reconciled", "=", False)
+                & Domain("partner_id", "=", False)
             )
 
         (all_statement_lines - self).move_id._track_set_author(
