@@ -1,4 +1,5 @@
 import logging
+import time
 
 from odoo import api, models, tools
 from odoo.exceptions import AccessError
@@ -29,9 +30,12 @@ REPLY_CHANNEL = register_channel_scope(
 REPLY_ROUTE = tools.register_signed_scope(
     "iot.reply_route",
     purpose="carry through an IoT box the reply channel its answer returns to",
-    lifetime="undated: one request's round trip",
+    lifetime="ROUTE_LIFETIME from the request, the device events it owns included",
 )
 ROUTE_SEPARATOR = "|"
+# An upstream box authenticates none of its answers: a route a box ever echoed
+# could otherwise be replayed through it for good.
+ROUTE_LIFETIME = 24 * 3600
 # What a web client may ask of a box; the rest is the server's to send.
 CLIENT_MESSAGE_TYPES = frozenset({"iot_action", "webrtc_offer", "test_connection"})
 # Each is a verb of iot.box, granted by its ir.access row.
@@ -142,20 +146,28 @@ class IotChannel(models.AbstractModel):
             {**message, "session_id": session_id},
         )
 
-    def _wrap_session_id(self, reply_key, session_id, box_identifier) -> str:
+    def _wrap_session_id(
+        self, reply_key, session_id, box_identifier, issued=None
+    ) -> str:
         session_id = str(session_id)
+        issued = str(int(time.time() if issued is None else issued))
         signature = tools.hmac(
-            self.env, REPLY_ROUTE, (reply_key, session_id, box_identifier)
+            self.env, REPLY_ROUTE, (reply_key, session_id, box_identifier, issued)
         )
-        return ROUTE_SEPARATOR.join((reply_key, session_id, signature))
+        return ROUTE_SEPARATOR.join((reply_key, session_id, issued, signature))
 
     def _unwrap_session_id(self, wrapped, box_identifier) -> tuple[str, str] | None:
         parts = str(wrapped or "").split(ROUTE_SEPARATOR)
-        if len(parts) != 3 or not box_identifier:
+        if len(parts) != 4 or not box_identifier or not parts[2].isdigit():
             return None
-        reply_key, session_id, signature = parts
+        reply_key, session_id, issued, signature = parts
+        if time.time() - int(issued) > ROUTE_LIFETIME:
+            return None
         if not tools.is_hmac_valid(
-            self.env, REPLY_ROUTE, (reply_key, session_id, box_identifier), signature
+            self.env,
+            REPLY_ROUTE,
+            (reply_key, session_id, box_identifier, issued),
+            signature,
         ):
             return None
         return reply_key, session_id

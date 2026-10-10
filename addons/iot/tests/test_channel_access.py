@@ -1,10 +1,15 @@
+import time
 from unittest.mock import patch
 
 from odoo.tests import HttpCase, new_test_user, tagged
 from odoo.tests.http import JsonRpcException
 
 from odoo.addons.bus.tools.channel_capability import channel_target, resolve_capability
-from odoo.addons.iot.models.iot_channel import BOX_CHANNEL, REPLY_CHANNEL
+from odoo.addons.iot.models.iot_channel import (
+    BOX_CHANNEL,
+    REPLY_CHANNEL,
+    ROUTE_LIFETIME,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -258,3 +263,23 @@ class TestIotChannelAccess(HttpCase):
             },
         )
         self.assertEqual(self.sent, [], "a device event nobody asked for")
+
+    def test_a_route_older_than_its_lifetime_reaches_nobody(self):
+        channels = self.env["iot.channel"]
+        key = f"user.{self.alice.id}"
+        for age, delivered in ((ROUTE_LIFETIME + 1, 0), (ROUTE_LIFETIME - 60, 1)):
+            with self.subTest(age=age):
+                self.sent.clear()
+                route = channels._wrap_session_id(
+                    key, "s-1", "box_shop", issued=time.time() - age
+                )
+                self.call_jsonrpc(
+                    "/iot/box/send_websocket",
+                    {
+                        "session_id": route,
+                        "iot_box_identifier": "box_shop",
+                        "device_identifier": "box_shop",
+                        "status": "success",
+                    },
+                )
+                self.assertEqual(len(self.sent), delivered)
