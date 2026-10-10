@@ -54,6 +54,28 @@
                         class="text-danger" />
                 </group>
             </xpath>
+            <xpath expr="//page[@name='extra']" position="after">
+                <page
+                    name="carrier_tracking_details"
+                    string="Shipment Tracking"
+                    invisible="not carrier_tracking_provider or not carrier_tracking_ref">
+                    <button
+                        name="action_fetch_carrier_tracking"
+                        type="object"
+                        string="Refresh Tracking"
+                        icon="fa-refresh"
+                        class="oe_link" />
+                    <group name="carrier_tracking_details_sync">
+                        <field name="date_carrier_tracking_sync" />
+                        <field
+                            name="carrier_tracking_error"
+                            invisible="not carrier_tracking_error"
+                            class="text-danger" />
+                    </group>
+                    <p>Carrier documents open in a separate tab. They do not replace the signed delivery note.</p>
+                    <field name="carrier_tracking_details_html" />
+                </page>
+            </xpath>
         </field>
     </record>
 

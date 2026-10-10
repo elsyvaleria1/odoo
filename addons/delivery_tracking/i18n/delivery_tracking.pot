@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-09 23:27+0000\n"
-"PO-Revision-Date: 2026-10-09 23:27+0000\n"
+"POT-Creation-Date: 2026-10-10 07:49+0000\n"
+"PO-Revision-Date: 2026-10-10 07:49+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -28,13 +28,31 @@ msgid "%(carrier)s · %(code)s %(event)s · %(branch)s · %(date)s"
 msgstr ""
 
 #. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "%(reference)s: %(event)s (%(count)s tracking numbers)"
+msgstr ""
+
+#. module: delivery_tracking
 #: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__at_destination
 msgid "At Destination"
 msgstr ""
 
 #. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Branch"
+msgstr ""
+
+#. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_status_branch
 msgid "Carrier Branch"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Carrier Documents"
 msgstr ""
 
 #. module: delivery_tracking
@@ -74,6 +92,18 @@ msgid "Carrier Status Read On"
 msgstr ""
 
 #. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_details
+msgid "Carrier Tracking Details"
+msgstr ""
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid ""
+"Carrier documents open in a separate tab. They do not replace the signed "
+"delivery note."
+msgstr ""
+
+#. module: delivery_tracking
 #: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_search_carrier_tracking
 msgid "Carrier: At Destination"
 msgstr ""
@@ -89,8 +119,26 @@ msgid "Carrier: On the Way"
 msgstr ""
 
 #. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Date"
+msgstr ""
+
+#. module: delivery_tracking
 #: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__delivered
 msgid "Delivered"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Delivery Evidence"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Destination"
 msgstr ""
 
 #. module: delivery_tracking
@@ -107,6 +155,12 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_estimated_delivery
 msgid "Estimated Delivery"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Event"
 msgstr ""
 
 #. module: delivery_tracking
@@ -138,6 +192,12 @@ msgid "Notify on Delivery"
 msgstr ""
 
 #. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Origin"
+msgstr ""
+
+#. module: delivery_tracking
 #: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__other
 msgid "Other"
 msgstr ""
@@ -145,6 +205,12 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__out_for_delivery
 msgid "Out for Delivery"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Packages"
 msgstr ""
 
 #. module: delivery_tracking
@@ -166,13 +232,66 @@ msgid ""
 msgstr ""
 
 #. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Receipt"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_received_by
 msgid "Received By"
 msgstr ""
 
 #. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid "Refresh Tracking"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Refresh tracking to consult the shipment history and documents."
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Service"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_details_html
+msgid "Shipment History and Documents"
+msgstr ""
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid "Shipment Tracking"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Shipped On"
+msgstr ""
+
+#. module: delivery_tracking
 #: model:ir.model,name:delivery_tracking.model_delivery_carrier
 msgid "Shipping Methods"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "The carrier has not published documents for this shipment."
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "The carrier returned no movement history."
 msgstr ""
 
 #. module: delivery_tracking
@@ -189,6 +308,18 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.actions.server,name:delivery_tracking.ir_cron_fetch_carrier_tracking_ir_actions_server
 msgid "Transfers: read carrier tracking status"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Waiting for the status of all tracking numbers."
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Weight (kg)"
 msgstr ""
 
 #. module: delivery_tracking

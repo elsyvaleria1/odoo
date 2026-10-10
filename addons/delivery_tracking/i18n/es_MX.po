@@ -10,8 +10,8 @@ msgstr ""
 "PO-Revision-Date: 2026-10-09 23:27+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"MIME-Version: 1.0\n"
 "Language: es_MX\n"
+"MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -116,8 +116,8 @@ msgid ""
 "Gets a to-do when the carrier reports an open transfer as delivered. Empty: "
 "the transfer's responsible."
 msgstr ""
-"Recibe una actividad cuando el transportista reporta como entregada "
-"una transferencia abierta. Vacío: el responsable de la transferencia."
+"Recibe una actividad cuando el transportista reporta como entregada una "
+"transferencia abierta. Vacío: el responsable de la transferencia."
 
 #. module: delivery_tracking
 #: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_delivery_kind__home
@@ -171,6 +171,8 @@ msgstr ""
 "conector de transportista se agrega aquí."
 
 #. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_received_by
 msgid "Received By"
 msgstr "Recibió"
@@ -202,5 +204,137 @@ msgid ""
 "Where the carrier last reported the shipment, read on a schedule from its "
 "tracking number."
 msgstr ""
-"Dónde reportó el transportista el envío la última vez, leído "
-"periódicamente con su número de guía."
+"Dónde reportó el transportista el envío la última vez, leído periódicamente "
+"con su número de guía."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "%(reference)s: %(event)s (%(count)s tracking numbers)"
+msgstr "%(reference)s: %(event)s (%(count)s guías)"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Branch"
+msgstr "Sucursal"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Carrier Documents"
+msgstr "Documentos del transportista"
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_details
+msgid "Carrier Tracking Details"
+msgstr "Detalle del rastreo del transportista"
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid ""
+"Carrier documents open in a separate tab. They do not replace the signed "
+"delivery note."
+msgstr ""
+"Los documentos del transportista se abren en otra pestaña. No sustituyen la "
+"OUT firmada."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Date"
+msgstr "Fecha"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Delivery Evidence"
+msgstr "Evidencia de entrega"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Destination"
+msgstr "Destino"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Event"
+msgstr "Movimiento"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Origin"
+msgstr "Origen"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Packages"
+msgstr "Bultos"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Receipt"
+msgstr "Acuse"
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid "Refresh Tracking"
+msgstr "Actualizar rastreo"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Refresh tracking to consult the shipment history and documents."
+msgstr ""
+"Actualiza el rastreo para consultar el historial y los documentos del envío."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Service"
+msgstr "Servicio"
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_details_html
+msgid "Shipment History and Documents"
+msgstr "Historial y documentos del envío"
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_form_carrier_tracking
+msgid "Shipment Tracking"
+msgstr "Seguimiento del envío"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Shipped On"
+msgstr "Fecha de embarque"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "The carrier has not published documents for this shipment."
+msgstr "El transportista no tiene documentos publicados para este envío."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "The carrier returned no movement history."
+msgstr "El transportista no devolvió movimientos para esta guía."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Waiting for the status of all tracking numbers."
+msgstr "Falta consultar el estado de alguna de las guías."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking.py:0
+msgid "Weight (kg)"
+msgstr "Peso (kg)"

@@ -27,7 +27,8 @@ class DeliveryCarrier(models.Model):
         :return: ``state`` (a ``carrier_tracking_state`` value), ``code``,
             ``text``, ``branch``, ``date`` (naive UTC datetime or None),
             ``kind`` (``home``, ``pickup`` or None), ``estimated`` and
-            ``received_by``
+            ``received_by``. Optional ``events``, ``documents`` and ``shipment``
+            carry JSON-compatible details; event dates are UTC strings.
         :rtype: dict
         :raise UserError: the carrier answered with an error or nothing usable
         """
@@ -38,3 +39,8 @@ class DeliveryCarrier(models.Model):
                 f"{self.tracking_provider!r} implements no tracking status reader"
             )
         return fetch(reference)
+
+    def _is_tracking_document_url(self, url) -> bool:
+        """Whether this provider permits opening the supplied document URL."""
+        # Each connector declares the hosts it actually receives documents from.
+        return False

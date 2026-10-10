@@ -1,8 +1,8 @@
 import logging
-from collections import defaultdict
 from datetime import timedelta
 
 import requests
+from markupsafe import Markup
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
@@ -83,9 +83,156 @@ class StockPicking(models.Model):
         copy=False,
         readonly=True,
     )
+    carrier_tracking_details = fields.Json(
+        string="Carrier Tracking Details",
+        copy=False,
+        readonly=True,
+    )
+    carrier_tracking_details_html = fields.Html(
+        string="Shipment History and Documents",
+        compute="_compute_carrier_tracking_details_html",
+    )
+
+    def write(self, vals):
+        if not {"carrier_id", "carrier_tracking_ref"}.intersection(vals):
+            return super().write(vals)
+        changed = self.filtered(
+            lambda picking: (
+                ("carrier_id" in vals and vals["carrier_id"] != picking.carrier_id.id)
+                or (
+                    "carrier_tracking_ref" in vals
+                    and vals["carrier_tracking_ref"] != picking.carrier_tracking_ref
+                )
+            )
+        )
+        if not changed:
+            return super().write(vals)
+        reset = dict.fromkeys(
+            (
+                "carrier_tracking_state",
+                "carrier_delivery_kind",
+                "carrier_status_code",
+                "carrier_status_text",
+                "carrier_status_branch",
+                "date_carrier_status",
+                "carrier_estimated_delivery",
+                "carrier_received_by",
+                "date_carrier_tracking_sync",
+                "carrier_tracking_error",
+                "carrier_tracking_details",
+            ),
+            False,
+        )
+        super(StockPicking, changed).write(vals | reset)
+        return (
+            super(StockPicking, self - changed).write(vals) if self - changed else True
+        )
+
+    @api.depends(
+        "carrier_tracking_details",
+        "carrier_id.tracking_provider",
+        "carrier_tracking_ref",
+    )
+    @api.depends_context("lang", "tz")
+    def _compute_carrier_tracking_details_html(self):
+        for picking in self:
+            content = []
+            details = picking.carrier_tracking_details or {}
+            for reference in picking._get_carrier_tracking_references():
+                if reference not in details:
+                    continue
+                status = details[reference]
+                content.append(
+                    Markup("<h4>%s</h4><p>%s</p>") % (reference, status["text"])
+                )
+                shipment = status.get("shipment") or {}
+                labels = (
+                    ("service", self.env._("Service")),
+                    ("origin", self.env._("Origin")),
+                    ("destination", self.env._("Destination")),
+                    ("weight", self.env._("Weight (kg)")),
+                    ("pieces", self.env._("Packages")),
+                    ("shipped_on", self.env._("Shipped On")),
+                )
+                content.extend(
+                    Markup("<p><strong>%s:</strong> %s</p>") % (label, shipment[key])
+                    for key, label in labels
+                    if shipment.get(key)
+                )
+                events = status.get("events") or []
+                if events:
+                    content.append(
+                        Markup(
+                            '<div class="table-responsive"><table class="table table-sm"><thead><tr>%s</tr></thead><tbody>'
+                        )
+                        % Markup("").join(
+                            Markup("<th>%s</th>") % label
+                            for label in (
+                                self.env._("Date"),
+                                self.env._("Event"),
+                                self.env._("Branch"),
+                                self.env._("Received By"),
+                            )
+                        )
+                    )
+                    content.extend(
+                        Markup("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>")
+                        % (
+                            format_datetime(self.env, event["date"])
+                            if event.get("date")
+                            else "",
+                            event.get("text", ""),
+                            event.get("branch", ""),
+                            event.get("received_by", ""),
+                        )
+                        for event in events
+                    )
+                    content.append(Markup("</tbody></table></div>"))
+                else:
+                    content.append(
+                        Markup("<p>%s</p>")
+                        % self.env._("The carrier returned no movement history.")
+                    )
+                documents = [
+                    doc
+                    for doc in status.get("documents", [])
+                    if picking.carrier_id._is_tracking_document_url(doc.get("url"))
+                ]
+                content.append(Markup("<h5>%s</h5>") % self.env._("Carrier Documents"))
+                if not documents:
+                    content.append(
+                        Markup("<p>%s</p>")
+                        % self.env._(
+                            "The carrier has not published documents for this shipment."
+                        )
+                    )
+                for index, document in enumerate(documents, 1):
+                    label = (
+                        self.env._("Receipt")
+                        if document["kind"] == "receipt"
+                        else self.env._("Delivery Evidence")
+                    )
+                    content.append(
+                        Markup(
+                            '<p><a href="%s" target="_blank" rel="noopener noreferrer">%s %s (%s)</a></p>'
+                        )
+                        % (
+                            document["url"],
+                            label,
+                            index,
+                            document["format"],
+                        )
+                    )
+            picking.carrier_tracking_details_html = Markup("").join(content) or (
+                Markup("<p>%s</p>")
+                % self.env._(
+                    "Refresh tracking to consult the shipment history and documents."
+                )
+            )
 
     # ACTION METHODS
     def action_fetch_carrier_tracking(self) -> None:
+        self.check_access("write")
         self._fetch_carrier_tracking()
 
     # CRON METHODS
@@ -103,30 +250,96 @@ class StockPicking(models.Model):
 
     # BUSINESS METHODS
     def _fetch_carrier_tracking(self) -> None:
-        """Read each transfer's tracking number from its carrier and record the
-        status: one call per carrier and number, each in its own savepoint, so
-        one bad number never stops the others."""
-        groups = defaultdict(self.browse)
+        """Read each carrier and number once, preserving successful snapshots."""
+        groups = {}
         for picking in self:
             if picking.carrier_id.tracking_provider and picking.carrier_tracking_ref:
-                # several numbers in one field: the first one is read
-                reference = picking.carrier_tracking_ref.split(",")[0].strip()
-                groups[picking.carrier_id, reference] |= picking
-        for (carrier, reference), pickings in groups.items():
+                for reference in picking._get_carrier_tracking_references():
+                    groups[picking.carrier_id, reference] = None
+        results, errors = {}, {}
+        for key in groups:
+            carrier, reference = key
             try:
                 with self.env.cr.savepoint():
                     status = carrier._fetch_tracking_status(reference)
-                    pickings._record_carrier_tracking(carrier, status)
+                    results[carrier, reference] = status | {
+                        "date": fields.Datetime.to_string(status["date"]),
+                    }
             except (UserError, ValueError, requests.RequestException) as error:
                 _logger.info(
                     "Tracking %s with %s failed: %s", reference, carrier.name, error
                 )
-                pickings.write(
+                errors[carrier, reference] = str(error)
+        for picking in self:
+            carrier = picking.carrier_id
+            references = picking._get_carrier_tracking_references()
+            if not carrier.tracking_provider or not references:
+                continue
+            details = {
+                key: value
+                for key, value in (picking.carrier_tracking_details or {}).items()
+                if key in references
+            }
+            updated = False
+            for reference in references:
+                if (carrier, reference) in results:
+                    details[reference] = results[carrier, reference]
+                    updated = True
+            with self.env.cr.savepoint():
+                if updated:
+                    picking._record_carrier_tracking(
+                        carrier,
+                        picking._aggregate_carrier_tracking(details, references),
+                    )
+                picking.write(
                     {
-                        "carrier_tracking_error": str(error)[:250],
+                        "carrier_tracking_details": details,
+                        "carrier_tracking_error": "; ".join(
+                            f"{reference}: {errors[carrier, reference]}"
+                            for reference in references
+                            if (carrier, reference) in errors
+                        )[:250]
+                        or False,
                         "date_carrier_tracking_sync": fields.Datetime.now(),
                     }
                 )
+
+    def _get_carrier_tracking_references(self) -> list[str]:
+        self.check_singleton()
+        return list(
+            dict.fromkeys(
+                ref.strip()
+                for ref in (self.carrier_tracking_ref or "").split(",")
+                if ref.strip()
+            )
+        )
+
+    def _aggregate_carrier_tracking(self, details, references) -> dict:
+        """Summarize all numbers without treating a partial delivery as complete."""
+        order = [
+            "other",
+            "documented",
+            "in_transit",
+            "at_destination",
+            "out_for_delivery",
+            "delivered",
+        ]
+        reference = min(details, key=lambda ref: order.index(details[ref]["state"]))
+        status = details[reference].copy()
+        status["date"] = fields.Datetime.to_datetime(status["date"])
+        if len(references) > 1:
+            status["text"] = self.env._(
+                "%(reference)s: %(event)s (%(count)s tracking numbers)",
+                reference=reference,
+                event=status["text"],
+                count=len(references),
+            )
+        if len(details) != len(references):
+            status.update(state="other", code="", date=None, received_by="")
+            status["text"] = self.env._(
+                "Waiting for the status of all tracking numbers."
+            )
+        return status
 
     def _record_carrier_tracking(self, carrier, status) -> None:
         """Write a carrier status on the transfers that share its number, post
@@ -134,7 +347,7 @@ class StockPicking(models.Model):
         who validates it."""
         news = self.filtered(
             lambda picking: (
-                (picking.carrier_status_code, picking.date_carrier_status)
+                (picking.carrier_status_code or "", picking.date_carrier_status or None)
                 != (status["code"], status["date"])
             )
         )
