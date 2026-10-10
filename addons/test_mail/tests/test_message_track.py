@@ -2144,9 +2144,9 @@ class TestTrackingFieldReadOnSomeRecords(MailCommon):
         def queries(records):
             trackings = records.message_ids.sudo().tracking_value_ids
             self.env.invalidate_all()
-            before = self.cr.sql_log_count
+            before = self.cr.sql_statement_count
             trackings._filtered_has_field_access(env)
-            return self.cr.sql_log_count - before
+            return self.cr.sql_statement_count - before
 
         queries(self.records)
         self.assertEqual(queries(self.records), queries(self.records[:1]))
