@@ -46,3 +46,17 @@ class TestAnInternalUserReadsBoxes(TransactionCase):
             self.env, login="till_admin", groups="base.group_user,base.group_system"
         )
         self.assertTrue(self.box.with_user(admin).read(["token"])[0]["token"])
+
+    def test_an_iot_administrator_edits_a_box_and_its_devices_but_no_other_row(self):
+        admin = new_test_user(
+            self.env,
+            login="iot_box_admin",
+            groups="base.group_user,iot.group_iot_admin",
+        )
+        self.box.with_user(admin).write({"name": "Front till box"})
+        self.scanner.with_user(admin).write({"name": "Front scanner"})
+        self.assertEqual(self.box.name, "Front till box")
+        with self.assertRaises(AccessError):
+            self.other_device.with_user(admin).write({"name": "Renamed"})
+        with self.assertRaises(AccessError):
+            self.box.with_user(self.user).write({"name": "Clerk's box"})

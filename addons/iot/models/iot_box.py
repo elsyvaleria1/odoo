@@ -39,7 +39,7 @@ class IotBox(models.Model):
     _inherits = {"device.device": "device_id"}
     # Who may open a box to remote debugging is its verb's row
     # (security/ir_access.xml), checked where the request leaves for the box.
-    _access_verbs = {"remote_debug": models.Verb(requires="read")}
+    _access_verbs = {"remote_debug": models.Verb()}
 
     device_id = fields.Many2one(
         comodel_name="device.device",
