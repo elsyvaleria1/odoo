@@ -145,12 +145,10 @@ class WizardMailTemplatePreview(models.TransientModel):
         for preview in self:
             preview.has_attachments = bool(preview.attachment_ids)
 
-    @api.depends("lang")
     def _compute_has_several_languages_installed(self) -> None:
-        for preview in self:
-            preview.has_several_languages_installed = bool(
-                preview._fields["lang"].selection(preview)
-            )
+        self.has_several_languages_installed = (
+            len(self.env["res.lang"].get_installed()) > 1
+        )
 
     @api.depends("mail_template_id")
     def _compute_resource_ref(self) -> None:

@@ -3794,6 +3794,25 @@ class TestMailMailSettlingIsNotDelivery(MailCommon):
         self.assertEqual(mail.state, "exception")
         self.assertEqual(mail.failure_type, "unknown")
 
+    def test_an_unclassified_error_is_not_an_earlier_recipient_address_failure(self):
+        invalid = self.env["res.partner"].create(
+            {"email": "not-an-email", "name": "Invalid"}
+        )
+        mail = self._notification_mail()
+        mail.write({"auto_delete": True, "recipient_ids": [Command.link(invalid.id)]})
+        with self.mock_mail_gateway():
+            self.send_email_mocked.side_effect = [
+                OutgoingEmailError(
+                    "no valid recipient", self.env["ir.mail_server"].NO_VALID_RECIPIENT
+                ),
+                RuntimeError("boom"),
+            ]
+            mail.send(raise_exception=False)
+        self.assertTrue(mail.exists(), "a mail that failed is kept, not auto-deleted")
+        self.assertEqual(mail.state, "exception")
+        self.assertEqual(mail.failure_type, "unknown")
+        self.assertIn("boom", mail.failure_reason)
+
     def test_settling_survives_a_multi_record_caller(self):
         mails = self._notification_mail() | self._notification_mail()
         mails._postprocess_sent_message(

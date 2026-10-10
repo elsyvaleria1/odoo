@@ -1,5 +1,6 @@
 import ast
 import base64
+import hashlib
 import itertools
 import typing
 from collections import defaultdict
@@ -12,6 +13,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
+from odoo.tools import SQL
 from odoo.tools.mail import (
     email_normalize,
     email_normalize_all,
@@ -74,7 +76,13 @@ class SentEmails:
     __slots__ = ("by_email",)
 
     def __init__(self) -> None:
-        self.by_email: dict[str, list[dict]] = {}
+        self.by_email: dict[str, set[tuple[str | None, bytes]]] = {}
+
+    @staticmethod
+    def content_key(mail_values: dict) -> tuple[str | None, bytes]:
+        body = str(mail_values.get("body") or "").encode()
+        digest = hashlib.blake2b(body, digest_size=16).digest()
+        return mail_values.get("subject"), digest
 
 
 def _reopen(self, res_id: int, model: str, context: dict | None = None) -> dict:
@@ -1457,7 +1465,6 @@ class WizardMailMessageSend(models.TransientModel):
             and not self.subtype_is_log,
         )
         for res_id in res_ids:
-            template_values[res_id].pop("attachment_ids", None)
             mail_values_all[res_id].update(template_values[res_id])
 
     def _update_mail_values_attachments(
@@ -1469,6 +1476,7 @@ class WizardMailMessageSend(models.TransientModel):
     ) -> None:
         attachment_ids = attachment_copies.ids
         attachment_ids.reverse()
+        attachment_ids += mail_values.pop("attachment_ids", [])
         decoded_attachments = [
             (name, base64.b64decode(enc_cont))
             for name, enc_cont in mail_values.pop("attachments", [])
@@ -1630,17 +1638,16 @@ class WizardMailMessageSend(models.TransientModel):
                     for mail_to in recipients["mail_to_normalized"]
                 )
                 and any(
-                    sent_mail.get("subject") == mail_values.get("subject")
-                    and sent_mail.get("body") == mail_values.get("body")
+                    SentEmails.content_key(mail_values) in sent_emails_mapping[mail_to]
                     for mail_to in recipients["mail_to_normalized"]
-                    for sent_mail in sent_emails_mapping[mail_to]
                 )
             ):
                 mail_values["state"] = "cancel"
                 mail_values["failure_type"] = "mail_dup"
             else:
+                content_key = SentEmails.content_key(mail_values)
                 for mail_to in recipients["mail_to_normalized"]:
-                    sent_emails_mapping.setdefault(mail_to, []).append(mail_values)
+                    sent_emails_mapping.setdefault(mail_to, set()).add(content_key)
 
         if _debug.pipeline.enabled:
             _debug.pipeline(
@@ -1701,11 +1708,7 @@ class WizardMailMessageSend(models.TransientModel):
         if not self.use_exclusion_list:
             return blacklisted_rec_ids
         if self.composition_mode == "mass_mail":
-            self.env["mail.blacklist"].flush_model(["email", "active"])
-            self.env.cr.execute("SELECT email FROM mail_blacklist WHERE active=true")
-            blacklist = {x[0] for x in self.env.cr.fetchall()}
-            if not blacklist:
-                return blacklisted_rec_ids
+            emails_by_res_id = defaultdict(set)
             if isinstance(
                 self.env[self.model], self.pool["mixin.mail.thread.blacklist"]
             ):
@@ -1713,25 +1716,37 @@ class WizardMailMessageSend(models.TransientModel):
                 primary_email = model._primary_email
                 targets = model.browse(mail_values_dict.keys())
                 targets.fetch(["email_normalized", primary_email])
-                blacklisted_rec_ids.update(
-                    target.id
-                    for target in targets
-                    if blacklist
-                    & set(
+                for target in targets:
+                    emails_by_res_id[target.id].update(
                         email_normalize_all(target[primary_email] or "")
                         or filter(None, [target.email_normalized])
                     )
+            for res_id, recipient_info in (recipients_info or {}).items():
+                emails_by_res_id[res_id].update(recipient_info["mail_to_normalized"])
+            candidates = set().union(*emails_by_res_id.values())
+            if not candidates:
+                return blacklisted_rec_ids
+            self.env["mail.blacklist"].flush_model(["email", "active"])
+            blacklist = {
+                email
+                for [email] in self.env.execute_query(
+                    SQL(
+                        "SELECT email FROM mail_blacklist"
+                        " WHERE active AND email = ANY(%s)",
+                        list(candidates),
+                    )
                 )
-            if recipients_info:
-                blacklisted_rec_ids.update(
-                    res_id
-                    for res_id, recipient_info in recipients_info.items()
-                    if blacklist & set(recipient_info["mail_to_normalized"])
-                )
+            }
+            blacklisted_rec_ids.update(
+                res_id
+                for res_id, emails in emails_by_res_id.items()
+                if blacklist & emails
+            )
             _debug.logic(
                 "blacklist_applied",
                 wizard=self.id,
-                blacklist=len(blacklist),
+                candidates=len(candidates),
+                blacklisted_emails=len(blacklist),
                 records=len(mail_values_dict),
                 blacklisted=len(blacklisted_rec_ids),
             )

@@ -396,9 +396,7 @@ class MailScheduledMessage(models.Model):
         messages_to_post = self.search(domain, limit=limit)
         _debug.pipeline("cron_pass", due=len(messages_to_post), limit=limit)
         _logger.info("Posting %s scheduled messages", len(messages_to_post))
-        messages_to_post.with_context(mail_notify_force_send=True)._post_message(
-            raise_exception=False
-        )
+        messages_to_post._post_message(raise_exception=False)
 
         if self.search_count(domain, limit=1):
             self.env["ir.cron"]._trigger_ref("mail.ir_cron_post_scheduled_message")

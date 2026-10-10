@@ -111,7 +111,10 @@ NO_RECORD_RES_ID = 0
 
 
 _MODIFYING_STATEMENT = re.compile(
-    r"(INSERT|UPDATE|DELETE|COPY|TRUNCATE)\b", re.IGNORECASE
+    r"(INSERT|UPDATE|DELETE|MERGE|COPY|TRUNCATE)\b", re.IGNORECASE
+)
+_MODIFYING_CTE = re.compile(
+    r"WITH\b.*\b(INSERT|UPDATE|DELETE|MERGE)\b", re.IGNORECASE | re.DOTALL
 )
 
 
@@ -722,8 +725,10 @@ class MailTemplate(models.Model):
         def watch(_cr, query, _params, _start, _delay):
             nonlocal modified
             if not modified:
-                code = getattr(query, "code", query)
-                modified = bool(_MODIFYING_STATEMENT.match(str(code).lstrip()))
+                code = str(getattr(query, "code", query)).lstrip()
+                modified = bool(
+                    _MODIFYING_STATEMENT.match(code) or _MODIFYING_CTE.match(code)
+                )
 
         savepoint = cr.savepoint()
         hooks.append(watch)

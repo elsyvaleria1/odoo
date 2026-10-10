@@ -606,6 +606,36 @@ class TestMailTemplateSaveGate(MailCommon):
                 body_html=Markup('<t t-foreach="object.message_ids">x</t>')
             )
 
+    def test_what_a_probe_render_writes_is_not_saved(self):
+        record = self.env[self.model].create({"name": "Untouched"})
+        MailTemplate = type(self.env["mail.template"])
+        render_field = MailTemplate._render_field
+        for statement in (
+            (
+                "WITH renamed AS (UPDATE mail_test_ticket SET name = 'probed'"
+                " WHERE id = %s RETURNING id) SELECT id FROM renamed"
+            ),
+            (
+                "MERGE INTO mail_test_ticket USING (SELECT %s AS id) source"
+                " ON mail_test_ticket.id = source.id"
+                " WHEN MATCHED THEN UPDATE SET name = 'probed'"
+            ),
+        ):
+
+            def writing_render(template, *args, statement=statement, **kwargs):
+                template.env.cr.execute(statement, [record.id])
+                return render_field(template, *args, **kwargs)
+
+            with (
+                self.subTest(statement=statement.split()[0]),
+                patch.object(MailTemplate, "_render_field", writing_render),
+            ):
+                record.name = "Untouched"
+                record.flush_recordset(["name"])
+                self._create_template(subject="{{ object.name }}")
+                record.invalidate_recordset(["name"])
+                self.assertEqual(record.name, "Untouched")
+
     @mute_logger("odoo.addons.mail.models.mail_mail")
     def test_a_future_schedule_survives_force_send(self):
         template = self._create_template(

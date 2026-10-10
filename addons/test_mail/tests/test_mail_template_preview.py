@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.tests import Form, tagged, users
 
 from odoo.addons.test_mail.tests.test_mail_template import TestMailTemplateCommon
@@ -43,6 +45,14 @@ class TestMailTemplateTools(TestMailTemplateCommon):
             test_record_ref,
             "Should take first (only) record by default",
         )
+
+    def test_mail_template_preview_hides_the_language_of_a_single_language(self):
+        installed = self.env["res.lang"].get_installed()
+        with patch.object(
+            type(self.env["res.lang"]), "get_installed", return_value=installed[:1]
+        ):
+            preview = self.env["wizard.mail.template.preview"].new({})
+            self.assertFalse(preview.has_several_languages_installed)
 
     def test_mail_template_preview_empty_database(self):
         self.env["mail.test.lang"].search([]).unlink()

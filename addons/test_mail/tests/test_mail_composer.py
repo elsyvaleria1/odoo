@@ -3585,6 +3585,84 @@ class TestComposerResultsComment(TestMailComposer, CronMixinCase):
                 emails_count=1,
             )
 
+    @users("employee")
+    def test_mail_composer_batch_keeps_each_record_attachments(self):
+        own_attachments = (
+            self.env["ir.attachment"]
+            .sudo()
+            .create(
+                [
+                    {
+                        "name": f"own-{record.id}.xml",
+                        "raw": b"<cfdi/>",
+                        "res_model": record._name,
+                        "res_id": record.id,
+                    }
+                    for record in self.test_records
+                ]
+            )
+        )
+        own_by_record = dict(zip(self.test_records.ids, own_attachments, strict=True))
+
+        def per_record_attachments(records, mail_template):
+            return {
+                record.id: {"attachment_ids": own_by_record[record.id].ids}
+                for record in records
+            }
+
+        for composition_mode in ("comment", "mass_mail"):
+            with (
+                self.subTest(composition_mode=composition_mode),
+                patch.object(
+                    type(self.env["mail.test.ticket.mc"]),
+                    "_process_attachments_for_template_post",
+                    per_record_attachments,
+                ),
+                self.mock_mail_gateway(),
+            ):
+                composer = (
+                    self.env["wizard.mail.message.send"]
+                    .with_context(
+                        self._get_web_context(
+                            self.test_records,
+                            default_composition_mode=composition_mode,
+                            default_template_id=self.template.id,
+                        )
+                    )
+                    .create({})
+                )
+                composer._action_send_mail()
+                for record in self.test_records:
+                    if composition_mode == "comment":
+                        attachments = record.message_ids[0].attachment_ids
+                    else:
+                        attachments = self._find_mail_mail_wrecord(
+                            record
+                        ).attachment_ids
+                    self.assertIn(own_by_record[record.id], attachments)
+                    self.assertNotIn(
+                        own_attachments - own_by_record[record.id], attachments
+                    )
+
+        single = self.test_records[0]
+        with (
+            patch.object(
+                type(self.env["mail.test.ticket.mc"]),
+                "_process_attachments_for_template_post",
+                per_record_attachments,
+            ),
+            self.mock_mail_gateway(),
+        ):
+            composer = (
+                self.env["wizard.mail.message.send"]
+                .with_context(
+                    self._get_web_context(single, default_template_id=self.template.id)
+                )
+                .create({})
+            )
+            composer._action_send_mail()
+        self.assertIn(own_by_record[single.id], single.message_ids[0].attachment_ids)
+
 
 @tagged("mail_composer", "mail_blacklist")
 class TestComposerResultsCommentStatus(TestMailComposer):

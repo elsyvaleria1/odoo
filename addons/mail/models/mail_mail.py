@@ -1447,9 +1447,22 @@ class MailMail(models.Model):
             db_registry = Registry(dbname)
             with db_registry.cursor() as cr:
                 env = api.Environment(cr, SUPERUSER_ID, _context)
-                retrying(
-                    lambda: env["mail.mail"].browse(email_ids).exists().send(), env
-                )
+                try:
+                    retrying(
+                        lambda: (
+                            env["mail.mail"]
+                            .browse(email_ids)
+                            .exists()
+                            .send(auto_commit=True)
+                        ),
+                        env,
+                    )
+                except Exception:
+                    _logger.exception(
+                        "Sending mails %s after their commit failed; the mail "
+                        "queue sends the ones still outgoing",
+                        email_ids,
+                    )
 
     def send(
         self,
@@ -2048,9 +2061,7 @@ class MailMail(models.Model):
     ) -> None:
         self.check_singleton()
         outcome.failure_type, outcome.failure_reason = self._classify_send_error(
-            exception,
-            failure_type=outcome.failure_type,
-            failure_reason=outcome.failure_reason,
+            exception
         )
         _debug.lifecycle(
             "send_failure",
@@ -2299,13 +2310,9 @@ class MailMail(models.Model):
             len(email_list),
         )
 
-    def _classify_send_error(
-        self,
-        exception: BaseException,
-        failure_type: str | None = None,
-        failure_reason: str | None = None,
-    ) -> tuple[str, str]:
+    def _classify_send_error(self, exception: BaseException) -> tuple[str, str]:
         IrMailServer = self.env["ir.mail_server"]
+        failure_type = failure_reason = None
         if isinstance(exception, smtplib.SMTPServerDisconnected):
             failure_type = "mail_smtp"
             failure_reason = self.env._(
