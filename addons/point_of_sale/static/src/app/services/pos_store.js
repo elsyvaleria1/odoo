@@ -394,10 +394,10 @@ export class PosStore extends WithLazyGetterTrap {
             "CLOSING_SESSION",
             this.closingSessionNotification.bind(this),
         );
-        // the display links were revoked: the next display opens with the new one
-        this.data.connectWebSocket("CUSTOMER_DISPLAY_TOKEN", ({ token }) => {
-            this.config.customer_display_token = token;
-        });
+        this.data.connectWebSocket(
+            "CUSTOMER_DISPLAY_TOKEN",
+            this.customerDisplayTokenNotification.bind(this),
+        );
         const endAfter = log.perf("afterProcessServerData");
         const process = await this.afterProcessServerData();
         endAfter({ selectedOrder: this.selectedOrderUuid });
@@ -427,6 +427,14 @@ export class PosStore extends WithLazyGetterTrap {
         }));
         this.navigate(page.page, page.params);
         return process;
+    }
+
+    /**
+     * The display links were revoked: the next display opens with the new one.
+     * @param {{ token: string }} payload
+     */
+    customerDisplayTokenNotification({ token }) {
+        this.config.customer_display_token = token;
     }
 
     async closingSessionNotification(data) {

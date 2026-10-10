@@ -23,6 +23,22 @@ patch(PosStore.prototype, {
         this.hardwareProxy.iotBoxes = this.models["iot.box"].getAll();
         this.iotHttp.cacheIotBoxRecords(this.hardwareProxy.iotBoxes);
     },
+    customerDisplayTokenNotification(payload) {
+        super.customerDisplayTokenNotification(payload);
+        // the box's display reloaded into the refusal of its revoked link
+        this.openIotCustomerDisplay();
+    },
+    openIotCustomerDisplay() {
+        const { iotId, identifier } =
+            this.hardwareProxy.deviceControllers.display || {};
+        if (this.config.iface_display_id && iotId && identifier) {
+            this.iotHttp.action(iotId, identifier, {
+                action: "open",
+                access_token: this.config.customer_display_token,
+                pos_id: this.config.id,
+            });
+        }
+    },
     _loadIotDevice(devices) {
         const iotLongpolling = this.env.services.iot_longpolling;
         for (const device of devices) {
