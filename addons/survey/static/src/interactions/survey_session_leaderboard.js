@@ -137,22 +137,7 @@ export class SurveySessionLeaderboard extends Interaction {
         );
         this.waitFor(Promise.all([fadeOutPromise, leaderboardPromise])).then(
             this.bindDeferred((results) => {
-                const leaderboardResults = results[1];
-                const renderedTemplate = document.createElement("div");
-                const parser = new DOMParser();
-                const parsedResults = parser.parseFromString(
-                    leaderboardResults,
-                    "text/html",
-                ).body.firstChild;
-                if (parsedResults) {
-                    // In case of scored survey with no participants, parsedResults
-                    // would be null and it would break the insert below
-                    this.insert(parsedResults, renderedTemplate);
-                }
-                this.insert(
-                    renderedTemplate,
-                    this.el.querySelector(".o_survey_session_leaderboard_container"),
-                );
+                this.swapFragments(results[1]);
                 this.el
                     .querySelectorAll(".o_survey_session_leaderboard_item")
                     .forEach((item, index) => {

@@ -162,6 +162,9 @@ export class SurveySessionManage extends Interaction {
     }
 
     start() {
+        if (this.el.dataset.isRpcCall) {
+            fadeIn(this.el, this.fadeInOutTime);
+        }
         this.setupCurrentScreen();
         this.startTimer();
         // Check if we are loading this page because the user clicked on 'previous'
@@ -424,63 +427,38 @@ export class SurveySessionManage extends Interaction {
                 go_back: goBack,
             }),
         );
+        const backgroundImageUrl = this.nextQuestion.data.background_image_url;
         let preloadBgPromise;
-        if (this.refreshBackground && this.nextQuestion.background_image_url) {
-            preloadBgPromise = preloadBackground(
-                this.nextQuestion.background_image_url,
-            );
+        if (this.refreshBackground && backgroundImageUrl) {
+            preloadBgPromise = preloadBackground(backgroundImageUrl);
         } else {
             preloadBgPromise = Promise.resolve();
         }
         // await both the fadeout and the rpc
         await this.waitFor(Promise.all([fadeOutPromise, preloadBgPromise]));
-        this.bindDeferred(() => this.onNextQuestionDone(goBack))();
+        this.bindDeferred(() => this.onNextQuestionDone())();
     }
 
     /**
-     * Refresh the screen with the next question's rendered template.
-     *
-     * @param {boolean} goBack Whether we are going back to the previous question or not
+     * Swap the next question's screen in. It replaces this whole element, so
+     * this interaction stops and the new screen's starts from the server's
+     * markup (going back, faded out); the background is the page's, outside it.
      */
-    async onNextQuestionDone(goBack) {
-        if (!this.nextQuestion.question_html) {
+    onNextQuestionDone() {
+        if (this.nextQuestion.data.ended) {
             this.isSessionClosed = true;
             this.onEndSessionClick();
             return;
         }
-
-        const parser = new DOMParser();
-        const newContent = parser.parseFromString(
-            this.nextQuestion.question_html,
-            "text/html",
-        ).body.firstChild;
-        newContent.style.opacity = 0;
-
-        if (goBack) {
-            // If the question is loaded with goBack flag, we need to start
-            // from the leaderboard screen. This is achieved by adding a
-            // data-going-back attribute to newContent
-            newContent.dataset.goingBack = true;
-        }
-
-        // Background Management
-        if (this.refreshBackground) {
-            const surveyBackground = newContent.querySelector(
-                "div.o_survey_background",
-            );
-            if (surveyBackground) {
-                surveyBackground.style.backgroundImage = `url(${this.nextQuestion.background_image_url})`;
-                surveyBackground.classList.remove("o_survey_background_transition");
+        const surveyBackground = document.querySelector("div.o_survey_background");
+        if (this.refreshBackground && surveyBackground) {
+            const url = this.nextQuestion.data.background_image_url;
+            if (url) {
+                surveyBackground.style.backgroundImage = `url(${url})`;
             }
+            surveyBackground.classList.remove("o_survey_background_transition");
         }
-
-        this.el.parentNode.replaceChild(newContent, this.el);
-
-        // Fade in the new content, wait for the interactions to be ready and then
-        // stop the interaction on the old content (the one execuing this code)
-        fadeIn(newContent, this.fadeInOutTime);
-        await this.services["public.interactions"].startInteractions(newContent);
-        this.services["public.interactions"].stopInteractions(this.el);
+        this.swapFragments(this.nextQuestion);
     }
 
     /**

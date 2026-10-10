@@ -40,11 +40,11 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
             }
         )
 
-    def _rpc(self, route):
+    def _rpc(self, route, **params):
         response = self.url_open(
             route,
             data=json_dumps(
-                {"jsonrpc": "2.0", "method": "call", "params": {}, "id": 1}
+                {"jsonrpc": "2.0", "method": "call", "params": params, "id": 1}
             ),
             headers={"Content-Type": "application/json"},
         )
@@ -64,14 +64,32 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
         self.form.action_start_session()
         self.authenticate("session_host", "session_host")
         result = self._rpc(f"/survey/session/next_question/{self.form.access_token}")
-        self.assertTrue(result)
+        (fragment,) = result["fragments"]
+        self.assertEqual(
+            (fragment["key"], fragment["swap"]), ("survey.session_manage", "outer")
+        )
+        self.assertIn('data-fragment="survey.session_manage"', fragment["html"])
+        self.assertIn("background_image_url", result["data"])
         self.form.invalidate_recordset(["session_state"])
         self.assertEqual(self.form.session_state, "in_progress")
 
-    def test_next_question_without_a_session_returns_nothing(self):
+    def test_next_question_without_a_session_says_it_ended(self):
         self.authenticate("session_host", "session_host")
         result = self._rpc(f"/survey/session/next_question/{self.form.access_token}")
-        self.assertFalse(result)
+        self.assertEqual((result["fragments"], result["data"]), ([], {"ended": True}))
+
+    def test_going_back_is_rendered_on_the_screen_the_server_answers(self):
+        self.env["survey.question"].create(
+            {"title": "Second", "survey_id": self.form.id, "question_type": "char_box"}
+        )
+        self.form.action_start_session()
+        self.authenticate("session_host", "session_host")
+        self._rpc(f"/survey/session/next_question/{self.form.access_token}")
+        self._rpc(f"/survey/session/next_question/{self.form.access_token}")
+        result = self._rpc(
+            f"/survey/session/next_question/{self.form.access_token}", go_back=True
+        )
+        self.assertIn('data-going-back="True"', result["fragments"][0]["html"])
 
     def test_results_are_served_for_a_live_session(self):
         self._open_session()
@@ -114,26 +132,28 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
         self._attendee()
         self.authenticate("session_host", "session_host")
         result = self._rpc(f"/survey/session/leaderboard/{self.form.access_token}")
-        self.assertIsInstance(result, str)
-        self.assertIn("Ana", result)
+        (fragment,) = result["fragments"]
+        self.assertEqual(fragment["key"], "survey.session_leaderboard")
+        self.assertIn("Ana", fragment["html"])
 
     def test_leaderboard_is_empty_without_attendees(self):
         self._open_session()
         self.authenticate("session_host", "session_host")
-        self.assertEqual(
-            self._rpc(f"/survey/session/leaderboard/{self.form.access_token}"),
-            "",
-        )
+        result = self._rpc(f"/survey/session/leaderboard/{self.form.access_token}")
+        (fragment,) = result["fragments"]
+        self.assertNotIn("o_survey_session_leaderboard_item", fragment["html"])
 
     def test_leaderboard_is_empty_without_a_live_session(self):
         self.authenticate("session_host", "session_host")
         result = self._rpc(f"/survey/session/leaderboard/{self.form.access_token}")
-        self.assertEqual(result, "")
+        self.assertEqual(result["fragments"], [])
 
     def test_unknown_token_yields_no_session_data(self):
         self.authenticate("session_host", "session_host")
         self.assertFalse(self._rpc("/survey/session/results/not-a-token"))
-        self.assertEqual(self._rpc("/survey/session/leaderboard/not-a-token"), "")
+        self.assertEqual(
+            self._rpc("/survey/session/leaderboard/not-a-token")["fragments"], []
+        )
 
     def test_a_session_speaks_on_its_capability_and_never_names_its_token(self):
         self.form.action_start_session()
@@ -204,4 +224,36 @@ class TestSessionHostRoutes(common.TestSurveyCommon, HttpCase):
         """ % {"token": self.form.access_token}
         self.browser_js(
             f"/s/{self.form.session_code}", code, login="session_host", timeout=60
+        )
+
+    def test_the_host_walks_the_screens_the_server_answers(self):
+        self.question.write(
+            {
+                "title": "Scored question",
+                "suggested_answer_ids": [
+                    Command.clear(),
+                    Command.create(
+                        {"value": "A", "is_correct": True, "answer_score": 1}
+                    ),
+                    Command.create({"value": "B"}),
+                ],
+            }
+        )
+        # a question saving the nickname is what turns the leaderboard on
+        self.env["survey.question"].create(
+            {
+                "title": "Last question",
+                "survey_id": self.form.id,
+                "question_type": "char_box",
+                "save_as_nickname": True,
+            }
+        )
+        self.form.scoring_type = "scoring_with_answers"
+        self.form.action_start_session()
+        self._attendee()
+
+        self.start_tour(
+            f"/survey/session/manage/{self.form.access_token}",
+            "survey_session_host_screens",
+            login="session_host",
         )

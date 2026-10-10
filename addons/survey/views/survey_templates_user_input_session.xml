@@ -39,7 +39,8 @@
                 class="o_survey_session_open o_survey_session_manage position-absolute bottom-0 start-0 end-0 d-flex flex-column justify-content-between gap-md-4 mb-md-3 mx-md-4 fs-3 text-white"
                 t-att-data-survey-access-token="survey.access_token"
                 t-att-data-survey-id="survey.id"
-                t-att-data-is-start-screen="True">
+                t-att-data-is-start-screen="True"
+                data-fragment="survey.session_manage">
 
                 <div
                     class="o_survey_session_open_header d-flex flex-column flex-md-row flex-grow-1 flex-md-grow-0 justify-content-between gap-4 p-5 rounded-3 bg-black-25">
@@ -107,8 +108,10 @@
             t-value="question.question_type in ['char_box', 'date', 'datetime'] and not question.save_as_email and not question.save_as_nickname" />
         <div
             class="wrap min-vh-100 align-items-center justify-content-center d-flex flex-column o_survey_session_manage invisible"
-            t-att-style="'display: none;' if is_rpc_call else ''"
+            data-fragment="survey.session_manage"
+            t-att-style="'opacity: 0;' if is_rpc_call else None"
             t-att-data-is-rpc-call="is_rpc_call"
+            t-att-data-going-back="going_back or None"
             t-att-data-survey-id="survey.id"
             t-att-data-survey-has-conditional-questions="survey.has_conditional_questions"
             t-att-data-attendees-count="survey.session_answer_count"
@@ -251,8 +254,21 @@
                         </div>
                     </div>
                     <div
-                        class="justify-content-center d-flex flex-column flex-grow-1 mt-5 mb-5 pb-5 o_survey_session_leaderboard_container" />
+                        class="justify-content-center d-flex flex-column flex-grow-1 mt-5 mb-5 pb-5 o_survey_session_leaderboard_container"
+                        data-fragment="survey.session_leaderboard" />
                 </div>
+            </div>
+        </div>
+    </template>
+
+    <template
+        id="user_input_session_leaderboard_region"
+        name="Survey User Input Leaderboard Region">
+        <div
+            class="justify-content-center d-flex flex-column flex-grow-1 mt-5 mb-5 pb-5 o_survey_session_leaderboard_container"
+            data-fragment="survey.session_leaderboard">
+            <div>
+                <t t-call="survey.user_input_session_leaderboard" />
             </div>
         </div>
     </template>

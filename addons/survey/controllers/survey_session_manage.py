@@ -11,6 +11,12 @@ from odoo.http import request
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import is_html_empty
 
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    FragmentResponse,
+    render_fragments,
+)
+
 
 class UserInputSession(http.Controller):
     # The host screen scrolls free-text answers live; past this many the display is
@@ -79,11 +85,11 @@ class UserInputSession(http.Controller):
     )
     def survey_session_next_question(
         self, survey_token: str, go_back: bool = False, **kwargs: Any
-    ) -> dict[str, Any]:
+    ) -> FragmentResponse:
         survey = self._get_from_token(survey_token)
 
         if not survey or not survey.session_state:
-            return {}
+            return render_fragments(request.env, data={"ended": True})
 
         if survey.session_state == "ready":
             survey._session_open()
@@ -107,15 +113,23 @@ class UserInputSession(http.Controller):
 
             template_values = self._prepare_manage_session_values(survey)
             template_values["is_rpc_call"] = True
+            template_values["going_back"] = go_back
 
-            return {
-                "background_image_url": survey.session_question_id.background_image_url,
-                "question_html": request.env["ir.qweb"]._render(
-                    "survey.user_input_session_manage_content", template_values
+            # the next screen replaces the whole session screen, so its own
+            # interaction starts from what the server rendered
+            return render_fragments(
+                request.env,
+                Fragment(
+                    "survey.user_input_session_manage_content",
+                    template_values,
+                    key="survey.session_manage",
+                    swap="outer",
                 ),
-            }
-        else:
-            return {}
+                data={
+                    "background_image_url": survey.session_question_id.background_image_url
+                },
+            )
+        return render_fragments(request.env, data={"ended": True})
 
     @http.route(
         "/survey/session/results/<string:survey_token>",
@@ -149,15 +163,21 @@ class UserInputSession(http.Controller):
         auth="user",
         website=True,
     )
-    def survey_session_leaderboard(self, survey_token: str, **kwargs: Any) -> str:
+    def survey_session_leaderboard(
+        self, survey_token: str, **kwargs: Any
+    ) -> FragmentResponse:
         survey = self._get_from_token(survey_token)
 
         if not survey or survey.session_state != "in_progress":
-            return ""
+            return render_fragments(request.env)
 
-        return request.env["ir.qweb"]._render(
-            "survey.user_input_session_leaderboard",
-            {"animate": True, "leaderboard": survey._prepare_leaderboard_values()},
+        return render_fragments(
+            request.env,
+            Fragment(
+                "survey.user_input_session_leaderboard_region",
+                {"animate": True, "leaderboard": survey._prepare_leaderboard_values()},
+                key="survey.session_leaderboard",
+            ),
         )
 
     @http.route("/s", type="http", auth="public", website=True, sitemap=False)
