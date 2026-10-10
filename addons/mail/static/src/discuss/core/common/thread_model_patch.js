@@ -234,7 +234,7 @@ const threadPatch = {
         this.memberBusSubscription = fields.Attr("not_member", {
             /** @this {import("models").DiscussChannel} */
             compute() {
-                if (!this.isChannelKind || !this.self_member_id) {
+                if (!this.self_member_id) {
                     return "not_member";
                 }
                 const memberSince = this.self_member_id.memberSince;
@@ -432,25 +432,19 @@ const threadPatch = {
         return `${getOrigin()}/chat/${this.id}/${this.uuid}`;
     },
     get hasAttachmentPanel() {
-        return this.isChannelKind;
+        return true;
     },
     get canFetchMessages() {
-        return this.isChannelKind || super.canFetchMessages;
+        return true;
     },
     get busKeepsMessagesFresh() {
-        return this.isChannelKind || super.busKeepsMessagesFresh;
+        return true;
     },
     getFetchParams() {
-        if (this.isChannelKind) {
-            return { channel_id: this.id };
-        }
-        return super.getFetchParams();
+        return { channel_id: this.id };
     },
     getFetchRoute() {
-        if (this.isChannelKind) {
-            return "/discuss/channel/messages";
-        }
-        return super.getFetchRoute();
+        return "/discuss/channel/messages";
     },
     get imStatusMember() {
         return this.isDirectChat ? this.correspondent : undefined;
@@ -463,7 +457,7 @@ const threadPatch = {
         return this.isDirectChat && Boolean(this.correspondent?.persona.eq(persona));
     },
     get chatWindowComposerType() {
-        return this.isChannelKind ? undefined : super.chatWindowComposerType;
+        return undefined;
     },
     get composerPlaceholder() {
         if (this.typePolicy.describes_as_channel) {
@@ -679,11 +673,7 @@ const threadPatch = {
         return super.avatarUrl;
     },
     async checkReadAccess() {
-        const res = await super.checkReadAccess();
-        if (!res && this.isChannelKind) {
-            return this.channel_type;
-        }
-        return res;
+        return Boolean(await this.store.Thread.getOrFetch(this));
     },
     /** @returns {import("models").ChannelMember} */
     computeCorrespondent() {
@@ -728,7 +718,7 @@ const threadPatch = {
             }
             return formatList(nameParts);
         }
-        if (this.isChannelKind && this.name) {
+        if (this.name) {
             return this.name;
         }
         return super.displayName;
@@ -908,9 +898,6 @@ const threadPatch = {
      * @returns {boolean}
      */
     openChatUI(options) {
-        if (!this.isChannelKind) {
-            return super.openChatUI(...arguments);
-        }
         if (this.openChannel()) {
             return true;
         }
@@ -918,7 +905,7 @@ const threadPatch = {
         return true;
     },
     get hasOptimisticPost() {
-        return this.isChannelKind;
+        return true;
     },
     /**
      * @param {number} tmpId
@@ -927,9 +914,6 @@ const threadPatch = {
      * @returns {Promise<import("models").Message|undefined>}
      */
     async makeOptimisticPendingMessage(tmpId, body, postData) {
-        if (!this.hasOptimisticPost) {
-            return super.makeOptimisticPendingMessage(...arguments);
-        }
         const { attachments, parentId } = postData;
         const tmpData = {
             id: tmpId,
@@ -958,7 +942,7 @@ const threadPatch = {
      */
     async post(body) {
         const textContent = createElementWithContent("div", body).textContent.trim();
-        if (this.isChannelKind && textContent.startsWith("/")) {
+        if (textContent.startsWith("/")) {
             const [firstWord] = textContent.substring(1).split(/\s/);
             const command = commandRegistry.get(firstWord, false);
             if (
@@ -980,7 +964,6 @@ const threadPatch = {
     },
     get shouldSubscribeToBusChannel() {
         return Boolean(
-            this.isChannelKind &&
             !this.isTransient &&
             !this.self_member_id &&
             (this.isLocallyPinned || this.chat_window?.isOpen),

@@ -35,6 +35,8 @@ const pyToJsModels = {
 };
 
 const PUSH_NOTIFICATION_DISMISSED_LS = "mail.user_setting.push_notification_dismissed";
+const INITIALIZE_RETRY_DELAY = 5_000;
+const INITIALIZE_MAX_RETRY_DELAY = 60_000;
 
 const addFieldsByPyModel = {
     "discuss.channel": { model: "discuss.channel" },
@@ -138,6 +140,8 @@ export class Store extends BaseStore {
     _threadFetchAttempted = new Set();
     /** @type {(() => void) | undefined} */
     _unsubscribeColorScheme;
+    /** @type {(() => void) | undefined} */
+    _removeServiceWorkerListener;
     /** @type {Set<number>} */
     deletedMessageIds = new Set();
 
@@ -316,6 +320,7 @@ export class Store extends BaseStore {
         }
         const endInit = debugLog.perf("initialize");
         this._initializePromise = (async () => {
+            let retryDelay = INITIALIZE_RETRY_DELAY;
             for (;;) {
                 try {
                     await Promise.all(
@@ -332,8 +337,11 @@ export class Store extends BaseStore {
                         this._initializePromise = undefined;
                         throw error;
                     }
-                    debugLog.logic("initialize waiting for the bus to connect");
-                    await this._nextBusConnection();
+                    debugLog.logic("initialize waiting for the bus or a retry", () => ({
+                        retryDelay,
+                    }));
+                    await this._waitBeforeRetry(retryDelay);
+                    retryDelay = Math.min(retryDelay * 2, INITIALIZE_MAX_RETRY_DELAY);
                 }
             }
             this.isReady.resolve();
@@ -346,17 +354,22 @@ export class Store extends BaseStore {
         return ["init_messaging"];
     }
 
-    /** @returns {Promise<void>} */
-    _nextBusConnection() {
+    /**
+     * @param {number} delay
+     * @returns {Promise<void>}
+     */
+    _waitBeforeRetry(delay) {
         const bus = this.env.services.bus_service;
         return new Promise((resolve) => {
-            const connected = () => {
-                bus.removeEventListener("BUS:CONNECT", connected);
-                bus.removeEventListener("BUS:RECONNECT", connected);
+            const done = () => {
+                browser.clearTimeout(timeout);
+                bus.removeEventListener("BUS:CONNECT", done);
+                bus.removeEventListener("BUS:RECONNECT", done);
                 resolve();
             };
-            bus.addEventListener("BUS:CONNECT", connected);
-            bus.addEventListener("BUS:RECONNECT", connected);
+            const timeout = browser.setTimeout(done, delay);
+            bus.addEventListener("BUS:CONNECT", done);
+            bus.addEventListener("BUS:RECONNECT", done);
         });
     }
 
@@ -556,10 +569,10 @@ export class Store extends BaseStore {
                 this.onPushNotificationDisplayed(payload);
             }
         };
-        browser.navigator.serviceWorker?.addEventListener(
-            "message",
-            onServiceWorkerMessage,
-        );
+        const serviceWorker = browser.navigator.serviceWorker;
+        serviceWorker?.addEventListener("message", onServiceWorkerMessage);
+        this._removeServiceWorkerListener = () =>
+            serviceWorker?.removeEventListener("message", onServiceWorkerMessage);
     }
 
     destroy() {
@@ -568,6 +581,8 @@ export class Store extends BaseStore {
         }));
         this._unsubscribeColorScheme?.();
         this._unsubscribeColorScheme = undefined;
+        this._removeServiceWorkerListener?.();
+        this._removeServiceWorkerListener = undefined;
     }
 
     /** @param {{model: string, res_id: number}} payload */
@@ -745,6 +760,7 @@ export class Store extends BaseStore {
                     is_notification,
                     search_term: await prettifyMessageText(searchTerm),
                     before,
+                    limit: this.FETCH_LIMIT,
                 },
             },
         );

@@ -1,5 +1,5 @@
 // @ts-check
-import { defineMailModels, start } from "@mail/../tests/mail_test_helpers";
+import { defineMailModels, start, startServer } from "@mail/../tests/mail_test_helpers";
 import { Store } from "@mail/core/common/store_service";
 import { describe, expect, test } from "@odoo/hoot";
 import {
@@ -51,6 +51,20 @@ test("getOrFetch resolves (never rejects) when the channel fetch fails", async (
     );
     expect(rejected).toBe(false);
     expect(result).toBe(undefined);
+});
+
+test("checkReadAccess answers whether the channel could be fetched", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    await start();
+    const store = getService("mail.store");
+    const channel = store["discuss.channel"].insert({
+        id: channelId,
+        channel_type: "channel",
+    });
+    expect(await channel.checkReadAccess()).toBe(true);
+    const gone = store["discuss.channel"].insert({ id: 999, channel_type: "channel" });
+    expect(await gone.checkReadAccess()).toBe(false);
 });
 
 test("rename reverts the optimistic name when the server call fails", async () => {

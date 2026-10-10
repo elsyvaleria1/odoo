@@ -59,10 +59,10 @@ test("Attachment shows spinner during upload", async () => {
 });
 
 /**
- * @param {number} status
- * @param {string} [response]
+ * @param {"FILE_UPLOAD_LOADED"|"FILE_UPLOAD_ERROR"} event
+ * @param {{xhr: {status: number, response?: string}, response?: Object}} settled
  */
-async function uploadThenRespond(status, response) {
+async function uploadThenSettle(event, settled) {
     const pyEnv = await startServer();
     const channelId = pyEnv["discuss.channel"].create({ name: "channel_1" });
     const file = new File(["hello, world"], "text.txt", { type: "text/plain" });
@@ -77,39 +77,66 @@ async function uploadThenRespond(status, response) {
     const data = new FormData();
     data.append("temporary_id", String(tmpId));
     getService("file_upload").bus.dispatchEvent(
-        new CustomEvent("FILE_UPLOAD_LOADED", {
-            detail: { upload: { data, xhr: { status, response } } },
-        }),
+        new CustomEvent(event, { detail: { upload: { data, ...settled } } }),
     );
     return { service, tmpId };
 }
 
 test("an upload refused as too large is reported and stops uploading", async () => {
-    const { service, tmpId } = await uploadThenRespond(413);
+    const { service, tmpId } = await uploadThenSettle("FILE_UPLOAD_ERROR", {
+        xhr: { status: 413 },
+    });
     await contains(".o_notification", { text: "File too large" });
     await contains(".o-mail-AttachmentContainer.o-isUploading", { count: 0 });
     expect(service.pendingUploads.has(tmpId)).toBe(false);
 });
 
 test("an upload answered with a server error is reported and stops uploading", async () => {
-    const { service, tmpId } = await uploadThenRespond(500);
+    const { service, tmpId } = await uploadThenSettle("FILE_UPLOAD_ERROR", {
+        xhr: { status: 500, response: "" },
+    });
     await contains(".o_notification", { text: "Server error" });
     expect(service.pendingUploads.has(tmpId)).toBe(false);
 });
 
 test("an upload answered with unparsable content is reported as a server error", async () => {
-    const { service, tmpId } = await uploadThenRespond(200, "<html>not json</html>");
+    const { service, tmpId } = await uploadThenSettle("FILE_UPLOAD_LOADED", {
+        xhr: { status: 200, response: "<html>not json</html>" },
+    });
     await contains(".o_notification", { text: "Server error" });
     expect(service.pendingUploads.has(tmpId)).toBe(false);
 });
 
 test("an upload whose response carries an error reports that error verbatim", async () => {
-    const { service, tmpId } = await uploadThenRespond(
-        200,
-        JSON.stringify({ error: "You are not allowed to upload here" }),
-    );
+    const { service, tmpId } = await uploadThenSettle("FILE_UPLOAD_ERROR", {
+        xhr: {
+            status: 200,
+            response: JSON.stringify({ error: "You are not allowed to upload here" }),
+        },
+    });
     await contains(".o_notification", { text: "You are not allowed to upload here" });
     expect(service.pendingUploads.has(tmpId)).toBe(false);
+});
+
+test("a loaded upload is read from the body file_upload parsed, not from its request", async () => {
+    const { service, tmpId } = await uploadThenSettle("FILE_UPLOAD_LOADED", {
+        xhr: { status: 200, response: "" },
+        response: {
+            data: {
+                attachment_id: 501,
+                store_data: {
+                    "ir.attachment": [
+                        { id: 501, name: "text.txt", mimetype: "text/plain" },
+                    ],
+                },
+            },
+        },
+    });
+    await contains(
+        ".o-mail-AttachmentContainer:not(.o-isUploading):contains(text.txt)",
+    );
+    expect(service.pendingUploads.has(tmpId)).toBe(false);
+    expect(".o_notification").toHaveCount(0);
 });
 
 test("a transport-level upload failure stops uploading without a notification", async () => {

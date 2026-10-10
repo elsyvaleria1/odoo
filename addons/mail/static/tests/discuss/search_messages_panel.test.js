@@ -17,7 +17,7 @@ import { HIGHLIGHT_CLASS } from "@mail/core/common/message_search_hook";
 import { expect, mockTouch, mockUserAgent, test } from "@odoo/hoot";
 import { press } from "@odoo/hoot-dom";
 import { tick } from "@odoo/hoot-mock";
-import { serverState } from "@web/../tests/web_test_helpers";
+import { getService, serverState } from "@web/../tests/web_test_helpers";
 
 defineMailModels();
 
@@ -275,4 +275,31 @@ test("Search a message containing single quotes", async () => {
     await insertText(".o_searchview_input", "can't");
     triggerHotkey("Enter");
     await contains(".o-mail-SearchMessagesPanel .o-mail-Message");
+});
+
+test.tags("desktop");
+test("message search asks for the page size it pages by", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    pyEnv["mail.message"].create({
+        author_id: serverState.partnerId,
+        body: "This is a message",
+        message_type: "comment",
+        model: "discuss.channel",
+        res_id: channelId,
+    });
+    const searchLimits = [];
+    onRpcBefore("/discuss/channel/messages", ({ fetch_params }) => {
+        if (fetch_params?.search_term) {
+            searchLimits.push(fetch_params.limit);
+        }
+    });
+    await start();
+    await openDiscuss(channelId);
+    await contains(".o-mail-Message");
+    await click("button[title='Search Messages']");
+    await insertText(".o_searchview_input", "message");
+    triggerHotkey("Enter");
+    await contains(".o-mail-SearchMessagesPanel .o-mail-Message");
+    expect(searchLimits).toEqual([getService("mail.store").FETCH_LIMIT]);
 });

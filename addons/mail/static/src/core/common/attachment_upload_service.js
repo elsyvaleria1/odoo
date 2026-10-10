@@ -5,7 +5,7 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { Deferred } from "@web/core/utils/concurrency";
 
-/** @typedef {{data: FormData, xhr: XMLHttpRequest, type: string, title: string, res_model: string, state?: string}} Upload */
+/** @typedef {{data: FormData, xhr: XMLHttpRequest, type: string, title: string, res_model: string, state?: string, response?: Record<string, any>}} Upload */
 /**
  * @typedef {Object} PendingUpload
  * @property {(() => void)|undefined} abort
@@ -90,9 +90,12 @@ export class AttachmentUploadService {
      * @param {number} tmpId
      */
     _onUploadLoaded(upload, tmpId) {
-        const response = this._parseUploadResponse(upload, tmpId);
-        log.pipeline("upload loaded", () => ({ tmpId, ok: Boolean(response) }));
-        if (!response) {
+        // file_upload fires LOADED only for a 2xx answer without an error, and
+        // keeps the body it parsed: upload.xhr may since be another request
+        const response = upload.response;
+        log.pipeline("upload loaded", () => ({ tmpId, ok: Boolean(response?.data) }));
+        if (!response?.data) {
+            this._abandonUpload(tmpId, _t("Server error"));
             return;
         }
         const { thread, composer, deferred } = this.pendingUploads.get(tmpId);
@@ -153,30 +156,6 @@ export class AttachmentUploadService {
         return xhr.status
             ? _t("Server error")
             : _t("An error occurred while uploading.");
-    }
-
-    /**
-     * @param {Upload} upload
-     * @param {number} tmpId
-     * @returns {Object|undefined}
-     */
-    _parseUploadResponse(upload, tmpId) {
-        if (upload.xhr.status === 413) {
-            return this._abandonUpload(tmpId, _t("File too large"));
-        }
-        if (upload.xhr.status !== 200) {
-            return this._abandonUpload(tmpId, _t("Server error"));
-        }
-        let response;
-        try {
-            response = JSON.parse(upload.xhr.response);
-        } catch {
-            return this._abandonUpload(tmpId, _t("Server error"));
-        }
-        if (response.error) {
-            return this._abandonUpload(tmpId, response.error);
-        }
-        return response;
     }
 
     /**
