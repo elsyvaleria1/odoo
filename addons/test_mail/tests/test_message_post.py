@@ -2447,6 +2447,29 @@ class TestMessagePost(TestMessagePostCommon, CronMixinCase):
                 post(["not-a-pair"])
 
     @users("employee")
+    def test_an_unknown_notify_parameter_leaves_nothing_behind(self):
+        record = self.env["mail.test.simple"].create({"name": "Typo"})
+        record.message_unsubscribe(partner_ids=record.message_partner_ids.ids)
+        messages_before = record.message_ids
+        for post in (
+            lambda: record.message_post(
+                body="Lost", partner_ids=self.partner_employee_2.ids, force_sned=True
+            ),
+            lambda: record._message_post_batch({record.id: "Lost"}, force_sned=True),
+            lambda: record.message_notify(
+                body="Lost", partner_ids=self.partner_employee_2.ids, force_sned=True
+            ),
+        ):
+            try:
+                post()
+            except ValueError:
+                pass
+            else:
+                self.fail("an unknown parameter must be refused")
+            self.assertEqual(record.message_ids, messages_before)
+            self.assertFalse(record.message_partner_ids)
+
+    @users("employee")
     def test_message_post_batch_can_be_scheduled(self):
         records = self.env["mail.test.simple"].create([{"name": "S1"}, {"name": "S2"}])
         records.message_subscribe(partner_ids=self.partner_1.ids)

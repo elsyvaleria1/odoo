@@ -102,9 +102,10 @@ class DiscussChannel(models.Model):
         return super()._notify_get_channel_message_types() | {"whatsapp_message"}
 
     def _get_notify_valid_parameters(self):
-        if self.channel_type == "whatsapp":
-            return super()._get_notify_valid_parameters() | {"whatsapp_inbound_msg_uid"}
-        return super()._get_notify_valid_parameters()
+        valid = super()._get_notify_valid_parameters() | {"parent_msg_id"}
+        if self and all(channel.channel_type == "whatsapp" for channel in self):
+            valid |= {"whatsapp_inbound_msg_uid"}
+        return valid
 
     def _notify_thread(self, message, msg_vals=False, **kwargs):
         parent_msg_id = (

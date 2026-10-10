@@ -420,7 +420,7 @@ class MixinMailThread(models.AbstractModel):
                 self.env.execute_query(
                     SQL(
                         """
-                            SELECT msg.res_id, COUNT(msg.res_id)
+                            SELECT msg.res_id, COUNT(DISTINCT msg.id)
                               FROM mail_message msg
                         INNER JOIN mail_notification notif
                                 ON notif.mail_message_id = msg.id
@@ -1260,6 +1260,9 @@ class MixinMailThread(models.AbstractModel):
         notif_kwargs = {
             key: val for key, val in kwargs.items() if key not in message_fields
         }
+        self._check_supported_parameters(
+            set(notif_kwargs), restricting_names=self._get_notify_valid_parameters()
+        )
         return msg_kwargs, notif_kwargs
 
     def message_post(self, **post_values) -> MailMessage:

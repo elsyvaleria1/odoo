@@ -2690,3 +2690,20 @@ class TestNotificationStateCache(MailCommon):
         )
         self.assertTrue(as_employee.message_has_error)
         self.assertEqual(as_employee.message_has_error_counter, 1)
+
+    def test_has_error_counter_counts_messages_not_recipients(self):
+        customer = self.env["res.partner"].create(
+            {"email": "customer@test.example.com", "name": "Customer"}
+        )
+        message = self.record.with_user(self.user_employee).message_post(
+            body="ping",
+            partner_ids=(self.partner_admin | customer).ids,
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",
+        )
+        message.notification_ids.sudo().write(
+            {"notification_status": "exception", "failure_type": "unknown"}
+        )
+        self.assertEqual(len(message.notification_ids), 2)
+        as_employee = self.record.with_user(self.user_employee)
+        self.assertEqual(as_employee.message_has_error_counter, 1)
