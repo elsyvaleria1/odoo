@@ -208,6 +208,11 @@ class TestErrorStatusEndToEnd(HttpCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(calls, [self.EP])
 
+    def test_the_404_page_links_to_contactus_only_where_it_exists(self):
+        page = self.url_open("/http_routing/no_such_route", allow_redirects=False)
+        self.assertEqual(page.status_code, 404)
+        self.assertEqual('href="/contactus"' in page.text, "website" in self.env)
+
     def test_odoo_exception_keeps_its_http_status(self):
         self._raise(exceptions.ValidationError("nope"))
         response = self.url_open(self.EP, allow_redirects=False)

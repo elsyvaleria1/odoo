@@ -53,7 +53,7 @@ ladder, URL generation, and the frontend error page.
 
 ## The ladder (`_reroute_for_lang`)
 
-`request.lang` is resolved first, in priority order: **URL** → `frontend_lang`
+`request.lang` is resolved first, in priority order: **URL** (a configured `url_code`, or a segment shaped like a language tag, TRAPS §13) → `frontend_lang`
 cookie → context → site default. The ladder then decides what to do about the
 URL itself. Each case below is marked `# See /N` on its own branch of
 `_reroute_for_lang`, and `factcheck.sh` asserts all eight are still there. They

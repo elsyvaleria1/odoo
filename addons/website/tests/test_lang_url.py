@@ -30,14 +30,29 @@ class TestLangUrl(TestLangUrlCommon):
             )
 
     def test_02_url_redirect(self):
-        url = "/fr_WHATEVER/contactus"
+        url = "/fr_CA/contactus"
         r = self.url_open(url)
         self.assertEqual(r.status_code, 200)
         self.assertURLEqual(
             r.url,
             "/fr/contactus",
-            f"fr_WHATEVER should be forwarded to 'fr_FR' lang as closest match, url: {r.url}",
+            f"fr_CA should be forwarded to 'fr_FR' lang as closest match, url: {r.url}",
         )
+
+    def test_a_page_named_like_a_language_alias_is_served(self):
+        self.env["website.page"].create(
+            {
+                "name": "En vivo",
+                "url": "/en_vivo",
+                "type": "qweb",
+                "arch": '<t t-call="website.layout"><div>EN VIVO</div></t>',
+                "is_published": True,
+                "website_id": self.website.id,
+            }
+        )
+        r = self.url_open("/en_vivo", allow_redirects=False)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("EN VIVO", r.text)
 
         url = "/fr_FR/contactus"
         r = self.url_open(url)

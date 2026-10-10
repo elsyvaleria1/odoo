@@ -177,3 +177,21 @@ Unifying the named and context cases in either direction breaks one of them.
 → `TestUrlLangContext.test_unserved_context_lang_is_not_put_in_the_url`,
 `TestUrlLangContext.test_unserved_lang_named_by_the_caller_is_kept`, and the
 backend cases in `website`'s `tests/test_lang_url.py`
+
+## 13. A URL segment is a language only when it is shaped like one
+
+`_match` reads the first segment of an unrouted path as a language before any
+CMS page is looked up. It used to hand *any* segment to `get_nearest_lang`,
+whose base match took `en_vivo` for English and `fr_vivo` for French: a
+published page at `/en_vivo` answered **303 → /** and was unreachable. Meanwhile
+`/FR/x`, `/fr-FR/x` and `/en-US/x` -- real tags -- answered 404.
+
+A configured `url_code` still matches exactly first. Otherwise the segment must
+fit `_LANG_SEGMENT_RE` (2-3 letters, optionally `_` or `-` and a 2-letter or
+3-digit region, optionally `@script`, any case), and is canonicalized
+(`fr-fr` → `fr_FR`) before `get_nearest_lang`. A page whose whole first segment
+is tag-shaped (`/es-mx`) is still read as a language; that is the price of
+accepting the hyphenated tags people and crawlers type.
+→ `TestLangUrlSegment`, `TestLangLadder.test_a_segment_not_shaped_like_a_language_is_not_one`,
+and the `/en_vivo` page case in `website`'s `tests/test_lang_url.py`
+

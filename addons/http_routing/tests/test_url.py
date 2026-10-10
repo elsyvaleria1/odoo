@@ -532,7 +532,7 @@ class TestUrlLocalized(TestUrlCommon):
 
     def _router_raising(self, exception):
         router = MagicMock()
-        router.return_value.bind_to_environ.return_value.match.side_effect = exception
+        router.return_value.bind.return_value.match.side_effect = exception
         return patch("odoo.http.root.get_routing_map", router)
 
     def test_request_redirect_degrades(self):

@@ -27,6 +27,7 @@ Give each concurrent run its own `-d` and its own `-p` / `--gevent-port`.
 | | `TestDefaultLang` | unit | stale `ir.default`, and that the lookup is cached (it is on the per-link path) |
 | | `TestUrlRewrite` | unit | `MethodNotAllowed`, redirect loops, cache non-poisoning, request-free use |
 | `test_lang.py` | `TestNearestLang` | unit | base-language matching (`kab` ≠ `ka`, `sr@latin` ↔ `sr`) |
+| | `TestLangUrlSegment` | unit | which URL segments are a language at all, and their canonical code (`FR`, `fr-fr`, `sr@latin`; not `en_vivo`) |
 | | `TestRedirectLang` | unit | the single 3xx exit: status, Location, cookie, repeated query params |
 | | `TestRerouteLadder` | unit | **the ladder as a table** — cases /2../9, incl. an alias of the default language leaving in one hop |
 | | `TestLangLadder` | HttpCase | the same ladder end to end: proof it is wired into dispatch, plus the `//` merge and unsafe methods |

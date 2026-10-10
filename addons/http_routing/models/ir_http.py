@@ -39,9 +39,28 @@ FRONTEND_TRANSLATIONS_ROUTE = "/website/translations"
 
 _REDIRECTABLE_METHODS = ("GET", "HEAD")
 
+# A URL segment is read as a language only when it is shaped like one -- fr,
+# FR, fr_FR, fr-fr, es_419, sr@latin -- so a page at /en_vivo is not taken for
+# English. A configured url_code is matched as such before this applies.
+_LANG_SEGMENT_RE = re.compile(
+    r"([a-z]{2,3})(?:[_-]([a-z]{2}|[0-9]{3}))?(@[a-z]+)?", re.IGNORECASE
+)
+
 
 def _lang_base(lang_code: str) -> str:
     return lang_code.partition("_")[0].partition("@")[0]
+
+
+def _lang_code_from_url_segment(segment: str) -> str | None:
+    match = _LANG_SEGMENT_RE.fullmatch(segment)
+    if not match:
+        return None
+    lang, region, script = match.groups()
+    return (
+        lang.lower()
+        + (f"_{region.upper()}" if region else "")
+        + (script.lower() if script else "")
+    )
 
 
 class ModelConverter(ir_http.ModelConverter):
@@ -174,13 +193,11 @@ class IrHttp(models.AbstractModel):
 
         url = cls._lang_url_unprefix(url)
 
-        router = http.root.get_routing_map(request.db, env=request.env)
+        router = http.root.get_routing_map(request.db, env=request.env).bind("")
         try:
             # matched as the link will be followed, not as this request came:
             # a page answering a POST still links to its GET-only neighbours
-            rule, args = router.bind_to_environ(request.httprequest.environ).match(
-                path_info=url, method="GET", return_rule=True
-            )
+            rule, args = router.match(path_info=url, method="GET", return_rule=True)
             for key, val in list(args.items()):
                 if isinstance(val, models.BaseModel):
                     if isinstance(val.env.uid, RequestUID):
@@ -189,7 +206,7 @@ class IrHttp(models.AbstractModel):
                         args[key] = val = val.with_context(lang=lang.code)
                     if prefetch_langs:
                         args[key] = val = val.with_context(prefetch_langs=True)
-            path = router.bind("").build(rule.endpoint, args)
+            path = router.build(rule.endpoint, args)
         except (
             HTTPException,
             AccessError,
@@ -452,12 +469,12 @@ class IrHttp(models.AbstractModel):
         with cls._borrowed_public_env() as real_env:
             IrHttp = request.env["ir.http"]
             Lang = request.env["res.lang"]
+            url_lang_code = url_lang_str and (
+                Lang._get_data(url_code=url_lang_str).code
+                or _lang_code_from_url_segment(url_lang_str)
+            )
             nearest_url_lang = (
-                IrHttp.get_nearest_lang(
-                    Lang._get_data(url_code=url_lang_str).code or url_lang_str
-                )
-                if url_lang_str
-                else None
+                IrHttp.get_nearest_lang(url_lang_code) if url_lang_code else None
             )
             cookie_lang = IrHttp.get_nearest_lang(request.cookies.get("frontend_lang"))
             context_lang = IrHttp.get_nearest_lang(real_env.context.get("lang"))

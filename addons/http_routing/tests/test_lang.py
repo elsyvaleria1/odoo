@@ -11,6 +11,29 @@ from .common import (
     route_frontend_probe,
     setup_frontend_langs,
 )
+from odoo.addons.http_routing.models.ir_http import _lang_code_from_url_segment
+
+
+@tagged("-at_install", "post_install")
+class TestLangUrlSegment(TransactionCase):
+    def test_tag_shaped_segments_are_canonicalized(self):
+        for segment, code in (
+            ("fr", "fr"),
+            ("FR", "fr"),
+            ("fr_FR", "fr_FR"),
+            ("fr-fr", "fr_FR"),
+            ("es-419", "es_419"),
+            ("kab_DZ", "kab_DZ"),
+            ("sr@latin", "sr@latin"),
+            ("SR@Latin", "sr@latin"),
+        ):
+            with self.subTest(segment=segment):
+                self.assertEqual(_lang_code_from_url_segment(segment), code)
+
+    def test_other_segments_are_no_language(self):
+        for segment in ("en_vivo", "fr_xyz", "fr-france", "shop", "x", "", "fr_FR_x"):
+            with self.subTest(segment=segment):
+                self.assertIsNone(_lang_code_from_url_segment(segment))
 
 
 @tagged("-at_install", "post_install")
@@ -334,6 +357,26 @@ class TestLangLadder(HttpCase):
         self.assertEqual(r.status_code, 301)
         self.assertEqual(self._loc(r), "/fr")
         self.assertEqual(r.cookies.get("frontend_lang"), "fr_FR")
+
+    def test_a_language_is_read_whatever_its_case_or_separator(self):
+        for prefix, status, location in (
+            ("/FR", 301, "/fr"),
+            ("/fr-FR", 301, "/fr"),
+            ("/fr-fr", 301, "/fr"),
+            ("/FR_FR", 301, "/fr"),
+            ("/en-US", 303, ""),
+            ("/EN", 303, ""),
+        ):
+            with self.subTest(prefix=prefix):
+                r = self.url_open(prefix + self.EP, allow_redirects=False)
+                self.assertEqual(r.status_code, status)
+                self.assertEqual(self._loc(r), location + self.EP)
+
+    def test_a_segment_not_shaped_like_a_language_is_not_one(self):
+        for prefix in ("/en_vivo", "/fr_xyz", "/fr-france"):
+            with self.subTest(prefix=prefix):
+                r = self.url_open(prefix + self.EP, allow_redirects=False)
+                self.assertEqual(r.status_code, 404)
 
     def test_double_slash_is_merged(self):
         r = self.url_open("/http_routing//frontend_probe?a=b", allow_redirects=False)

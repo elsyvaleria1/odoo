@@ -130,7 +130,8 @@
                                     <h1 class="visually-hidden">Error 404</h1>
                                     <h2>We couldn't find the page you're looking for!</h2>
                                     <p />
-                                    <p><b>Don't panic.</b> If you think it's our mistake, please send us a message on <a href="/contactus">this page</a>.</p>
+                                    <!-- /contactus is website's page: without it the link is a 404 of its own -->
+                                    <p t-if="website"><b>Don't panic.</b> If you think it's our mistake, please send us a message on <a href="/contactus">this page</a>.</p>
                                 </div>
                                 <div class="col-lg-12">
                                     <div
