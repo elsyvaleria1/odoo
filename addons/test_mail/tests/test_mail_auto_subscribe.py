@@ -85,6 +85,16 @@ class AutoSubscribeCase(MailCommon):
 
 @tagged("mail_followers", "post_install", "-at_install")
 class TestAutoSubscribeReadPaths(AutoSubscribeCase):
+    def test_a_write_that_can_subscribe_nobody_queues_nothing(self):
+        ticket = self.tickets[0]
+        followers = ticket.message_partner_ids
+        ticket.write({"name": "Renamed"})
+        self.assertFalse(self._get_pending_ids())
+        with self.assertQueryCount(0):
+            self.assertEqual(ticket.message_partner_ids, followers)
+        ticket.write({"container_id": self.container.id})
+        self.assertEqual(self._get_pending_ids(), {ticket.id})
+
     def test_message_partner_ids_sees_a_pending_assignment_over_a_warm_cache(self):
         ticket = self.tickets[0]
         self.assertNotIn(self.partner_assignee, ticket.message_partner_ids)

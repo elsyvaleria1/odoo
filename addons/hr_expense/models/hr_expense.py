@@ -1074,6 +1074,9 @@ class HrExpense(models.Model):
         expenses.update_activities_and_mails()
         return expenses
 
+    def _message_auto_subscribe_fields(self) -> set[str]:
+        return super()._message_auto_subscribe_fields() | {"employee_id"}
+
     def _message_auto_subscribe_followers(self, updated_values, subtype_ids):
         res = super()._message_auto_subscribe_followers(updated_values, subtype_ids)
         if updated_values.get("employee_id"):

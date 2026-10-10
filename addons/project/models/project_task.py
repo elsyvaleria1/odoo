@@ -3852,6 +3852,9 @@ class ProjectTask(models.Model):
             )
         )
 
+    def _message_auto_subscribe_fields(self) -> set[str]:
+        return super()._message_auto_subscribe_fields() | self._get_fields_assignment()
+
     def _message_auto_subscribe_followers(
         self, updated_values: dict[str, Any], default_subtype_ids: list[int]
     ) -> list:

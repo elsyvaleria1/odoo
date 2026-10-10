@@ -5277,7 +5277,7 @@ class MrpProduction(models.Model):
             from_report=len(from_report),
             origins=len(origins),
         )
-        self._message_post_origin_links(origins, subtype_id=note_subtype_id)
+        self._message_post_origin_links(origins)
         return True
 
     def _resequence_workorders(self) -> bool:

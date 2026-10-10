@@ -191,9 +191,6 @@ class Base(models.AbstractModel):
     def _mail_get_followers(self) -> dict[int, ResPartner]:
         return dict.fromkeys(self._ids, self.env["res.partner"])
 
-    def _mail_get_thread_messages(self) -> dict[int, MailMessage]:
-        return dict.fromkeys(self._ids, self.env["mail.message"])
-
     def _creation_subtype(self) -> MailMessageSubtype:
         return self.env["mail.message.subtype"]
 

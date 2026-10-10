@@ -3627,6 +3627,50 @@ class TestMessagePostHelpers(TestMessagePostCommon):
 
 
 @tagged("mail_post", "post_install", "-at_install")
+class TestMessagePostBatchContract(TestMessagePostCommon):
+    def test_a_model_overriding_message_post_is_posted_record_by_record(self):
+        records = self.env["mail.test.simple"].create(
+            [{"name": "First"}, {"name": "Second"}]
+        )
+        posted = []
+        message_post = type(records).message_post
+
+        def counted_message_post(record, **kwargs):
+            posted.append(record.id)
+            return message_post(record, **kwargs)
+
+        with patch.object(type(records), "message_post", counted_message_post):
+            messages = records._message_post_values_all(
+                {record.id: {"body": "Same"} for record in records}
+            )
+        self.assertEqual(posted, records.ids)
+        self.assertEqual(messages.mapped("res_id"), records.ids)
+
+    def test_a_template_posts_on_the_records_in_their_own_context(self):
+        records = self.env["mail.test.ticket"].create(
+            [{"name": "First"}, {"name": "Second"}]
+        )
+        template = self.env["mail.template"].create(
+            {"model_id": self.env["ir.model"]._get_id(records._name), "body_html": "Hi"}
+        )
+        seen = []
+
+        def after_hook(record, message, msg_values):
+            seen.append(
+                sorted(key for key in record.env.context if key.startswith("default_"))
+            )
+
+        with patch.object(type(records), "_message_post_after_hook", after_hook):
+            records.message_post_with_source(template)
+        self.assertEqual(seen, [[], []])
+
+    def test_a_batch_is_posted_on_documents_only(self):
+        with self.assertRaises(ValueError):
+            self.env["mail.test.simple"].new({"name": "New"})._message_post_batch(
+                {0: "Body"}
+            )
+
+
 class TestMessagePostGlobal(TestMessagePostCommon):
     @users("employee")
     def test_message_post_return(self):

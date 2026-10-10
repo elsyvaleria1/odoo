@@ -176,7 +176,7 @@ class TestBaseSuggestedMessageSort(MailCommon):
         dated = self._post_comment("dated")
         self._post_comment("undated", date=False)
         self.env.flush_all()
-        messages = self.record._mail_get_thread_messages()[self.record.id]
+        messages = self.record.message_ids
         ordered = self.record._sort_suggested_messages(messages)
         self.assertEqual(
             ordered[0],

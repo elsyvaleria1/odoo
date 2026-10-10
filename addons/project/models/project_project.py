@@ -2111,6 +2111,9 @@ class ProjectProject(models.Model):
     def _prepare_assignment_vals(self, users) -> dict[str, Any]:
         return {"user_id": users[:1].id}
 
+    def _message_auto_subscribe_fields(self) -> set[str]:
+        return super()._message_auto_subscribe_fields() | self._get_fields_assignment()
+
     def _message_auto_subscribe_followers(
         self, updated_values: dict, default_subtype_ids: list[int]
     ) -> list:
