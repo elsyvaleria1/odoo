@@ -130,9 +130,13 @@ declare module "models" {
         showCorrespondentCountry: Readonly<boolean>;
         showUnreadBanner: Readonly<boolean>;
         lastMemberBusSubscription:
-            "not_member" | "member_before_start" | "member_after_start";
+            | "not_member"
+            | "member_before_start"
+            | "member_after_start";
         memberBusSubscription:
-            "not_member" | "member_before_start" | "member_after_start";
+            | "not_member"
+            | "member_before_start"
+            | "member_after_start";
         typesAllowingCalls: Readonly<string[]>;
         typingMembers: ChannelMember[];
         unknownMembersCount: Readonly<number>;

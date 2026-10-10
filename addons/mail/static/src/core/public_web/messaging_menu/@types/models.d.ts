@@ -21,7 +21,10 @@ declare module "models" {
     export interface Store {
         messagingMenu: MessagingMenu;
         MessagingMenu: StaticMailRecord<MessagingMenu, typeof MessagingMenuClass>;
-        MessagingMenuTab: StaticMailRecord<MessagingMenuTab, typeof MessagingMenuTabClass>;
+        MessagingMenuTab: StaticMailRecord<
+            MessagingMenuTab,
+            typeof MessagingMenuTabClass
+        >;
         MessagingMenuUIState: StaticMailRecord<
             MessagingMenuUIState,
             typeof MessagingMenuUIStateClass
