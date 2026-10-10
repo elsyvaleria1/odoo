@@ -6,14 +6,15 @@ from datetime import datetime, timedelta
 import pytz
 
 from odoo import api, fields, models
-from odoo.tools import remove_accents
+from odoo.exceptions import UserError
+from odoo.tools import SQL, remove_accents
 
 from ..services import catalog, documents, files, write_ops
 from ..services.catalog import NotFound, available_queries
 from ..services.insight_agent import InsightAgent
 from ..services.insight_assistant import HELP, SEND_DOCUMENT, InsightAssistant
 from ..services.odoo_reader import OdooReader
-from ..services.odoo_tools import STATEMENT_ID, OdooTools
+from ..services.odoo_tools import STATEMENT_REQUEST, OdooTools
 from .telegram_handler import (
     AUTHORIZE,
     AUTHORIZE_ACTION,
@@ -50,6 +51,11 @@ LEGACY_PENDING_KEY = "telegram_insight_pending"
 FILES_KEY = "telegram_insight_files"
 # how recent the agent's question must be for a message to be its reply
 FOLLOW_UP_WINDOW = timedelta(minutes=30)
+# how long after a change is applied the next message is taken as its
+# correction: past it, a message is classified like any other
+CORRECTION_WINDOW = timedelta(minutes=10)
+# a decision repeated within this long is the same one, sent twice
+REPEAT_WINDOW = timedelta(minutes=2)
 # a whole reply that authorizes or cancels, once normalized: a sentence that
 # only mentions authorizing ("¿quién autorizó…?", "no lo autorizo todavía")
 # is a new question, never a decision
@@ -132,9 +138,13 @@ class TelegramChat(models.Model):
             question = tr_env._("Analyse the file(s) I sent.")
 
         pending = chat._insight_pending()
-        decision = _decision(question) if pending else None
-        if decision:
+        decision = _decision(question)
+        if decision and pending:
             self._insight_decide(bot, chat, pending, decision, question, tr_env)
+            return
+        if decision == "authorize" and _just_decided(chat._insight_history()):
+            # a second «autorizo» right after the first: nothing left to decide
+            bot.send_message(chat.chat_id, _nothing_waiting(tr_env))
             return
 
         reader, tz, today = self._insight_reader(reader_user, tr_env)
@@ -379,13 +389,7 @@ class TelegramChat(models.Model):
         shown under, if that one still waits."""
         pending = chat._insight_pending()
         if not pending:
-            bot.send_message(
-                chat.chat_id,
-                tr_env._(
-                    "There are no changes waiting: they were already applied, "
-                    "cancelled, or expired after an hour."
-                ),
-            )
+            bot.send_message(chat.chat_id, _nothing_waiting(tr_env))
             return
         if not _same_proposal(pending, message):
             bot.send_message(
@@ -419,6 +423,12 @@ class TelegramChat(models.Model):
             return
         pdfs = []
         if decision == "authorize":
+            # two jobs deciding the same changes at once (a double tap): the
+            # row lock makes the second wait and then fail on the first's
+            # update, rolled back whole, so nothing is applied twice
+            self.env.cr.execute(
+                SQL("SELECT id FROM telegram_chat WHERE id = %s FOR UPDATE", chat.id)
+            )
             answer, pdfs = self._insight_authorize(bot, pending, tr_env)
         else:
             answer = tr_env._("Cancelled: nothing was changed.")
@@ -476,12 +486,25 @@ class TelegramChat(models.Model):
                 ),
                 requester,
             )
-        except Exception as error:
-            _logger.info("insight_telegram could not apply %s", pending, exc_info=True)
+        except (write_ops.OperationError, UserError) as error:
+            # the bot's own refusals and Odoo's messages to users are meant to
+            # be read
+            _logger.info(
+                "insight_telegram could not apply %s", _summary(pending), exc_info=True
+            )
             return (
                 tr_env._(
                     "I could not apply the changes, so nothing was changed: %(error)s",
                     error=str(error),
+                ),
+                [],
+            )
+        except Exception:
+            _logger.exception("insight_telegram failed to apply %s", _summary(pending))
+            return (
+                tr_env._(
+                    "I could not apply the changes because of an error in Odoo, so "
+                    "nothing was changed. TI can see it in the server log."
                 ),
                 [],
             )
@@ -561,7 +584,7 @@ class TelegramChat(models.Model):
         env = self._insight_super_env(self.env["res.users"].browse(reader.uid))
         bot.send_chat_action(chat, "upload_document")
         for report_id, model, ids in requests:
-            if report_id == STATEMENT_ID:
+            if report_id == STATEMENT_REQUEST:
                 files = []
                 for partner in env["res.partner"].browse(ids).exists():
                     try:
@@ -667,7 +690,8 @@ def _answers_the_agent(history) -> bool:
     # right after a change is applied, the next message is most likely a
     # correction of it ("the quantity was 2,000")
     if interpretation.get("decision") == "authorize":
-        return True
+        recent = fields.Datetime.to_string(fields.Datetime.now() - CORRECTION_WINDOW)
+        return last.get("at", "") >= recent
     if interpretation.get("query") != "none":
         return False
     # a link's query string ("maps?q=") is no question
@@ -686,6 +710,33 @@ def _decision(text):
     if _AUTHORIZE.match(words):
         return "authorize"
     return None
+
+
+def _just_decided(history) -> bool:
+    """Whether the last exchange decided pending changes a moment ago."""
+    if not history:
+        return False
+    last = history[-1]
+    recent = fields.Datetime.to_string(fields.Datetime.now() - REPEAT_WINDOW)
+    return bool(
+        (last.get("interpretation") or {}).get("decision")
+        and last.get("at", "") >= recent
+    )
+
+
+def _nothing_waiting(tr_env) -> str:
+    return tr_env._(
+        "There are no changes waiting: they were already applied, cancelled, or "
+        "expired after an hour."
+    )
+
+
+def _summary(pending) -> str:
+    """What pending changes are, for the server log: never their values."""
+    return ", ".join(
+        f"{operation.get('op')} {operation.get('model')}"
+        for operation in (pending or {}).get("operations", [])
+    )
 
 
 def _same_proposal(pending, message) -> bool:

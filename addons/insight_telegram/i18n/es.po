@@ -845,15 +845,6 @@ msgstr ""
 " que ellos autoricen (nunca borra ni toca lo técnico)."
 
 #. module: insight_telegram
-#: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__answered
-msgid ""
-"Whether a report answered. The unanswered questions are the ones the "
-"catalogue should learn next."
-msgstr ""
-"Si algún reporte respondió. Las preguntas sin respuesta son las que el "
-"catálogo debe aprender después."
-
-#. module: insight_telegram
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_handler.py:0
 msgid "You can also ask with a voice note 🎙."
@@ -1344,3 +1335,22 @@ msgstr "los cambios en espera de tu autorización"
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "where people and vehicles are (GPS)"
 msgstr "dónde están las personas y los vehículos (GPS)"
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"I could not apply the changes because of an error in Odoo, so nothing was "
+"changed. TI can see it in the server log."
+msgstr ""
+"No pude aplicar los cambios por un error en Odoo, así que no se cambió nada."
+" TI lo puede ver en el registro del servidor."
+
+#. module: insight_telegram
+#: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__answered
+msgid ""
+"Whether the bot answered: a report, the AI, a document or the help. The "
+"unanswered questions are the ones the catalogue should learn next."
+msgstr ""
+"Si el bot contestó: un reporte, la IA, un documento o la ayuda. Las "
+"preguntas sin respuesta son las que el catálogo debe aprender después."

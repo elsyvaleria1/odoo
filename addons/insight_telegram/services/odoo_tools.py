@@ -125,6 +125,8 @@ MAX_PDFS = 5
 # pdf_reports' id for a partner's account statement, which no report action
 # prints
 STATEMENT_ID = -1
+# how a statement is queued for printing: a kind of request, not a report id
+STATEMENT_REQUEST = "statement"
 
 PDF_TOOLS = [
     {
@@ -392,7 +394,7 @@ class OdooTools:
                 raise ReaderError(f"No res.partner record {ids}.")
             if len(self.pdf_requests) >= MAX_PDFS:
                 raise ReaderError("Too many PDFs at once.")
-            self.pdf_requests.append((STATEMENT_ID, "res.partner", partners.ids))
+            self.pdf_requests.append((STATEMENT_REQUEST, "res.partner", partners.ids))
             return {
                 "queued": "Account statement",
                 "records": partners.mapped("display_name"),

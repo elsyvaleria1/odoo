@@ -81,6 +81,8 @@ def _blocks_of(name, content, mimetype) -> list:
 
 def _text(name, text) -> dict:
     text = text if len(text) <= MAX_TEXT else text[:MAX_TEXT] + "\n[TRUNCATED]"
+    # the file's own text cannot close the tag that marks it as data
+    text = text.replace("</file", "<\\/file")
     return {
         "type": "text",
         "text": f"<file name={name!r}>\n{text}\n</file>",

@@ -76,6 +76,9 @@ ADMIN_GROUP = "base.group_system"
 # lines (6) deletes the ones left out, and linking (4) takes lines from
 # another document, so neither is allowed there.
 ONE2MANY_COMMANDS = (0, 1, 2, 3)
+# fields that tie a business record to a user account: changing them moves
+# who logs in as whom, which belongs to the user's own settings
+USER_LINK_FIELDS = {"res.partner": ("main_user_id", "user_ids")}
 MANY2MANY_COMMANDS = (0, 1, 3, 4, 6)
 
 
@@ -203,6 +206,11 @@ def _check_values(model, values, ids, path="") -> None:
         if field is None:
             raise OperationError(
                 f"{path}{model._name} has no field {name}; call describe_model."
+            )
+        if name in USER_LINK_FIELDS.get(model._name, ()):
+            raise OperationError(
+                f"{path}{name} ties a contact to an Odoo user, which is set from "
+                "the user's own settings."
             )
         if field.readonly and field.compute and not field.inverse:
             # a computed field without an inverse keeps its computed value: the
@@ -763,8 +771,10 @@ def _note(records, requester) -> None:
     )
     for record in records:
         try:
-            record.message_post(
-                body=body, message_type="comment", subtype_xmlid="mail.mt_note"
-            )
+            # a failed note must not abort the transaction the change is in
+            with record.env.cr.savepoint():
+                record.message_post(
+                    body=body, message_type="comment", subtype_xmlid="mail.mt_note"
+                )
         except Exception:
             _logger.info("insight_telegram could not note %s", record, exc_info=True)

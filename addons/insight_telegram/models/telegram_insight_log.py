@@ -34,7 +34,7 @@ class TelegramInsightLog(models.Model):
     )
     answered = fields.Boolean(
         index=True,
-        help="Whether a report answered. The unanswered questions are the ones "
-        "the catalogue should learn next.",
+        help="Whether the bot answered: a report, the AI, a document or the help. "
+        "The unanswered questions are the ones the catalogue should learn next.",
     )
     answer = fields.Text()

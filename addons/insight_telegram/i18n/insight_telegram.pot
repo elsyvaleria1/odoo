@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-10 06:28+0000\n"
-"PO-Revision-Date: 2026-10-10 06:28+0000\n"
+"POT-Creation-Date: 2026-10-10 07:05+0000\n"
+"PO-Revision-Date: 2026-10-10 07:05+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -445,6 +445,14 @@ msgstr ""
 #. odoo-python
 #: code:addons/insight_telegram/models/telegram_chat.py:0
 msgid "I could not answer that right now. Please try again."
+msgstr ""
+
+#. module: insight_telegram
+#. odoo-python
+#: code:addons/insight_telegram/models/telegram_chat.py:0
+msgid ""
+"I could not apply the changes because of an error in Odoo, so nothing was "
+"changed. TI can see it in the server log."
 msgstr ""
 
 #. module: insight_telegram
@@ -1001,8 +1009,8 @@ msgstr ""
 #. module: insight_telegram
 #: model:ir.model.fields,help:insight_telegram.field_telegram_insight_log__answered
 msgid ""
-"Whether a report answered. The unanswered questions are the ones the "
-"catalogue should learn next."
+"Whether the bot answered: a report, the AI, a document or the help. The "
+"unanswered questions are the ones the catalogue should learn next."
 msgstr ""
 
 #. module: insight_telegram
