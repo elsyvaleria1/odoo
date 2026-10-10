@@ -195,7 +195,7 @@ into `test_approvals.py`).
 
 | File | Content |
 |------|---------|
-| `res_groups.xml` | 4 groups — `group_approval_approver`, `group_approval_manager` under one `res.groups.privilege` (`res_groups_privilege_approvals`), `group_approval_decider`, which only carries the approver-reach rows the adopters ship, and the privilege `privilege_walk_authority`, under which a walking step reads the limits, grants and managers it walks |
+| `res_groups.xml` | 5 groups — `group_approval_approver`, `group_approval_manager` under one `res.groups.privilege` (`res_groups_privilege_approvals`), `group_approval_decider`, which only carries the approver-reach rows the adopters ship, and two privileges, declared first because loading the groups can already weigh a duty conflict: `privilege_walk_authority`, under which a walking step reads the limits, grants and managers it walks, and `privilege_read_delegations`, under which a segregation-of-duties check reads who stands in for a duty |
 | `ir.access.csv` | Permissions and guards for every shipped model: multi-company, ownership, per-category `privacy_visibility` read audiences. The mixin's concrete test consumer is not one of them: `approval.test.document` lives in `test_approval`, which ships no row for it |
 
 ## Directory Structure
