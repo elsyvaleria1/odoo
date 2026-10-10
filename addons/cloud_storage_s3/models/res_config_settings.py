@@ -141,7 +141,15 @@ class ResConfigSettings(models.TransientModel):
                 {
                     "AllowedOrigins": ["*"],
                     "AllowedMethods": ["GET", "PUT"],
-                    "AllowedHeaders": ["Content-Type"],
+                    # a PDF viewer reads a document in ranges, and needs the
+                    # range headers of the answer to know where it is
+                    "AllowedHeaders": ["Content-Type", "Range"],
+                    "ExposeHeaders": [
+                        "Accept-Ranges",
+                        "Content-Length",
+                        "Content-Range",
+                        "ETag",
+                    ],
                     "MaxAgeSeconds": self.env[
                         "ir.attachment"
                     ]._cloud_storage_upload_url_time_to_expiry,

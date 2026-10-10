@@ -384,6 +384,20 @@ class TestCloudStorageS3Endpoint(TestCloudStorageS3Common):
         with self.assertRaises(UserError):
             settings._check_cloud_storage_uninstallable()
 
+    def test_cloud_only_cors_lets_a_viewer_read_ranges(self):
+        self.env["ir.config_parameter"].set_param(
+            "cloud_storage_s3_storage_mode", "s3_only"
+        )
+        self.mock_s3_client.get_object.return_value = {"Body": MagicMock()}
+        self.env["res.config.settings"]._setup_cloud_storage_provider()
+        rule = self.mock_s3_client.put_bucket_cors.call_args.kwargs[
+            "CORSConfiguration"
+        ]["CORSRules"][0]
+        self.assertIn("Range", rule["AllowedHeaders"])
+        self.assertTrue(
+            {"Content-Range", "Accept-Ranges"} <= set(rule["ExposeHeaders"])
+        )
+
     def test_ovh_without_endpoint_is_not_configured(self):
         icp = self.env["ir.config_parameter"]
         icp.set_param("cloud_storage_provider", "ovh")
