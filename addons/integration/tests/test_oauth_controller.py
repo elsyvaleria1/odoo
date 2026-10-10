@@ -167,7 +167,7 @@ class TestOAuthCallbackState(HttpCase):
                 response = self.url_open(
                     f"{oauth._CALLBACK_PATH}?{urlencode({'state': state, 'code': 'c'})}"
                 )
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.status_code, 403)
                 self.assertIn(_REFUSED, response.text)
 
     @mute_logger("odoo.addons.integration.controllers.oauth")
@@ -176,7 +176,7 @@ class TestOAuthCallbackState(HttpCase):
         response = self.url_open(
             f"{oauth._CALLBACK_PATH}?{urlencode({'error': 'access_denied'})}"
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
         self.assertIn("access_denied", response.text)
 
     @mute_logger("odoo.addons.integration.controllers.oauth")
@@ -186,7 +186,7 @@ class TestOAuthCallbackState(HttpCase):
         self.authenticate("oauth_admin", "oauth_admin")
         missing = self.env["credential.credential"].search([], order="id desc", limit=1)
         response = self.url_open(f"/api_transport/oauth/authorize/{missing.id + 1}")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
         self.assertIn("Credential not found", response.text)
 
     @mute_logger("odoo.addons.integration.controllers.oauth")
@@ -204,7 +204,7 @@ class TestOAuthCallbackState(HttpCase):
         response = self.url_open(
             f"{oauth._CALLBACK_PATH}?{urlencode({'state': state, 'code': 'c'})}"
         )
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
         self.assertIn(_REFUSED, response.text)
 
     def _create_oauth_credential(self):

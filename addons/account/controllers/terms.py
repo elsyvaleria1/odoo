@@ -31,6 +31,7 @@ class TermsController(http.Controller):
                 request.env._(
                     """The requested page is invalid, or doesn't exist anymore."""
                 ),
+                status=404,
             )
         values = {
             "use_invoice_terms": use_invoice_terms,

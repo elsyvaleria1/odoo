@@ -281,6 +281,7 @@ class HrContractSalary(http.Controller):
         return request.env["ir.http"]._serve_error_page(
             request.env._("Oops"),
             request.env._("This offer is outdated, please request an updated link..."),
+            status=410,
         )
 
     def _can_submit_offer(self, values) -> bool:
@@ -383,7 +384,9 @@ class HrContractSalary(http.Controller):
             )
             if not has_access:
                 return request.env["ir.http"]._serve_error_page(
-                    request.env._("Oops"), error_message
+                    request.env._("Oops"),
+                    error_message,
+                    status=403,
                 )
 
             if offer.state == "full_signed":
@@ -392,6 +395,7 @@ class HrContractSalary(http.Controller):
                     request.env._(
                         "This offer has been fully signed, you can not sign it again.."
                     ),
+                    status=409,
                 )
 
             if offer.applicant_id:

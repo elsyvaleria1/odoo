@@ -117,10 +117,13 @@ class OAuthController(http.Controller):
             return request.env["ir.http"]._serve_error_page(
                 request.env._("OAuth Authorization Error"),
                 request.env._("You are not allowed to authorize this connection."),
+                status=403,
             )
         except UserError as e:
             return request.env["ir.http"]._serve_error_page(
-                request.env._("OAuth Authorization Error"), str(e)
+                request.env._("OAuth Authorization Error"),
+                str(e),
+                status=400,
             )
         except Exception:
             _logger.exception("OAuth authorization failed")
@@ -129,6 +132,7 @@ class OAuthController(http.Controller):
                 request.env._(
                     "An unexpected error occurred. Please contact your administrator."
                 ),
+                status=500,
             )
 
     def _redirect_to_provider(self, connection, return_url):
@@ -203,6 +207,7 @@ class OAuthController(http.Controller):
                     request.env._("Authorization Denied"),
                     request.env._("OAuth authorization was denied: %s")
                     % (error_description or error),
+                    status=403,
                 )
             if not state:
                 raise UserError(request.env._("Missing state parameter"))
@@ -260,24 +265,30 @@ class OAuthController(http.Controller):
         except AccessDenied as e:
             _logger.error("OAuth callback access denied: %s", e)
             return request.env["ir.http"]._serve_error_page(
-                request.env._("Access Denied"), str(e)
+                request.env._("Access Denied"),
+                str(e),
+                status=403,
             )
         except AccessError:
             _logger.error("OAuth callback by a user who may not authorize it")
             return request.env["ir.http"]._serve_error_page(
                 request.env._("Access Denied"),
                 request.env._("You are not allowed to authorize this connection."),
+                status=403,
             )
         except UserError as e:
             _logger.warning("OAuth callback user error: %s", e)
             return request.env["ir.http"]._serve_error_page(
-                request.env._("OAuth Error"), str(e)
+                request.env._("OAuth Error"),
+                str(e),
+                status=400,
             )
         except Exception as e:
             _logger.exception("OAuth callback failed")
             return request.env["ir.http"]._serve_error_page(
                 request.env._("OAuth Error"),
                 request.env._("Token exchange failed: %s") % str(e),
+                status=500,
             )
 
     def _get_oauth_state(self, connection_id, redirect_uri="", return_url=None):

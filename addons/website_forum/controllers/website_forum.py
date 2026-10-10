@@ -610,6 +610,7 @@ class WebsiteForum(WebsiteProfile):
                 request.env._("Bad Request"),
                 (post_parent and request.env._("Reply should not be empty."))
                 or request.env._("Question should not be empty."),
+                status=400,
             )
 
         post_tag_ids = forum._tag_to_write_vals(post.get("post_tags", ""))
@@ -726,6 +727,7 @@ class WebsiteForum(WebsiteProfile):
                 return request.env["ir.http"]._serve_error_page(
                     request.env._("Bad Request"),
                     request.env._("Title should not be empty."),
+                    status=400,
                 )
 
             vals["name"] = kwargs.get("post_name")

@@ -707,7 +707,7 @@ class IrHttp(models.AbstractModel):
             )
 
     @classmethod
-    def _serve_error_page(cls, title: str, message: str, status: int = 200) -> Response:
+    def _serve_error_page(cls, title: str, message: str, *, status: int) -> Response:
         # http_error's layout reads what only a frontend request carries
         # (portal's frontend_languages, website's website), so a route that is
         # not one -- a backend download, an OAuth callback -- is made one first

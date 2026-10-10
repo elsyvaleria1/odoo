@@ -169,7 +169,10 @@ a site where every missing URL told crawlers and monitors something else.
 | `http_routing.error_message`, `http_routing.http_error_debug` | structural fragments used by the above; the debug accordion renders only under `editable or debug` |
 
 **A controller answers a refusal with `_serve_error_page(title, message,
-status=200)`, never `request.render("http_routing.http_error", …)`.** The page
+status=…)`, never `request.render("http_routing.http_error", …)`.** `status` is
+keyword-only and has no default: it defaulted to 200, and 23 of the 25 callers
+-- OAuth "Access Denied", a forum "Bad Request", payroll and sign refusals --
+told every monitor, cache and crawler that their refusal was a success. The page
 is a frontend page: with `portal` or `website` installed its layout reads
 `frontend_languages` / `website`, which only `_prepare_frontend_environment`
 puts in the qcontext, and only for a request `_match_and_flag` marked frontend. A route that is not `website=True` --

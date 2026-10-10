@@ -29,6 +29,7 @@ class TermsController(http.Controller):
                 request.env._(
                     """The requested page is invalid, or doesn't exist anymore."""
                 ),
+                status=404,
             )
         values = {"use_sign_terms": use_sign_terms, "company": request.env.company}
         return request.render("sign.sign_terms_conditions_page", values)

@@ -558,6 +558,7 @@ class Sign(http.Controller):
                 request.env._(
                     "You do not have access to these documents, please contact a Sign Administrator."
                 ),
+                status=403,
             )
 
         sign_requests = (

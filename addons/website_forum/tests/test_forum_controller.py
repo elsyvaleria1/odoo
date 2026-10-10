@@ -198,6 +198,23 @@ class TestForumPostRoutes(HttpCase):
             allow_redirects=False,
         )
 
+    def test_an_empty_question_is_refused_as_a_bad_request(self):
+        self.authenticate("admin", "admin")
+        slug = self.env["ir.http"]._slug
+
+        refused = self.url_open(
+            f"/forum/{slug(self.forum)}/new",
+            data={
+                "csrf_token": http.Request.csrf_token(self),
+                "post_name": "A title",
+                "content": "<p><br></p>",
+            },
+            allow_redirects=False,
+        )
+
+        self.assertEqual(refused.status_code, 400)
+        self.assertIn("Question should not be empty.", refused.text)
+
     def test_a_question_cannot_be_marked_as_the_correct_answer(self):
         self.authenticate("admin", "admin")
 

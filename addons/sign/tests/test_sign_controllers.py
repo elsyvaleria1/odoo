@@ -547,7 +547,7 @@ class TestSignController(TestSignControllerCommon):
         new_test_user(self.env, login="no_sign_user", groups="base.group_user")
         self.authenticate("no_sign_user", "no_sign_user")
         response = self.url_open("/sign/download/zip/1")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 403)
         self.assertIn("You do not have access to these documents", response.text)
 
 
