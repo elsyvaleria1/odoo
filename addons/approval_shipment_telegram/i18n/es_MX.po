@@ -1,0 +1,217 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* approval_shipment_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-10 00:14+0000\n"
+"PO-Revision-Date: 2026-10-10 00:14+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Language: es_MX\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,help:approval_shipment_telegram.field_delivery_carrier__freight_approval_category_id
+msgid ""
+"A shipping order sent with /embarque prepares a draft request of this "
+"category for the freight. Empty: none is prepared."
+msgstr ""
+"Una hoja de embarque enviada con /embarque prepara un borrador de "
+"solicitud de esta categoría para el flete. Vacío: no se prepara "
+"ninguna."
+
+#. module: approval_shipment_telegram
+#: model:ir.model,name:approval_shipment_telegram.model_approval_request
+msgid "Approval Request"
+msgstr "Solicitud de aprobación"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Customer"
+msgstr "Cliente"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Destination"
+msgstr "Destino"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Destination: %(city)s – Consignee: %(customer)s"
+msgstr "Destino: %(city)s – Destinatario: %(customer)s"
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_approval_request__display_name
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_delivery_carrier__display_name
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_stock_picking__display_name
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_telegram_shipment_sheet__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Freight %(ref)s"
+msgstr "Flete %(ref)s"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Freight %(request)s already covers %(ref)s; %(picking)s is now on it."
+msgstr ""
+"El flete %(request)s ya cubre la guía %(ref)s; %(picking)s quedó "
+"ligada a él."
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_delivery_carrier__freight_approval_category_id
+msgid "Freight Approval"
+msgstr "Aprobación de flete"
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_delivery_carrier__freight_partner_id
+msgid "Freight Billed By"
+msgstr "Factura el flete"
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_stock_picking__freight_request_ids
+msgid "Freight Requests"
+msgstr "Solicitudes de flete"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid ""
+"Freight request %(category)s prepared as a draft for %(amount)s: check it "
+"against the sheet and submit it."
+msgstr ""
+"Solicitud de flete %(category)s preparada en borrador por %(amount)s: "
+"revísala contra la hoja y envíala."
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid ""
+"Freight request %(category)s prepared as a draft without an amount: the "
+"total could not be read off the sheet."
+msgstr ""
+"Solicitud de flete %(category)s preparada en borrador sin monto: no "
+"se pudo leer el total de la hoja."
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid ""
+"I could not prepare the freight request: you may not create %(category)s "
+"requests."
+msgstr ""
+"No pude preparar la solicitud de flete: no puedes crear solicitudes "
+"de %(category)s."
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_approval_request__id
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_delivery_carrier__id
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_stock_picking__id
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_telegram_shipment_sheet__id
+msgid "ID"
+msgstr "ID"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Ocurre"
+msgstr "Ocurre"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Payment details"
+msgstr "Datos de pago"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Sales order"
+msgstr "Orden de venta"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Salesperson"
+msgstr "Vendedor"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Service"
+msgstr "Servicio"
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,field_description:approval_shipment_telegram.field_approval_request__shipment_picking_ids
+msgid "Shipped Transfers"
+msgstr "Transferencias embarcadas"
+
+#. module: approval_shipment_telegram
+#: model:ir.model,name:approval_shipment_telegram.model_delivery_carrier
+msgid "Shipping Methods"
+msgstr "Métodos de envío"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Subtotal"
+msgstr "Subtotal"
+
+#. module: approval_shipment_telegram
+#: model:ir.model,name:approval_shipment_telegram.model_telegram_shipment_sheet
+msgid "Telegram Shipping Order"
+msgstr "Hoja de embarque por Telegram"
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,help:approval_shipment_telegram.field_approval_request__shipment_picking_ids
+msgid "The delivery orders this freight paid for."
+msgstr "Las entregas que paga este flete."
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Total with taxes"
+msgstr "Total con impuestos"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Tracking number"
+msgstr "Número de guía"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+#: model:ir.model,name:approval_shipment_telegram.model_stock_picking
+msgid "Transfer"
+msgstr "Transferencia"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "VAT"
+msgstr "IVA"
+
+#. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "VAT withheld"
+msgstr "IVA retenido"
+
+#. module: approval_shipment_telegram
+#: model:ir.model.fields,help:approval_shipment_telegram.field_delivery_carrier__freight_partner_id
+msgid "Who bills the freight: the vendor of the request and of its bill."
+msgstr "Quién factura el flete: el proveedor de la solicitud y de su factura."

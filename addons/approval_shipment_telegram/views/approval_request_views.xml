@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_approval_request_form_shipment" model="ir.ui.view">
+        <field name="name">approval.request.form.shipment</field>
+        <field name="model">approval.request</field>
+        <field name="inherit_id" ref="approval_app.view_approval_request_form_fields" />
+        <field name="arch" type="xml">
+            <field name="location" position="after">
+                <field
+                    name="shipment_picking_ids"
+                    widget="many2many_tags"
+                    invisible="not shipment_picking_ids" />
+            </field>
+        </field>
+    </record>
+
+</odoo>
