@@ -24,9 +24,7 @@ export class WorkerService {
     /**
      * What the service effectively ended up running, decided at RUNTIME (a
      * SharedWorker can fail and fall back to a dedicated Worker, or fail
-     * entirely). Consumers that must adapt their strategy to the worker kind
-     * (e.g. the multi_tab election) should await `ensureWorkerStarted()` /
-     * `connectionInitializedDeferred` then read this — import-time feature
+     * entirely). Read it after `ensureWorkerStarted()` -- import-time feature
      * detection (`browser.SharedWorker` presence) is NOT equivalent.
      *
      * @returns {"shared" | "dedicated" | "failed" | null} null while the
