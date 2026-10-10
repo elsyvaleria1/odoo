@@ -3,7 +3,7 @@ from typing import Literal, Self, TypedDict
 
 from odoo import api, fields, models
 
-KIOSK_EVENT_FIELDS = {"name", "start", "stop", "active"}
+KIOSK_EVENT_FIELDS = {"name", "start", "stop", "active", "privacy", "user_id"}
 
 
 class RoomBookingData(TypedDict):

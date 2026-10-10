@@ -179,6 +179,19 @@ class TestRoomFrontend(RoomCommon, HttpCase):
             ]
             self.assertEqual(inlined, [], src)
 
+    def test_a_meeting_made_private_turns_busy_on_the_open_kiosk(self):
+        booking = self.bookings[0]
+        booking.privacy = "public"
+        sent = []
+        with patch.object(
+            type(self.env["bus.bus"]),
+            "_sendone",
+            lambda _bus, _target, _type, message: sent.append(message),
+        ):
+            booking.privacy = "private"
+        names = [event["name"] for message in sent for event in message]
+        self.assertEqual(names, ["Busy"])
+
     @freeze_time("2023-05-15 07:00:00")
     def test_the_kiosk_listens_on_its_room_capability(self):
         resource = self.resources[0]
