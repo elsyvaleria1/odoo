@@ -1285,6 +1285,8 @@ class AccountPayment(models.Model):
 
         payments = super().create(vals_list)
 
+        default_entry_payments = self.env["account.payment"]
+        entry_payments_vals = []
         for pay, vals, (write_off_line_vals, force_balance, line_ids) in zip(
             payments, vals_list, entry_vals_list, strict=True
         ):
@@ -1293,6 +1295,10 @@ class AccountPayment(models.Model):
                 and force_balance is None
                 and line_ids is None
             ):
+                continue
+            entry_payments_vals.append((pay, vals))
+            if not write_off_line_vals and force_balance is None and not line_ids:
+                default_entry_payments |= pay
                 continue
             _debug.pipeline(
                 "create_journal_entry_explicit_vals",
@@ -1306,6 +1312,8 @@ class AccountPayment(models.Model):
                 force_balance=force_balance,
                 line_ids=line_ids,
             )
+        default_entry_payments._create_journal_entry()
+        for pay, vals in entry_payments_vals:
             if move_vals := pay._move_vals_from_related(vals):
                 pay.move_id.write(move_vals)
         return payments

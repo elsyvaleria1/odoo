@@ -5039,20 +5039,10 @@ class AccountMove(models.Model):
             "total_residual_currency": 0.0,
         }
 
-        term_currencies = set()
-        has_term_lines = False
+        term_lines = self.env["account.move.line"]
         for line in self.line_ids:
             if line.account_type in RECEIVABLE_PAYABLE_TYPES:
-                sign = 1 if line.balance > 0.0 else -1
-
-                term_currencies.add(line.currency_id)
-                has_term_lines = True
-                values["total_balance"] += sign * line.balance
-                values["total_residual"] += sign * line.amount_residual
-                values["total_amount_currency"] += sign * line.amount_currency
-                values["total_residual_currency"] += (
-                    sign * line.amount_residual_currency
-                )
+                term_lines |= line
             elif line.tax_line_id.tax_exigibility == "on_payment":
                 values["to_process_lines"].append(("tax", line))
             elif "on_payment" in line.tax_ids.flatten_taxes_hierarchy().mapped(
@@ -5064,11 +5054,25 @@ class AccountMove(models.Model):
             "caba_lines_collected",
             move=self,
             to_process_lines=len(values["to_process_lines"]),
-            has_term_lines=has_term_lines,
-            term_currencies=len(term_currencies),
+            has_term_lines=bool(term_lines),
+            term_currencies=len(term_lines.currency_id),
         )
-        if not values["to_process_lines"] or not has_term_lines:
+        if not values["to_process_lines"] or not term_lines:
             return None
+
+        # On each account only the term lines on the side the move is owed carry
+        # its tax; an opposite line there settles them like a payment would, so
+        # counting both sides would recognise a same-move netting twice.
+        values["debt_lines"] = self._get_cash_basis_debt_lines(
+            term_lines, values["to_process_lines"]
+        )
+        term_currencies = set(values["debt_lines"].mapped("currency_id"))
+        for line in values["debt_lines"]:
+            sign = 1 if line.balance > 0.0 else -1
+            values["total_balance"] += sign * line.balance
+            values["total_residual"] += sign * line.amount_residual
+            values["total_amount_currency"] += sign * line.amount_currency
+            values["total_residual_currency"] += sign * line.amount_residual_currency
 
         # The paid share is measured on the term lines alone; when they carry
         # several currencies only the company currency adds them up.
@@ -5090,6 +5094,33 @@ class AccountMove(models.Model):
             is_fully_paid=values["is_fully_paid"],
         )
         return values
+
+    def _get_cash_basis_debt_lines(self, term_lines, to_process_lines):
+        company_currency = self.company_id.currency_id
+        caba_balance = sum(line.balance for _caba_type, line in to_process_lines)
+        balanced_sign = (
+            -1 if company_currency.compare_amounts(caba_balance, 0.0) > 0 else 1
+        )
+        debt_lines = self.env["account.move.line"]
+        for account_lines in term_lines.grouped("account_id").values():
+            net_balance = sum(account_lines.mapped("balance"))
+            if company_currency.is_zero(net_balance):
+                sign = balanced_sign
+            else:
+                sign = 1 if net_balance > 0.0 else -1
+            debt_lines |= account_lines.filtered(
+                lambda line, sign=sign: (
+                    (line.balance or line.amount_currency) * sign > 0.0
+                )
+            )
+        _debug.logic(
+            "caba_debt_side_decided",
+            move=self,
+            debt_lines=debt_lines,
+            settlement_lines=term_lines - debt_lines,
+            balanced_sign=balanced_sign,
+        )
+        return debt_lines
 
     @_debug.perf.timed
     def _prepare_tax_lines_for_taxes_computation(
@@ -7185,9 +7216,7 @@ class AccountMove(models.Model):
             view_id=self.env.ref("account.validate_account_move_view").id,
         )
 
-    @_debug.perf.timed
-    def js_add_outstanding_line(self, line_id):
-        _debug.lifecycle("js_add_outstanding_line", records=self)
+    def _get_addable_outstanding_line(self, line_id):
         self.check_singleton()
         counterpart_line = (
             self.env["account.move.line"]
@@ -7203,6 +7232,12 @@ class AccountMove(models.Model):
             raise UserError(
                 self.env._("This line cannot be reconciled with this invoice anymore.")
             )
+        return counterpart_line
+
+    @_debug.perf.timed
+    def js_add_outstanding_line(self, line_id):
+        _debug.lifecycle("js_add_outstanding_line", records=self)
+        counterpart_line = self._get_addable_outstanding_line(line_id)
         lines = counterpart_line
         lines += self.line_ids.filtered(
             lambda line: (

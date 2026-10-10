@@ -2991,3 +2991,107 @@ class TestAccountPaymentRegister(AccountTestInvoicingCommon, PaymentCommon):
             3,
             "We should get 2 payments from the first move and 1 for the second one",
         )
+
+    def test_batch_register_builds_entries_and_reconciles_in_one_pass(self):
+        partners = self.partner_a + self.partner_a.copy() + self.partner_a.copy()
+        invoices = self.env["account.move"].create(
+            [
+                {
+                    "move_type": "out_invoice",
+                    "date": "2017-01-01",
+                    "invoice_date": "2017-01-01",
+                    "partner_id": partner.id,
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "product_id": self.product_a.id,
+                                "price_unit": 100.0 * index,
+                                "tax_ids": [],
+                            }
+                        )
+                    ],
+                }
+                for index, partner in enumerate(partners, start=1)
+            ]
+        )
+        invoices.action_post()
+        payment_model = type(self.env["account.payment"])
+        aml_model = type(self.env["account.move.line"])
+        create_journal_entry = payment_model._create_journal_entry
+        reconcile_plan = aml_model._reconcile_plan
+        entry_batches = []
+        plan_batches = []
+        depth = []
+
+        def tracked_create_journal_entry(payments, *args, **kwargs):
+            if need_move := payments.filtered(
+                lambda p: not p.move_id and p.outstanding_account_id
+            ):
+                entry_batches.append(len(need_move))
+            return create_journal_entry(payments, *args, **kwargs)
+
+        def tracked_reconcile_plan(lines, plan_list, *args, **kwargs):
+            if not depth:
+                plan_batches.append(len(plan_list))
+            depth.append(1)
+            try:
+                return reconcile_plan(lines, plan_list, *args, **kwargs)
+            finally:
+                depth.pop()
+
+        with (
+            patch.object(
+                payment_model, "_create_journal_entry", tracked_create_journal_entry
+            ),
+            patch.object(aml_model, "_reconcile_plan", tracked_reconcile_plan),
+        ):
+            payments = self._register_payment(
+                invoices, payment_date="2017-01-01", group_payment=False
+            )
+
+        self.assertEqual(len(payments), 3)
+        self.assertEqual(entry_batches, [3])
+        self.assertEqual(plan_batches, [3])
+        self.assertTrue(all(payments.mapped("is_invoice_reconciled")))
+        self.assertEqual(invoices.mapped("amount_residual"), [0.0, 0.0, 0.0])
+        self.assertEqual(
+            [invoice.matched_payment_ids for invoice in invoices], list(payments)
+        )
+
+    def test_preferred_channel_journal_outside_the_available_ones_is_ignored(self):
+        outbound_only = self.company_data["default_journal_bank"].copy(
+            {"name": "Outbound only", "code": "OUTO"}
+        )
+        outbound_only.inbound_payment_channel_ids.unlink()
+        self.assertFalse(outbound_only.inbound_payment_channel_ids)
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "date": "2017-01-01",
+                "invoice_date": "2017-01-01",
+                "partner_id": self.partner_a.id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "product_id": self.product_a.id,
+                            "price_unit": 100.0,
+                            "tax_ids": [],
+                        }
+                    )
+                ],
+            }
+        )
+        invoice.action_post()
+        invoice.preferred_payment_channel_id = (
+            outbound_only.outbound_payment_channel_ids[:1]
+        )
+
+        wizard = (
+            self.env["wizard.account.move.line.pay"]
+            .with_context(active_model="account.move", active_ids=invoice.ids)
+            .create({})
+        )
+
+        self.assertNotIn(outbound_only, wizard.available_journal_ids)
+        self.assertIn(wizard.journal_id, wizard.available_journal_ids)
+        self.assertTrue(wizard.payment_channel_id)

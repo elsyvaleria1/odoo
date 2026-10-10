@@ -139,7 +139,7 @@ class TestMarinCashBasisBatch2(AccountTestInvoicingCommon):
         )
         self.assertTrue(transition_line.reconciled)
 
-    def test_same_move_netting_counts_each_side_once(self):
+    def test_same_move_netting_settles_the_debt_side_once(self):
         move = self._post_entry(
             [
                 *self._sale_lines_vals(),
@@ -150,7 +150,7 @@ class TestMarinCashBasisBatch2(AccountTestInvoicingCommon):
         credit_line, debit_line = self._receivable_lines(move)
         (credit_line + debit_line).reconcile()
 
-        self.assertEqual(self._exigible_amounts(move), (42.86, 14.28))
+        self.assertEqual(self._exigible_amounts(move), (27.27, 9.09))
 
         payment = self._post_entry(
             [
@@ -162,6 +162,71 @@ class TestMarinCashBasisBatch2(AccountTestInvoicingCommon):
 
         self.assertTrue(debit_line.reconciled)
         self.assertEqual(self._exigible_amounts(move), (100.0, 33.33))
+
+    def test_same_move_partial_settlement_recognises_the_settled_share(self):
+        for received, settled_amounts in (
+            (66.67, (50.0, 16.67)),
+            (40.0, (30.0, 10.0)),
+        ):
+            with self.subTest(received=received):
+                move = self._post_entry(
+                    [
+                        *self._sale_lines_vals(),
+                        self._receivable_vals(133.33),
+                        self._receivable_vals(-received),
+                        {"account_id": self.bank_account.id, "balance": received},
+                    ]
+                )
+                credit_line, debit_line = self._receivable_lines(move)
+                (credit_line + debit_line).reconcile()
+
+                self.assertEqual(len(move.tax_cash_basis_created_move_ids), 1)
+                self.assertEqual(self._exigible_amounts(move), settled_amounts)
+                self.assertFalse(self._transition_line(move).reconciled)
+
+                rest = round(133.33 - received, 2)
+                payment = self._post_entry(
+                    [
+                        self._receivable_vals(-rest),
+                        {"account_id": self.bank_account.id, "balance": rest},
+                    ]
+                )
+                (debit_line + self._receivable_lines(payment)).reconcile()
+
+                self.assertEqual(self._exigible_amounts(move), (100.0, 33.33))
+                self.assertTrue(self._transition_line(move).reconciled)
+
+    def test_settlement_line_applied_to_another_entry_leaves_the_tax_pending(self):
+        move = self._post_entry(
+            [
+                *self._sale_lines_vals(),
+                self._receivable_vals(133.33),
+                self._receivable_vals(-50.0),
+                {"account_id": self.bank_account.id, "balance": 50.0},
+            ]
+        )
+        credit_line, debit_line = self._receivable_lines(move)
+        other = self._post_entry(
+            [
+                self._receivable_vals(50.0),
+                {"account_id": self.revenue_account.id, "balance": -50.0},
+            ]
+        )
+        (credit_line + self._receivable_lines(other)).reconcile()
+
+        self.assertTrue(credit_line.reconciled)
+        self.assertEqual(self._exigible_amounts(move), (0.0, 0.0))
+
+        payment = self._post_entry(
+            [
+                self._receivable_vals(-133.33),
+                {"account_id": self.bank_account.id, "balance": 133.33},
+            ]
+        )
+        (debit_line + self._receivable_lines(payment)).reconcile()
+
+        self.assertEqual(self._exigible_amounts(move), (100.0, 33.33))
+        self.assertTrue(self._transition_line(move).reconciled)
 
     def test_same_move_unreconcile_reverses_its_cash_basis_entries(self):
         move = self._post_entry(

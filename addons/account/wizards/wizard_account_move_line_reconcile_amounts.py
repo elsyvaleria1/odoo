@@ -61,13 +61,9 @@ class WizardAccountMoveLineReconcile(models.TransientModel):
         return aml_values_map
 
     def _get_reco_rate_bounds(self, amls, reco_currency) -> tuple:
-        most_recent_line = max(amls, key=lambda aml: aml.date)
-        if not most_recent_line.amount_currency:
-            _debug.logic(
-                "reco_rate_bounds_chosen", line=most_recent_line, source="no_amount"
-            )
-            return 0.0, 0.0, 0.0
-        if most_recent_line.currency_id == reco_currency:
+        rated_lines = amls.filtered(lambda aml: aml.balance and aml.amount_currency)
+        most_recent_line = max(rated_lines or amls, key=lambda aml: aml.date)
+        if rated_lines and most_recent_line.currency_id == reco_currency:
             _debug.logic(
                 "reco_rate_bounds_chosen", line=most_recent_line, source="line_rate"
             )

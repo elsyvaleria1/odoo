@@ -1,8 +1,5 @@
-from collections import defaultdict
-
 from odoo import Command, models
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.numbers import float_compare
 
 _debug = DebugLog(__name__)
 
@@ -53,6 +50,30 @@ class AccountPayment(models.Model):
             )
         ).sorted("date")
 
+    def _allocate_to_open_terms(self, date, settle=None) -> tuple:
+        self.check_singleton()
+        inbound = self.currency_id.compare_amounts(self.amount_signed, 0) >= 0
+        remaining = self.amount_signed
+        allocations = []
+        for line in self._get_open_payment_term_lines():
+            if self.currency_id.is_zero(remaining):
+                break
+            line_amount = self._get_aml_amount_in_payment_currency(line, date)
+            current = (
+                min(remaining, line_amount) if inbound else max(remaining, line_amount)
+            )
+            if settle:
+                current = settle(line, line_amount, current)
+            allocations.append((line, current))
+            remaining -= current
+        _debug.logic(
+            "open_terms_allocated",
+            payment=self,
+            lines=len(allocations),
+            unallocated=remaining,
+        )
+        return allocations, remaining
+
     @_debug.perf.timed
     def _get_amls_for_payment_without_move(self, date=None):
         valid_payment_states = ["draft", *self._valid_payment_states()]
@@ -63,42 +84,12 @@ class AccountPayment(models.Model):
 
             company_currency = payment.company_id.currency_id
             rate_date = date or payment.date
-            line2amount = defaultdict(float)
-
-            payment_term_lines = payment._get_open_payment_term_lines()
-            remaining = payment.amount_signed
-            for line in payment_term_lines:
-                if payment.currency_id.is_zero(remaining):
-                    break
-
-                line_amount = line.currency_id._convert(
-                    from_amount=line.amount_residual_currency,
-                    to_currency=payment.currency_id,
-                    company=payment.company_id,
-                    date=rate_date,
-                )
-                if (
-                    float_compare(
-                        payment.amount_signed, 0, payment.currency_id.decimal_places
-                    )
-                    >= 0
-                ):
-                    current = min(remaining, line_amount)
-                else:
-                    current = max(remaining, line_amount)
-                remaining -= current
-                line2amount[line] -= current
-
+            allocations, remaining = payment._allocate_to_open_terms(rate_date)
+            line2amount = [(line, -current) for line, current in allocations]
             if not payment.currency_id.is_zero(remaining):
-                line2amount[False] -= remaining
-            _debug.logic(
-                "amls_without_move_line",
-                payment=payment,
-                payment_term_lines_count=len(payment_term_lines),
-                unallocated=remaining,
-            )
+                line2amount.append((False, -remaining))
 
-            for line, amount in line2amount.items():
+            for line, amount in line2amount:
                 balance = payment.currency_id._convert(
                     from_amount=amount,
                     to_currency=company_currency,
@@ -129,26 +120,16 @@ class AccountPayment(models.Model):
     def _add_payment_link(self, line_vals):
         pass
 
-    def _get_aml_amount_in_payment_currency(self, aml):
+    def _get_aml_amount_in_payment_currency(self, aml, date=None):
         self.check_singleton()
-        comp_curr = aml.company_id.currency_id
         if self.currency_id == aml.currency_id:
-            amount = aml.amount_residual_currency
-        elif self.currency_id == comp_curr:
-            amount = aml.currency_id._convert(
-                from_amount=aml.amount_residual_currency,
-                to_currency=self.currency_id,
-                company=aml.company_id,
-                date=self.date,
-            )
-        else:
-            amount = comp_curr._convert(
-                from_amount=aml.amount_residual,
-                to_currency=self.currency_id,
-                company=aml.company_id,
-                date=self.date,
-            )
-        return amount
+            return aml.amount_residual_currency
+        return aml.currency_id._convert(
+            from_amount=aml.amount_residual_currency,
+            to_currency=self.currency_id,
+            company=aml.company_id,
+            date=date or self.date,
+        )
 
     def _supersede_with_payment_move(self, line, current_amount) -> None:
         self.check_singleton()
@@ -188,14 +169,8 @@ class AccountPayment(models.Model):
 
     @_debug.perf.timed
     def _get_amls_for_reconciliation(self, st_line) -> tuple:
-        def get_current_amount(payment, line_amount, remaining):
-            return (
-                min(remaining, line_amount)
-                if payment.currency_id.compare_amounts(payment.amount_signed, 0) >= 0
-                else max(remaining, line_amount)
-            )
-
         amls_to_create = []
+        superseded = []
         has_exchange_diff = False
         payments = self.sorted(lambda payment: (payment.date, payment.id))
         payments_with_move = payments.filtered(lambda payment: payment.move_id)
@@ -256,14 +231,16 @@ class AccountPayment(models.Model):
             if payment.state not in valid_payment_states:
                 continue
 
-            payment_term_lines = payment._get_open_payment_term_lines()
-            remaining = payment.amount_signed
-            for line in payment_term_lines:
-                if payment.currency_id.is_zero(remaining):
-                    break
-
-                line_amount = payment._get_aml_amount_in_payment_currency(line)
-                current_amount = get_current_amount(payment, line_amount, remaining)
+            def settle(line, line_amount, current_amount, payment=payment):
+                nonlocal has_exchange_diff
+                if (line.currency_id | payment.currency_id) != company_currency:
+                    _debug.logic(
+                        "moveless_allocation_exchange_enabled",
+                        stline=st_line,
+                        payment=payment,
+                        line=line,
+                    )
+                    has_exchange_diff = True
                 exchange_diff_balance = (
                     st_line._lines_get_account_balance_exchange_diff(
                         line.currency_id,
@@ -298,19 +275,23 @@ class AccountPayment(models.Model):
                     amls_to_add = lines_with_epd or amls_to_add
                     current_amount = total_amount_currency or current_amount
                     if len(lines_with_epd) == 1:
-                        payment._supersede_with_payment_move(line, current_amount)
+                        superseded.append((payment, line, current_amount))
                     elif lines_with_epd:
                         payment._add_payment_link(lines_with_epd[0])
 
-                remaining -= current_amount
                 amls_to_create.extend(amls_to_add)
+                return current_amount
+
+            allocations, remaining = payment._allocate_to_open_terms(
+                st_line.date, settle=settle
+            )
 
             if _debug.logic.enabled:
                 _debug.logic(
                     "moveless_payment_remainder",
                     stline=st_line,
                     payment=payment,
-                    term_lines=len(payment_term_lines),
+                    term_lines=len(allocations),
                     remaining=remaining,
                     to_partner_account=not payment.currency_id.is_zero(remaining),
                 )
@@ -330,6 +311,8 @@ class AccountPayment(models.Model):
                 }
                 payment._add_payment_link(leftover_vals)
                 amls_to_create.append(leftover_vals)
+        for payment, line, current_amount in superseded:
+            payment._supersede_with_payment_move(line, current_amount)
         _debug.pipeline(
             "payment_reconciliation_amls_built",
             stline=st_line,

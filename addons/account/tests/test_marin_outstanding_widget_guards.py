@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import tagged
@@ -59,6 +61,34 @@ class TestOutstandingWidgetGuards(AccountTestInvoicingCommon):
         invoice = self._posted_invoice()
         invoice.js_add_outstanding_line(self._outstanding_credit(300.0).id)
         self.assertEqual(invoice.payment_state, "partial")
+
+    def test_add_a_statement_line_skips_the_lone_line_reconcile(self):
+        invoice = self._posted_invoice(1000.0)
+        st_line = self.env["account.bank.statement.line"].create(
+            {
+                "journal_id": self.company_data["default_journal_bank"].id,
+                "date": "2026-06-02",
+                "payment_ref": "outstanding",
+                "partner_id": self.partner_a.id,
+                "amount": 1000.0,
+            }
+        )
+        liquidity_line = st_line.line_ids.filtered(
+            lambda line: line.account_id.account_type == "asset_cash"
+        )
+        aml_model = type(self.env["account.move.line"])
+        reconcile_plan = aml_model._reconcile_plan
+        plans = []
+
+        def tracked_reconcile_plan(lines, plan_list, *args, **kwargs):
+            plans.extend(plan_list)
+            return reconcile_plan(lines, plan_list, *args, **kwargs)
+
+        with patch.object(aml_model, "_reconcile_plan", tracked_reconcile_plan):
+            invoice.js_add_outstanding_line(liquidity_line.id)
+
+        self.assertNotIn(liquidity_line, plans)
+        self.assertTrue(self._receivable_line(invoice).reconciled)
 
     def test_add_refuses_an_id_that_is_not_a_line(self):
         invoice = self._posted_invoice()

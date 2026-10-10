@@ -157,6 +157,13 @@ class AccountPartialReconcile(models.Model):
                 move_values = collected_per_move[move.id]
                 if not move_values:
                     continue
+                if source_line not in move_values["debt_lines"]:
+                    _debug.logic(
+                        "cash_basis_settlement_side_skipped",
+                        partial=partial,
+                        line=source_line,
+                    )
+                    continue
 
                 partial_vals = partial._prepare_cash_basis_partial_vals(
                     source_line, counterpart_line, move_values

@@ -657,6 +657,50 @@ class TestAccountEarlyPaymentDiscount(AccountTestInvoicingCommon):
             ],
         )
 
+    def test_register_payment_batch_foreign_currency_per_partner(self):
+        self.early_pay_10_percents_10_days.early_pay_discount_computation = "excluded"
+        invoices = self.env["account.move"].create(
+            [
+                {
+                    "move_type": "out_invoice",
+                    "date": "2019-01-01",
+                    "invoice_date": "2019-01-01",
+                    "partner_id": partner.id,
+                    "currency_id": self.other_currency.id,
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "product_id": self.product_a.id,
+                                "price_unit": price_unit,
+                                "tax_ids": [],
+                            }
+                        )
+                    ],
+                    "invoice_payment_term_id": self.early_pay_10_percents_10_days.id,
+                }
+                for partner, price_unit in (
+                    (self.partner_a, 1000.0),
+                    (self.partner_b, 2000.0),
+                )
+            ]
+        )
+        invoices.action_post()
+        wizard = (
+            self.env["wizard.account.move.line.pay"]
+            .with_context(active_model="account.move", active_ids=invoices.ids)
+            .create({"payment_date": "2019-01-01"})
+        )
+        self.assertEqual(wizard.currency_id, self.company_data["currency"])
+        payments = wizard._create_payments()
+        self.assertRecordValues(
+            payments.sorted("amount"),
+            [
+                {"amount": 900.0, "currency_id": self.other_currency.id},
+                {"amount": 1800.0, "currency_id": self.other_currency.id},
+            ],
+        )
+        self.assertEqual(invoices.mapped("amount_residual"), [0.0, 0.0])
+
     def test_register_payment_batch_mixed(self):
         self.early_pay_10_percents_10_days.early_pay_discount_computation = "mixed"
         out_invoice_1 = self.env["account.move"].create(

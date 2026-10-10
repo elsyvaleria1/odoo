@@ -486,6 +486,60 @@ class TestAccountReconcileWizard(AccountTestInvoicingCommon):
             line_1 + line_2 + line_3, wizard_input_values, expected_values
         )
 
+    def test_write_off_rate_skips_most_recent_zero_amount_currency_line(self):
+        line_1 = self.create_line_for_reconciliation(
+            50.0, 100.0, self.foreign_currency, "2017-01-01"
+        )
+        line_2 = self.create_line_for_reconciliation(
+            -45.0, -90.0, self.foreign_currency, "2017-02-01"
+        )
+        line_3 = self.create_line_for_reconciliation(
+            -1.0, 0.0, self.foreign_currency, "2017-03-01"
+        )
+        lines = line_1 + line_2 + line_3
+        wizard = (
+            self.env["wizard.account.move.line.reconcile"]
+            .with_context(active_model="account.move.line", active_ids=lines.ids)
+            .new({})
+        )
+        self.assertRecordValues(
+            wizard,
+            [
+                {
+                    "reco_currency_id": self.foreign_currency.id,
+                    "amount_currency": 10.0,
+                    "amount": 4.0,
+                }
+            ],
+        )
+        self.assertWizardReconcileValues(
+            lines,
+            {
+                "journal_id": self.misc_journal.id,
+                "account_id": self.write_off_account.id,
+                "label": "Write-Off Test Label",
+                "allow_partials": False,
+                "date": fields.Date.from_string("2017-04-01"),
+            },
+            [
+                {
+                    "account_id": self.receivable_account.id,
+                    "balance": -4.0,
+                    "amount_currency": -10.0,
+                    "currency_id": self.foreign_currency.id,
+                },
+                {
+                    "account_id": self.write_off_account.id,
+                    "balance": 4.0,
+                    "amount_currency": 10.0,
+                    "currency_id": self.foreign_currency.id,
+                },
+            ],
+        )
+        self.assertFalse(
+            (lines.matched_debit_ids | lines.matched_credit_ids).exchange_move_id
+        )
+
     def test_write_off_both_same_foreign_currency_ensure_no_exchange_diff(self):
         foreign_currency = self.setup_other_currency(
             "CAD", rounding=0.01, rates=[("2016-01-01", 1 / 0.225)]

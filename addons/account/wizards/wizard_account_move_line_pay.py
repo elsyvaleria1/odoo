@@ -709,7 +709,11 @@ class WizardAccountMoveLinePay(models.TransientModel):
             if wizard.journal_id in wizard.available_journal_ids:
                 continue
             move_payment_channels = wizard.line_ids.move_id.preferred_payment_channel_id
-            if move_payment_channels and len(move_payment_channels) == 1:
+            if (
+                len(move_payment_channels) == 1
+                and move_payment_channels.journal_id
+                in wizard.available_journal_ids._origin
+            ):
                 _debug.logic(
                     "register_journal_chosen", register=wizard, source="move_channel"
                 )
@@ -855,7 +859,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
             wizard.actionable_errors = actionable_errors
 
     @_debug.perf.timed
-    def _convert_to_wizard_currency(self, installments):
+    def _convert_to_wizard_currency(self, installments, target_currency=None):
         self.check_singleton()
         total_per_currency = defaultdict(
             lambda: {
@@ -873,7 +877,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
             )
 
         total_amount = 0.0
-        wizard_curr = self.currency_id
+        wizard_curr = target_currency or self.currency_id
         comp_curr = self.company_currency_id
         for currency, amounts in total_per_currency.items():
             amount_residual = amounts["amount_residual"]
@@ -901,8 +905,16 @@ class WizardAccountMoveLinePay(models.TransientModel):
         )
         return total_amount
 
+    def _get_batch_payment_currency(self, batch_result):
+        if self.can_edit_wizard:
+            return self.currency_id
+        _debug.logic("batch_payment_currency", register=self, source="batch")
+        return self.env["res.currency"].browse(
+            batch_result["payment_values"]["currency_id"]
+        )
+
     @_debug.perf.timed
-    def _get_total_amounts_to_pay(self, batch_results) -> dict:
+    def _get_total_amounts_to_pay(self, batch_results, currency=None) -> dict:
         self.check_singleton()
         next_payment_date = self._extract_next_payment_date_from_context()
         amount_per_line_common = []
@@ -911,15 +923,21 @@ class WizardAccountMoveLinePay(models.TransientModel):
         amount_per_line_for_difference = []
         epd_applied = False
         first_installment_mode = False
-        all_lines = self.env["account.move.line"]
+        lines_per_move = defaultdict(lambda: self.env["account.move.line"])
+        payment_currency_per_move = {}
         for batch_result in batch_results:
-            all_lines |= batch_result["lines"]
-        all_lines = all_lines.sorted(
-            key=lambda line: (line.move_id.id, line.date_maturity or date.max)
-        )
-        for lines in all_lines.grouped("move_id").values():
+            payment_currency = currency or self._get_batch_payment_currency(
+                batch_result
+            )
+            for line in batch_result["lines"]:
+                lines_per_move[line.move_id] |= line
+                payment_currency_per_move[line.move_id] = payment_currency
+        for move in sorted(lines_per_move, key=lambda move: move.id):
+            lines = lines_per_move[move].sorted(
+                key=lambda line: line.date_maturity or date.max
+            )
             installments = lines._prepare_installments_data(
-                payment_currency=self.currency_id,
+                payment_currency=payment_currency_per_move[move],
                 payment_date=self.payment_date,
                 next_payment_date=next_payment_date,
             )
@@ -962,12 +980,16 @@ class WizardAccountMoveLinePay(models.TransientModel):
 
                 amount_per_line_common.append(installment)
 
-        common = self._convert_to_wizard_currency(amount_per_line_common)
-        by_default = self._convert_to_wizard_currency(amount_per_line_by_default)
-        for_difference = self._convert_to_wizard_currency(
-            amount_per_line_for_difference
+        common = self._convert_to_wizard_currency(amount_per_line_common, currency)
+        by_default = self._convert_to_wizard_currency(
+            amount_per_line_by_default, currency
         )
-        full_amount = self._convert_to_wizard_currency(amount_per_line_full_amount)
+        for_difference = self._convert_to_wizard_currency(
+            amount_per_line_for_difference, currency
+        )
+        full_amount = self._convert_to_wizard_currency(
+            amount_per_line_full_amount, currency
+        )
 
         lines = self.env["account.move.line"]
         for value in amount_per_line_common + amount_per_line_by_default:
@@ -1602,9 +1624,9 @@ class WizardAccountMoveLinePay(models.TransientModel):
         if bank_account_id:
             payment_vals["bank_account_id"] = bank_account_id
 
-        total_amount_values = self._get_total_amounts_to_pay([batch_result])
-        total_amount = total_amount_values["amount_by_default"]
         currency = self.env["res.currency"].browse(batch_values["source_currency_id"])
+        total_amount_values = self._get_total_amounts_to_pay([batch_result], currency)
+        total_amount = total_amount_values["amount_by_default"]
         if total_amount_values["epd_applied"]:
             payment_vals["amount"] = total_amount
 
@@ -1729,15 +1751,14 @@ class WizardAccountMoveLinePay(models.TransientModel):
             ),
             ("reconciled", "=", False),
         ]
+        aml_model = self.env["account.move.line"].with_context(
+            clean_context(self.env.context)
+        )
+        plan_list = []
         for vals in to_process:
             payment = vals["payment"]
             payment_lines = payment.move_id.line_ids.filtered_domain(domain)
             lines = vals["to_reconcile"]
-            extra_context = (
-                {"forced_rate_from_register_payment": vals["rate"]}
-                if "rate" in vals
-                else {}
-            )
 
             _debug.pipeline(
                 "_reconcile_payments_against",
@@ -1747,14 +1768,27 @@ class WizardAccountMoveLinePay(models.TransientModel):
                 accounts=payment_lines.account_id,
                 rate=vals.get("rate"),
             )
-            for account in payment_lines.account_id:
-                (payment_lines + lines).with_context(**extra_context).filtered_domain(
+            payment_plan_list = [
+                (payment_lines + lines).filtered_domain(
                     [
                         ("account_id", "=", account.id),
                         ("reconciled", "=", False),
                     ]
-                ).reconcile()
-            lines.move_id.matched_payment_ids = [Command.link(payment.id)]
+                )
+                for account in payment_lines.account_id
+            ]
+            if "rate" in vals:
+                aml_model.with_context(
+                    forced_rate_from_register_payment=vals["rate"]
+                )._reconcile_plan(payment_plan_list)
+            else:
+                plan_list += payment_plan_list
+        if plan_list:
+            aml_model._reconcile_plan(plan_list)
+        for vals in to_process:
+            vals["to_reconcile"].move_id.matched_payment_ids = [
+                Command.link(vals["payment"].id)
+            ]
 
     def _get_payable_batches(self):
         batches = []

@@ -7644,6 +7644,37 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         self.assertEqual(line_a.matching_number, f"P{line_a.matched_credit_ids.id}")
         self.assertEqual(line_a.matching_number, line_b.matching_number)
 
+    def test_full_reconcile_numbers_lines_without_a_second_pass(self):
+        currency = self.env.company.currency_id
+        line_a = self.create_line_for_reconciliation(1000, 1000, currency, "2016-01-01")
+        line_b = self.create_line_for_reconciliation(
+            -1000, -1000, currency, "2016-01-01"
+        )
+        partial_model = type(self.env["account.partial.reconcile"])
+        update_matching_number = partial_model._update_matching_number
+        passes = []
+
+        def tracked_update_matching_number(partials, amls):
+            passes.append(amls)
+            return update_matching_number(partials, amls)
+
+        with patch.object(
+            partial_model, "_update_matching_number", tracked_update_matching_number
+        ):
+            (line_a + line_b).reconcile()
+
+        self.assertEqual(len(passes), 1)
+        full = line_a.full_reconcile_id
+        self.assertTrue(full)
+        self.assertEqual(
+            (line_a + line_b).mapped("matching_number"), [str(full.id)] * 2
+        )
+        self.env.invalidate_all()
+        self.assertEqual(
+            (line_a + line_b).mapped("matching_number"), [str(full.id)] * 2
+        )
+        (line_a + line_b)._check_matching_number()
+
     def test_unlink_reverses_a_shared_exchange_move_once(self):
         currency = self.env.company.currency_id
         debit_line = self.create_line_for_reconciliation(
@@ -9811,6 +9842,7 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
                 move_values = {
                     "move": debit_line.move_id,
                     "to_process_lines": [("base", debit_line)],
+                    "debt_lines": debit_line,
                     "total_balance": 0.0,
                     "total_amount_currency": 0.0,
                     "currency": currency,

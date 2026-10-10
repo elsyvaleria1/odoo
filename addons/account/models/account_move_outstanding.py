@@ -209,9 +209,9 @@ class AccountMove(models.Model):
     @_debug.perf.timed
     def js_add_outstanding_line(self, line_id):
         _debug.lifecycle("js_add_outstanding_line", records=self)
-        super().js_add_outstanding_line(line_id)
-        line = self.env["account.move.line"].browse(line_id)
+        line = self._get_addable_outstanding_line(line_id)
         if line.account_id.account_type == "asset_cash" and line.statement_line_id:
+            _debug.logic("outstanding_statement_line_matched", move=self, line=line)
             return line.statement_line_id.with_context(
                 skip_payment_tolerance=True,
                 stop_reco_at_first_partial=True,
@@ -223,6 +223,7 @@ class AccountMove(models.Model):
                     )
                 ).ids
             )
+        super().js_add_outstanding_line(line_id)
         return None
 
     @_debug.perf.timed

@@ -80,10 +80,15 @@ class AccountFullReconcile(models.Model):
             partial_ids_count=len(partial_ids),
         )
 
+        reconciled_lines = self.env["account.move.line"].browse(
+            [line_id for ids in move_line_ids for line_id in ids]
+        )
+        reconciled_lines.flush_recordset(["full_reconcile_id", "matching_number"])
         self.env.cr.execute_values(
             """
             UPDATE account_move_line line
-               SET full_reconcile_id = source.full_id
+               SET full_reconcile_id = source.full_id,
+                   matching_number = source.full_id::text
               FROM (VALUES %s) AS source(full_id, line_ids)
              WHERE line.id = ANY(source.line_ids)
             """,
@@ -97,8 +102,8 @@ class AccountFullReconcile(models.Model):
             _debug.perf.count(
                 "full_lines_linked", rows=sum(len(ids) for ids in move_line_ids)
             )
-        fulls.reconciled_line_ids.invalidate_recordset(
-            ["full_reconcile_id"], flush=False
+        reconciled_lines.invalidate_recordset(
+            ["full_reconcile_id", "matching_number"], flush=False
         )
         fulls.invalidate_recordset(["reconciled_line_ids"], flush=False)
 
@@ -123,10 +128,6 @@ class AccountFullReconcile(models.Model):
             ["full_reconcile_id"], flush=False
         )
         fulls.invalidate_recordset(["partial_reconcile_ids"], flush=False)
-
-        self.env["account.partial.reconcile"]._update_matching_number(
-            fulls.reconciled_line_ids
-        )
         return fulls
 
     def _partial_companies(self, partial_ids: list[int]) -> dict[int, int | None]:

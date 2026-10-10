@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
@@ -332,7 +334,7 @@ class AccountPartialReconcile(models.Model):
             ]
         )
         endpoint_moves = (self.debit_move_id | self.credit_move_id).move_id
-        endpoint_moves.fetch(["matched_payment_ids"])
+        endpoint_moves.fetch(["matched_payment_ids", "statement_line_id"])
         matched_payments = endpoint_moves.matched_payment_ids.sudo()
         matched_payments.fetch(
             [
@@ -372,12 +374,17 @@ class AccountPartialReconcile(models.Model):
             candidates=candidate_payments,
         )
 
+        demote_on_bank_unmatch = from_state == "paid"
         to_update_ids = set()
-        grouped_amounts = {}
+        bank_unmatched = self.env["account.payment"]
+        grouped_amounts = defaultdict(float)
         for partial in self:
             partial_moves = (partial.credit_move_id | partial.debit_move_id).move_id
             partial_payments = partial_moves.matched_payment_ids.sudo()
+            is_bank_partial = bool(partial_moves.statement_line_id)
             for payment in candidate_payments & partial_payments:
+                if demote_on_bank_unmatch and is_bank_partial:
+                    bank_unmatched |= payment
                 amount = partial._get_payment_comparable_amount(payment)
                 if amount is None:
                     continue
@@ -385,15 +392,26 @@ class AccountPartialReconcile(models.Model):
                     payment.amount_signed, amount
                 ):
                     to_update_ids.add(payment.id)
-                elif payment.move_id in partial_moves:
-                    grouped_amounts[payment.id] = (
-                        grouped_amounts.get(payment.id, 0.0) + amount
-                    )
+                if is_bank_partial or payment.move_id in partial_moves:
+                    grouped_amounts[payment.id] += amount
 
         for payment in self.env["account.payment"].browse(grouped_amounts):
             if not payment.currency_id.compare_amounts(
                 payment.amount_signed, grouped_amounts[payment.id]
             ):
+                to_update_ids.add(payment.id)
+        for payment in bank_unmatched:
+            if payment.id in to_update_ids:
+                continue
+            covered = abs(self._get_remaining_bank_coverage(payment))
+            amount = abs(payment.amount_signed)
+            if payment.currency_id.compare_amounts(covered, amount) < 0:
+                _debug.logic(
+                    "payment_bank_match_removed",
+                    partial=self,
+                    payment=payment,
+                    covered=covered,
+                )
                 to_update_ids.add(payment.id)
         _debug.logic(
             "payment_state_matches",
@@ -403,6 +421,23 @@ class AccountPartialReconcile(models.Model):
             to_update=len(to_update_ids),
         )
         return self.env["account.payment"].browse(to_update_ids)
+
+    def _get_remaining_bank_coverage(self, payment) -> float:
+        invoice_lines = payment.invoice_ids.line_ids
+        remaining = (
+            invoice_lines.matched_debit_ids | invoice_lines.matched_credit_ids
+        ) - self
+        bank_partials = remaining.filtered(
+            lambda partial: (
+                partial.debit_move_id.move_id.statement_line_id
+                or partial.credit_move_id.move_id.statement_line_id
+            )
+        )
+        return sum(
+            amount
+            for partial in bank_partials
+            if (amount := partial._get_payment_comparable_amount(payment)) is not None
+        )
 
     @api.model
     @_debug.perf.timed
