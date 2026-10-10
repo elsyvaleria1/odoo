@@ -88,14 +88,14 @@ class TestTour(BaseCommon):
     def test_get_current_tour(self):
         self.env.user.tour_enabled = True
         tour = self.env["web_tour.tour"].get_current_tour()
+        self.assertEqual(set(tour), {"name", "rainbowManMessage"})
         self.assertEqual(tour["name"], "their_tour")
         self.env["web_tour.tour"].consume("their_tour")
         tour = self.env["web_tour.tour"].get_current_tour()
         self.assertEqual(tour["name"], "my_tour")
         self.env["web_tour.tour"].consume("my_tour")
         self.env.user.tour_enabled = False
-        tour = self.env["web_tour.tour"].get_current_tour()
-        self.assertEqual(bool(tour), False)
+        self.assertIsNone(self.env["web_tour.tour"].get_current_tour())
 
 
 @tagged("post_install", "-at_install")

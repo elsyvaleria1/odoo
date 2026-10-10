@@ -50,20 +50,23 @@ class Web_TourTour(models.Model):
         return self.get_current_tour()
 
     @api.model
-    def get_current_tour(self):
-        if (
-            self.env.user
-            and self.env.user.tour_enabled
-            and self.env.user._is_internal()
-        ):
-            tours_to_run = self.search(
-                [
-                    ("custom", "=", False),
-                    ("user_consumed_ids", "not in", self.env.user.id),
-                ]
-            )
-            return bool(tours_to_run[:1]) and tours_to_run[:1]._get_tour_json()
-        return None
+    def get_current_tour(self) -> dict | None:
+        user = self.env.user
+        if not (user and user.tour_enabled and user._is_internal()):
+            return None
+        tour = self.search(
+            [
+                ("custom", "=", False),
+                ("user_consumed_ids", "not in", user.id),
+            ],
+            limit=1,
+        )
+        if not tour:
+            return None
+        # what the tour service starts it with; a non-custom tour's steps and
+        # url come from its JS registry. This rides in the session info of
+        # every page, so the steps are not read for it.
+        return {"name": tour.name, "rainbowManMessage": tour.rainbow_man_message}
 
     @api.model
     def get_tour_json_by_name(self, tour_name):
