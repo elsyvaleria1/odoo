@@ -17,11 +17,10 @@ import dateutil
 from markupsafe import Markup
 
 from odoo import Command, api, fields, models
-from odoo.exceptions import ConcurrencyError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import escape_psql
-from odoo.service.transaction import PG_CONCURRENCY_ERRORS_TO_RETRY
+from odoo.service.transaction import is_retryable
 from odoo.tools import SQL, html2plaintext
 from odoo.tools.mail import (
     decode_message_header,
@@ -50,12 +49,6 @@ if typing.TYPE_CHECKING:
 class RouteVerdict(enum.Enum):
     UNUSABLE = "unusable"
     REFUSED = "refused"
-
-
-def _is_retried_failure(error: Exception) -> bool:
-    return isinstance(error, ConcurrencyError) or (
-        getattr(error, "sqlstate", None) in PG_CONCURRENCY_ERRORS_TO_RETRY
-    )
 
 
 class Route(NamedTuple):
@@ -116,6 +109,18 @@ def _automatic_mail_marker(message: EmailMessage) -> str | None:
 
 
 MESSAGE_ID_MAX_BYTES = 2000
+
+
+def _message_id(message: EmailMessage) -> str:
+    message_id = (message.get("Message-Id") or "").strip()
+    if (
+        message_id.strip("<> \t")
+        and len(message_id.encode(errors="surrogateescape")) <= MESSAGE_ID_MAX_BYTES
+    ):
+        return message_id
+    message_id = _message_fallback_id(message)
+    _debug.logic("message_id_derived", message_id=message_id)
+    return message_id
 
 
 def _message_fallback_id(message: EmailMessage) -> str:
@@ -1108,17 +1113,16 @@ class MixinMailGateway(models.AbstractModel):
 
     @api.model
     def _routing_get_alias_recipients(
-        self, emails: list[str], aliases: MailAlias
+        self, emails: list[str], aliases: MailAlias, allowed_domains: list[str]
     ) -> list[str]:
-        full_names = frozenset(aliases.mapped("alias_full_name"))
-        local_names = frozenset(
-            aliases.filtered("alias_incoming_local").mapped("alias_name")
-        )
         return [
             email_address
             for email_address in emails
-            if email_address in full_names
-            or email_address.split("@", 1)[0] in local_names
+            if self._routing_addressed_aliases(
+                aliases,
+                [email_address],
+                self._routing_get_local_parts([email_address], allowed_domains),
+            )
         ]
 
     @api.model
@@ -1292,7 +1296,7 @@ class MixinMailGateway(models.AbstractModel):
                 )
                 is_a_reply, reply_model, reply_thread_id = False, False, False
                 rcpt_tos_valid = self._routing_get_alias_recipients(
-                    rcpt_tos_valid, other_model_aliases
+                    rcpt_tos_valid, other_model_aliases, catchall_domains_allowed
                 )
 
         recipients = RoutingRecipients(
@@ -1610,7 +1614,7 @@ class MixinMailGateway(models.AbstractModel):
                 thread = ModelCtx.message_new(route_message_dict, custom_values)
                 span.set(thread=thread.id)
         except Exception as error:
-            if alias and not _is_retried_failure(error):
+            if alias and not is_retryable(error):
                 self._routing_bounce_failed_creation(alias, message, message_dict)
             raise
         if alias:
@@ -1798,23 +1802,7 @@ class MixinMailGateway(models.AbstractModel):
         raw = message
         message = email.message_from_bytes(raw, policy=email.policy.SMTP)
 
-        with _debug.perf(
-            "message_parse", cr=self.env.cr, model=model, save_original=save_original
-        ) as span:
-            msg_dict = self.message_parse(
-                message,
-                save_original=save_original,
-                original=raw if save_original else None,
-            )
-            span.set(
-                message_id=msg_dict["message_id"],
-                attachments=len(msg_dict.get("attachments") or ()),
-                is_bounce=bool(msg_dict.get("is_bounce")),
-            )
-        if strip_attachments:
-            msg_dict["attachments"] = []
-
-        msg_id = msg_dict["message_id"]
+        msg_id = _message_id(message)
         duplicate_of = None
         if not self.env["mail.gateway.receipt"]._claim_message_id(msg_id):
             duplicate_of = "receipt"
@@ -1834,11 +1822,27 @@ class MixinMailGateway(models.AbstractModel):
             )
             _logger.info(
                 "Ignored mail from %s to %s with Message-Id %s: found duplicated Message-Id during processing",
-                msg_dict.get("email_from"),
-                msg_dict.get("to"),
+                decode_message_header(message, "From", separator=","),
+                decode_message_header(message, "To", separator=","),
                 msg_id,
             )
             return False
+
+        with _debug.perf(
+            "message_parse", cr=self.env.cr, model=model, save_original=save_original
+        ) as span:
+            msg_dict = self.message_parse(
+                message,
+                save_original=save_original,
+                original=raw if save_original else None,
+            )
+            span.set(
+                message_id=msg_dict["message_id"],
+                attachments=len(msg_dict.get("attachments") or ()),
+                is_bounce=bool(msg_dict.get("is_bounce")),
+            )
+        if strip_attachments:
+            msg_dict["attachments"] = []
 
         if self._has_loop_headers(msg_dict):
             _logger.info(
@@ -1866,9 +1870,7 @@ class MixinMailGateway(models.AbstractModel):
             message_id=msg_id,
             routes=len(routes),
         ):
-            thread_id = self._message_route_process(message, msg_dict, routes)
-        self.env["mail.gateway.receipt"]._release_message_id_unless_posted(msg_id)
-        return thread_id
+            return self._message_route_process(message, msg_dict, routes)
 
     def _message_receive_bounce(self, email: str, partner: ResPartner) -> None:
         pass
@@ -1957,7 +1959,7 @@ class MixinMailGateway(models.AbstractModel):
 
         email_part = self._message_parse_bounce_get_part(
             email_message, ("message/rfc822", "text/rfc822-headers")
-        ) or self._message_parse_bounce_get_part(email_message, ("multipart/report",))
+        )
         dsn_part = self._message_parse_bounce_get_part(
             email_message, ("message/delivery-status",)
         )
@@ -1983,6 +1985,10 @@ class MixinMailGateway(models.AbstractModel):
                 bounced_message, bounced_msg_ids = self._get_bounced_message_data(
                     email_payload, message_dict
                 )
+        elif self._message_parse_bounce_get_part(email_message, ("multipart/report",)):
+            bounced_message, bounced_msg_ids = self._get_bounced_message_data(
+                None, message_dict
+            )
 
         if bounce_failed and not recipients and bounced_message:
             recipients = self._message_parse_bounce_notified_recipient(bounced_message)
@@ -2020,18 +2026,7 @@ class MixinMailGateway(models.AbstractModel):
             raise ValueError("Message should be a valid EmailMessage instance")
         msg_dict = {"message_type": "email"}
 
-        message_id = (message.get("Message-Id") or "").strip()
-        if (
-            not message_id.strip("<> \t")
-            or len(message_id.encode(errors="surrogateescape")) > MESSAGE_ID_MAX_BYTES
-        ):
-            message_id = _message_fallback_id(message)
-            _debug.logic("message_id_derived", message_id=message_id)
-            _logger.debug(
-                "Parsing Message without message-id, deriving one from its content: %s",
-                message_id,
-            )
-        msg_dict["message_id"] = message_id
+        message_id = msg_dict["message_id"] = _message_id(message)
 
         if message.get("Subject"):
             msg_dict["subject"] = decode_message_header(message, "Subject")
@@ -2158,13 +2153,13 @@ class MixinMailGateway(models.AbstractModel):
         return values
 
     def _get_bounced_message_data(
-        self, message: EmailMessage, message_dict: dict
+        self, message: EmailMessage | None, message_dict: dict
     ) -> tuple[MailMessage, list[str]]:
         reference_ids = []
-        headers = ("Message-Id", "X-Microsoft-Original-Message-ID")
-        for header in headers:
-            value = decode_message_header(message, header)
-            reference_ids.extend(unfold_references(value))
+        if message is not None:
+            for header in ("Message-Id", "X-Microsoft-Original-Message-ID"):
+                value = decode_message_header(message, header)
+                reference_ids.extend(unfold_references(value))
 
         if reference_ids:
             bounced_message = (

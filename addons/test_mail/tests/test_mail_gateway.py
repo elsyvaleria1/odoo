@@ -329,6 +329,42 @@ class TestEmailParsing(MailCommon):
             self.from_string(test_mail_data.MAIL_XHTML)
         )
 
+    def test_odoo_notification_markup_is_stripped_from_an_inbound_body(self):
+        raw = (
+            b"From: someone@example.com\r\n"
+            b"To: groups@example.com\r\n"
+            b"Subject: notified\r\n"
+            b"Message-Id: <notified@example.com>\r\n"
+            b"MIME-Version: 1.0\r\n"
+            b"Content-Type: text/html; charset=utf-8\r\n"
+            b"\r\n"
+            b'<html><body><div class="o_mail_notification">joined</div>my answer'
+            b'<div><div summary="o_mail_notification">View Task</div>quoted'
+            b"<p>original</p></div></body></html>\r\n"
+        )
+        body = self.env["mixin.mail.thread"].message_parse(
+            email.message_from_bytes(raw, policy=email.policy.SMTP)
+        )["body"]
+        self.assertNotIn("joined", body)
+        self.assertNotIn("View Task", body)
+        for kept in ("my answer", "quoted", "original"):
+            self.assertIn(kept, body)
+
+    def test_an_empty_html_document_still_parses(self):
+        raw = (
+            b"From: someone@example.com\r\n"
+            b"To: groups@example.com\r\n"
+            b"Subject: empty\r\n"
+            b"Message-Id: <empty-html@example.com>\r\n"
+            b"MIME-Version: 1.0\r\n"
+            b"Content-Type: text/html; charset=utf-8\r\n"
+            b"\r\n"
+            b"<html></html>\r\n"
+        )
+        self.env["mixin.mail.thread"].message_parse(
+            email.message_from_bytes(raw, policy=email.policy.SMTP)
+        )
+
 
 @tagged("mail_gateway")
 class MailGatewayCommon(MailCommon):
@@ -4607,6 +4643,25 @@ class TestMailgatewayDedup(MailGatewayCommon):
             "only one mail.message should carry the duplicated Message-Id",
         )
 
+    def test_a_duplicate_is_recognised_before_its_body_is_parsed(self):
+        mail = self.format(
+            MAIL_TEMPLATE,
+            to=f"groups@{self.alias_domain}",
+            subject="Parsed once",
+            email_from=self.email_from,
+            msg_id="<parsed-once@test.example.com>",
+        )
+        thread = self.env["mixin.mail.thread"].sudo()
+        with patch.object(
+            MixinMailGateway,
+            "_message_parse_extract_payload",
+            autospec=True,
+            side_effect=MixinMailGateway._message_parse_extract_payload,
+        ) as extract:
+            self.assertTrue(thread.message_process(None, mail))
+            self.assertFalse(thread.message_process(None, mail))
+        self.assertEqual(extract.call_count, 1)
+
 
 @tagged("mail_gateway")
 class TestMailGatewayRegressions(MailGatewayCommon):
@@ -5075,6 +5130,28 @@ class TestMailGatewayNonThreadTarget(MailGatewayCommon):
                 subject="To the list",
                 target_model=owner._name,
             )
+        self.assertEqual(owner.received_subjects, "To the list")
+
+    def test_a_redelivered_mail_to_an_owner_without_a_thread_is_taken_once(self):
+        owner = self.env["mail.test.gateway.nothread"].create(
+            {
+                "name": "The list",
+                "alias_name": "list",
+                "alias_domain_id": self.mail_alias_domain.id,
+                "alias_contact": "everyone",
+            }
+        )
+        mail = self.format(
+            MAIL_TEMPLATE,
+            to=f"list@{self.alias_domain}",
+            subject="To the list",
+            email_from=self.email_from,
+            msg_id="<redelivered-nothread@test.example.com>",
+        )
+        gateway = self.env["mixin.mail.thread"].sudo()
+        with self.mock_mail_gateway():
+            gateway.message_process(None, mail)
+            gateway.message_process(None, mail)
         self.assertEqual(owner.received_subjects, "To the list")
 
 
@@ -5608,6 +5685,19 @@ class TestMailGatewayDeliveryReports(MailGatewayCommon):
                 "Action: failed\r\nStatus: 5.0.0",
             ],
         )
+        self._process(raw)
+        self.assertEqual(self._bounces(), (1, 0, 1))
+
+    @mute_logger("odoo.addons.mail.models.mixin_mail_gateway")
+    def test_a_redelivered_report_counts_its_bounce_once(self):
+        raw = self._report(
+            "delivery-status",
+            [
+                "Reporting-MTA: dns; mta.remote.example.org",
+                self._recipient(self.partner_1.email, "failed", "5.1.1"),
+            ],
+        )
+        self._process(raw)
         self._process(raw)
         self.assertEqual(self._bounces(), (1, 0, 1))
 

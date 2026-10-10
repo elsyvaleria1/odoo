@@ -48,21 +48,6 @@ class MailGatewayReceipt(models.Model):
             flush=False,
         )
 
-    @api.model
-    def _release_message_id_unless_posted(self, message_id: str) -> None:
-        self.env["mail.message"].flush_model(["message_id"])
-        self.env.cr.execute(
-            SQL(
-                "DELETE FROM mail_gateway_receipt WHERE message_id = %s"
-                " AND NOT EXISTS (SELECT 1 FROM mail_message WHERE message_id = %s)",
-                message_id,
-                message_id,
-            )
-        )
-        _debug.logic(
-            "receipt_released", message_id=message_id, released=self.env.cr.rowcount
-        )
-
     @api.autovacuum
     def _gc_receipts(self) -> None:
         self.env.cr.execute(

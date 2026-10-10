@@ -2,6 +2,8 @@ import logging
 from email.message import EmailMessage
 from typing import NamedTuple
 
+from lxml.etree import LxmlError
+
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.mail import add_html_content, html_sanitize
 
@@ -197,7 +199,9 @@ def extract_payload(
     fragment = _get_fragment(message, stop_at_first_body=is_bounce)
     body = fragment.body
     if fragment.html:
-        body = html_sanitize(body, sanitize_tags=False, strip_classes=True)
+        body = html_sanitize(
+            strip_notifications(body), sanitize_tags=False, strip_classes=True
+        )
     _debug.pipeline(
         "payload_extracted",
         html=fragment.html,
@@ -209,34 +213,59 @@ def extract_payload(
     return Payload(body, attachments + fragment.attachments)
 
 
+def _is_notification(node) -> bool:
+    return any(
+        "o_mail_notification" in (node.get(attribute) or "")
+        for attribute in ("class", "summary")
+    )
+
+
+def strip_notifications(body: str) -> str:
+    if not body.strip():
+        return body
+    try:
+        fragments = parse_body_fragments(body)
+    except AssertionError, ValueError, LxmlError:
+        _debug.logic("notifications_unparsable", length=len(body))
+        return body
+    notifications = [
+        node for node in iter_fragment_elements(fragments) if _is_notification(node)
+    ]
+    _debug.logic("notifications_stripped", count=len(notifications))
+    if not notifications:
+        return body
+    kept = []
+    for fragment in fragments:
+        if isinstance(fragment, str) or not _is_notification(fragment):
+            kept.append(fragment)
+        elif fragment.tail:
+            kept.append(fragment.tail)
+    for node in notifications:
+        if node.getparent() is not None:
+            node.drop_tree()
+    return render_body_fragments(kept)
+
+
 def postprocess_payload(payload: Payload) -> Payload:
     body, attachments = payload
     if not body.strip():
         return payload
     fragments = parse_body_fragments(body)
 
-    postprocessed = False
-    to_remove = []
-    for node in iter_fragment_elements(fragments):
-        if "o_mail_notification" in (node.get("class") or "") or (
-            "o_mail_notification" in (node.get("summary") or "")
-        ):
-            postprocessed = True
-            if node.getparent() is not None:
-                to_remove.append(node)
-        if node.tag == "img" and node.get("src", "").startswith("cid:"):
-            cid = node.get("src").split(":", 1)[1]
-            named = next(
-                (a for a in attachments if a.info and a.info.get("cid") == cid), None
-            )
-            if named:
-                node.set("data-filename", named.fname)
-                postprocessed = True
+    named = 0
+    for node in iter_fragment_elements(fragments, "img"):
+        if not node.get("src", "").startswith("cid:"):
+            continue
+        cid = node.get("src").split(":", 1)[1]
+        attachment = next(
+            (a for a in attachments if a.info and a.info.get("cid") == cid), None
+        )
+        if attachment:
+            node.set("data-filename", attachment.fname)
+            named += 1
 
-    for node in to_remove:
-        node.getparent().remove(node)
-    _debug.logic("payload_postprocessed", changed=postprocessed, removed=len(to_remove))
-    if postprocessed:
+    _debug.logic("payload_postprocessed", named=named)
+    if named:
         body = render_body_fragments(fragments)
     return Payload(body, attachments)
 

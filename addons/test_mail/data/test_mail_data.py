@@ -1130,7 +1130,7 @@ Auto-Submitted: auto-replied
 MIME-Version: 1.0
 Content-Type: multipart/report; report-type=delivery-status;
     boundary="92726A5F09.1555335666/mail2.test.ironsky"
-Message-Id: <20190415134106.93A83A5F0D@mail2.test.ironsky>
+Message-Id: {msg_id}
 
 This is a MIME-encapsulated message.
 
