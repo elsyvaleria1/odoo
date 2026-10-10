@@ -1,7 +1,8 @@
 # pylint: disable=C0326
 from odoo import Command, fields
+from odoo.exceptions import ValidationError
 from odoo.libs.json import loads as json_loads
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 
 from .common_report_engine import TestAccountReportsCommon
 
@@ -485,3 +486,89 @@ class TestTaxReportCarryover(TestAccountReportsCommon):
 
         # There should be no carryover pop-up
         self.assertTrue("info_popup_data" not in lines_company_2[0]["columns"][0])
+
+    def _validated_return_with_carryover(self):
+        self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2021-03-01",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "credit": 1000.0,
+                            "account_id": self.company_data[
+                                "default_account_expense"
+                            ].id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "debit": 1000.0,
+                            "account_id": self.company_data[
+                                "default_account_payable"
+                            ].id,
+                        }
+                    ),
+                ],
+            }
+        ).action_post()
+        self.env.flush_all()
+        tax_return = self.env["account.return"].create(
+            {
+                "name": "Tax return",
+                "type_id": self.tax_return_type.id,
+                "company_id": self.company_1.id,
+                "date_from": "2021-01-01",
+                "date_to": "2021-12-31",
+            }
+        )
+        tax_return.action_validate()
+        carryover = self.env["report.formula.external.value"].search(
+            [("company_id", "=", self.company_1.id)]
+        )
+        self.assertEqual(carryover.date, fields.Date.from_string("2021-12-31"))
+        return tax_return, carryover
+
+    def _reset_user(self, login, lock_date_fields):
+        user = new_test_user(
+            self.env,
+            login=login,
+            groups="account.group_account_manager",
+            company_id=self.company_1.id,
+            company_ids=self.company_1.ids,
+        )
+        self.env["account.lock_exception"].create(
+            [
+                {
+                    "company_id": self.company_1.id,
+                    "user_id": user.id,
+                    lock_date_field: fields.Date.from_string("2020-12-31"),
+                    "reason": f"reset by {login}",
+                }
+                for lock_date_field in lock_date_fields
+            ]
+        )
+        return user
+
+    def test_reset_in_a_soft_locked_year_needs_a_fiscalyear_exception(self):
+        tax_return, carryover = self._validated_return_with_carryover()
+        self.company_1.account_config_id.fiscalyear_lock_date = "2021-12-31"
+        tax_only = self._reset_user("reset_tax_exception_only", ["tax_lock_date"])
+        holder = self._reset_user(
+            "reset_tax_and_fiscalyear_exceptions",
+            ["tax_lock_date", "fiscalyear_lock_date"],
+        )
+
+        with (
+            self.assertRaisesRegex(ValidationError, "locked by"),
+            self.env.cr.savepoint(),
+        ):
+            tax_return.with_user(tax_only).action_reset_tax_return_common()
+        self.env.invalidate_all()
+        self.assertTrue(carryover.exists())
+        self.assertEqual(tax_return.state, "reviewed")
+
+        tax_return.with_user(holder).action_reset_tax_return_common()
+
+        self.assertFalse(carryover.exists())
+        self.assertRecordValues(tax_return, [{"state": "new", "date_lock": False}])

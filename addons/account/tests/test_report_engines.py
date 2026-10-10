@@ -2,10 +2,11 @@ from unittest.mock import patch
 
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 from odoo.tools import frozendict
 
 from .common_report_engine import TestAccountReportsCommon
+from odoo.addons.account.models.account_move import BYPASS_LOCK_CHECK
 
 
 @tagged("post_install", "-at_install")
@@ -3462,3 +3463,137 @@ class TestReportEngines(TestAccountReportsCommon):
         with self.assertRaisesRegex(ValidationError, "locked by"):
             external_value.unlink()
         self.assertTrue(external_value.exists())
+
+    def _external_value_lock_fixture(self, is_tax=False):
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_external(
+                        "sum",
+                        [self._prepare_test_external_values(100.0, "2020-01-01")],
+                    ),
+                ),
+            ],
+            **(
+                {"root_report_id": self.env.ref("account.generic_tax_report").id}
+                if is_tax
+                else {}
+            ),
+        )
+        expression = report.line_ids.expression_ids
+        external_value = self.env["report.formula.external.value"].search(
+            [("target_report_expression_id", "=", expression.id)]
+        )
+        return expression, external_value
+
+    def _lock_test_user(self, login):
+        return new_test_user(
+            self.env,
+            login=login,
+            groups="account.group_account_manager",
+            company_id=self.env.company.id,
+            company_ids=self.env.company.ids,
+        )
+
+    def _grant_lock_exception(self, user, lock_date_field, lock_date):
+        self.env["account.lock_exception"].create(
+            {
+                "company_id": self.env.company.id,
+                "user_id": user.id,
+                lock_date_field: lock_date,
+                "reason": f"exception for {user.login}",
+            }
+        )
+
+    def _assert_external_value_locked(self, expression, external_value, user):
+        external_value = external_value.with_user(user)
+        with (
+            self.assertRaisesRegex(ValidationError, "locked by"),
+            self.env.cr.savepoint(),
+        ):
+            external_value.create(
+                {
+                    "name": "new",
+                    "value": 5.0,
+                    "date": "2020-06-30",
+                    "target_report_expression_id": expression.id,
+                    "company_id": self.env.company.id,
+                }
+            )
+        with (
+            self.assertRaisesRegex(ValidationError, "locked by"),
+            self.env.cr.savepoint(),
+        ):
+            external_value.value = 200.0
+        with (
+            self.assertRaisesRegex(ValidationError, "locked by"),
+            self.env.cr.savepoint(),
+        ):
+            external_value.unlink()
+        external_value.invalidate_recordset()
+        self.assertRecordValues(external_value, [{"value": 100.0}])
+
+    def _assert_external_value_editable(self, expression, external_value, user):
+        external_value = external_value.with_user(user)
+        created = external_value.create(
+            {
+                "name": "new",
+                "value": 5.0,
+                "date": "2020-06-30",
+                "target_report_expression_id": expression.id,
+                "company_id": self.env.company.id,
+            }
+        )
+        external_value.value = 200.0
+        self.assertEqual(external_value.value, 200.0)
+        (external_value | created).unlink()
+        self.assertFalse((external_value | created).exists())
+
+    def test_external_value_soft_lock_follows_the_user_lock_exceptions(self):
+        expression, external_value = self._external_value_lock_fixture()
+        holder = self._lock_test_user("external_value_exception_holder")
+        other = self._lock_test_user("external_value_no_exception")
+        self.env.company.account_config_id.fiscalyear_lock_date = "2020-12-31"
+        self._grant_lock_exception(holder, "fiscalyear_lock_date", "2019-12-31")
+
+        self._assert_external_value_locked(expression, external_value, other)
+        self._assert_external_value_editable(expression, external_value, holder)
+
+    def test_external_value_hard_lock_has_no_exception(self):
+        expression, external_value = self._external_value_lock_fixture()
+        holder = self._lock_test_user("external_value_hard_lock")
+        self._grant_lock_exception(holder, "fiscalyear_lock_date", "2019-12-31")
+        self.env.company.account_config_id.hard_lock_date = "2020-12-31"
+
+        self._assert_external_value_locked(expression, external_value, holder)
+
+    def test_external_value_tax_lock_binds_tax_report_values_only(self):
+        non_tax_expression, non_tax_value = self._external_value_lock_fixture()
+        tax_expression, tax_value = self._external_value_lock_fixture(is_tax=True)
+        holder = self._lock_test_user("external_value_tax_exception")
+        other = self._lock_test_user("external_value_no_tax_exception")
+        self.env.company.account_config_id.tax_lock_date = "2020-12-31"
+        self._grant_lock_exception(holder, "tax_lock_date", "2019-12-31")
+
+        self._assert_external_value_editable(non_tax_expression, non_tax_value, other)
+        self._assert_external_value_locked(tax_expression, tax_value, other)
+        self._assert_external_value_editable(tax_expression, tax_value, holder)
+
+    def test_external_value_tax_lock_is_not_lifted_by_a_context_key(self):
+        expression, external_value = self._external_value_lock_fixture(is_tax=True)
+        user = self._lock_test_user("external_value_context_bypass")
+        self.env.company.account_config_id.tax_lock_date = "2020-12-31"
+
+        for context in (
+            {"ignore_tax_lock_date": True},
+            {"bypass_tax_lock_check": True},
+        ):
+            with self.subTest(context=context):
+                self._assert_external_value_locked(
+                    expression, external_value.with_context(**context), user
+                )
+
+        external_value.with_context(
+            bypass_tax_lock_check=BYPASS_LOCK_CHECK
+        ).value = 300.0
+        self.assertEqual(external_value.value, 300.0)

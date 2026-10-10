@@ -15,6 +15,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, date_utils, groupby
 from odoo.tools.misc import format_date
 
+from odoo.addons.account.models.account_move import BYPASS_LOCK_CHECK
 from odoo.addons.account.tools.display_types import NON_ACCOUNTABLE_DISPLAY_TYPES
 from odoo.addons.account.tools.report_engines import (
     LEDGER_ENGINES,
@@ -4158,10 +4159,15 @@ class AccountReportExternalValue(models.Model):
         - company (res.company): the company to check the lock dates for
         """
         generic_tax_report = self.env.ref("account.generic_tax_report")
+        # The sentinel cannot travel over RPC, unlike a boolean context key: only server
+        # code booking a carryover into the period its own return just locked holds it.
+        bypass_tax_lock = (
+            self.env.context.get("bypass_tax_lock_check") is BYPASS_LOCK_CHECK
+        )
         for external_value in records:
             report = external_value.target_report_expression_id.report_line_id.report_id
             yield (
-                not self.env.context.get("ignore_tax_lock_date")
+                not bypass_tax_lock
                 and generic_tax_report
                 in (
                     report
@@ -4179,11 +4185,8 @@ class AccountReportExternalValue(models.Model):
         :param vals_to_check: a set of tuples like: `{(is_tax, date, company_id)}`
         """
         for is_tax, date, company_id in vals_to_check:
-            violated_lock_dates = company_id._get_lock_date_violations(
-                date,
-                sale=False,
-                purchase=False,
-                tax=is_tax,
+            violated_lock_dates = company_id._get_violated_lock_dates(
+                date, is_tax, self.env["account.journal"]
             )
             if violated_lock_dates:
                 _debug.logic(
