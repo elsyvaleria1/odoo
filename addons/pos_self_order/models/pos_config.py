@@ -497,8 +497,12 @@ class PosConfig(models.Model):
         if not read_records:
             return read_records
         record = read_records[0]
+        # the till's read, for its computed extras, but only the fields a
+        # public self-order device is given
+        allowed = set(self._load_pos_self_data_fields(config))
+        for fname in [f for f in record if f in self._fields and f not in allowed]:
+            del record[fname]
         record["access_token"] = config.self_ordering_access_token
-        record.pop("customer_display_token", None)
         record["_self_ordering_image_home_ids"] = (
             config.self_ordering_image_home_ids.ids
         )
