@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="wallet_account_form" model="ir.ui.view">
+        <field name="name">wallet.account.form.telegram</field>
+        <field name="model">wallet.account</field>
+        <field name="inherit_id" ref="wallet.view_wallet_account_form" />
+        <field name="arch" type="xml">
+            <field name="amount_threshold_low" position="after">
+                <field
+                    name="telegram_topup_category_id"
+                    options="{'no_create': True}" />
+            </field>
+        </field>
+    </record>
+
+</odoo>

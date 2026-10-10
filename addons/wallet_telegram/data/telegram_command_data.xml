@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="command_saldo" model="telegram.command">
+        <field name="name">/saldo</field>
+    </record>
+
+    <record id="command_recarga" model="telegram.command">
+        <field name="name">/recarga</field>
+    </record>
+
+</odoo>

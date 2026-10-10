@@ -1,0 +1,284 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* wallet_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-10 08:38+0000\n"
+"PO-Revision-Date: 2026-10-10 08:38+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: es_MX\n"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "/recarga - Request approval of a top-up for your card or TAG."
+msgstr "/recarga - Solicitar la aprobación de una recarga para tu tarjeta o TAG."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "/saldo - View the last dated balance of your card or TAG."
+msgstr "/saldo - Consultar el último saldo registrado de tu tarjeta o TAG y su fecha."
+
+#. module: wallet_telegram
+#: model:ir.model.fields,help:wallet_telegram.field_telegram_bot__wallet_account_ids
+msgid ""
+"Accounts available through /saldo and /recarga. Each person sees only cards "
+"assigned to their own contact as holder."
+msgstr "Cuentas disponibles mediante /saldo y /recarga. Cada persona solo ve las tarjetas cuyo titular es su propio contacto."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Card/TAG: %(card)s"
+msgstr "Tarjeta/TAG: %(card)s"
+
+#. module: wallet_telegram
+#: model:ir.model.fields,help:wallet_telegram.field_wallet_account__telegram_topup_category_id
+msgid ""
+"Category used by /recarga. Configure its approvers and required amount; "
+"leave empty to allow balance consultation only. Approval does not send money"
+" to the issuer."
+msgstr "Categoría utilizada por /recarga. Configura sus aprobadores y el importe obligatorio; deja este campo vacío para permitir solo la consulta de saldo. La aprobación no envía dinero al emisor."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Check your card or TAG balance"
+msgstr "Consultar el saldo de tu tarjeta o TAG"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Choose your card or TAG. /cancelar stops this request."
+msgstr "Selecciona tu tarjeta o TAG. /cancelar detiene esta solicitud."
+
+#. module: wallet_telegram
+#: model:ir.model.fields,field_description:wallet_telegram.field_telegram_bot__display_name
+#: model:ir.model.fields,field_description:wallet_telegram.field_telegram_handler_wallet__display_name
+#: model:ir.model.fields,field_description:wallet_telegram.field_wallet_account__display_name
+#: model:ir.model.fields,field_description:wallet_telegram.field_wallet_card__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: wallet_telegram
+#: model:ir.model,name:wallet_telegram.model_wallet_account
+msgid "Electronic Wallet Account"
+msgstr "Cuenta de monedero electrónico"
+
+#. module: wallet_telegram
+#: model:ir.model,name:wallet_telegram.model_wallet_card
+msgid "Electronic Wallet Card"
+msgstr "Tarjeta de monedero electrónico"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"Enter a positive amount using the currency's decimal precision, without "
+"thousands separators."
+msgstr "Ingresa un importe positivo con los decimales de la moneda, sin separadores de miles."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Enter a reason between 1 and 500 characters."
+msgstr "Ingresa un motivo de entre 1 y 500 caracteres."
+
+#. module: wallet_telegram
+#: model:res.groups,comment:wallet_telegram.privilege_read_own_wallet
+msgid ""
+"Held only while the wallet commands read the sender's cards and their "
+"accounts. The holder must be the linked user's own contact; company guards "
+"still apply. Grants no writes, balance history, transactions, credentials or"
+" issuer funding access."
+msgstr "Se utiliza únicamente mientras los comandos del monedero consultan las tarjetas del remitente y sus cuentas. El titular debe ser el contacto del usuario vinculado; se mantienen las restricciones de empresa. No otorga acceso de escritura, al historial de saldos, movimientos, credenciales ni transferencias al emisor."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"How much do you need in %(currency)s? Enter a positive amount without "
+"thousands separators, for example 500.00."
+msgstr "¿Cuánto necesitas en %(currency)s? Ingresa un importe positivo sin separadores de miles, por ejemplo 500.00."
+
+#. module: wallet_telegram
+#: model:ir.model.fields,field_description:wallet_telegram.field_telegram_bot__id
+#: model:ir.model.fields,field_description:wallet_telegram.field_telegram_handler_wallet__id
+#: model:ir.model.fields,field_description:wallet_telegram.field_wallet_account__id
+#: model:ir.model.fields,field_description:wallet_telegram.field_wallet_card__id
+msgid "ID"
+msgstr "ID"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"Last consultation: %(date)s\n"
+"Recorded balance: %(amount)s\n"
+"The balance may have changed since that consultation."
+msgstr "Última consulta: %(date)s\nSaldo registrado: %(amount)s\nEl saldo puede haber cambiado desde esa consulta."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Next"
+msgstr "Siguiente"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"No issuer balance has been read yet. This does not mean the balance is zero."
+msgstr "Todavía no se ha consultado el saldo con el emisor. Esto no significa que el saldo sea cero."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Previous"
+msgstr "Anterior"
+
+#. module: wallet_telegram
+#: model:res.groups,name:wallet_telegram.privilege_read_own_wallet
+msgid "Privilege: a Telegram cardholder reads their own wallet"
+msgstr "Privilegio: el titular consulta su propio monedero desde Telegram"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"Request %(request)s submitted for approval. The card has not been reloaded."
+msgstr "Solicitud %(request)s enviada a aprobación. La tarjeta todavía no se ha recargado."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Request a card or TAG top-up"
+msgstr "Solicitar una recarga para tu tarjeta o TAG"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"Request a top-up of %(amount)s for %(card)s?\n"
+"Reason: %(reason)s\n"
+"This sends a request for approval; it does not reload the card."
+msgstr "¿Solicitar una recarga de %(amount)s para %(card)s?\nMotivo: %(reason)s\nEsto envía una solicitud a aprobación; no recarga la tarjeta."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Send request"
+msgstr "Enviar solicitud"
+
+#. module: wallet_telegram
+#: model:ir.model,name:wallet_telegram.model_telegram_bot
+msgid "Telegram Bot Configuration"
+msgstr "Configuración del bot de Telegram"
+
+#. module: wallet_telegram
+#: model:ir.model,name:wallet_telegram.model_telegram_handler_wallet
+msgid "Telegram: Wallet Balances and Top-up Requests"
+msgstr "Telegram: saldos de monederos y solicitudes de recarga"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"The request could not be submitted: %(error)s. Start again with /recarga."
+msgstr "No se pudo enviar la solicitud: %(error)s. Inicia nuevamente con /recarga."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"This selection is no longer available. Start again with /saldo or /recarga."
+msgstr "Esta selección ya no está disponible. Inicia nuevamente con /saldo o /recarga."
+
+#. module: wallet_telegram
+#: model:ir.model.fields,field_description:wallet_telegram.field_wallet_account__telegram_topup_category_id
+msgid "Top-up Approval Category"
+msgstr "Categoría de aprobación de recargas"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Top-up request cancelled."
+msgstr "Solicitud de recarga cancelada."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"Top-up requests are not configured for this account. Ask the wallet manager "
+"to configure its approval category."
+msgstr "Las solicitudes de recarga no están configuradas para esta cuenta. Solicita al responsable del monedero que configure su categoría de aprobación."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Use the buttons above, or /cancelar."
+msgstr "Usa los botones anteriores o /cancelar."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Use these commands in a private chat linked to your active Odoo user."
+msgstr "Usa estos comandos en un chat privado vinculado a tu usuario activo de Odoo."
+
+#. module: wallet_telegram
+#: model:ir.model.fields,field_description:wallet_telegram.field_telegram_bot__wallet_account_ids
+msgid "Wallet Accounts"
+msgstr "Cuentas de monederos"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_bot.py:0
+msgid "Wallet accounts must belong to companies this bot serves."
+msgstr "Las cuentas de monederos deben pertenecer a las empresas atendidas por este bot."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Wallet: %(account)s"
+msgstr "Monedero: %(account)s"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "Wallets"
+msgstr "Monederos"
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "What is the top-up for? Enter a reason of up to 500 characters."
+msgstr "¿Para qué necesitas la recarga? Ingresa un motivo de hasta 500 caracteres."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid ""
+"You have no active card or TAG assigned here. Ask the wallet manager to set "
+"you as its holder."
+msgstr "No tienes una tarjeta o TAG activo asignado aquí. Solicita al responsable del monedero que te registre como titular."
+
+#. module: wallet_telegram
+#. odoo-python
+#: code:addons/wallet_telegram/models/telegram_handler.py:0
+msgid "a wallet consultation or top-up request"
+msgstr "una consulta de monedero o solicitud de recarga"

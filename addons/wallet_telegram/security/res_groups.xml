@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_read_own_wallet" model="res.groups">
+        <field
+            name="name">Privilege: a Telegram cardholder reads their own wallet</field>
+        <field
+            name="comment">Held only while the wallet commands read the sender's cards and their accounts. The holder must be the linked user's own contact; company guards still apply. Grants no writes, balance history, transactions, credentials or issuer funding access.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

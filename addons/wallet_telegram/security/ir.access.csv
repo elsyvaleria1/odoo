@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+wallet_card_privilege_own,wallet.card: Telegram reads the holder's cards,wallet.model_wallet_card,privilege_read_own_wallet,permission,r,own,partner,
+wallet_account_privilege_own,wallet.account: Telegram reads accounts of the holder's cards,wallet.model_wallet_account,privilege_read_own_wallet,permission,r,own,partner,
