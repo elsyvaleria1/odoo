@@ -5,6 +5,7 @@ import os
 import selectors
 import threading
 import time
+import traceback
 
 import psycopg
 import psycopg.sql
@@ -280,12 +281,14 @@ class BusBus(models.Model):
             @cr.precommit.add
             def create_bus():
                 self.sudo().create(cr.precommit.data.pop("bus.bus.values"))
+                cr.postcommit.data["bus.bus.transaction_began"] = cr.now()
 
         if "bus.bus.channels" not in cr.postcommit.data:
             cr.postcommit.data.setdefault_set("bus.bus.channels")
 
             @cr.postcommit.add
             def notify():
+                _warn_if_watermark_overtaken(cr.postcommit.data)
                 channels = list(cr.postcommit.data.pop("bus.bus.channels"))
                 payloads = get_notify_payloads(channels)
                 if len(payloads) > 1:
@@ -352,8 +355,34 @@ class BusBus(models.Model):
         return notifications, truncated
 
     def _bus_last_id(self):
-        self.env.cr.execute("SELECT COALESCE(MAX(id), 0) FROM bus_bus")
-        return self.env.cr.fetchone()[0]
+        cr = self.env.cr
+        if "bus.bus.transaction_began" in cr.postcommit.data:
+            cr.postcommit.data.setdefault(
+                "bus.bus.watermark_read_at", "".join(traceback.format_stack(limit=8))
+            )
+        cr.execute("SELECT COALESCE(MAX(id), 0) FROM bus_bus")
+        return cr.fetchone()[0]
+
+
+def _warn_if_watermark_overtaken(data) -> None:
+    # RESTAMP_AT_COMMIT redraws the ids of a transaction older than a second
+    # above every id drawn before: a watermark it read after inserting its own
+    # rows no longer covers them, and a client reconciling a delta against it
+    # (mail's counters) counts that delta twice.
+    began = data.pop("bus.bus.transaction_began", None)
+    read_at = data.pop("bus.bus.watermark_read_at", None)
+    if read_at is None or began is None:
+        return
+    elapsed = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - began
+    if elapsed > datetime.timedelta(seconds=1):
+        _logger.warning(
+            "A transaction read _bus_last_id() after inserting its own bus "
+            "notifications and committed %.1f s after it began: their ids were "
+            "redrawn above that watermark, so a client reconciling against it "
+            "applies them twice.\n%s",
+            elapsed.total_seconds(),
+            read_at,
+        )
 
 
 def _keep_session_alive_while_idle(conn) -> None:

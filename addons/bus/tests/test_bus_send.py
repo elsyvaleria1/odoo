@@ -262,6 +262,24 @@ class TestIdsDrawnAtCommit(BaseCase):
             notifications = self._env(cr)["bus.bus"]._poll([self.CHANNEL], last=0)
         self.assertEqual([n["message"]["payload"] for n in notifications], ["long"])
 
+    def _read_watermark_after_inserting(self, seconds):
+        with self.db.cursor() as cr:
+            Bus = self._env(cr)["bus.bus"]
+            Bus._sendone(self.CHANNEL, "t", "own")
+            with cr.savepoint():
+                pass
+            Bus._bus_last_id()
+            time.sleep(seconds)
+
+    def test_a_watermark_its_own_redrawn_rows_overtake_is_reported(self):
+        with self.assertLogs("odoo.addons.bus.models.bus", "WARNING") as logs:
+            self._read_watermark_after_inserting(1.1)
+        self.assertIn("_read_watermark_after_inserting", logs.output[0])
+
+    def test_a_prompt_transaction_reading_its_watermark_is_not_reported(self):
+        with self.assertNoLogs("odoo.addons.bus.models.bus", "WARNING"):
+            self._read_watermark_after_inserting(0)
+
     def test_a_prompt_transaction_keeps_the_ids_it_drew(self):
         with self.db.cursor() as cr:
             Bus = self._env(cr)["bus.bus"]
