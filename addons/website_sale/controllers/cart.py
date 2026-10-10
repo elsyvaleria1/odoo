@@ -425,7 +425,15 @@ class Cart(PaymentPortal):
         website=True,
         sitemap=False,
     )
-    def cart_line(self, line_id=None, quantity=None, delta=None, delete=None, **kwargs):
+    def cart_line(
+        self,
+        line_id=None,
+        quantity=None,
+        delta=None,
+        delete=None,
+        redirect=None,
+        **kwargs,
+    ):
         order_sudo = request.cart
         line = order_sudo.line_ids.filtered(lambda sol: str(sol.id) == str(line_id))
         new_quantity = 0 if delete else self._cart_line_quantity(line, quantity, delta)
@@ -436,7 +444,9 @@ class Cart(PaymentPortal):
                 "update_cart", order=order_sudo.id, line=line.id, quantity=new_quantity
             )
         fragments, changes = self._cart_changed(order_sudo, values)
-        return fragments_or_redirect(request.env, "/shop/cart", *fragments, **changes)
+        return fragments_or_redirect(
+            request.env, redirect or "/shop/cart", *fragments, **changes
+        )
 
     @staticmethod
     def _cart_line_quantity(line, quantity, delta):

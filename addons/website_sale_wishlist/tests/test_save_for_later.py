@@ -41,3 +41,39 @@ class TestSaveForLater(HttpCase):
             product,
             self.env["product.wishlist"].sudo().search([]).product_id,
         )
+
+    def test_without_javascript_saving_comes_back_where_the_form_says(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "PN Shelf",
+                "list_price": 10.0,
+                "is_published": True,
+                "sale_ok": True,
+            }
+        )
+        self.authenticate(None, None)
+        self.call_jsonrpc(
+            "/shop/cart/add",
+            {
+                "product_template_id": product.product_tmpl_id.id,
+                "product_id": product.id,
+                "quantity": 1,
+            },
+        )
+        line = self.env["sale.order.line"].search(
+            [("product_id", "=", product.id)], order="id desc", limit=1
+        )
+
+        response = self.url_open(
+            "/shop/wishlist/save_for_later",
+            data={
+                "line_id": line.id,
+                "redirect": "/shop/checkout",
+                "csrf_token": http.Request.csrf_token(self),
+            },
+            allow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["Location"].endswith("/shop/checkout"))
+        self.assertFalse(line.exists())

@@ -14,7 +14,7 @@ class WishlistCart(Cart):
         website=True,
         sitemap=False,
     )
-    def save_for_later(self, line_id=None, **kwargs):
+    def save_for_later(self, line_id=None, redirect=None, **kwargs):
         order_sudo = request.cart
         line = order_sudo.line_ids.filtered(lambda sol: str(sol.id) == str(line_id))
         values, saved = {}, {}
@@ -26,4 +26,6 @@ class WishlistCart(Cart):
             saved = {"website_sale_wishlist:product_added": {"product_id": product.id}}
         fragments, changes = self._cart_changed(order_sudo, values)
         changes["events"] = {**changes["events"], **saved}
-        return fragments_or_redirect(request.env, "/shop/cart", *fragments, **changes)
+        return fragments_or_redirect(
+            request.env, redirect or "/shop/cart", *fragments, **changes
+        )

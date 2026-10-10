@@ -67,9 +67,9 @@
         id="payment_delivery"
         name="Delivery Costs"
         inherit_id="website_sale.delivery_form">
-        <form id="o_delivery_form" position="after">
+        <div id="o_delivery_form" position="after">
             <t t-call="website_sale_ups.ups_bill_my_account_dialog" />
-        </form>
+        </div>
     </template>
 
     <template id="ups_delivery_method" inherit_id="website_sale.delivery_method">

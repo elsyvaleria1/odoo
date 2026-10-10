@@ -1,18 +1,11 @@
 /** @odoo-module native */
-import { rpc } from "@web/core/network";
 import { _t } from "@web/core/translation";
 import { patch } from "@web/core/utils/patch";
-import { patchDynamicContent } from "@web/public/utils";
 import { Checkout } from "@website_sale/interactions/checkout";
 
 patch(Checkout.prototype, {
     setup() {
         super.setup();
-        patchDynamicContent(this.dynamicContent, {
-            ".js_wsc_update_product_qty": {
-                "t-on-click": this.onClickUpdateProductQty.bind(this),
-            },
-        });
         this.deliveryAddressTitle = this.el.querySelector(
             '[name="delivery_address_title"]',
         );
@@ -32,20 +25,6 @@ patch(Checkout.prototype, {
     async selectDeliveryMethod() {
         this._adaptDeliveryTitles();
         await super.selectDeliveryMethod(...arguments);
-    },
-
-    /**
-     * @param {Event} ev
-     */
-    async onClickUpdateProductQty(ev) {
-        await this.waitFor(
-            rpc("/shop/cart/update", {
-                line_id: parseInt(ev.currentTarget.dataset.lineId, 10),
-                product_id: parseInt(ev.currentTarget.dataset.productId, 10),
-                quantity: parseInt(ev.currentTarget.dataset.availableQty || 0, 10),
-            }),
-        );
-        window.location.reload();
     },
 
     /**

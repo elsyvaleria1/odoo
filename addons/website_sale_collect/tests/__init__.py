@@ -8,3 +8,4 @@ from . import test_product_template
 from . import test_sale_order
 from . import test_stock_warehouse
 from . import test_website
+from . import test_unavailable_products_form

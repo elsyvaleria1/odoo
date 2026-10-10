@@ -34,7 +34,17 @@
         </div>
         <div t-out="line_ids._acquire_shop_warning()" />
         <div name="o_wsale_unavailable_line_button_container" class="mt-2 mt-md-1">
-        <a href="#" class="alert-link me-2 small">
+        <form
+            class="o_wsc_update_qty_form d-inline"
+            method="post"
+            action="/shop/cart/line">
+        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()" />
+        <input type="hidden" name="line_id" t-att-value="line_ids.id" />
+        <input type="hidden" name="quantity" t-att-value="str(available_qty)" />
+        <input type="hidden" name="redirect" value="/shop/checkout" />
+        <button
+            type="submit"
+            class="o_wsc_update_product_qty btn btn-link alert-link p-0 me-2 small align-baseline">
         <i
             t-attf-class="{{'fa-solid fa-rotate' if available_qty else 'fa-regular fa-trash-can'}}"
             role="presentation"
@@ -42,12 +52,9 @@
         <t t-set="update_cart_button_label">Update cart with available stock</t>
         <t t-set="remove_from_cart_button_label">Remove</t>
         <span
-            class="js_wsc_update_product_qty"
-            t-att-data-line-id="line_ids.id"
-            t-att-data-product-id="line_ids.product_id.id"
-            t-att-data-available-qty="available_qty"
             t-out="update_cart_button_label if available_qty else remove_from_cart_button_label" />
-        </a>
+        </button>
+        </form>
         </div>
         </div>
         </div>

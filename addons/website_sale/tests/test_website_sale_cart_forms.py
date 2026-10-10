@@ -53,6 +53,13 @@ class TestCartLineForm(HttpCase):
         self.assertTrue(response.headers["Location"].endswith("/shop/cart"))
         self.assertEqual(self.line.product_uom_qty, 3)
 
+    def test_a_form_elsewhere_names_the_page_it_comes_back_to(self):
+        response = self._post_line(quantity=1, redirect="/shop/checkout")
+
+        self.assertEqual(response.status_code, 303)
+        self.assertTrue(response.headers["Location"].endswith("/shop/checkout"))
+        self.assertEqual(self.line.product_uom_qty, 1)
+
     def test_asked_in_place_it_answers_the_cart_fragments_and_events(self):
         response = self._post_line({"X-Odoo-Fragments": "1"}, quantity=5)
 
