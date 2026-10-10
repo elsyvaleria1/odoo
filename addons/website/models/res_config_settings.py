@@ -57,6 +57,10 @@ class ResConfigSettings(models.TransientModel):
         string="Default language",
         readonly=False,
     )
+    website_auto_redirect_lang = fields.Boolean(
+        related="website_id.auto_redirect_lang",
+        readonly=False,
+    )
     website_default_lang_code = fields.Char(
         related="website_id.default_lang_id.code",
         string="Default language code",

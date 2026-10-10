@@ -68,6 +68,14 @@
                                     options="{'no_open': True, 'no_create': True}"
                                     required="website_id" />
                             </div>
+                            <div
+                                class="row mt8"
+                                invisible="website_language_count &lt; 2">
+                                <div class="col">
+                                    <field name="website_auto_redirect_lang" />
+                                    <label for="website_auto_redirect_lang" />
+                                </div>
+                            </div>
                             <div class="mt8">
                                 <button
                                     name="%(base.action_view_base_language_install)d"

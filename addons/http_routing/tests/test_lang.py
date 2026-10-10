@@ -11,7 +11,7 @@ from .common import (
     route_frontend_probe,
     setup_frontend_langs,
 )
-from odoo.addons.http_routing.models.ir_http import _lang_code_from_url_segment
+from odoo.addons.http_routing.models.ir_http import _canonical_lang_code
 
 
 @tagged("-at_install", "post_install")
@@ -28,12 +28,12 @@ class TestLangUrlSegment(TransactionCase):
             ("SR@Latin", "sr@latin"),
         ):
             with self.subTest(segment=segment):
-                self.assertEqual(_lang_code_from_url_segment(segment), code)
+                self.assertEqual(_canonical_lang_code(segment), code)
 
     def test_other_segments_are_no_language(self):
         for segment in ("en_vivo", "fr_xyz", "fr-france", "shop", "x", "", "fr_FR_x"):
             with self.subTest(segment=segment):
-                self.assertIsNone(_lang_code_from_url_segment(segment))
+                self.assertIsNone(_canonical_lang_code(segment))
 
 
 @tagged("-at_install", "post_install")
@@ -377,6 +377,48 @@ class TestLangLadder(HttpCase):
             with self.subTest(prefix=prefix):
                 r = self.url_open(prefix + self.EP, allow_redirects=False)
                 self.assertEqual(r.status_code, 404)
+
+    def _browser(self, accept, enabled=True, **kw):
+        self.patch(self.registry["ir.http"], "_uses_browser_lang", lambda self: enabled)
+        self.opener.cookies.clear()
+        headers = {"Accept-Language": accept, **kw.pop("headers", {})}
+        return self.url_open(self.EP, allow_redirects=False, headers=headers, **kw)
+
+    def test_a_first_visit_goes_to_the_nearest_browser_language(self):
+        r = self._browser("de-CH, de;q=0.9, fr-CA;q=0.8, en;q=0.5")
+        self.assertEqual(r.status_code, 303)
+        self.assertEqual(self._loc(r), "/fr" + self.EP)
+        self.assertEqual(r.cookies.get("frontend_lang"), "fr_FR")
+
+    def test_the_browser_language_is_ignored_unless_enabled(self):
+        self.assertEqual(self._browser("fr-FR", enabled=False).status_code, 200)
+
+    def test_a_chosen_language_outranks_the_browser(self):
+        r = self._browser("fr-FR", cookies={"frontend_lang": "en_US"})
+        self.assertEqual(r.status_code, 200)
+
+    def test_a_logged_in_users_language_outranks_the_browser(self):
+        self.env.ref("base.user_admin").lang = "fr_FR"
+        self.authenticate("admin", "admin")
+        for enabled in (True, False):
+            with self.subTest(browser_lang_enabled=enabled):
+                self.patch(
+                    self.registry["ir.http"],
+                    "_uses_browser_lang",
+                    lambda self, enabled=enabled: enabled,
+                )
+                self.opener.cookies.pop("frontend_lang", None)
+                r = self.url_open(
+                    self.EP,
+                    allow_redirects=False,
+                    headers={"Accept-Language": "en-US", **self.BROWSER_UA},
+                )
+                self.assertEqual(r.status_code, 303)
+                self.assertEqual(self._loc(r), "/fr" + self.EP)
+
+    def test_a_bot_is_not_redirected_to_its_browser_language(self):
+        r = self._browser("fr-FR", headers={"User-Agent": "Googlebot/2.1"})
+        self.assertEqual(r.status_code, 200)
 
     def test_double_slash_is_merged(self):
         r = self.url_open("/http_routing//frontend_probe?a=b", allow_redirects=False)

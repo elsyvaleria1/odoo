@@ -187,7 +187,7 @@ published page at `/en_vivo` answered **303 → /** and was unreachable. Meanwhi
 `/FR/x`, `/fr-FR/x` and `/en-US/x` -- real tags -- answered 404.
 
 A configured `url_code` still matches exactly first. Otherwise the segment must
-fit `_LANG_SEGMENT_RE` (2-3 letters, optionally `_` or `-` and a 2-letter or
+fit `_LANG_TAG_RE` (2-3 letters, optionally `_` or `-` and a 2-letter or
 3-digit region, optionally `@script`, any case), and is canonicalized
 (`fr-fr` → `fr_FR`) before `get_nearest_lang`. A page whose whole first segment
 is tag-shaped (`/es-mx`) is still read as a language; that is the price of

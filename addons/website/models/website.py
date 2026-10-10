@@ -147,9 +147,10 @@ class Website(models.Model):
         required=True,
     )
     auto_redirect_lang = fields.Boolean(
-        string="Autoredirect Language",
+        string="Redirect to the Browser's Language",
         default=True,
-        help="Should users be redirected to their browser's language",
+        help="A visitor who has not chosen a language, and whose URL names none, "
+        "is redirected to their browser's language when the website serves it.",
     )
     cookies_bar = fields.Boolean(
         help="Display a customizable cookies bar on your website."
@@ -1515,12 +1516,20 @@ class Website(models.Model):
 
         _debug.perf.count("cached_values_computed", website=self.id)
         self.fetch(
-            ["user_id", "company_id", "default_lang_id", "homepage_url", "cookies_bar"]
+            [
+                "user_id",
+                "company_id",
+                "default_lang_id",
+                "auto_redirect_lang",
+                "homepage_url",
+                "cookies_bar",
+            ]
         )
         return {
             "user_id": self.user_id.id,
             "company_id": self.company_id.id,
             "default_lang_id": self.default_lang_id.id,
+            "auto_redirect_lang": self.auto_redirect_lang,
             "homepage_url": self.homepage_url,
             "cookies_bar": self.cookies_bar,
         }

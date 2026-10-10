@@ -45,7 +45,7 @@ fields.
 **Notable fields:** `name`, `sequence`, `domain` (public URL, unique SQL
 constraint `_domain_unique`), `domain_punycode` (compute, ASCII host),
 `company_id`, `user_id` (the per-website **Public User**), `language_ids` /
-`default_lang_id` / `auto_redirect_lang`, `menu_id` (compute, main menu),
+`default_lang_id` / `auto_redirect_lang` (default on: a visitor who chose no language goes to the browser's, through `http_routing`'s `_uses_browser_lang`), `menu_id` (compute, main menu),
 `homepage_url`, `theme_id` (→ ir.module.module). Analytics/SEO:
 `google_analytics_key`, `google_search_console`, `google_maps_api_key`,
 `plausible_shared_key`/`plausible_site`, `robots_txt` (Html, `sanitize=False`).
@@ -59,7 +59,7 @@ CDN: `cdn_activated`, `cdn_url`, `cdn_filters`. Custom code:
 **Key methods:**
 - `website_domain()` — the multi-website scoping domain.
 - `get_current_website(fallback=True)` / `_get_current_website_id(domain, fallback)` — resolve the active website from request/domain. `_force()` / `_force_website(id)` pin it in session.
-- `_get_cached(field)` / `_get_cached_values()` — ormcached scalar accessors (user_id, company_id, default_lang_id) avoiding per-request reads.
+- `_get_cached(field)` / `_get_cached_values()` — ormcached scalar accessors (user_id, company_id, default_lang_id, auto_redirect_lang, homepage_url, cookies_bar) avoiding per-request reads; a read there also skips the prefetch of translated fields, which raises under a context language that is not installed.
 - **Configurator RPC surface:** `configurator_init`, `configurator_apply`, `configurator_skip`, `configurator_recommended_themes`, `configurator_set_menu_links`, `configurator_get_footer_links`, `get_theme_configurator_snippets`, `create_and_redirect_configurator`, + snippet preconfig helpers.
 - **Page CRUD:** `new_page(...)`, `get_unique_path(url)`, `get_unique_key(...)`, `_bootstrap_homepage`, `copy_menu_hierarchy`, `is_page_existing`, `search_pages`, `search_url_dependencies`.
 - **Frontend fuzzy-search engine:** `_search_get_details`, `_search_with_fuzzy`, `_search_exact`, `_search_render_results`, `_search_find_fuzzy_term`, `_trigram_enumerate_words` (pg_trgm), `_basic_enumerate_words`, `_search_text_from_html`.

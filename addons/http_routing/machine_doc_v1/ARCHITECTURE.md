@@ -54,7 +54,13 @@ ladder, URL generation, and the frontend error page.
 ## The ladder (`_reroute_for_lang`)
 
 `request.lang` is resolved first, in priority order: **URL** (a configured `url_code`, or a segment shaped like a language tag, TRAPS §13) → `frontend_lang`
-cookie → context → site default. The ladder then decides what to do about the
+cookie → a logged-in user's language → the browser's `Accept-Language`
+(unless `_uses_browser_lang` says no: `website`'s `auto_redirect_lang`) → site
+default, each source consulted only when the ones before it found nothing. An
+anonymous session's context language is *not* a source of its own: core seeds it
+from `Accept-Language` (`Request.get_default_lang`), so reading it as "context"
+redirected every first visit to the browser's language with no way to turn it
+off, whatever `auto_redirect_lang` said. The ladder then decides what to do about the
 URL itself. Each case below is marked `# See /N` on its own branch of
 `_reroute_for_lang`, and `factcheck.sh` asserts all eight are still there. They
 used to live in `_match`'s docstring, where 869409d761a's docstring strip took

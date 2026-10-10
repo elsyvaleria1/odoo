@@ -399,6 +399,12 @@ class IrHttp(models.AbstractModel):
         return super()._frontend_url_codes()
 
     @api.model
+    def _uses_browser_lang(self) -> bool:
+        return bool(
+            request and self._get_url_website()._get_cached("auto_redirect_lang")
+        )
+
+    @api.model
     def _get_default_lang(self):
         if request:
             return self.env["res.lang"]._get_data(

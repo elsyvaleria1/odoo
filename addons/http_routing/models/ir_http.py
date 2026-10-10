@@ -39,10 +39,11 @@ FRONTEND_TRANSLATIONS_ROUTE = "/website/translations"
 
 _REDIRECTABLE_METHODS = ("GET", "HEAD")
 
-# A URL segment is read as a language only when it is shaped like one -- fr,
-# FR, fr_FR, fr-fr, es_419, sr@latin -- so a page at /en_vivo is not taken for
-# English. A configured url_code is matched as such before this applies.
-_LANG_SEGMENT_RE = re.compile(
+# A URL segment or an Accept-Language tag is read as a language only when it is
+# shaped like one -- fr, FR, fr_FR, fr-fr, es_419, sr@latin -- so a page at
+# /en_vivo is not taken for English. A configured url_code is matched as such
+# before this applies.
+_LANG_TAG_RE = re.compile(
     r"([a-z]{2,3})(?:[_-]([a-z]{2}|[0-9]{3}))?(@[a-z]+)?", re.IGNORECASE
 )
 
@@ -51,8 +52,8 @@ def _lang_base(lang_code: str) -> str:
     return lang_code.partition("_")[0].partition("@")[0]
 
 
-def _lang_code_from_url_segment(segment: str) -> str | None:
-    match = _LANG_SEGMENT_RE.fullmatch(segment)
+def _canonical_lang_code(tag: str) -> str | None:
+    match = _LANG_TAG_RE.fullmatch(tag)
     if not match:
         return None
     lang, region, script = match.groups()
@@ -471,34 +472,60 @@ class IrHttp(models.AbstractModel):
             Lang = request.env["res.lang"]
             url_lang_code = url_lang_str and (
                 Lang._get_data(url_code=url_lang_str).code
-                or _lang_code_from_url_segment(url_lang_str)
+                or _canonical_lang_code(url_lang_str)
             )
             nearest_url_lang = (
                 IrHttp.get_nearest_lang(url_lang_code) if url_lang_code else None
             )
-            cookie_lang = IrHttp.get_nearest_lang(request.cookies.get("frontend_lang"))
-            context_lang = IrHttp.get_nearest_lang(real_env.context.get("lang"))
             default_lang = IrHttp._get_default_lang()
-            request.lang = Lang._get_data(
-                code=(
-                    nearest_url_lang or cookie_lang or context_lang or default_lang.code
-                )
+            sources = (
+                ("url", lambda: nearest_url_lang),
+                (
+                    "cookie",
+                    lambda: IrHttp.get_nearest_lang(
+                        request.cookies.get("frontend_lang")
+                    ),
+                ),
+                # an anonymous session's context language is the browser's
+                # (Request.get_default_lang): it is the "browser" source, which
+                # a site may switch off, not a choice the visitor made
+                (
+                    "user",
+                    lambda: (
+                        request.session.uid
+                        and IrHttp.get_nearest_lang(real_env.context.get("lang"))
+                    ),
+                ),
+                ("browser", IrHttp._get_nearest_browser_lang),
             )
+            by, code = "default", default_lang.code
+            for source, resolve in sources:
+                if found := resolve():
+                    by, code = source, found
+                    break
+            request.lang = Lang._get_data(code=code)
             _debug.logic(
                 "frontend_lang",
-                by=(
-                    "url"
-                    if nearest_url_lang
-                    else "cookie"
-                    if cookie_lang
-                    else "context"
-                    if context_lang
-                    else "default"
-                ),
+                by=by,
                 lang=request.lang.code,
                 url_code=url_lang_str or None,
             )
         return default_lang, nearest_url_lang
+
+    @api.model
+    def _uses_browser_lang(self) -> bool:
+        return True
+
+    @api.model
+    def _get_nearest_browser_lang(self) -> str | None:
+        if not self._uses_browser_lang():
+            return None
+        for tag, _quality in request.httprequest.accept_languages:
+            code = _canonical_lang_code(tag)
+            if code and (nearest := self.get_nearest_lang(code)):
+                _debug.logic("browser_lang", tag=tag, lang=nearest)
+                return nearest
+        return None
 
     @classmethod
     @contextlib.contextmanager

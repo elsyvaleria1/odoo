@@ -39,6 +39,22 @@ class TestLangUrl(TestLangUrlCommon):
             f"fr_CA should be forwarded to 'fr_FR' lang as closest match, url: {r.url}",
         )
 
+    def test_the_browser_language_redirect_follows_the_website_setting(self):
+        headers = {
+            "Accept-Language": "fr-FR,fr;q=0.9",
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Chrome/120",
+        }
+        self.assertTrue(self.website.auto_redirect_lang)
+        self.opener.cookies.clear()
+        r = self.url_open("/contactus", allow_redirects=False, headers=headers)
+        self.assertEqual(r.status_code, 303)
+        self.assertURLEqual(r.headers["Location"], "/fr/contactus")
+
+        self.website.auto_redirect_lang = False
+        self.opener.cookies.clear()
+        r = self.url_open("/contactus", allow_redirects=False, headers=headers)
+        self.assertEqual(r.status_code, 200)
+
     def test_a_page_named_like_a_language_alias_is_served(self):
         self.env["website.page"].create(
             {
