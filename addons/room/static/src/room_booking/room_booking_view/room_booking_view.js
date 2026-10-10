@@ -47,6 +47,7 @@ export const REFRESH_INTERVAL = 1000;
  * @param {Object} booking
  * @param {Number} booking.id
  * @param {String} booking.name
+ * @param {Boolean} [booking.private] the server withholds its name
  * @param {String} booking.start_datetime
  * @param {String} booking.stop_datetime
  * @param {Boolean} [booking.readonly] a reservation from another origin (maintenance)
@@ -54,7 +55,7 @@ export const REFRESH_INTERVAL = 1000;
 function formatServerBooking(booking) {
     return {
         id: booking.id,
-        name: booking.name,
+        name: booking.private ? _t("Busy") : booking.name,
         readonly: Boolean(booking.readonly),
         interval: makeInterval(
             deserializeDateTime(booking.start_datetime),

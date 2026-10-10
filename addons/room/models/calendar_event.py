@@ -9,6 +9,7 @@ KIOSK_EVENT_FIELDS = {"name", "start", "stop", "active", "privacy", "user_id"}
 class RoomBookingData(TypedDict):
     id: int
     name: str
+    private: bool
     start_datetime: str | Literal[False]
     stop_datetime: str | Literal[False]
 
@@ -19,11 +20,14 @@ class CalendarEvent(models.Model):
     def _prepare_room_booking_data(self) -> RoomBookingData:
         # A kiosk is public and reads its bookings elevated, past the masking
         # calendar applies to a private event's name for anyone not invited.
+        # It says "Busy" itself, in its own language: a notification is
+        # prepared in the language of whoever changed the booking.
         self.check_singleton()
         hidden = self.effective_privacy in ("private", "confidential")
         return {
             "id": self.id,
-            "name": self.env._("Busy") if hidden else self.name,
+            "name": "" if hidden else self.name,
+            "private": hidden,
             "start_datetime": fields.Datetime.to_string(self.start),
             "stop_datetime": fields.Datetime.to_string(self.stop),
         }

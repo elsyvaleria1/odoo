@@ -418,6 +418,31 @@ test("Room Booking View - Receiving booking update through bus", async () => {
     assertRoomStatus({ minutes: 59, seconds: 59 }, 1);
 });
 
+test("Room Booking View - A booking made private through the bus shows Busy", async () => {
+    onRpc("/room/room_test/get_existing_bookings", () => [
+        {
+            id: 1,
+            name: "Board review",
+            start_datetime: "2023-06-17 11:00:00",
+            stop_datetime: "2023-06-17 12:00:00",
+        },
+    ]);
+    mockDate("2023-06-17 10:30:00", 0);
+    const { notifyView } = await mountRoomBookingView(true);
+    expect(".o_room_sidebar .list-group-item").toHaveText(/Board review/);
+
+    await notifyView("booking/update", [
+        {
+            id: 1,
+            name: "",
+            private: true,
+            start_datetime: "2023-06-17 11:00:00",
+            stop_datetime: "2023-06-17 12:00:00",
+        },
+    ]);
+    expect(".o_room_sidebar .list-group-item").toHaveText(/Busy/);
+});
+
 test("Room Booking View - Receiving booking deletion through bus", async () => {
     onRpc("/room/room_test/get_existing_bookings", () => [
         {

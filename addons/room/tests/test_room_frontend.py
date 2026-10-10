@@ -54,7 +54,8 @@ class TestRoomFrontend(RoomCommon, HttpCase):
             f"/room/{self.resources[0].access_token}/get_existing_bookings", {}
         )
         self.assertEqual(
-            [booking["name"] for booking in bookings], ["Busy", "Busy", "Board review"]
+            [(booking["name"], booking["private"]) for booking in bookings],
+            [("", True), ("", True), ("Board review", False)],
         )
         self.call_jsonrpc(
             f"/room/{self.resources[0].access_token}/booking/{self.bookings[0].id}/update",
@@ -189,8 +190,8 @@ class TestRoomFrontend(RoomCommon, HttpCase):
             lambda _bus, _target, _type, message: sent.append(message),
         ):
             booking.privacy = "private"
-        names = [event["name"] for message in sent for event in message]
-        self.assertEqual(names, ["Busy"])
+        events = [event for message in sent for event in message]
+        self.assertEqual([(e["name"], e["private"]) for e in events], [("", True)])
 
     @freeze_time("2023-05-15 07:00:00")
     def test_the_kiosk_listens_on_its_room_capability(self):

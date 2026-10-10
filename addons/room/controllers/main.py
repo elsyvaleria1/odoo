@@ -80,7 +80,7 @@ class RoomController(http.Controller):
             for key, fname in BOOKING_FIELDS.items()
             if kwargs.get(key)
         }
-        if booking._prepare_room_booking_data()["name"] != booking.name:
+        if booking._prepare_room_booking_data()["private"]:
             # the kiosk was shown a placeholder, and sends it back
             vals.pop("name", None)
         return booking.write(vals)
