@@ -12,6 +12,8 @@ from odoo.libs.json import dumps as json_dumps
 from odoo.tools import SQL, frozendict
 from odoo.tools.translate import LazyTranslate
 
+from odoo.addons.account.models.account_return_submission import OPEN_STATES
+
 _debug = DebugLog(__name__)
 
 _lt = LazyTranslate(__name__)
@@ -62,6 +64,7 @@ class AccountReturn(models.Model):
         compute="_compute_state",
         inverse="_inverse_state",
         store=True,
+        write_classification="account.return_workflow",
     )
     next_state = fields.Char(compute="_compute_next_state")
     generic_state_tax_report = fields.Selection(
@@ -74,6 +77,7 @@ class AccountReturn(models.Model):
         string="Generic State",
         default="new",
         tracking=True,
+        write_classification="account.return_workflow",
         help="The state of the return for generic tax report flows",
     )
     generic_state_only_pay = fields.Selection(
@@ -83,6 +87,7 @@ class AccountReturn(models.Model):
         ],
         default="new",
         tracking=True,
+        write_classification="account.return_workflow",
         help="The state of the return for report flows when only payment is needed",
     )
     generic_state_review_submit = fields.Selection(
@@ -93,6 +98,7 @@ class AccountReturn(models.Model):
         ],
         default="new",
         tracking=True,
+        write_classification="account.return_workflow",
         help="The state of the return for report flows when review and submission are needed",
     )
     generic_state_review = fields.Selection(
@@ -102,11 +108,13 @@ class AccountReturn(models.Model):
         ],
         default="new",
         tracking=True,
+        write_classification="account.return_workflow",
         help="The default state for audit and custom generated return types",
     )
     is_completed = fields.Boolean(
         default=False,
         tracking=True,
+        write_classification="account.return_workflow",
     )  # Set to true when all steps are done
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -136,8 +144,14 @@ class AccountReturn(models.Model):
         compute="_compute_date_deadline",
         store=True,
     )
-    date_lock = fields.Date(string="Lock Date")
-    date_submission = fields.Date(string="Submission Date")
+    date_lock = fields.Date(
+        string="Lock Date",
+        write_classification="account.return_workflow",
+    )
+    date_submission = fields.Date(
+        string="Submission Date",
+        write_classification="account.return_workflow",
+    )
     check_ids = fields.One2many(
         comodel_name="account.return.check",
         inverse_name="return_id",
@@ -415,7 +429,7 @@ class AccountReturn(models.Model):
 
             if "audit_status" in vals:
                 if record.audit_status in ("ongoing", "paused"):
-                    record.state = "new"
+                    record._as_workflow_step().state = "new"
         return result
 
     @api.ondelete(at_uninstall=False)
@@ -987,7 +1001,7 @@ class AccountReturn(models.Model):
         )
 
         if self.return_type_category == "audit":
-            self.state = "reviewed"
+            self._as_workflow_step().state = "reviewed"
             return self._mark_completed()
 
         return self._proceed_with_locking()
@@ -1099,7 +1113,8 @@ class AccountReturn(models.Model):
                     )
                 )
 
-        self.date_lock = fields.Date.context_today(self)
+        workflow_step = self._as_workflow_step()
+        workflow_step.date_lock = fields.Date.context_today(self)
         _debug.lifecycle(
             "locked",
             tax_return=self,
@@ -1107,7 +1122,7 @@ class AccountReturn(models.Model):
             workflow=self.type_id.states_workflow,
         )
 
-        self.state = "reviewed"
+        workflow_step.state = "reviewed"
         if self.type_id.states_workflow == "generic_state_review":
             return self._mark_completed()
 
@@ -1201,6 +1216,12 @@ class AccountReturn(models.Model):
         payments = counterparts.move_id.origin_payment_id
         return all(payment.state == "paid" for payment in payments)
 
+    def _as_workflow_step(self):
+        return self.with_privilege(
+            "account.privilege_move_return_workflow",
+            reason="a return moved along its workflow",
+        )
+
     @api.model
     def _as_settlement_observer(self):
         return self.with_privilege(
@@ -1234,7 +1255,7 @@ class AccountReturn(models.Model):
             if settled and tax_return.state == "submitted":
                 tax_return._action_finalize_payment()
             elif not settled and tax_return.state == "paid":
-                tax_return.state = "submitted"
+                tax_return._as_workflow_step().state = "submitted"
                 if tax_return.is_completed:
                     tax_return._mark_uncompleted()
 
@@ -1311,13 +1332,16 @@ class AccountReturn(models.Model):
         self.check_singleton()
         self._check_submittable()
         self._check_all_branches_allowed()
+        return self._start_submission()
+
+    def _start_submission(self) -> dict | None:
+        self.check_singleton()
         if self.type_id.filing_channel:
             return self._submit_through_channel()
         return self._proceed_with_submission()
 
     def _submit_through_channel(self) -> dict | None:
         self.check_singleton()
-        self._check_failing_checks_in_current_stage()
         submission = self.env["account.return.submission"].create(
             {
                 "return_id": self.id,
@@ -1352,6 +1376,18 @@ class AccountReturn(models.Model):
                     name=self.display_name,
                 )
             )
+        pending = self.submission_ids.filtered(
+            lambda submission: submission.state in OPEN_STATES
+        )
+        _debug.logic("reset_checked", tax_return=self, pending=pending)
+        if pending:
+            raise UserError(
+                self.env._(
+                    "%(name)s is being filed and the authority has not answered yet; "
+                    "wait for its answer before resetting it.",
+                    name=self.display_name,
+                )
+            )
 
     def _check_submittable(self) -> None:
         self._check_transition("submitted")
@@ -1364,12 +1400,16 @@ class AccountReturn(models.Model):
                     name=self.display_name,
                 )
             )
+        self._check_failing_checks_in_current_stage()
 
     def _proceed_with_submission(self):
         self._check_submittable()
-        self._check_failing_checks_in_current_stage()
-        self.state = "submitted"
-        self.date_submission = fields.Date.context_today(self)
+        self._as_workflow_step().write(
+            {
+                "state": "submitted",
+                "date_submission": fields.Date.context_today(self),
+            }
+        )
         return self._on_post_submission_event()
 
     def _on_post_submission_event(self):
@@ -1404,7 +1444,7 @@ class AccountReturn(models.Model):
         _debug.lifecycle("_action_finalize_payment", records=self)
         self.check_singleton()
         self._check_transition("paid")
-        self.state = "paid"
+        self._as_workflow_step().state = "paid"
         if self.type_id.states_workflow in (
             "generic_state_only_pay",
             "generic_state_tax_report",
@@ -1597,7 +1637,7 @@ class AccountReturn(models.Model):
             self.total_amount_to_pay = 0
             self.period_amount_to_pay = 0
 
-        self.date_lock = False
+        self._as_workflow_step().date_lock = False
         _debug.logic("tax_return_unlocked", tax_return=self, had_report=bool(report))
         self._reset_common()
         return True
@@ -1644,11 +1684,11 @@ class AccountReturn(models.Model):
                 ].selection
             ]
         )
-        self.state = "new"
+        self._as_workflow_step().state = "new"
         self._mark_uncompleted()
         self.report_opened_once = False
         self.attachment_ids.unlink()
-        self.date_submission = False
+        self._as_workflow_step().date_submission = False
 
         if self.closing_move_ids:
             self.closing_move_ids.action_draft()
@@ -1672,7 +1712,7 @@ class AccountReturn(models.Model):
 
     def _mark_completed(self) -> dict | None:
         self.check_singleton()
-        self.is_completed = True
+        self._as_workflow_step().is_completed = True
         if self.return_type_category == "audit":
             self.audit_status = "done"
         _debug.logic(
@@ -1710,7 +1750,8 @@ class AccountReturn(models.Model):
 
     def _mark_uncompleted(self) -> None:
         self.check_singleton()
-        self.is_completed = False
+        workflow_step = self._as_workflow_step()
+        workflow_step.is_completed = False
         if self.return_type_category == "audit":
             self.audit_status = "ongoing"
 

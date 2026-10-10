@@ -38,4 +38,19 @@
         <field name="class_id" ref="access_class_invoice_sending_queue" />
     </record>
 
+    <record id="access_class_return_workflow" model="ir.access.class">
+        <field name="name">account.return_workflow</field>
+        <field
+            name="description">Where a return stands in its workflow: its step, its lock and submission dates, whether it is completed and why it closed outside Odoo. Only the return's own steps set them, each behind its guard, never a client.</field>
+    </record>
+
+    <record id="access_return_workflow_privilege" model="ir.access">
+        <field
+            name="name">account.return_workflow: a return's own step moving it along its workflow</field>
+        <field name="group_id" ref="account.privilege_move_return_workflow" />
+        <field name="kind">permission</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="access_class_return_workflow" />
+    </record>
+
 </odoo>

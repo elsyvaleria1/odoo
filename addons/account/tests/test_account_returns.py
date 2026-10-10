@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
 
 from odoo import Command, fields
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tools.misc import ReadonlyDict
 from odoo.tools.translate import CodeTranslations
@@ -3498,6 +3498,63 @@ class TestAccountReturn(TestAccountReportsCommon):
                 lambda r: r.date_from == fields.Date.from_string("2024-03-01")
             )
         )
+
+    def test_a_client_cannot_write_where_a_return_stands_in_its_workflow(self):
+        first_return = self._basic_returns(limit=1).with_user(self.simple_accountman)
+        for vals in (
+            {"state": "paid"},
+            {"generic_state_tax_report": "paid"},
+            {"is_completed": True},
+            {"date_lock": "2024-01-31"},
+            {"date_submission": "2024-02-01"},
+        ):
+            with self.subTest(vals=vals), self.assertRaises(AccessError):
+                first_return.write(vals)
+
+        described = first_return.fields_get(
+            ["state", "is_completed", "date_lock", "date_submission"], ["readonly"]
+        )
+        self.assertTrue(all(field["readonly"] for field in described.values()))
+        self.assertRecordValues(
+            first_return,
+            [{"state": "new", "is_completed": False, "date_lock": False}],
+        )
+
+    def test_a_return_moves_along_its_workflow_for_its_users(self):
+        first_return = self._basic_returns(limit=1).with_user(self.simple_accountman)
+
+        first_return.action_validate()
+        self.assertEqual(first_return.state, "reviewed")
+        self.assertTrue(first_return.date_lock)
+        first_return.action_submit()
+        self.assertIn(first_return.state, ("submitted", "paid"))
+        self.assertTrue(first_return.date_submission)
+
+        first_return.action_reset_tax_return_common()
+        self.assertRecordValues(
+            first_return,
+            [{"state": "new", "is_completed": False, "date_lock": False}],
+        )
+
+    def test_every_workflow_field_of_a_return_is_written_only_by_its_steps(self):
+        Return = self.env["account.return"]
+        workflow_fields = (
+            self.env["account.return.type"]
+            ._fields["states_workflow"]
+            .get_values(self.env)
+        )
+        for fname in (
+            "state",
+            "is_completed",
+            "date_lock",
+            "date_submission",
+            *workflow_fields,
+        ):
+            with self.subTest(field=fname):
+                self.assertEqual(
+                    Return._fields[fname].write_classification,
+                    "account.return_workflow",
+                )
 
 
 @tagged("post_install", "-at_install")

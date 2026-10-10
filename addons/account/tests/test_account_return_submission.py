@@ -227,6 +227,78 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
             1,
         )
 
+    def test_a_localized_submission_flow_starts_only_from_a_submittable_return(self):
+        started = []
+
+        def start(tax_return):
+            started.append(tax_return)
+            return {"type": "ir.actions.act_window_close"}
+
+        tax_return = self.return_type.with_context(
+            forced_date_from=fields.Date.from_string("2024-02-01"),
+            forced_date_to=fields.Date.from_string("2024-02-29"),
+        )._try_create_returns_for_fiscal_year(self.env.company, False)
+        with (
+            patch.object(self.registry["account.return"], "_start_submission", start),
+            self.assertRaisesRegex(UserError, "cannot move to submitted"),
+        ):
+            tax_return.action_submit()
+        self.assertFalse(started)
+
+        with patch.object(
+            self.registry["account.return"],
+            "_generate_locking_attachments",
+            lambda self, options: None,
+        ):
+            tax_return.action_validate()
+        with patch.object(self.registry["account.return"], "_start_submission", start):
+            action = tax_return.action_submit()
+        self.assertEqual(started, [tax_return])
+        self.assertEqual(action, {"type": "ir.actions.act_window_close"})
+        self.assertEqual(tax_return.state, "reviewed")
+
+        self.env["account.return.check"].create(
+            {
+                "name": "Unresolved anomaly",
+                "code": "unresolved_anomaly",
+                "return_id": tax_return.id,
+                "state": "reviewed",
+                "result": "anomaly",
+            }
+        )
+        with (
+            patch.object(self.registry["account.return"], "_start_submission", start),
+            self.assertRaisesRegex(UserError, "Some checks fail"),
+        ):
+            tax_return.action_submit()
+        self.assertEqual(started, [tax_return])
+
+    def test_a_return_the_authority_has_not_answered_for_cannot_be_reset(self):
+        def send(_self, submission):
+            submission._update_from_channel("acknowledged", external_ref="kenmerk-8")
+
+        def poll(_self, submission):
+            submission._update_from_channel("accepted")
+
+        tax_return, submission = self._draft_submission()
+        with (
+            patch(f"{MANUAL}._send_submission", send),
+            patch(f"{MANUAL}._update_submission_status", poll),
+        ):
+            submission.action_send()
+            with self.assertRaisesRegex(UserError, "has not answered yet"):
+                tax_return.action_reset_2_states()
+            with self.assertRaisesRegex(UserError, "has not answered yet"):
+                tax_return.action_reset_tax_return_common()
+            self.assertEqual(tax_return.state, "reviewed")
+
+            submission._job_update_status()
+
+        self.assertEqual(submission.state, "accepted")
+        self.assertRecordValues(
+            tax_return, [{"state": "submitted", "is_completed": True}]
+        )
+
     # ------------------------------------------------------------------
     # The channel contract, against fakes shaped like the real channels
     # ------------------------------------------------------------------
