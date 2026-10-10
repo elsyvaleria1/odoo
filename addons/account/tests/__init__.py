@@ -73,6 +73,7 @@ from . import test_account_cash_rounding
 from . import test_fiscal_country_codes
 from . import test_product
 from . import test_marin_account_move_audit
+from . import test_marin_account_move_lifecycle
 from . import test_marin_account_move_fixes
 from . import test_marin_account_move_sequence_gap
 from . import test_marin_account_move_sync_fixes

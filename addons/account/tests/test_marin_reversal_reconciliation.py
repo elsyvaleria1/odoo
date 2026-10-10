@@ -63,3 +63,48 @@ class TestReversalReconciliation(AccountTestInvoicingCommon):
                 refund_b.name: (True, [invoice_b.name]),
             },
         )
+
+    def test_a_cash_basis_refund_does_not_reconcile_transition_lines_twice(self):
+        self.env.company.account_config_id.tax_exigibility = True
+        transition_account = self.env["account.account"].create(
+            {
+                "code": "209990",
+                "name": "Cash basis transition",
+                "account_type": "liability_current",
+                "reconcile": True,
+            }
+        )
+        tax = self.env["account.tax"].create(
+            {
+                "name": "cash basis 10%",
+                "amount": 10.0,
+                "tax_exigibility": "on_payment",
+                "cash_basis_transition_account_id": transition_account.id,
+            }
+        )
+        invoice = self.init_invoice(
+            "out_invoice", amounts=[1000.0], taxes=tax, post=True
+        )
+        refund = invoice._reverse_moves()
+
+        refund.action_post()
+
+        receivable_lines = (invoice + refund).line_ids.filtered(
+            lambda line: line.account_id.account_type == "asset_receivable"
+        )
+        self.assertTrue(all(receivable_lines.mapped("reconciled")))
+        self.assertEqual(
+            receivable_lines.full_reconcile_id.reconciled_line_ids, receivable_lines
+        )
+        for move in invoice + refund:
+            transition_line = move.line_ids.filtered(
+                lambda line: line.account_id == transition_account
+            )
+            self.assertTrue(transition_line.reconciled)
+            self.assertEqual(
+                (
+                    transition_line.matched_debit_ids.debit_move_id
+                    | transition_line.matched_credit_ids.credit_move_id
+                ).move_id.tax_cash_basis_origin_move_id,
+                move,
+            )

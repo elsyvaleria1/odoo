@@ -57,13 +57,20 @@ class WizardAccountMoveResequence(models.TransientModel):
             active_move_ids = self.env["account.move"].browse(
                 self.env.context["active_ids"]
             )
-        if len(active_move_ids.journal_id) > 1:
+        self._check_moves_share_one_sequence(active_move_ids)
+        values["move_ids"] = [Command.set(active_move_ids.ids)]
+        return values
+
+    @api.model
+    def _check_moves_share_one_sequence(self, moves) -> None:
+        journal = moves.journal_id
+        if len(journal) > 1:
             raise UserError(
                 self.env._("You can only resequence items from the same journal")
             )
-        move_types = set(active_move_ids.mapped("move_type"))
+        move_types = set(moves.mapped("move_type"))
         if (
-            active_move_ids.journal_id.refund_sequence
+            journal.refund_sequence
             and ("in_refund" in move_types or "out_refund" in move_types)
             and len(move_types) > 1
         ):
@@ -72,23 +79,29 @@ class WizardAccountMoveResequence(models.TransientModel):
                     "The sequences of this journal are different for Invoices and Refunds but you selected some of both types."
                 )
             )
-        is_payment = set(active_move_ids.mapped(lambda x: bool(x.origin_payment_id)))
-        if active_move_ids.journal_id.payment_sequence and len(is_payment) > 1:
+        is_payment = set(moves.mapped(lambda x: bool(x.origin_payment_id)))
+        if journal.payment_sequence and len(is_payment) > 1:
             raise UserError(
                 self.env._(
                     "The sequences of this journal are different for Payments and non-Payments but you selected some of both types."
                 )
             )
+        if journal.is_self_billing and len(moves.commercial_partner_id) > 1:
+            raise UserError(
+                self.env._(
+                    "This self-billing journal numbers each partner separately; "
+                    "select the entries of a single partner."
+                )
+            )
         if _debug.logic.enabled:
             _debug.logic(
                 "resequence_moves_selected",
-                move=active_move_ids,
-                journal=active_move_ids.journal_id,
+                move=moves,
+                journal=journal,
                 move_types=sorted(move_types),
                 payment_kinds=len(is_payment),
+                partners=len(moves.commercial_partner_id),
             )
-        values["move_ids"] = [Command.set(active_move_ids.ids)]
-        return values
 
     @api.depends("first_name", "move_ids")
     def _compute_sequence_number_reset(self) -> None:
@@ -289,6 +302,7 @@ class WizardAccountMoveResequence(models.TransientModel):
 
     def resequence(self):
         self.check_singleton()
+        self._check_moves_share_one_sequence(self.move_ids)
         new_values = json_loads(self.new_values)
         if (
             self.move_ids.journal_id

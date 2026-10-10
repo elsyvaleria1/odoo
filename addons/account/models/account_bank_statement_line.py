@@ -1008,9 +1008,9 @@ class AccountBankStatementLine(models.Model):
             )
 
         for st_line in self.with_context(skip_account_move_synchronization=True):
-            st_line.move_id.with_context(skip_readonly_check=True).write(
-                st_line._prepare_synchronized_move_vals(rebuild=rebuild)
-            )
+            st_line.move_id.with_context(
+                skip_readonly_check=True, force_delete=rebuild
+            ).write(st_line._prepare_synchronized_move_vals(rebuild=rebuild))
 
     @_debug.perf.timed
     def _prepare_synchronized_move_vals(self, rebuild):

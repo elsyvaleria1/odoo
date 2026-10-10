@@ -616,7 +616,7 @@ class AccountMoveLine(models.Model):
                     in ["asset_receivable", "liability_payable"]
                     else "product"
                 )
-                if line.move_id.is_invoice()
+                if line.move_id.is_invoice(include_receipts=True)
                 else "product"
             )
 
@@ -1790,16 +1790,8 @@ class AccountMoveLine(models.Model):
         return SQL("move_id")
 
     def _inverse_analytic_distribution(self) -> None:
-        self._update_analytic_distribution_from_origin()
-
-    def _update_analytic_distribution_from_origin(self) -> None:
         if self.env.context.get("skip_analytic_sync"):
             return
-        lines_to_modify = (
-            self.env["account.move.line"]
-            .browse([line.id for line in self if line.parent_state == "posted"])
-            .with_context(skip_analytic_sync=True)
-        )
         old_distributions = dict(
             self.env.execute_query(
                 SQL(
@@ -1814,12 +1806,19 @@ class AccountMoveLine(models.Model):
                 old_distribution=old_distributions.get(line._origin.id) or {},
                 new_distribution=line.analytic_distribution or {},
             )
-        lines_to_modify.analytic_line_ids.unlink()
-        lines_to_modify._create_analytic_lines()
+
+    def _rebuild_posted_analytic_lines(self) -> None:
+        if self.env.context.get("skip_analytic_sync"):
+            return
+        posted_lines = self.filtered(
+            lambda line: line.parent_state == "posted"
+        ).with_context(skip_analytic_sync=True)
+        _debug.logic("posted_analytic_lines_rebuilt", lines=posted_lines)
+        posted_lines.analytic_line_ids.unlink()
+        posted_lines._create_analytic_lines()
 
     @api.onchange("account_id")
     def _inverse_account_id(self) -> None:
-        self._update_analytic_distribution_from_origin()
         self._conditional_add_to_compute(
             "tax_ids",
             lambda line: (
@@ -2446,6 +2445,7 @@ class AccountMoveLine(models.Model):
         lines.filtered(
             lambda l: l.parent_state == "draft"
         ).analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
+        lines._rebuild_posted_analytic_lines()
         return lines
 
     @_debug.perf.timed
@@ -2555,15 +2555,6 @@ class AccountMoveLine(models.Model):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         if not vals:
             return True
-        account_to_write = (
-            self.env["account.account"].browse(vals["account_id"])
-            if "account_id" in vals
-            else None
-        )
-
-        if account_to_write and not account_to_write.active:
-            raise UserError(self.env._("You cannot use an archived account."))
-
         vals = self._normalize_vals(vals)
 
         self._check_write_on_hashed_entry(vals)
@@ -2629,6 +2620,8 @@ class AccountMoveLine(models.Model):
                     lambda l: l.parent_state == "draft"
                 ).analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
 
+        if "account_id" in vals or "analytic_distribution" in vals:
+            self._rebuild_posted_analytic_lines()
         return result
 
     def _is_valid_field_parameter(self, field, name) -> bool:
@@ -2639,8 +2632,7 @@ class AccountMoveLine(models.Model):
     def _unlink_except_posted(self) -> None:
         _debug.lifecycle("_unlink_except_posted", records=self)
         if not self.env.context.get("force_delete"):
-            non_zero_lines = self.filtered(lambda l: l.balance or l.amount_currency)
-            restricted = non_zero_lines.move_id.filtered(
+            restricted = self.move_id.filtered(
                 lambda move: (
                     move.state == "posted" and not move._is_unreconcile_entry_deletion()
                 )
@@ -2694,9 +2686,7 @@ class AccountMoveLine(models.Model):
 
         self.remove_move_reconcile()
 
-        non_zero_lines = self.filtered(lambda l: l.balance or l.amount_currency)
-        moves_to_check = non_zero_lines.move_id.filtered(lambda m: m.state == "posted")
-        moves_to_check._check_fiscal_lock_dates()
+        self.move_id.filtered(lambda m: m.state == "posted")._check_fiscal_lock_dates()
 
         self._check_tax_lock_date()
 
@@ -3693,18 +3683,11 @@ class AccountMoveLine(models.Model):
 
     @_debug.perf.timed
     def _prepare_exchange_difference_move_vals(
-        self, amounts_list, company=None, exchange_date=None, **kwargs
-    ) -> dict | None:
+        self, amounts_list, exchange_date=None, **kwargs
+    ) -> dict:
         company = (
-            (
-                self.move_id.filtered(lambda m: m.is_invoice(True)) or self.move_id
-            ).company_id
-            or company
-        )[:1]
-        if not company:
-            _debug.logic("exchange_move_skipped", reason="no_company", lines=self)
-            return None
-
+            self.move_id.filtered(lambda m: m.is_invoice(True)) or self.move_id
+        ).company_id[:1]
         journal = company.account_config_id.currency_exchange_journal_id
         _debug.logic(
             "exchange_journal_resolved",
@@ -3809,7 +3792,6 @@ class AccountMoveLine(models.Model):
                 "debit": debit,
                 "credit": credit,
                 "amount_currency": -amount_residual_currency,
-                "full_reconcile_id": self.full_reconcile_id.id,
                 "account_id": self.account_id.id,
                 "currency_id": self.currency_id.id,
                 "partner_id": self.partner_id.id,
@@ -4221,15 +4203,12 @@ class AccountMoveLine(models.Model):
 
     @_debug.perf.timed
     def _reconciled_lines(self):
-        ids = []
-        for aml in self.filtered("reconciled"):
-            ids.extend(
-                [r.debit_move_id.id for r in aml.matched_debit_ids]
-                if aml.credit > 0
-                else [r.credit_move_id.id for r in aml.matched_credit_ids]
-            )
-            ids.append(aml.id)
-        return ids
+        reconciled = self.filtered("reconciled")
+        return (
+            reconciled
+            | reconciled.matched_debit_ids.debit_move_id
+            | reconciled.matched_credit_ids.credit_move_id
+        ).ids
 
     @_debug.perf.timed
     def _reconciled_by_number(self) -> dict:

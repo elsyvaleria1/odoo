@@ -9,12 +9,20 @@ from datetime import date, timedelta
 from textwrap import shorten
 from typing import Any, Self
 
+import psycopg
 from markupsafe import Markup
 
 from odoo import api, fields, models, modules
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.db.schema import column_exists, create_column
-from odoo.exceptions import AccessError, RedirectWarning, UserError, ValidationError
+from odoo.exceptions import (
+    AccessError,
+    ConcurrencyError,
+    LockError,
+    RedirectWarning,
+    UserError,
+    ValidationError,
+)
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import (
@@ -572,6 +580,10 @@ class AccountMove(models.Model):
         copy=False,
         readonly=True,
     )
+    auto_post_failed = fields.Boolean(
+        copy=False,
+        readonly=True,
+    )
     hide_post_button = fields.Boolean(
         compute="_compute_hide_post_button",
         readonly=True,
@@ -866,11 +878,18 @@ class AccountMove(models.Model):
         string="Currency Rate",
         digits=0,
         compute="_compute_invoice_currency_rate",
+        inverse="_inverse_invoice_currency_rate",
         precompute=True,
         store=True,
         copy=False,
         readonly=False,
         help="Currency rate from company currency to document currency.",
+    )
+    invoice_currency_rate_manual = fields.Boolean(
+        compute="_compute_invoice_currency_rate_manual",
+        precompute=True,
+        store=True,
+        copy=False,
     )
 
     direction_sign = fields.Integer(
@@ -1722,6 +1741,32 @@ class AccountMove(models.Model):
     def _update_invoice_currency_rate(self) -> None:
         for move in self:
             move.invoice_currency_rate = move.expected_currency_rate
+
+    @api.depends(
+        "currency_id",
+        "company_currency_id",
+        "company_id",
+        "invoice_date",
+        "taxable_supply_date",
+    )
+    def _compute_invoice_currency_rate_manual(self) -> None:
+        self.invoice_currency_rate_manual = False
+
+    def _inverse_invoice_currency_rate(self) -> None:
+        for move in self:
+            manual = (
+                float_compare(
+                    move.invoice_currency_rate,
+                    move.expected_currency_rate,
+                    precision_digits=6,
+                )
+                != 0
+            )
+            if move.invoice_currency_rate_manual != manual:
+                _debug.logic(
+                    "invoice_currency_rate_manual_set", move=move, manual=manual
+                )
+                move.invoice_currency_rate_manual = manual
 
     @api.depends("move_type")
     def _compute_direction_sign(self) -> None:
@@ -3806,7 +3851,7 @@ class AccountMove(models.Model):
         named = self.filtered(lambda move: move.name and move.name != "/")
         cleared = (self - named).filtered("made_sequence_gap")
         if cleared:
-            cleared.made_sequence_gap = False
+            cleared._set_sequence_gap_flag(False)
             cleared.journal_id.invalidate_recordset(["has_sequence_holes"])
         named._update_sequence_made_gap()
 
@@ -4422,11 +4467,8 @@ class AccountMove(models.Model):
                     for command, _id, line_vals in vals["line_ids"]
                     if command == Command.CREATE
                 ]
-            elif move.move_type == "entry":
-                if "partner_id" not in vals or not self.env.context.get(
-                    "move_reverse_cancel", False
-                ):
-                    vals["partner_id"] = False
+            elif move.move_type == "entry" and "partner_id" not in default:
+                vals["partner_id"] = False
             user_fiscal_lock_date = move.company_id._get_user_fiscal_lock_date(
                 move.journal_id
             )
@@ -4787,6 +4829,10 @@ class AccountMove(models.Model):
                     "skip_is_manually_modified"
                 ):
                     vals = dict(vals, is_manually_modified=True)
+                if "auto_post_failed" not in vals and any(
+                    self.mapped("auto_post_failed")
+                ):
+                    vals = dict(vals, auto_post_failed=False)
 
                 res = super(
                     AccountMove,
@@ -5928,22 +5974,29 @@ class AccountMove(models.Model):
             return False
         if self.state != "posted":
             return True
-        lock_date = self.company_id._get_user_fiscal_lock_date(self.journal_id)
+        violated_lock_dates = self._get_violated_lock_dates(
+            self.date, self._affect_tax_report()
+        )
         posted_caba_entry = (
             self.tax_cash_basis_rec_id or self.tax_cash_basis_origin_move_id
         )
         posted_exchange_diff_entry = self.exchange_diff_partial_ids
+        unreviewable = self.checked and not self._is_user_able_to_review()
         _debug.logic(
             "posted_unlink_inputs",
             move=self,
-            lock_date=lock_date,
+            violated_lock_dates=violated_lock_dates,
             caba_entry=bool(posted_caba_entry),
             exchange_diff_entry=bool(posted_exchange_diff_entry),
+            need_cancel_request=self.need_cancel_request,
+            unreviewable=unreviewable,
         )
-        return (
-            self.date > lock_date
-            and not posted_caba_entry
-            and not posted_exchange_diff_entry
+        return not (
+            violated_lock_dates
+            or posted_caba_entry
+            or posted_exchange_diff_entry
+            or self.need_cancel_request
+            or unreviewable
         )
 
     def _is_protected_by_audit_trail(self) -> bool:
@@ -6065,22 +6118,18 @@ class AccountMove(models.Model):
         if invoice.invoice_date:
             return
         if invoice.is_sale_document(include_receipts=True):
-            expected_rate = invoice._get_expected_currency_rate_at(
-                invoice.create_date.date()
-            )
-            is_manual_rate = (
-                float_compare(
-                    invoice.invoice_currency_rate,
-                    expected_rate,
-                    precision_digits=6,
-                )
-                != 0
-            )
+            is_manual_rate = invoice.invoice_currency_rate_manual
             _debug.logic(
                 "invoice_date_defaulted", move=invoice, manual_rate=is_manual_rate
             )
             with (
-                self.env.protecting([self._fields["invoice_currency_rate"]], invoice)
+                self.env.protecting(
+                    [
+                        self._fields["invoice_currency_rate"],
+                        self._fields["invoice_currency_rate_manual"],
+                    ],
+                    invoice,
+                )
                 if is_manual_rate
                 else nullcontext()
             ):
@@ -6613,7 +6662,14 @@ class AccountMove(models.Model):
             rows=len(made_gap_data),
             invalidate_current=invalidate_current,
         )
-        gap_flags_changed = 0  # debuglog
+        gap_flags = {}
+
+        def set_gap_flag(move, made_gap) -> None:
+            gap_flags[move] = made_gap
+
+        def gap_flag(move) -> bool:
+            return gap_flags.get(move, move.made_sequence_gap)
+
         for previous_ids, current_id, next_ids in made_gap_data:
             move_p1, move_p2 = (
                 browse(previous_ids)
@@ -6632,9 +6688,8 @@ class AccountMove(models.Model):
                 )
                 and self._has_sequence_gap_around(move_p1, current_move, move_n1)
             )
-            if current_move.made_sequence_gap != current_made_gap:
-                gap_flags_changed += 1  # debuglog
-                current_move.made_sequence_gap = current_made_gap
+            if gap_flag(current_move) != current_made_gap:
+                set_gap_flag(current_move, current_made_gap)
 
             if move_n1:
                 n1_made_gap = bool(
@@ -6645,9 +6700,8 @@ class AccountMove(models.Model):
                         move_n2,
                     )
                 )
-                if move_n1.made_sequence_gap != n1_made_gap:
-                    gap_flags_changed += 1  # debuglog
-                    move_n1.made_sequence_gap = n1_made_gap
+                if gap_flag(move_n1) != n1_made_gap:
+                    set_gap_flag(move_n1, n1_made_gap)
 
             if move_p1 and (
                 not is_computed_with_mixin(current_move)
@@ -6660,14 +6714,24 @@ class AccountMove(models.Model):
                         self.browse() if invalidate_current else current_move,
                     )
                 )
-                if move_p1.made_sequence_gap != p1_made_gap:
-                    gap_flags_changed += 1  # debuglog
-                    move_p1.made_sequence_gap = p1_made_gap
+                if gap_flag(move_p1) != p1_made_gap:
+                    set_gap_flag(move_p1, p1_made_gap)
 
-        _debug.logic(
-            "sequence_gap_flags_updated", moves=self, changed=gap_flags_changed
-        )
+        changed = {
+            move: made_gap
+            for move, made_gap in gap_flags.items()
+            if move.made_sequence_gap != made_gap
+        }
+        _debug.logic("sequence_gap_flags_updated", moves=self, changed=len(changed))
+        for made_gap in (True, False):
+            browse(
+                [move.id for move, flag in changed.items() if flag is made_gap]
+            )._set_sequence_gap_flag(made_gap)
         self.journal_id.invalidate_recordset(["has_sequence_holes"])
+
+    def _set_sequence_gap_flag(self, made_gap) -> None:
+        if self:
+            super().write({"made_sequence_gap": made_gap})
 
     def _find_and_set_purchase_orders(
         self, po_references, partner_id, amount_total, from_ocr=False, timeout=10
@@ -7447,10 +7511,12 @@ class AccountMove(models.Model):
             ("state", "=", "draft"),
             ("date", "<=", fields.Date.context_today(self)),
             ("auto_post", "!=", "no"),
+            ("auto_post_failed", "=", False),
         ]
-        moves = self.search(domain, limit=batch_size).try_lock_for_update()
+        moves = self.search(domain, limit=batch_size)
         remaining = len(moves) if len(moves) < batch_size else self.search_count(domain)
         self.env["ir.cron"]._commit_progress(remaining=remaining)
+        moves = moves.try_lock_for_update()
         _debug.lifecycle("cron_autopost_batch", moves=moves, remaining=remaining)
 
         try:
@@ -7482,23 +7548,42 @@ class AccountMove(models.Model):
                 self.env["ir.cron"]._commit_progress(1)
             except PG_RETRY_EXCEPTIONS:
                 raise
-            except (UserError, ValidationError) as e:
+            except (LockError, ConcurrencyError, psycopg.OperationalError) as e:
                 self.env.cr.rollback()
+                _debug.logic("cron_autopost_move_deferred", move=move, error=repr(e))
+                _logger.info(
+                    "Auto-post cron: move %s deferred to the next run after a "
+                    "transient error: %s",
+                    move.id,
+                    e,
+                )
+            except (UserError, RedirectWarning) as e:
+                self.env.cr.rollback()
+                move._mark_auto_post_failed()
                 msg = self.env._(
                     "The move could not be posted for the following reason: %(error_message)s",
-                    error_message=e,
+                    error_message=e.args[0],
                 )
                 move.message_post(body=msg, message_type="comment")
                 self.env["ir.cron"]._commit_progress(1)
             except Exception:
                 self.env.cr.rollback()
+                _debug.logic("cron_autopost_move_unexpected_error", move=move)
                 _logger.warning(
                     "Auto-post cron: skipping move %s this run after an "
                     "unexpected error; it will be retried.",
                     move.id,
                     exc_info=True,
                 )
-                self.env["ir.cron"]._commit_progress(1)
+
+    def _mark_auto_post_failed(self) -> None:
+        _debug.logic("cron_autopost_move_failed", moves=self)
+        super().write({"auto_post_failed": True})
+
+    def action_retry_auto_post(self) -> None:
+        failed = self.filtered("auto_post_failed")
+        _debug.logic("auto_post_retry_requested", moves=failed)
+        super(AccountMove, failed).write({"auto_post_failed": False})
 
     @api.model
     @_debug.perf.timed
@@ -8241,33 +8326,6 @@ class AccountMove(models.Model):
 
     def _refunds_origin_required(self):
         return False
-
-    def _set_reversed_entry(self, credit_notes) -> None:
-        for credit_note in credit_notes:
-            if credit_note.move_type != "out_refund":
-                continue
-
-            credit_note_sale_lines = credit_note.invoice_line_ids.sale_line_ids
-            original_invoice = self.browse(
-                [
-                    inv.id
-                    for inv in self
-                    if inv.move_type == "out_invoice"
-                    and credit_note_sale_lines
-                    and set(credit_note_sale_lines.ids)
-                    <= set(inv.invoice_line_ids.sale_line_ids.ids)
-                ]
-            )
-            if (
-                len(original_invoice) == 1
-                and original_invoice._refunds_origin_required()
-            ):
-                _debug.logic(
-                    "reversed_entry_from_sale_lines",
-                    move=credit_note,
-                    reversed_entry=original_invoice,
-                )
-                credit_note.reversed_entry_id = original_invoice.id
 
     @api.model
     def get_invoice_localisation_fields_required_to_invoice(self, country_id):

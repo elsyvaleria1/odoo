@@ -41,10 +41,7 @@ class AccountMove(models.Model):
             try:
                 with self.env.cr.savepoint():
                     attachments = set(
-                        self.attachment_ids
-                        + self._from_files_data(
-                            files_data + self._unwrap_attachments(files_data)
-                        )
+                        self.attachment_ids + self._from_files_data(files_data)
                     )
                     self.journal_id._notify_invoice_subscribers(
                         invoice=self,

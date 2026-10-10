@@ -3,11 +3,13 @@ from collections import defaultdict
 from itertools import zip_longest
 from unittest.mock import patch
 
+import psycopg
 from dateutil.relativedelta import relativedelta
 from freezegun import freeze_time
+from lxml import etree
 
 from odoo import Command, fields
-from odoo.exceptions import RedirectWarning, UserError
+from odoo.exceptions import LockError, RedirectWarning, UserError
 from odoo.tests import Form, tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -128,38 +130,99 @@ class TestAccountMove(AccountTestInvoicingCommon):
             self.assertEqual(self.test_move.state, "posted")
         self.assertEqual(nb_invoices, self.env["account.move"].search_count(domain=[]))
 
-    def test_autopost_failure_keeps_entry_scheduled(self):
+    def _trigger_autopost_cron_failing_with(self, error, expect_log):
+        with (
+            freeze_time(self.test_move.date + relativedelta(days=1)),
+            self.sync_env_with_side_cursors(),
+            patch.object(type(self.test_move), "_post", side_effect=error),
+            expect_log as logs,
+        ):
+            self.env.ref(
+                "account.ir_cron_auto_post_draft_entry"
+            ).method_direct_trigger()
+        self.assertEqual(self.test_move.state, "draft")
+        self.assertEqual(
+            self.test_move.auto_post,
+            "at_date",
+            "auto_post must not be disabled by a failed cron post",
+        )
+        return logs
+
+    def test_autopost_business_error_flags_entry_until_modified(self):
         self.test_move.auto_post = "at_date"
         self.test_move.date = fields.Date.today()
-        cron = self.env.ref("account.ir_cron_auto_post_draft_entry")
-        move_cls = type(self.test_move)
+        for error in (UserError("boom"), RedirectWarning("no account", 1, "Fix")):
+            with self.subTest(error=type(error).__name__):
+                self._trigger_autopost_cron_failing_with(
+                    error, self.assertNoLogs(_AUTO_POST_LOGGER, "WARNING")
+                )
+                self.assertTrue(
+                    self.test_move.auto_post_failed,
+                    "a failed move must leave the cron's selection until modified",
+                )
+                self.test_move.ref = f"fixed after {type(error).__name__}"
+                self.assertFalse(self.test_move.auto_post_failed)
 
-        for error, is_logged in (
-            (UserError("boom"), False),
-            (ValueError("unexpected"), True),
+    def test_autopost_transient_or_unexpected_error_retries_entry(self):
+        self.test_move.auto_post = "at_date"
+        self.test_move.date = fields.Date.today()
+        for error in (
+            psycopg.errors.QueryCanceled("statement timeout"),
+            psycopg.OperationalError("server closed the connection"),
+            LockError("Cannot grab a lock on records"),
         ):
             with self.subTest(error=type(error).__name__):
-                expect_log = (
-                    self.assertLogs(_AUTO_POST_LOGGER, "WARNING")
-                    if is_logged
-                    else self.assertNoLogs(_AUTO_POST_LOGGER, "WARNING")
+                self._trigger_autopost_cron_failing_with(
+                    error, self.assertNoLogs(_AUTO_POST_LOGGER, "WARNING")
                 )
-                with (
-                    freeze_time(self.test_move.date + relativedelta(days=1)),
-                    self.sync_env_with_side_cursors(),
-                    patch.object(move_cls, "_post", side_effect=error),
-                    expect_log as logs,
-                ):
-                    cron.method_direct_trigger()
-                if is_logged:
-                    self.assertEqual(len(logs.output), 1, "only the retry is logged")
-                    self.assertIn(f"skipping move {self.test_move.id}", logs.output[0])
-                self.assertEqual(self.test_move.state, "draft")
-                self.assertEqual(
-                    self.test_move.auto_post,
-                    "at_date",
-                    "auto_post must not be disabled by a failed cron post",
-                )
+                self.assertFalse(self.test_move.auto_post_failed)
+
+        logs = self._trigger_autopost_cron_failing_with(
+            ValueError("unexpected"), self.assertLogs(_AUTO_POST_LOGGER, "WARNING")
+        )
+        self.assertEqual(len(logs.output), 1, "only the retry is logged")
+        self.assertIn(f"skipping move {self.test_move.id}", logs.output[0])
+        self.assertFalse(self.test_move.auto_post_failed)
+
+    def test_autopost_retry_requeues_failed_entry(self):
+        self.test_move.write(
+            {"auto_post": "at_date", "date": fields.Date.today(), "ref": "requeue"}
+        )
+        self.test_move.write({"auto_post_failed": True, "is_manually_modified": False})
+        self.assertFalse(
+            self.env["account.move"].search_count(
+                [("id", "=", self.test_move.id), ("auto_post_failed", "=", False)]
+            )
+        )
+        self.test_move.action_retry_auto_post()
+        self.assertFalse(self.test_move.auto_post_failed)
+        self.assertEqual(self.test_move.ref, "requeue")
+        self.assertFalse(
+            self.test_move.is_manually_modified,
+            "a retry is not a business modification of the entry",
+        )
+        with (
+            freeze_time(self.test_move.date + relativedelta(days=1)),
+            patch.object(
+                type(self.env["ir.cron"]), "_commit_progress", lambda *a, **kw: 0.0
+            ),
+        ):
+            self.env["account.move"]._autopost_draft_entries()
+        self.assertEqual(self.test_move.state, "posted")
+
+    def test_autopost_failure_is_shown_and_filterable(self):
+        form = etree.fromstring(self.env.ref("account.view_move_form").arch)
+        [alert] = form.xpath("//div[@name='auto_post_failed_alert']")
+        self.assertIn("auto_post_failed", alert.get("invisible"))
+        self.assertTrue(alert.xpath(".//button[@name='action_retry_auto_post']"))
+        for search_view in ("view_account_move_filter", "view_account_invoice_filter"):
+            with self.subTest(view=search_view):
+                arch = etree.fromstring(self.env.ref(f"account.{search_view}").arch)
+                [flt] = arch.xpath("//filter[@name='auto_post_failed']")
+                self.assertIn("auto_post_failed", flt.get("domain"))
+
+        views = self.env["account.move"].get_views([(False, "form"), (False, "search")])
+        self.assertIn("auto_post_failed", views["models"]["account.move"]["fields"])
 
     def test_posting_future_invoice_fails(self):
         self.test_move.date = fields.Date.today() + relativedelta(days=1)

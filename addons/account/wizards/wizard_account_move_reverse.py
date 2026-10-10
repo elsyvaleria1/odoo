@@ -98,29 +98,29 @@ class WizardAccountMoveReverse(models.TransientModel):
             if self.env.context.get("active_model") == "account.move"
             else self.env["account.move"]
         )
-
-        if len(move_ids.company_id) > 1:
-            _debug.logic(
-                "reversal_defaults_rejected", move=move_ids, reason="multi_company"
-            )
-            raise UserError(
-                self.env._(
-                    "All selected moves for reversal must belong to the same company."
-                )
-            )
-
-        if any(move.state != "posted" for move in move_ids):
-            _debug.logic(
-                "reversal_defaults_rejected", move=move_ids, reason="not_posted"
-            )
-            raise UserError(
-                self.env._("To reverse a journal entry, it has to be posted first.")
-            )
+        self._check_moves_reversible(move_ids)
         if "company_id" in fields:
             res["company_id"] = move_ids.company_id.id or self.env.company.id
         if "move_ids" in fields:
             res["move_ids"] = [Command.set(move_ids.ids)]
         return res
+
+    @api.model
+    def _check_moves_reversible(self, moves, company=None) -> None:
+        if len(moves.company_id) > 1 or (
+            company and moves and company not in moves.company_id.parent_ids
+        ):
+            _debug.logic("reversal_rejected", move=moves, reason="multi_company")
+            raise UserError(
+                self.env._(
+                    "All selected moves for reversal must belong to the same company."
+                )
+            )
+        if any(move.state != "posted" for move in moves):
+            _debug.logic("reversal_rejected", move=moves, reason="not_posted")
+            raise UserError(
+                self.env._("To reverse a journal entry, it has to be posted first.")
+            )
 
     @api.depends("move_ids")
     @_debug.perf.timed
@@ -242,6 +242,7 @@ class WizardAccountMoveReverse(models.TransientModel):
     def reverse_moves(self, is_modify=False):
         self.check_singleton()
         moves = self.move_ids
+        self._check_moves_reversible(moves, self.company_id)
 
         default_values_list = [
             {

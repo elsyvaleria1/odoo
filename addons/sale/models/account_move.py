@@ -176,6 +176,33 @@ class AccountMove(models.Model):
             cancel=cancel,
         )
 
+    def _set_reversed_entry(self, credit_notes) -> None:
+        for credit_note in credit_notes:
+            if credit_note.move_type != "out_refund":
+                continue
+
+            credit_note_sale_lines = credit_note.invoice_line_ids.sale_line_ids
+            original_invoice = self.browse(
+                [
+                    inv.id
+                    for inv in self
+                    if inv.move_type == "out_invoice"
+                    and credit_note_sale_lines
+                    and set(credit_note_sale_lines.ids)
+                    <= set(inv.invoice_line_ids.sale_line_ids.ids)
+                ]
+            )
+            if (
+                len(original_invoice) == 1
+                and original_invoice._refunds_origin_required()
+            ):
+                _debug.logic(
+                    "reversed_entry_from_sale_lines",
+                    move=credit_note,
+                    reversed_entry=original_invoice,
+                )
+                credit_note.reversed_entry_id = original_invoice.id
+
     def _invoice_paid_hook(self):
         res = super()._invoice_paid_hook()
         todo = set()

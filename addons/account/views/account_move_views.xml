@@ -43,6 +43,10 @@
                     string="Manual"
                     domain="[('auto_post', '=', 'no')]"
                     context="{'default_journal_type': 'general'}" />
+                <filter
+                    name="auto_post_failed"
+                    string="Auto-post Failed"
+                    domain="[('auto_post_failed', '=', True), ('state', '=', 'draft')]" />
                 <separator />
                 <filter
                     name="sales"
@@ -189,6 +193,10 @@
                     name="to_check"
                     string="To Review"
                     domain="[('checked', '=', False), ('state', '!=', 'draft')]" />
+                <filter
+                    name="auto_post_failed"
+                    string="Auto-post Failed"
+                    domain="[('auto_post_failed', '=', True), ('state', '=', 'draft')]" />
                 <separator />
                 <filter
                     name="open"
@@ -925,6 +933,14 @@
                     In order to validate this invoice, you must <button name="action_activate_currency" type="object" class="oe_link" style="padding: 0; vertical-align: baseline;">activate the currency of the
                     invoice</button>. The journal entries need to be computed by Odoo before being
                     posted in your company's currency. </div>
+                <div
+                    class="alert alert-warning"
+                    role="alert"
+                    name="auto_post_failed_alert"
+                    invisible="not auto_post_failed or state != 'draft'">
+                    Automatic posting failed for this entry; the reason is in the chatter. It is
+                    retried once the entry is saved with a change, or <button name="action_retry_auto_post" type="object" groups="account.group_account_invoice" class="oe_link" style="padding: 0; vertical-align: baseline;">retry
+                    automatic posting</button> once the cause is fixed. </div>
 
                 <sheet>
                     <div name="button_box" class="oe_button_box">
@@ -1079,6 +1095,7 @@
                     <field name="tax_cash_basis_created_move_ids" invisible="1" />
                     <field name="quick_edit_mode" invisible="1" />
                     <field name="hide_post_button" invisible="1" />
+                    <field name="auto_post_failed" invisible="1" />
                     <field name="quick_encoding_vals" invisible="1" />
                     <field name="show_delivery_date" invisible="1" />
                     <field name="is_being_sent" invisible="1" />
