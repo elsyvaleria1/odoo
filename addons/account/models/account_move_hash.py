@@ -470,7 +470,7 @@ class AccountMove(models.Model):
         if stored_hash.startswith("$"):
             version = stored_hash.split("$")[1]
             if not (
-                version.isdigit()
+                version.isdecimal()
                 and max(min_version, LAST_UNPREFIXED_HASH_VERSION + 1)
                 <= int(version)
                 <= MAX_HASH_VERSION

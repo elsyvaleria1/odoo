@@ -88,7 +88,7 @@ class PosPrepDisplay(models.Model):
     def _from_tracking_token(self, token):
         display_id, _sep, signature = str(token or "").partition("-")
         display = (
-            self.browse(int(display_id)).exists() if display_id.isdigit() else None
+            self.browse(int(display_id)).exists() if display_id.isdecimal() else None
         )
         if display and tools.is_hmac_valid(
             self.env, TRACKING_ACCESS, display._tracking_message(), signature

@@ -88,7 +88,7 @@ class TelegramHandlerAccountCollection(models.AbstractModel):
 
     def _get_own_collection(self, payment_id, user):
         payments = self.env["account.payment"]
-        if not payment_id.isdigit() or not user:
+        if not payment_id.isdecimal() or not user:
             return payments
         payment = payments.browse(int(payment_id)).exists()
         if not payment.has_access("read") or payment.collector_id != user:

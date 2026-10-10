@@ -92,7 +92,7 @@ class SignRequestItem(models.Model):
         ]
 
         for template_id in whatsapp_template_ids:
-            if not (template_id and template_id.isdigit()):
+            if not (template_id and template_id.isdecimal()):
                 return False
             template = (
                 self.env["whatsapp.template"]

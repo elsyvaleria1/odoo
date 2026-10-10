@@ -22,7 +22,7 @@ class MixinApprovalAccess(models.AbstractModel):
     def _get_access_subject(self, subject_key: str) -> tuple:
         prefix, _separator, rest = (subject_key or "").partition(":")
         partner_id, _separator, role = rest.partition(":")
-        if prefix != ACCESS_SUBJECT_PREFIX or not partner_id.isdigit():
+        if prefix != ACCESS_SUBJECT_PREFIX or not partner_id.isdecimal():
             return self.env["res.partner"], False
         partner = self.env["res.partner"].browse(int(partner_id)).exists()
         return partner, role or False

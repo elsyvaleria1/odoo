@@ -38,8 +38,8 @@ class WizardProductProductPrintLabel(models.TransientModel):
         for wizard in self:
             if "x" in wizard.print_format:
                 columns, rows = wizard.print_format.split("x")[:2]
-                wizard.columns = (columns.isdigit() and int(columns)) or 1
-                wizard.rows = (rows.isdigit() and int(rows)) or 1
+                wizard.columns = (columns.isdecimal() and int(columns)) or 1
+                wizard.rows = (rows.isdecimal() and int(rows)) or 1
             else:
                 wizard.columns, wizard.rows = 1, 1
 

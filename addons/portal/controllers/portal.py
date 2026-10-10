@@ -580,7 +580,7 @@ class CustomerPortal(Controller):
                 if (
                     field.type == "many2one"
                     and isinstance(value, str)
-                    and value.isdigit()
+                    and value.isdecimal()
                 ):
                     address_values[key] = field.convert_to_cache(int(value), ResPartner)
                 else:

@@ -136,7 +136,7 @@ class WebsiteHrRecruitment(WebsiteForm):
             return counter_by_object_by_field
 
         def to_int(query_arg):
-            return int(query_arg) if query_arg and query_arg.isdigit() else False
+            return int(query_arg) if query_arg and query_arg.isdecimal() else False
 
         env = request.env(
             context=dict(request.env.context, show_address=True, no_tag_br=True)

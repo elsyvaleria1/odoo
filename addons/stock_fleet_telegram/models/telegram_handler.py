@@ -336,7 +336,7 @@ class TelegramHandlerStockFleet(models.AbstractModel):
         slip = (
             self.env["telegram.delivery.slip"]
             .with_context(lang=tr.lang)
-            .browse(int(slip_id) if slip_id.isdigit() else 0)
+            .browse(int(slip_id) if slip_id.isdecimal() else 0)
             .exists()
             .filtered(
                 lambda candidate: (

@@ -293,7 +293,7 @@ class ApprovalBinding(models.Model):
     def _parse_button_action(self, action) -> int | bool:
         if not action:
             return False
-        if isinstance(action, int) or str(action).isdigit():
+        if isinstance(action, int) or str(action).isdecimal():
             return int(action)
         record = self.env.ref(str(action), raise_if_not_found=False)
         return record.id if record else False

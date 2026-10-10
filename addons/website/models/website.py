@@ -1123,7 +1123,7 @@ class Website(models.Model):
         if request:
             _debug.lifecycle("website_forced", website=website_id)
             request.session["force_website_id"] = (
-                website_id and str(website_id).isdigit() and int(website_id)
+                website_id and str(website_id).isdecimal() and int(website_id)
             )
 
     @api.model

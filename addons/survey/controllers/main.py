@@ -657,7 +657,7 @@ class Survey(http.Controller):
                     question_id = int(key.removeprefix("prefill_"))
                 except ValueError:
                     continue
-            elif key.startswith("Q") and key[1:].isdigit():
+            elif key.startswith("Q") and key[1:].isdecimal():
                 question_id = int(key[1:])
             if (
                 question_id
@@ -940,7 +940,7 @@ class Survey(http.Controller):
                     [
                         int(line.value_char_box)
                         for line in previous
-                        if line.value_char_box.isdigit()
+                        if line.value_char_box.isdecimal()
                     ],
                 ),
             ]

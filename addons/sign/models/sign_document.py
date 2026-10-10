@@ -427,7 +427,7 @@ CRM, eCommerce, accounting, inventory, point of sale,\nproject management, etc.
 
                 elif item.type_id.item_type == "selection":
                     text = ""
-                    selected = int(value) if str(value).isdigit() else None
+                    selected = int(value) if str(value).isdecimal() else None
                     for option in item.option_ids:
                         if option.id == selected:
                             text = option.value

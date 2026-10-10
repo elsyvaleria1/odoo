@@ -22,7 +22,7 @@ def _holds_pos_channel(env, key) -> bool:
     model, record_id, audience, _revision = _split_pos_bus_key(key)
     if audience not in USER_AUDIENCES:
         return True
-    if model not in env or not record_id.isdigit():
+    if model not in env or not record_id.isdecimal():
         return False
     record = env[model].browse(int(record_id)).exists()
     return bool(record) and record.has_access("read")

@@ -65,7 +65,7 @@ class MixinAnalytic(models.AbstractModel):
         for key in distribution or ():
             for segment in str(key).split(","):
                 segment = segment.strip()
-                if segment.isdigit():
+                if segment.isdecimal():
                     ordered.setdefault(int(segment), None)
         return list(ordered)
 

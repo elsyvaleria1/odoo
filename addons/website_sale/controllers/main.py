@@ -640,7 +640,7 @@ class WebsiteSale(payment_portal.PaymentPortal):
         sitemap=False,
     )
     def old_product(self, product, category="", **kwargs):
-        category = int(category) if str(category).isdigit() else False
+        category = int(category) if str(category).isdecimal() else False
         category = self._get_category(category)
         query = self._get_filtered_query_string(
             request.httprequest.query_string.decode(), keys_to_remove=["category"]
@@ -1928,7 +1928,7 @@ class WebsiteSale(payment_portal.PaymentPortal):
         if (
             not isinstance(category, ProductCategory.__class__)
             and category
-            and not str(category).isdigit()
+            and not str(category).isdecimal()
         ):
             raise ValidationError(request.env._("Invalid category."))
         if (

@@ -67,7 +67,7 @@ def _count_activated_sockets(config: OptionSource) -> int:
     count = (
         int(listen_fds)
         if config["http_enable"]
-        and listen_fds.isdigit()
+        and listen_fds.isdecimal()
         and os.getenv("LISTEN_PID") == str(os.getpid())
         else 0
     )

@@ -289,7 +289,7 @@ class AccountReportExpression(models.Model):
             )
 
         cross_report_value = subformula_match.group(1).strip()
-        if cross_report_value.isdigit():
+        if cross_report_value.isdecimal():
             target_report = (
                 self.env["report.formula"].browse(int(cross_report_value)).exists()
             )
@@ -302,7 +302,7 @@ class AccountReportExpression(models.Model):
             _debug.logic(
                 "cross_report_resolved",
                 expression=self,
-                by_id=cross_report_value.isdigit(),
+                by_id=cross_report_value.isdecimal(),
                 target_report=target_report,
             )
         if not target_report:

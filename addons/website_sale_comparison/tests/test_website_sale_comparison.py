@@ -142,6 +142,11 @@ class TestWebsiteSaleComparisonUi(HttpCase):
                 lambda ptav: ptav.attribute_id == cls.attribute_vintage
             ).price_extra = price
 
+    def test_a_superscript_product_id_is_not_a_server_error(self):
+        response = self.url_open("/shop/compare?products=²", allow_redirects=False)
+
+        self.assertIn(response.status_code, (301, 302, 303))
+
     def test_01_admin_tour_product_comparison(self):
         attribute = self.env["product.attribute"].create(
             {

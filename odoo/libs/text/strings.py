@@ -69,7 +69,7 @@ def mod10r(number: str) -> str:
     result = ""
     for digit in number:
         result += digit
-        if digit.isdigit():
+        if digit.isdecimal():
             report = codec[(int(digit) + report) % 10]
     return result + str((10 - report) % 10)
 

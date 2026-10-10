@@ -654,7 +654,7 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
     @_debug.perf.timed
     def _prepare_domain_from_period(self, options, period):
         domain = []
-        if period != "total" and period[-1].isdigit():
+        if period != "total" and period[-1].isdecimal():
             period_number = int(period[-1])
             last_period_number = self._get_aging_period_count(options) - 1
             date_to = fields.Date.from_string(options["date"]["date_to"])

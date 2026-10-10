@@ -140,13 +140,13 @@ class WebsiteEventController(http.Controller):
         current_type = None
         current_country = None
 
-        if searches["type"] != "all" and searches["type"].isdigit():
+        if searches["type"] != "all" and searches["type"].isdecimal():
             current_type = SudoEventType.browse(int(searches["type"]))
 
         if (
             searches["country"] != "all"
             and searches["country"] != "online"
-            and searches["country"].isdigit()
+            and searches["country"].isdecimal()
         ):
             current_country = request.env["res.country"].browse(
                 int(searches["country"])

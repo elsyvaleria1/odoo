@@ -577,7 +577,7 @@ class ResPartner(models.Model):
 
     # Peruvian VAT validation, contributed by Vauxoo
     def check_vat_pe(self, vat) -> bool:
-        if len(vat) != 11 or not vat.isdigit():
+        if len(vat) != 11 or not vat.isdecimal():
             return False
         dig_check = 11 - (
             sum(int("5432765432"[f]) * int(vat[f]) for f in range(10)) % 11

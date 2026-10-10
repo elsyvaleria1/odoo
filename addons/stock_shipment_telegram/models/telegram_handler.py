@@ -267,7 +267,7 @@ class TelegramHandlerShipment(models.AbstractModel):
         sheet = (
             self.env["telegram.shipment.sheet"]
             .with_context(lang=tr.lang)
-            .browse(int(sheet_id) if sheet_id.isdigit() else 0)
+            .browse(int(sheet_id) if sheet_id.isdecimal() else 0)
             .exists()
             .filtered(lambda s: s.chat_id == chat and s.state == "pending")
         )

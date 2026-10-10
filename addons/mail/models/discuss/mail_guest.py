@@ -97,7 +97,7 @@ class MailGuest(models.Model):
         parts = token.split(self._cookie_separator)
         if len(parts) == 2:
             guest_id, guest_access_token = parts
-            if not guest_id.isdigit():
+            if not guest_id.isdecimal():
                 return guest
             guest = self.browse(int(guest_id)).sudo().exists()
             if (

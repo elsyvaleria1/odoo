@@ -24,7 +24,7 @@ class TelegramHandlerSaleConfirm(models.AbstractModel):
     def _handle_confirm_callback(self, bot, chat, callback_query, internal_user, data):
         env = self._tr(bot, chat)
         parts = data.split(":")
-        if len(parts) != 3 or parts[1] != "c" or not parts[2].isdigit():
+        if len(parts) != 3 or parts[1] != "c" or not parts[2].isdecimal():
             return
         if not internal_user:
             bot.send_message(

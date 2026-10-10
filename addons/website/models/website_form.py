@@ -128,7 +128,7 @@ class IrModel(models.Model):
                         ]
                         relation_field = fields_get[definition_record]
                         definition_model = self.env[relation_field["relation"]]
-                        if not property_origins[definition_record].isdigit():
+                        if not property_origins[definition_record].isdecimal():
                             continue
                         definition_record = definition_model.browse(
                             int(property_origins[definition_record])

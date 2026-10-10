@@ -467,7 +467,7 @@ class CardDAVController(http.Controller):
 
     def _resolve_partner(self, env, card_id):
         name = card_id.removesuffix(".vcf")
-        if name.isdigit():
+        if name.isdecimal():
             partner = env["res.partner"].browse(int(name)).exists()
             if partner:
                 return partner

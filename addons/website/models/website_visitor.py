@@ -194,7 +194,7 @@ class WebsiteVisitor(models.Model):
                 visitor.partner_id = visitor._origin.partner_id
                 continue
             token = visitor.access_token or ""
-            partner_id = int(token) if len(token) != 32 and token.isdigit() else False
+            partner_id = int(token) if len(token) != 32 and token.isdecimal() else False
             visitor.partner_id = self.env["res.partner"].browse(partner_id)
 
     @api.depends("partner_id.email_normalized", "partner_id.phone_ids")

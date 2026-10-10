@@ -436,7 +436,7 @@ class CalDAVController(http.Controller):
 
     def _resolve_event(self, env, ics_id):
         name = ics_id.removesuffix(".ics")
-        if name.isdigit():
+        if name.isdecimal():
             event = env["calendar.event"].browse(int(name)).exists()
             if event:
                 return event

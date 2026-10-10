@@ -296,7 +296,7 @@ class PosPaymentMethod(models.Model):
             "SaleTransactionID"
         ]["TransactionID"]
         session_id = (transaction_id or "").rpartition("--")[2]
-        if not session_id.isdigit():
+        if not session_id.isdecimal():
             return
         session = self.env["pos.session"].sudo().browse(int(session_id)).exists()
         if session:

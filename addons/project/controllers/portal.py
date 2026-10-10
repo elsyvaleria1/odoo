@@ -483,7 +483,7 @@ class ProjectCustomerPortal(CustomerPortal):
         opened = (
             bool(task_sudo)
             and isinstance(signature, str)
-            and str(pid or "").isdigit()
+            and str(pid or "").isdecimal()
             and task_sudo._portal_verify_parent_hash(
                 signature, int(pid), token=access_token
             )

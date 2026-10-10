@@ -57,7 +57,7 @@ def get_watchdog_interval() -> float | None:
     # Half of the unit's WatchdogSec=, as sd_watchdog_enabled(3) recommends,
     # and only when the variable names this process or names none.
     usec = os.environ.get("WATCHDOG_USEC") or ""
-    if not usec.isdigit():
+    if not usec.isdecimal():
         return None
     pid = os.environ.get("WATCHDOG_PID") or ""
     if pid and pid != str(os.getpid()):

@@ -1260,7 +1260,7 @@ class MailTemplate(models.Model):
         partner_ids = []
         for pid in parsed:
             if isinstance(pid, str):
-                if pid.strip().isdigit():
+                if pid.strip().isdecimal():
                     partner_ids.append(int(pid.strip()))
             elif isinstance(pid, int) and not isinstance(pid, bool) and pid > 0:
                 partner_ids.append(pid)

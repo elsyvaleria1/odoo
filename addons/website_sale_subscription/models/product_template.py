@@ -156,7 +156,7 @@ class ProductTemplate(models.Model):
         currency = website.currency_id
         requested_plan = request and request.params.get("plan_id")
         requested_plan_id = (
-            requested_plan and requested_plan.isdigit() and int(requested_plan)
+            requested_plan and requested_plan.isdecimal() and int(requested_plan)
         )
         requested_plan_id = requested_plan_id or request.cart.plan_id.id
         if requested_plan_id:

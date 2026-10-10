@@ -191,7 +191,7 @@ def _extract_row(row):
     ):
         repeat = cell.get(f"{{{_ODF_NAMESPACES['table']}}}number-columns-repeated")
         repeat_count = (
-            min(int(repeat), MAX_COLUMN_REPEAT) if repeat and repeat.isdigit() else 1
+            min(int(repeat), MAX_COLUMN_REPEAT) if repeat and repeat.isdecimal() else 1
         )
         text_parts = cell.xpath(".//text:p//text()", namespaces=_ODF_NAMESPACES)
         cell_text = " ".join(t.strip() for t in text_parts if t.strip())
@@ -211,7 +211,7 @@ def _extract_spreadsheet(content):
             row_repeat = row.get(f"{{{_ODF_NAMESPACES['table']}}}number-rows-repeated")
             row_repeat_count = (
                 min(int(row_repeat), MAX_ROW_REPEAT)
-                if row_repeat and row_repeat.isdigit()
+                if row_repeat and row_repeat.isdecimal()
                 else 1
             )
             cells = _extract_row(row)

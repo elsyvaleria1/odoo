@@ -542,7 +542,7 @@ class CustomerPortal(payment_portal.PaymentPortal, OrderPortalMixin):
             return request.redirect("/my")
 
         order_line = request.env["sale.order.line"].sudo()
-        if str(line_id or "").isdigit():
+        if str(line_id or "").isdecimal():
             order_line = order_line.browse(int(line_id)).exists()
         if not order_sudo._can_be_edited_on_portal():
             _debug.logic(

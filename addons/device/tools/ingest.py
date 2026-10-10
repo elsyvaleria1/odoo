@@ -12,7 +12,7 @@ def parse_epoch_or_iso(raw):
     if raw is None:
         return None
     text = str(raw)
-    if text.isdigit():
+    if text.isdecimal():
         value = int(text)
         if value > 10**12:
             value //= 1000

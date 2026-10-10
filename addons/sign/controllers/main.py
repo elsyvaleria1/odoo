@@ -563,7 +563,7 @@ class Sign(http.Controller):
 
         sign_requests = (
             http.request.env["sign.request"]
-            .browse(int(i) for i in ids.split(",") if i.isdigit())
+            .browse(int(i) for i in ids.split(",") if i.isdecimal())
             .exists()
         )
         return self._create_zip_response(sign_requests)

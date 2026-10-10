@@ -1561,7 +1561,7 @@ class HrPayslip(models.Model):
         property_inputs = {
             int(rule_id): float(value)
             for rule_id, value in employee_properties.items()
-            if rule_id.isdigit()
+            if rule_id.isdecimal()
         }
 
         localdict = {

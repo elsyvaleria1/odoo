@@ -580,7 +580,7 @@ class IrModelFieldsSelection(models.Model):
         )
         return (
             self.env["res.company"]
-            .browse(int(key) for (key,) in rows if key.isdigit())
+            .browse(int(key) for (key,) in rows if key.isdecimal())
             .exists()
         )
 

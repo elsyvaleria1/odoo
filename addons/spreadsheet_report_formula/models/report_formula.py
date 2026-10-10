@@ -35,7 +35,7 @@ class ReportFormula(models.Model):
 
     @api.model
     def _get_spreadsheet_report(self, reference):
-        if isinstance(reference, int) or str(reference).isdigit():
+        if isinstance(reference, int) or str(reference).isdecimal():
             return self.browse(int(reference)).exists()
         record = self.env.ref(str(reference), raise_if_not_found=False)
         return record if record and record._name == self._name else self.browse()

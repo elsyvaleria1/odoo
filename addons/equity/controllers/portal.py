@@ -34,7 +34,7 @@ class PortalEquity(CustomerPortal):
         self, access_token=None, default_to_request_partner=True, role="view"
     ):
         partner_id, _separator, token = (access_token or "").partition("$")
-        if partner_id.isdigit():
+        if partner_id.isdecimal():
             try:
                 request.env["access.link"]._resolve(
                     token,

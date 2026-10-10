@@ -728,7 +728,9 @@ class SignRequestItem(models.Model):
                     item
                     and item.type_id.item_type == "selection"
                     and value not in (False, "")
-                    and not (str(value).isdigit() and int(value) in item.option_ids.ids)
+                    and not (
+                        str(value).isdecimal() and int(value) in item.option_ids.ids
+                    )
                 ):
                     # Reject a bad selection value at submission, so the offending
                     # signer is told, instead of crashing the LAST signer's render.

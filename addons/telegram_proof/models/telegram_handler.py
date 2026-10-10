@@ -121,7 +121,7 @@ class TelegramHandlerProof(models.AbstractModel):
         deliveries = (
             self.env["proof.challenge"]._with_proof_privilege().env["proof.delivery"]
         )
-        if not delivery_id.isdigit():
+        if not delivery_id.isdecimal():
             return deliveries
         return deliveries.browse(int(delivery_id)).exists()
 

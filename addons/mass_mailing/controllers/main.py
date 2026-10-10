@@ -483,7 +483,7 @@ class MassMailController(http.Controller):
             .browse(
                 int(list_id)
                 for list_id in request.httprequest.form.getlist("mailing_list_ids")
-                if list_id.isdigit()
+                if list_id.isdecimal()
             )
             .exists()
         )
@@ -534,7 +534,7 @@ class MassMailController(http.Controller):
         mailing_sudo, email_found, _hash = self._subscription_request(
             mailing_id, document_id, email, hash_token
         )
-        if not str(opt_out_reason_id or "").isdigit():
+        if not str(opt_out_reason_id or "").isdecimal():
             raise UserError(request.env._("Please choose a reason."))
         opt_out_reason_id = int(opt_out_reason_id)
         record_id = int(document_id) if document_id else None
@@ -708,7 +708,7 @@ class MassMailController(http.Controller):
             raise Unauthorized from e
 
         # do not force lang, will simply use user context
-        document_id = int(document_id) if document_id and document_id.isdigit() else 0
+        document_id = int(document_id) if document_id and document_id.isdecimal() else 0
         html_markupsafe = mailing_sudo._render_field(
             "body_html",
             [document_id],

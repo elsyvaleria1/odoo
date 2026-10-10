@@ -74,7 +74,7 @@ class AppraisalSurvey(Survey):
             return 0
         if isinstance(value, int):
             return max(0, value)
-        if isinstance(value, str) and value.isdigit():
+        if isinstance(value, str) and value.isdecimal():
             return int(value)
         return 0
 

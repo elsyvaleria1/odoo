@@ -45,7 +45,7 @@ class MixinAccountAvataxUniqueCode(models.AbstractModel):
                         v if not v.lower().startswith(prefix) else v[len(prefix) :]
                     )
                 )
-                if number_v.isdigit()
+                if number_v.isdecimal()
             ]
         except AttributeError as e:
             raise ValueError("Invalid avatax_unique_code search value") from e

@@ -1157,7 +1157,7 @@ class PoFileReader:
                         "src": source,
                         "value": translation,
                         "comments": comments,
-                        "res_id": int(line_number) if line_number.isdigit() else 0,
+                        "res_id": int(line_number) if line_number.isdecimal() else 0,
                         "module": entry_module,
                     }
                     continue

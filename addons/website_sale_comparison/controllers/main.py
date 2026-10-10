@@ -8,7 +8,7 @@ class WebsiteSaleProductComparison(Controller):
     @route("/shop/compare", type="http", auth="public", website=True, sitemap=False)
     def product_compare(self, **post):
         product_ids = [
-            int(i) for i in post.get("products", "").split(",") if i.isdigit()
+            int(i) for i in post.get("products", "").split(",") if i.isdecimal()
         ]
         if not product_ids:
             _debug.logic("compare_no_products", raw=post.get("products", ""))

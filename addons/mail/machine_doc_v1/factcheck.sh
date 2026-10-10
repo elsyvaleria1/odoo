@@ -286,7 +286,7 @@ assert_eq "ROUTE_MAP.md documents the dgid guest cookie" \
 assert_eq "mail_guest.py cookie separator is |" \
     "$(grep -c '_cookie_separator = "|"' "$MAIL/models/discuss/mail_guest.py")" "1"
 assert_eq "_get_guest_from_token rejects a non-digit id (no 500 on hostile cookie)" \
-    "$(grep -c 'if not guest_id.isdigit():' "$MAIL/models/discuss/mail_guest.py")" "1"
+    "$(grep -c 'if not guest_id.isdecimal():' "$MAIL/models/discuss/mail_guest.py")" "1"
 assert_eq "_get_guest_from_context asserts a single-record guest" \
     "$(grep -c 'assert len(guest) <= 1' "$MAIL/models/discuss/mail_guest.py")" "1"
 assert_eq "CONVENTIONS.md documents add_guest_to_context" \

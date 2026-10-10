@@ -409,7 +409,7 @@ def parse_user_color(raw):
         return None
     if value[:1] in "'\"" and value[-1:] == value[:1]:
         return value[1:-1]
-    if value.isdigit():
+    if value.isdecimal():
         return int(value)
     return parse_sass_color(value)
 

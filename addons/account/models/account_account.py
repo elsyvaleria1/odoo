@@ -689,7 +689,7 @@ class AccountAccount(models.Model):
                     and code.endswith(end_str)
                 ):
                     middle = code[len(start_str) : code_len - len(end_str)]
-                    if middle.isdigit():
+                    if middle.isdecimal():
                         occupied.add(int(middle))
             for num in range(n + 1, 10**d):
                 if num in occupied:

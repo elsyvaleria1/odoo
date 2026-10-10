@@ -62,7 +62,7 @@ class MixinMicrosoftCalendarSync(models.AbstractModel):
         timeout = self.env.registry.settings.get(
             self.env, "calendar_microsoft.graph_timeout", False
         )
-        if not timeout or not timeout.isdigit():
+        if not timeout or not timeout.isdecimal():
             return 5
         return max(1, int(timeout))
 
