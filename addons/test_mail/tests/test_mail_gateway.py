@@ -206,6 +206,48 @@ class TestEmailParsing(MailCommon):
         )
         self.assertEqual(res["body"], "", "Gateway should not crash with void content")
 
+    def test_message_parse_unusable_message_id_is_derived(self):
+        for message_id in ("<>", f"<{'x' * 3000}@example.com>", f"<{'é' * 1500}@x>"):
+            with self.subTest(length=len(message_id)):
+                message = email.message.EmailMessage(policy=email.policy.SMTP)
+                message["Message-Id"] = message_id
+                message["Subject"] = f"id of {len(message_id)}"
+                message.set_content("body")
+                parsed = self.env["mixin.mail.thread"].message_parse(message)
+                self.assertTrue(
+                    parsed["message_id"].endswith("-no-message-id@localhost>")
+                )
+        long_but_indexable = f"<{'y' * 1500}@example.com>"
+        message = email.message.EmailMessage(policy=email.policy.SMTP)
+        message["Message-Id"] = long_but_indexable
+        message.set_content("body")
+        parsed = self.env["mixin.mail.thread"].message_parse(message)
+        self.assertEqual(parsed["message_id"], long_but_indexable)
+
+    def test_message_process_keeps_the_original_bytes(self):
+        signature = b"a" * 200
+        raw = (
+            b"Return-Path: <sender@example.com>\r\n"
+            b"From: Sender <sender@example.com>\r\n"
+            b"To: groups@example.com\r\n"
+            b"Subject: caf\xc3\xa9\r\n"
+            b"Message-Id: <keep-original@example.com>\r\n"
+            b"DKIM-Signature: v=1; a=rsa-sha256; d=example.com; s=sel; b="
+            + signature
+            + b"\r\n"
+            b"Content-Type: text/plain; charset=utf-8\r\n"
+            b"\r\n"
+            b"Body\r\n"
+        )
+        thread_id = self.env["mixin.mail.thread"].message_process(
+            "mail.test.gateway", raw, save_original=True
+        )
+        record = self.env["mail.test.gateway"].browse(thread_id)
+        original = record.message_ids.attachment_ids.filtered(
+            lambda attachment: attachment.name == "original_email.eml"
+        )
+        self.assertEqual(original.raw, raw)
+
     def test_message_parse_eml(self):
         mail = self.format(
             test_mail_data.MAIL_EML_ATTACHMENT,
@@ -1882,8 +1924,27 @@ class TestMailgateway(MailGatewayCommon):
         self.assertEqual(self.test_record.message_bounce, 0)
 
         extra = self.fake_email.message_id
+        inbox = self.env["mail.notification"].create(
+            {
+                "notification_type": "inbox",
+                "res_partner_id": self.partner_1.id,
+                "mail_message_id": self.fake_email.id,
+            }
+        )
+        self.format_and_process(
+            email,
+            self.partner_1.email_formatted,
+            f"{self.alias_bounce}@{self.alias_domain}",
+            subject="Undelivered Mail Returned to Sender",
+            extra=extra,
+        )
+        self.assertEqual(self.partner_1.message_bounce, 0)
+        self.assertEqual(inbox.notification_status, "ready")
+        inbox.unlink()
+
         self.env["mail.notification"].create(
             {
+                "notification_type": "email",
                 "res_partner_id": self.partner_1.id,
                 "mail_message_id": self.fake_email.id,
             }
@@ -1931,6 +1992,7 @@ class TestMailgateway(MailGatewayCommon):
         notification = self.env["mail.notification"].create(
             {
                 "mail_message_id": self.fake_email.id,
+                "notification_type": "email",
                 "res_partner_id": self.partner_1.id,
             }
         )
@@ -3863,6 +3925,21 @@ class TestMailGatewayHelpers(MailGatewayCommon):
         self.assertEqual(found, "gone@remote.example.org")
         self.assertEqual(partner.email_normalized, "gone@remote.example.org")
 
+    def test_bounce_recipient_is_the_address_sent_to_not_its_forward(self):
+        self.env["res.partner"].create(
+            {"name": "Forwarder", "email": "alice@corp.example.com"}
+        )
+        recipients, failed = self.thread_model._message_parse_bounce_recipients(
+            self._dsn(
+                "Original-Recipient: rfc822; alice@corp.example.com\r\n"
+                "Final-Recipient: rfc822; alice@forward.example.org"
+            )
+        )
+        self.assertTrue(failed)
+        ((found, partner),) = recipients
+        self.assertEqual(found, "alice@corp.example.com")
+        self.assertEqual(partner.email_normalized, "alice@corp.example.com")
+
     def test_bounce_recipient_survives_a_malformed_report(self):
         for dsn in (
             None,
@@ -5118,6 +5195,24 @@ class TestMailGatewayParsedMessageContract(MailGatewayCommon):
             subject="Re: Real reverse path",
         )
 
+    def test_a_second_return_path_does_not_hide_the_envelope_sender(self):
+        self.alias.write({"alias_contact": "partners"})
+        with self.mock_mail_gateway():
+            record = self.format_and_process(
+                MAIL_TEMPLATE,
+                '"Nobody Known" <nobody@remote.example.com>',
+                f"groups@{self.alias_domain}",
+                return_path="<bounces+tag@remote.example.com>",
+                extra="Return-Path: <forged@elsewhere.example.com>",
+                subject="Two reverse paths",
+            )
+        self.assertFalse(record)
+        self.assertSentEmail(
+            f'"MAILER-DAEMON" <{self.alias_bounce}@{self.alias_domain}>',
+            ["bounces+tag@remote.example.com"],
+            subject="Re: Two reverse paths",
+        )
+
     def test_loop_replies_never_count_author_less_messages_for_an_unparsable_from(self):
         record = self.env["mail.test.gateway"].create({"name": "Quiet"})
         self._mails_on(record, 6, email_from=False)
@@ -5365,7 +5460,11 @@ class TestMailGatewayDeliveryReports(MailGatewayCommon):
             {"name": "Second Recipient", "email": "second.recipient@agrolait.com"}
         )
         cls.env["mail.notification"].create(
-            {"res_partner_id": cls.partner_1.id, "mail_message_id": cls.fake_email.id}
+            {
+                "mail_message_id": cls.fake_email.id,
+                "notification_type": "email",
+                "res_partner_id": cls.partner_1.id,
+            }
         )
 
     def _report(self, report_type, fields_blocks, *, email_from=None, to=None):

@@ -188,10 +188,12 @@ def extract_payload(
     *,
     is_bounce: bool = False,
     save_original: bool = False,
+    original: bytes | None = None,
 ) -> Payload:
     attachments = []
     if save_original:
-        attachments.append(Attachment("original_email.eml", message.as_bytes(), {}))
+        content = original if original is not None else message.as_bytes()
+        attachments.append(Attachment("original_email.eml", content, {}))
     fragment = _get_fragment(message, stop_at_first_body=is_bounce)
     body = fragment.body
     if fragment.html:
@@ -255,11 +257,12 @@ def _recipient_block_failed(block: EmailMessage) -> bool:
     return not status or status.startswith("5")
 
 
-def _final_recipient(block: EmailMessage) -> str | None:
-    _address_type, sep, address = str(block.get("Final-Recipient") or "").partition(";")
-    if not sep:
-        return None
-    return address.strip() or None
+def _bounced_recipient(block: EmailMessage) -> str | None:
+    for header in ("Original-Recipient", "Final-Recipient"):
+        _address_type, sep, address = str(block.get(header) or "").partition(";")
+        if sep and (address := address.strip()):
+            return address
+    return None
 
 
 def read_delivery_status(dsn_part: EmailMessage | None) -> DeliveryStatus:
@@ -273,7 +276,7 @@ def read_delivery_status(dsn_part: EmailMessage | None) -> DeliveryStatus:
     failed_recipients = [
         recipient
         for block in failed_blocks
-        if (recipient := _final_recipient(block)) is not None
+        if (recipient := _bounced_recipient(block)) is not None
     ]
     _debug.logic(
         "delivery_status",

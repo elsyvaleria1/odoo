@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import poplib
 import socket
@@ -179,6 +180,20 @@ class OdooPOP3_SSL(OdooPOP3, POP3_SSL):
         )
 
 
+@contextlib.contextmanager
+def close_on_error(connection: OdooIMAP4 | OdooPOP3) -> Iterator[None]:
+    try:
+        yield
+    except BaseException:
+        _debug.logic("connection_closed_on_error", kind=type(connection).__name__)
+        with contextlib.suppress(OSError):
+            if isinstance(connection, IMAP4):
+                connection.shutdown()
+            else:
+                connection.close()
+        raise
+
+
 def connect(
     server_type: Literal["imap", "pop"],
     host: str,
@@ -211,7 +226,8 @@ def connect(
                 host, port, addresses=addresses, timeout=MAIL_TIMEOUT
             )
             if context is not None:
-                connection.starttls(context)
+                with close_on_error(connection):
+                    connection.starttls(context)
         return connection
     if server_type == "pop":
         if implicit_tls:
@@ -221,7 +237,8 @@ def connect(
         else:
             connection = OdooPOP3(host, port, addresses=addresses, timeout=MAIL_TIMEOUT)
             if context is not None:
-                connection.stls(context)
+                with close_on_error(connection):
+                    connection.stls(context)
         return connection
     raise ValueError(
         f"unsupported incoming mail protocol {server_type!r}, "

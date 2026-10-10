@@ -13,7 +13,7 @@ from socket import gaierror
 from ssl import SSLCertVerificationError, SSLError
 from typing import Any, Literal, Self
 
-from odoo import api, fields, models
+from odoo import SUPERUSER_ID, api, fields, models
 from odoo.api import ValuesType
 from odoo.exceptions import ConcurrencyError, UserError
 from odoo.fields import Domain
@@ -28,6 +28,7 @@ from ..tools.incoming_mail import (
     IncomingMailConnection,
     MessageRef,
     OdooIMAP4,
+    close_on_error,
     connect,
     default_port,
 )
@@ -530,14 +531,21 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
             },
         }
 
-    def _deliver_inbound_message(self, delivery: InboundDelivery) -> int | None:
+    def _gateway_env(self, cr: BaseCursor | None = None) -> api.Environment:
         self.check_singleton()
-        gateway_env = self.env(
-            user=self.env.ref("mail.ir_cron_mail_gateway_action").user_id,
+        cron = self.env.ref(
+            "mail.ir_cron_mail_gateway_action", raise_if_not_found=False
+        )
+        return self.env(
+            cr=cr or self.env.cr,
+            user=cron.user_id if cron else SUPERUSER_ID,
             su=False,
             context={"default_fetchmail_server_id": self.id},
         )
-        thread_id = gateway_env["mixin.mail.thread"].message_process(
+
+    def _deliver_inbound_message(self, delivery: InboundDelivery) -> int | None:
+        self.check_singleton()
+        thread_id = self._gateway_env()["mixin.mail.thread"].message_process(
             self.object_id.model,
             delivery.stamped(),
             save_original=self.original,
@@ -600,11 +608,12 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
                 self.encryption,
                 addresses=addresses,
             )
-            if connection_type == "imap":
-                self._imap_login__(connection)
-            else:
-                connection.user(self.user)
-                connection.pass_(self.password)
+            with close_on_error(connection):
+                if connection_type == "imap":
+                    self._imap_login__(connection)
+                else:
+                    connection.user(self.user)
+                    connection.pass_(self.password)
         return connection
 
     def _imap_login__(self, connection: OdooIMAP4) -> None:
@@ -740,7 +749,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
             message_cr = self.env.registry.cursor()
             sink = self._prepare_message_sink(message_cr)
             failures = self._get_failure_states(sink)
-            commit_progress = sink.thread.env["ir.cron"]._commit_progress
+            commit_progress = self.env(cr=message_cr)["ir.cron"]._commit_progress
             announced = connection.count_unread_messages()
             _debug.pipeline(
                 "mailbox_opened",
@@ -831,9 +840,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
     def _prepare_message_sink(self, message_cr: BaseCursor) -> _MessageSink:
         self.check_singleton()
         return _MessageSink(
-            thread=self.env["mixin.mail.thread"]
-            .with_env(self.env(cr=message_cr))
-            .with_context(default_fetchmail_server_id=self.id),
+            thread=self._gateway_env(message_cr)["mixin.mail.thread"],
             options={
                 "model": self.object_id.model,
                 "save_original": self.original,
@@ -843,7 +850,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
 
     def _get_failure_states(self, sink: _MessageSink) -> dict[str, _FailureState]:
         self.check_singleton()
-        rows = sink.thread.env.execute_query(
+        rows = self.env(cr=sink.cr).execute_query(
             SQL(
                 "SELECT fingerprint, id, attempt_count, is_quarantined"
                 "  FROM fetchmail_server_failure WHERE server_id = %s",
@@ -923,7 +930,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
         return _MessageOutcome.DELIVERED
 
     def _get_failure_model(self, sink: _MessageSink) -> FetchmailServerFailure:
-        return sink.thread.env["fetchmail.server.failure"]
+        return self.env(cr=sink.cr)["fetchmail.server.failure"]
 
     def _update_message_failure(
         self,

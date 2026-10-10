@@ -1,6 +1,8 @@
 import contextlib
 import datetime
+import imaplib
 import ipaddress
+import poplib
 import shutil
 import ssl
 import tempfile
@@ -199,6 +201,47 @@ class TestIncomingMailTransport(TransactionCase):
                     addresses=_LOOPBACK,
                 ).disconnect()
                 self.assertEqual(server.server_names, ["mail.pinned.test"])
+
+    def test_a_refused_login_closes_the_socket(self):
+        for protocol, login, closer, error in (
+            ("imap", "login", "shutdown", imaplib.IMAP4.error),
+            ("pop", "pass_", "close", poplib.error_proto),
+        ):
+            with (
+                self.subTest(protocol=protocol),
+                FakeMailServer(protocol) as server,
+            ):
+                fetchmail = self.env["fetchmail.server"].create(
+                    {
+                        "name": f"refused {protocol}",
+                        "server_type": protocol,
+                        "server": "127.0.0.1",
+                        "port": server.port,
+                        "encryption": "none",
+                        "user": "user",
+                        "password": "wrong",
+                    }
+                )
+                connection_class = (
+                    incoming_mail.OdooIMAP4
+                    if protocol == "imap"
+                    else incoming_mail.OdooPOP3
+                )
+                close = getattr(connection_class, closer)
+                with (
+                    patch.object(connection_class, login, side_effect=error("refused")),
+                    patch.object(
+                        connection_class, closer, autospec=True, side_effect=close
+                    ) as closed,
+                    patch.object(
+                        type(self.env["ir.egress"]),
+                        "check_host",
+                        return_value=_LOOPBACK,
+                    ),
+                    self.assertRaises(error),
+                ):
+                    fetchmail._connect__()
+                closed.assert_called_once()
 
     def test_ssl_without_validation_still_connects(self):
         with FakeMailServer("pop", certificate=self._certificate) as server:
@@ -774,6 +817,35 @@ class TestFetchmailPolling(FetchmailCommon):
             process.assert_called_once()
         self.assertEqual(seen["message"], _message(1))
         self.assertEqual(connection.acknowledged, [1])
+
+    def test_fetch_now_processes_as_the_gateway_does(self):
+        server = self._server(name="on demand")
+        connection = MockedConnection({1: _message(1)})
+        clicker = new_test_user(self.env, login="clicker", groups="base.group_system")
+        seen = {}
+
+        def message_process(obj, model, message, **kw):
+            seen["uid"] = obj.env.uid
+            seen["context"] = dict(obj.env.context)
+
+        with (
+            self.sync_env_with_side_cursors(),
+            self.registry.cursor() as cr,
+            patch.object(type(server), "_connect__", lambda self, **kw: connection),
+            patch.object(
+                self.registry["mixin.mail.thread"],
+                "message_process",
+                side_effect=message_process,
+                autospec=True,
+            ),
+        ):
+            server.with_env(
+                server.env(cr=cr, user=clicker, context={"tz": "Asia/Tokyo"})
+            ).action_poll_mailbox()
+        self.assertEqual(
+            seen["uid"], self.env.ref("mail.ir_cron_mail_gateway_action").user_id.id
+        )
+        self.assertEqual(seen["context"], {"default_fetchmail_server_id": server.id})
 
     @mute_logger("odoo.addons.mail.models.fetchmail_server")
     def test_a_failed_acknowledgement_does_not_stop_the_batch(self):

@@ -115,6 +115,9 @@ def _automatic_mail_marker(message: EmailMessage) -> str | None:
     return None
 
 
+MESSAGE_ID_MAX_BYTES = 2000
+
+
 def _message_fallback_id(message: EmailMessage) -> str:
     try:
         raw = message.as_bytes()
@@ -190,7 +193,7 @@ class MixinMailGateway(models.AbstractModel):
                 marker,
             )
             return
-        return_path = decode_message_header(message, "Return-Path")
+        return_path = str(message.get("Return-Path") or "").strip()
         if return_path and not email_normalize(return_path):
             _debug.logic(
                 "bounce_skipped", reason="null_return_path", email_from=email_from
@@ -232,13 +235,13 @@ class MixinMailGateway(models.AbstractModel):
         )
         bounce = self.env["mail.mail"].sudo().create(bounce_mail_values)
         _debug.lifecycle(
-            "bounce_sent",
+            "bounce_queued",
             mail=bounce.id,
             to=bounce_to,
             by_return_path=bool(return_path),
             extra=sorted(mail_values),
         )
-        bounce.send()
+        bounce.send_after_commit()
 
     def _routing_get_bounce_from(self, message: EmailMessage) -> str | None:
         if bounce_from := self.env.company.bounce_email:
@@ -317,6 +320,7 @@ class MixinMailGateway(models.AbstractModel):
             .sudo()
             .search(
                 Domain("mail_message_id", "=", bounced_message.id)
+                & Domain("notification_type", "=", "email")
                 & Domain.OR(sub_domains)
             )
         )
@@ -1231,7 +1235,7 @@ class MixinMailGateway(models.AbstractModel):
                 route = self._routing_dispatch_check_route(
                     message, message_dict, route, raise_exception=True
                 )
-            except ValueError as error:
+            except MailRouteMisconfigured as error:
                 _debug.logic("alias_route_unusable", alias=alias.id, error=str(error))
                 unusable = unusable or error
                 continue
@@ -1791,12 +1795,17 @@ class MixinMailGateway(models.AbstractModel):
             message = bytes(message.data)
         if isinstance(message, str):
             message = message.encode("utf-8")
-        message = email.message_from_bytes(message, policy=email.policy.SMTP)
+        raw = message
+        message = email.message_from_bytes(raw, policy=email.policy.SMTP)
 
         with _debug.perf(
             "message_parse", cr=self.env.cr, model=model, save_original=save_original
         ) as span:
-            msg_dict = self.message_parse(message, save_original=save_original)
+            msg_dict = self.message_parse(
+                message,
+                save_original=save_original,
+                original=raw if save_original else None,
+            )
             span.set(
                 message_id=msg_dict["message_id"],
                 attachments=len(msg_dict.get("attachments") or ()),
@@ -1876,12 +1885,17 @@ class MixinMailGateway(models.AbstractModel):
         return {"body": payload.body, "attachments": payload.attachments}
 
     def _message_parse_extract_payload(
-        self, message: EmailMessage, message_dict: dict, save_original: bool = False
+        self,
+        message: EmailMessage,
+        message_dict: dict,
+        save_original: bool = False,
+        original: bytes | None = None,
     ) -> dict:
         payload = mime.extract_payload(
             message,
             is_bounce=bool(message_dict.get("is_bounce")),
             save_original=save_original,
+            original=original,
         )
         return self._message_parse_extract_payload_postprocess(
             message, {"body": payload.body, "attachments": payload.attachments}
@@ -1917,7 +1931,9 @@ class MixinMailGateway(models.AbstractModel):
     def _message_parse_bounce_notified_recipient(
         self, bounced_message: MailMessage
     ) -> list[BouncedRecipient]:
-        notified = bounced_message.notification_ids.res_partner_id
+        notified = bounced_message.notification_ids.filtered(
+            lambda notification: notification.notification_type == "email"
+        ).res_partner_id
         if len(notified) != 1:
             return []
         return [
@@ -1994,20 +2010,28 @@ class MixinMailGateway(models.AbstractModel):
         }
 
     @api.model
-    def message_parse(self, message: EmailMessage, save_original: bool = False) -> dict:
+    def message_parse(
+        self,
+        message: EmailMessage,
+        save_original: bool = False,
+        original: bytes | None = None,
+    ) -> dict:
         if not isinstance(message, EmailMessage):
             raise ValueError("Message should be a valid EmailMessage instance")
         msg_dict = {"message_type": "email"}
 
-        message_id = message.get("Message-Id")
-        if not message_id:
+        message_id = (message.get("Message-Id") or "").strip()
+        if (
+            not message_id.strip("<> \t")
+            or len(message_id.encode(errors="surrogateescape")) > MESSAGE_ID_MAX_BYTES
+        ):
             message_id = _message_fallback_id(message)
             _debug.logic("message_id_derived", message_id=message_id)
             _logger.debug(
                 "Parsing Message without message-id, deriving one from its content: %s",
                 message_id,
             )
-        msg_dict["message_id"] = message_id.strip()
+        msg_dict["message_id"] = message_id
 
         if message.get("Subject"):
             msg_dict["subject"] = decode_message_header(message, "Subject")
@@ -2074,7 +2098,7 @@ class MixinMailGateway(models.AbstractModel):
         msg_dict.update(self._message_parse_extract_bounce(message, msg_dict))
         msg_dict.update(
             self._message_parse_extract_payload(
-                message, msg_dict, save_original=save_original
+                message, msg_dict, save_original=save_original, original=original
             )
         )
         _debug.pipeline(
