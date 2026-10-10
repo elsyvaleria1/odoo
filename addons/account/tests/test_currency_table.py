@@ -550,6 +550,131 @@ class TestCurrencyTable(TestAccountReportsCommon):
             options,
         )
 
+    def test_currency_table_comparison_ascending_periods(self):
+        self.setup_other_currency(
+            "EUR",
+            rates=[("2018-01-01", 7), ("2019-01-01", 2), ("2020-03-12", 5)],
+        )
+        self._generate_equity_move(self.company_eur_data, "2019-11-11", 55)
+        self._generate_equity_move(self.company_eur_data, "2020-11-11", 99)
+
+        options = self._generate_options(self.report, "2020-01-01", "2020-12-31")
+        options = self._update_comparison_filter(
+            options, self.report, "previous_period", 1, period_order="ascending"
+        )
+
+        self.assertLinesValues(
+            self.report._get_lines(options),
+            #                            2019        2020
+            [0, 1, 2],
+            [
+                ("Asset", 0.0, 0.0),
+                ("Income", 0.0, 0.0),
+                ("Equity", 27.50, 19.80),
+                ("EUR Company 1", 27.50, 19.80),
+            ],
+            options,
+        )
+
+    def test_currency_table_external_value_with_comparisons(self):
+        self.setup_other_currency("EUR", rates=[("2018-01-01", 2)])
+        report = self.env["report.formula"].create(
+            {
+                "name": "External Currency Table Test",
+                "filter_multi_company": "selector",
+                "currency_translation": "current",
+                "column_ids": [
+                    Command.create({"name": "Balance", "expression_label": "balance"})
+                ],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "Manual",
+                            "expression_ids": [
+                                Command.create(
+                                    {
+                                        "label": "balance",
+                                        "engine": "external",
+                                        "formula": "sum",
+                                        "figure_type": "monetary",
+                                        "date_scope": "strict_range",
+                                    }
+                                ),
+                            ],
+                        }
+                    ),
+                ],
+            }
+        )
+        self.env["report.formula.external.value"].create(
+            {
+                "name": "Manual value",
+                "value": 100.0,
+                "date": "2020-06-01",
+                "target_report_expression_id": report.line_ids.expression_ids.id,
+                "company_id": self.company_eur_data["company"].id,
+            }
+        )
+
+        options = self._generate_options(report, "2020-01-01", "2020-12-31")
+        options = self._update_comparison_filter(options, report, "previous_period", 2)
+
+        self.assertLinesValues(
+            report._get_lines(options),
+            #                 2020    2019    2018
+            [0, 1, 2, 3],
+            [("Manual", 50.0, 0.0, 0.0)],
+            options,
+        )
+
+    def test_currency_table_account_codes_balance_character_rounds_half_away_from_zero(
+        self,
+    ):
+        self.setup_other_currency("EUR", rates=[("2018-01-01", 2)])
+        eur_company = self.company_eur_data["company"]
+        expense_code = (
+            self.company_eur_data["default_account_expense"]
+            .with_company(eur_company)
+            .code
+        )
+        report = self.env["report.formula"].create(
+            {
+                "name": "Balance Character Rounding Test",
+                "filter_multi_company": "selector",
+                "currency_translation": "current",
+                "column_ids": [
+                    Command.create({"name": "Balance", "expression_label": "balance"})
+                ],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": name,
+                            "expression_ids": [
+                                Command.create(
+                                    {
+                                        "label": "balance",
+                                        "engine": "account_codes",
+                                        "formula": f"{expense_code}{balance_character}",
+                                    }
+                                ),
+                            ],
+                        }
+                    )
+                    for name, balance_character in (("Credit", "C"), ("Debit", "D"))
+                ],
+            }
+        )
+        self._generate_equity_move(self.company_eur_data, "2020-06-01", 0.01)
+
+        options = self._generate_options(report, "2020-01-01", "2020-12-31")
+        self.assertEqual(
+            [
+                (line["name"], line["columns"][0]["no_format"])
+                for line in report._get_lines(options)
+            ],
+            [("Credit", -0.005), ("Debit", 0.0)],
+        )
+
     def test_currency_table_branches(self):
         usd_branch_data = self.setup_other_company(
             name="USD Branch",

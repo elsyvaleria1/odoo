@@ -1,5 +1,6 @@
 # pylint: disable=C0326
 from odoo import Command, fields
+from odoo.db.metrics import observing_statements
 from odoo.tests import tagged
 
 from .common_report_engine import TestAccountReportsCommon
@@ -1372,3 +1373,33 @@ class TestAgedReceivableReport(TestAccountReportsCommon):
             ],
             options,
         )
+
+    def test_aged_receivable_unfold_all_queries_do_not_grow_with_partners(self):
+        options = self._generate_options(
+            self.report,
+            "2017-02-01",
+            "2017-02-01",
+            default_options={"unfold_all": True},
+        )
+
+        def count_statements():
+            self.env.invalidate_all()
+            with observing_statements():
+                count = self.env.cr.sql_statement_count
+                self.report._get_lines(options)
+                return self.env.cr.sql_statement_count - count
+
+        count_statements()
+        baseline = count_statements()
+        partners = self.env["res.partner"].create(
+            [{"name": f"Extra partner {i}"} for i in range(5)]
+        )
+        for partner in partners:
+            self.init_invoice(
+                "out_invoice",
+                partner=partner,
+                invoice_date="2017-01-15",
+                amounts=[100.0],
+                post=True,
+            )
+        self.assertLess(count_statements(), baseline + len(partners))

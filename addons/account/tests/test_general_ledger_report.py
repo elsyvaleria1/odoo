@@ -3,6 +3,7 @@ from freezegun import freeze_time
 
 import odoo.tests
 from odoo import Command, fields
+from odoo.db.metrics import observing_statements
 from odoo.tests import tagged
 
 from .common_report_engine import TestAccountReportsCommon
@@ -1096,6 +1097,76 @@ class TestGeneralLedgerReport(TestAccountReportsCommon, odoo.tests.HttpCase):
             ],
             options,
         )
+
+    def test_general_ledger_search_keeps_result_brought_forward_line(self):
+        options = self._generate_options(self.report, "2017-01-01", "2017-12-31")
+        for search, expected_names in (
+            ("Result Brought Forward", ["company_1_data", "company_2"]),
+            ("Result Brought Forward - company_1_data", ["company_1_data"]),
+            ("brought FORWARD - COMPANY_2", ["company_2"]),
+        ):
+            with self.subTest(search=search):
+                lines = self.report._get_lines({**options, "filter_search_bar": search})
+                self.assertEqual(
+                    [
+                        line["name"]
+                        for line in lines
+                        if self.report._get_markup(line["id"])
+                        == "undistributed_profits_losses"
+                    ],
+                    [f"Result Brought Forward - {name}" for name in expected_names],
+                )
+
+    def test_general_ledger_unfold_all_queries_do_not_grow_with_accounts(self):
+        options = self._generate_options(
+            self.report,
+            "2017-01-01",
+            "2017-12-31",
+            default_options={"unfold_all": True},
+        )
+
+        def count_statements():
+            self.env.invalidate_all()
+            with observing_statements():
+                count = self.env.cr.sql_statement_count
+                self.report._get_lines(options)
+                return self.env.cr.sql_statement_count - count
+
+        count_statements()
+        baseline = count_statements()
+        accounts = self.env["account.account"].create(
+            [
+                {
+                    "code": f"99{i:04d}",
+                    "name": f"Extra {i}",
+                    "account_type": "asset_current",
+                }
+                for i in range(5)
+            ]
+        )
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2017-06-01",
+                "line_ids": [
+                    Command.create(
+                        {"name": "extra", "account_id": account.id, "debit": 10.0}
+                    )
+                    for account in accounts
+                ]
+                + [
+                    Command.create(
+                        {
+                            "name": "counterpart",
+                            "account_id": accounts[0].id,
+                            "credit": 50.0,
+                        }
+                    )
+                ],
+            }
+        )
+        move.action_post()
+        self.assertLessEqual(count_statements(), baseline + 1)
 
     def test_general_ledger_income_expense_initial_balance(self):
         """Test that when the report period does not start at the beginning of the FY,

@@ -1338,6 +1338,43 @@ class AccountReportLines(models.Model):
         return getattr(self, function_name)
 
     @_debug.perf.timed
+    def _prefetch_unfold_all_batch_records(self, unfold_all_batch_data) -> None:
+        # Each expansion browses its own grouping keys, so without this every
+        # expanded line reads its records' labels in queries of its own.
+        source_model = self._get_required_source_model()
+        custom_handler_name = self._get_custom_handler_model()
+        custom_groupby_map = (
+            self.env[custom_handler_name]._get_custom_groupby_map()
+            if custom_handler_name
+            else {}
+        )
+        ids_by_model = defaultdict(set)
+        for sub_groupby_key, totals_by_column_group in (
+            unfold_all_batch_data or {}
+        ).items():
+            _prefix, separator, groupby_name = sub_groupby_key.rpartition("=>")
+            field = source_model._fields.get(groupby_name)
+            if not separator or groupby_name in custom_groupby_map:
+                continue
+            if groupby_name == "id":
+                model_name = source_model._name
+            elif field is not None and field.relational:
+                model_name = field.comodel_name
+            else:
+                continue
+            ids = ids_by_model[model_name]
+            for expression_totals in totals_by_column_group.values():
+                for totals in expression_totals.values():
+                    ids.update(key for key, _value in totals["value"] if key)
+        for model_name, ids in ids_by_model.items():
+            records = self.env[model_name].browse(ids).with_context(active_test=False)
+            records.sorted().mapped("display_name")
+        _debug.perf.count(
+            "unfold_all_records_prefetched",
+            records=sum(len(ids) for ids in ids_by_model.values()),
+        )
+
+    @_debug.perf.timed
     def _fully_unfold_lines_if_needed(self, lines, options):
         def line_need_expansion(line_dict):
             return line_dict.get("unfolded") and line_dict.get("expand_function")
@@ -1367,6 +1404,7 @@ class AccountReportLines(models.Model):
                 ]._custom_unfold_all_batch_data_generator(
                     self, options, lines_to_expand_by_function
                 )
+            self._prefetch_unfold_all_batch_records(custom_unfold_all_batch_data)
 
         _debug.logic(
             "unfold_all_batch_decided",

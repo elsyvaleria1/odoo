@@ -417,9 +417,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             """
             SELECT
                 %(additional_select)s
-                COALESCE(SUM(%(select_debit)s), 0.0) AS debit,
-                COALESCE(SUM(%(select_credit)s), 0.0) AS credit,
-                COALESCE(SUM(%(select_balance)s), 0.0) AS balance
+                %(sums_select)s
             FROM %(from_clause)s
 
             LEFT JOIN res_partner partner ON partner.id = account_move_line.partner_id
@@ -436,15 +434,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
             LIMIT %(limit)s
             """,
             additional_select=additional_select,
-            select_balance=report._currency_table_apply_rate(
-                SQL("account_move_line.balance")
-            ),
-            select_debit=report._currency_table_apply_rate(
-                SQL("account_move_line.debit")
-            ),
-            select_credit=report._currency_table_apply_rate(
-                SQL("account_move_line.credit")
-            ),
+            sums_select=report._get_aml_sums_select(),
             from_clause=report_query.from_clause,
             currency_table_join=report._currency_table_aml_join(options),
             where_clause=report_query.where_clause,
@@ -664,12 +654,25 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
     def _custom_unfold_all_batch_data_generator(
         self, report, options, lines_to_expand_by_function
     ):
-        return report._get_custom_engine_unfold_all_batch_data(
+        unfold_all_batch_data = report._get_custom_engine_unfold_all_batch_data(
             options,
             lines_to_expand_by_function,
             "_report_custom_engine_general_ledger",
             self._get_unfold_all_engine_rows,
         )
+        aml_ids = {
+            json_loads(grouping_key)[1]
+            for sub_groupby_key, totals_by_column_group in unfold_all_batch_data.items()
+            if sub_groupby_key.endswith("=>id_with_accumulated_balance")
+            for expression_totals in totals_by_column_group.values()
+            for totals in expression_totals.values()
+            for grouping_key, _value in totals["value"]
+            if "balance_line" not in grouping_key
+        }
+        # The label builder runs once per expanded account; reading every label
+        # here lets each of those calls hit the cache.
+        self.env["account.move.line"].browse(aml_ids).mapped("display_name")
+        return unfold_all_batch_data
 
     def _get_unfold_all_engine_rows(
         self, report_line, expressions, options, date_scope

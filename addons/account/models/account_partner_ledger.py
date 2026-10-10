@@ -585,16 +585,10 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         return SQL(" UNION ALL ").join(queries)
 
     def _get_sums_select(self, report, balance, debit=None, credit=None) -> SQL:
-        def get_sum(value):
-            if value is None:
-                return SQL("0")
-            return SQL("SUM(%s)", report._currency_table_apply_rate(value))
-
         return SQL(
-            "%(debit)s AS debit, %(credit)s AS credit, %(balance)s AS amount, %(balance)s AS balance",
-            debit=get_sum(debit),
-            credit=get_sum(credit),
-            balance=get_sum(balance),
+            "%s, %s AS amount",
+            report._get_sums_select(debit, credit, balance),
+            report._get_sum_select(balance),
         )
 
     @_debug.perf.timed

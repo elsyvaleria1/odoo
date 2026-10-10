@@ -144,33 +144,42 @@ class ResCurrency(models.Model):
                 main_company_id=main_company.root_id.id,
                 other_company_ids=tuple(other_companies.ids),
             )
-            last_date_to = None
             for period_key, date_from, date_to in date_periods:
-                main_company_unit_factor = main_company.currency_id._get_rates(
+                main_company_unit_factor = self._get_main_company_unit_factor(
                     main_company, date_to
-                )[main_company.currency_id.id]
-
+                )
                 table_builders.append(
                     self._get_table_builder_current(
                         scope, period_key, date_to, main_company_unit_factor
                     )
                 )
-
                 if use_cta_rates:
-                    table_builders += [
-                        self._get_table_builder_historical(
-                            scope, date_to, main_company_unit_factor, last_date_to
-                        ),
+                    table_builders.append(
                         self._get_table_builder_average(
                             scope,
                             period_key,
                             date_from,
                             date_to,
                             main_company_unit_factor,
-                        ),
-                    ]
+                        )
+                    )
 
-                last_date_to = date_to
+            if use_cta_rates and date_periods:
+                # Historical rows carry no period key: every period reads the same
+                # rate chain, so it is built once, up to the latest period end.
+                latest_date_to = max(
+                    (date_to for _key, _from, date_to in date_periods),
+                    key=fields.Date.to_date,
+                )
+                table_builders.append(
+                    self._get_table_builder_historical(
+                        scope,
+                        latest_date_to,
+                        self._get_main_company_unit_factor(
+                            main_company, latest_date_to
+                        ),
+                    )
+                )
 
         currency_table_build_query = SQL(" UNION ALL ").join(
             SQL("(%s)", builder) for builder in table_builders
@@ -203,6 +212,11 @@ class ResCurrency(models.Model):
             cta=use_cta_rates,
             builders=len(table_builders),
         )
+
+    def _get_main_company_unit_factor(self, main_company, date):
+        return main_company.currency_id._get_rates(main_company, date)[
+            main_company.currency_id.id
+        ]
 
     def _get_table_builder_domestic_currency(self, companies, use_cta_rates) -> SQL:
         return SQL(
@@ -251,14 +265,8 @@ class ResCurrency(models.Model):
         scope: CurrencyTableScope,
         date_to,
         main_company_unit_factor,
-        date_exclude,
     ) -> SQL:
-        _debug.logic(
-            "historical_rates_window",
-            date_to=date_to,
-            date_exclude=date_exclude,
-            exclusion_applied=bool(date_exclude),
-        )
+        _debug.logic("historical_rates_window", date_to=date_to)
         return SQL(
             """
                 SELECT
@@ -275,17 +283,11 @@ class ResCurrency(models.Model):
                     other_company.id IN %(other_company_ids)s
                     AND rate.company_id = %(main_company_id)s
                     AND rate.name <= %(date_to)s
-                    %(exclusion_condition)s
             """,
             main_company_id=scope.main_company_id,
             other_company_ids=scope.other_company_ids,
             main_company_unit_factor=main_company_unit_factor,
             date_to=date_to,
-            exclusion_condition=SQL(
-                "AND rate.name > %(date_exclude)s", date_exclude=date_exclude
-            )
-            if date_exclude
-            else SQL(),
         )
 
     @_debug.perf.timed

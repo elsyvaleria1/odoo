@@ -512,9 +512,7 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             """
             SELECT
                 %(select_groupby_key_components)s
-                COALESCE(SUM(%(select_balance)s), 0.0) AS balance,
-                COALESCE(SUM(%(select_debit)s), 0.0) AS debit,
-                COALESCE(SUM(%(select_credit)s), 0.0) AS credit
+                %(sums_select)s
             FROM %(table_references)s
             %(currency_table_join)s
             WHERE %(search_condition)s
@@ -523,15 +521,7 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             select_groupby_key_components=select_groupby_key_components
             if current_groupbys
             else SQL(""),
-            select_balance=report._currency_table_apply_rate(
-                SQL("account_move_line.balance")
-            ),
-            select_debit=report._currency_table_apply_rate(
-                SQL("account_move_line.debit")
-            ),
-            select_credit=report._currency_table_apply_rate(
-                SQL("account_move_line.credit")
-            ),
+            sums_select=report._get_aml_sums_select(),
             table_references=query.from_clause,
             currency_table_join=report._currency_table_aml_join(options),
             search_condition=query.where_clause,
@@ -639,6 +629,8 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
         )
 
         for line in unaffected_earning_lines + lines:
+            if report._get_markup(line["id"]) == "load_more":
+                continue
             unaffected_earning_line = (
                 report._get_markup(line["id"]) == "undistributed_profits_losses"
             )

@@ -495,6 +495,21 @@ class TestTrialBalanceReport(TestAccountReportsCommon):
             options,
         )
 
+    def test_trial_balance_load_more_line(self):
+        self.report.load_more_limit = 1
+        options = self._generate_options(
+            self.report,
+            fields.Date.from_string("2017-01-01"),
+            fields.Date.from_string("2017-12-31"),
+        )
+        self.assertIn(
+            "load_more",
+            [
+                self.report._get_markup(line["id"])
+                for line in self.report._get_lines(options)
+            ],
+        )
+
     def test_trial_balance_whole_report(self):
         options = self._generate_options(
             self.report,

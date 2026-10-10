@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from odoo import Command, fields
+from odoo.exceptions import ValidationError
 from odoo.tests import tagged
 from odoo.tools import frozendict
 
@@ -906,17 +907,17 @@ class TestReportEngines(TestAccountReportsCommon):
         # Check redirection.
         expected_redirection_values_list = [
             move.line_ids[:5],
-            move.line_ids[:5],
-            move.line_ids[:5],
+            move.line_ids[2:4],
+            move.line_ids[:2] + move.line_ids[4],
             move.line_ids[1:3],
-            move.line_ids[1:3],
+            move.line_ids[2],
             move.line_ids[1],
             move.line_ids[4],
             move.line_ids[4],
             move.line_ids[1:5],
             move.line_ids[1] + move.line_ids[3:5],
             move.line_ids[5],
-            move.line_ids[5],
+            move.line_ids[5][:0],
         ]
         for report_line, expected_amls in zip(
             report.line_ids, expected_redirection_values_list, strict=False
@@ -3231,3 +3232,233 @@ class TestReportEngines(TestAccountReportsCommon):
             ],
             options,
         )
+
+    def test_engine_tax_tags_same_tag_with_both_signs(self):
+        self.env.company.tax_config_id.account_fiscal_country_id = self.fake_country
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_tax_tags("44"), groupby="account_id"
+                ),
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_tax_tags("-44"), groupby="account_id"
+                ),
+            ],
+            country_id=self.fake_country.id,
+        )
+        self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(
+                    700.0, account_code="101001", tax_tags=["44"]
+                ),
+            ]
+        )
+
+        options = self._generate_options(
+            report, "2020-01-01", "2020-01-01", default_options={"unfold_all": True}
+        )
+        self.assertLinesValues(
+            report._get_lines(options),
+            [0, 1],
+            [
+                ("test_line_1", 700.0),
+                ("101001 101001", 700.0),
+                ("test_line_2", -700.0),
+                ("101001 101001", -700.0),
+            ],
+            options,
+        )
+
+    def test_engine_tax_tags_load_more_pages_grouping_keys(self):
+        self.env.company.tax_config_id.account_fiscal_country_id = self.fake_country
+        partner_a, partner_b = self.env["res.partner"].create(
+            [{"name": "Partner A"}, {"name": "Partner B"}]
+        )
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_tax_tags("66"),
+                    self._prepare_test_expression_tax_tags("77", label="base"),
+                    groupby="partner_id",
+                ),
+            ],
+            columns=["balance", "base"],
+            country_id=self.fake_country.id,
+        )
+        self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(
+                    100.0, tax_tags=["66"], partner_id=partner_a.id
+                ),
+                self._prepare_test_account_move_line(
+                    10.0, tax_tags=["77"], partner_id=partner_a.id
+                ),
+                self._prepare_test_account_move_line(
+                    200.0, tax_tags=["66"], partner_id=partner_b.id
+                ),
+                self._prepare_test_account_move_line(
+                    20.0, tax_tags=["77"], partner_id=partner_b.id
+                ),
+            ]
+        )
+        options = self._generate_options(report, "2020-01-01", "2020-01-01")
+        report._init_currency_table(options)
+        expressions = report.line_ids.expression_ids
+        formulas_dict = {expression.formula: expression for expression in expressions}
+
+        def get_page(offset):
+            results = report._get_formula_batch_with_engine_tax_tags(
+                options,
+                "strict_range",
+                formulas_dict,
+                "partner_id",
+                None,
+                offset=offset,
+                limit=1,
+            )
+            return {
+                formula: [(key, value["result"]) for key, value in groups]
+                for (formula, _expression), groups in results.items()
+            }
+
+        self.assertEqual(
+            get_page(0), {"66": [(partner_a.id, 100.0)], "77": [(partner_a.id, 10.0)]}
+        )
+        self.assertEqual(
+            get_page(1), {"66": [(partner_b.id, 200.0)], "77": [(partner_b.id, 20.0)]}
+        )
+        self.assertEqual(get_page(2), {"66": [], "77": []})
+
+    def test_engine_account_codes_load_more_pages_every_group(self):
+        partners = self.env["res.partner"].create(
+            [{"name": f"Partner {i}"} for i in range(4)]
+        )
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_account_codes("11D"),
+                    groupby="partner_id",
+                ),
+            ],
+        )
+        self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(
+                    500.0, account_code="12", partner_id=partners[0].id
+                ),
+                self._prepare_test_account_move_line(
+                    100.0, account_code="11", partner_id=partners[1].id
+                ),
+                self._prepare_test_account_move_line(
+                    -30.0, account_code="11", partner_id=partners[2].id
+                ),
+                self._prepare_test_account_move_line(
+                    50.0, account_code="11", partner_id=partners[3].id
+                ),
+                self._prepare_test_account_move_line(5.0, account_code="11"),
+            ]
+        )
+        options = self._generate_options(report, "2020-01-01", "2020-01-01")
+        report._init_currency_table(options)
+        expression = report.line_ids.expression_ids
+        formulas_dict = {expression.formula: expression}
+
+        def get_groups(offset=0, limit=None):
+            results = report._get_formula_batch_with_engine_account_codes(
+                options,
+                "strict_range",
+                formulas_dict,
+                "partner_id",
+                None,
+                offset=offset,
+                limit=limit,
+            )
+            return [(key, value["result"]) for key, value in results["11D", expression]]
+
+        all_groups = [
+            (partners[1].id, 100.0),
+            (partners[2].id, -30.0),
+            (partners[3].id, 50.0),
+            (None, 5.0),
+        ]
+        self.assertEqual(get_groups(), all_groups)
+        self.assertEqual(
+            [group for offset in range(5) for group in get_groups(offset, 1)],
+            all_groups,
+        )
+        self.assertEqual(get_groups(4, 1), [])
+
+    def test_engine_account_codes_unresolved_tag_matches_nothing(self):
+        tag = self.env["account.account.tag"].create(
+            {"name": "account_codes tagged", "applicability": "accounts"}
+        )
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_account_codes(
+                        "tag(account.account_codes_engine_missing_tag)"
+                    ),
+                    groupby="account_id",
+                ),
+            ]
+        )
+        move = self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(1000.0, account_code="100001"),
+                self._prepare_test_account_move_line(-1000.0, account_code="200001"),
+            ]
+        )
+        move.line_ids.account_id.filtered(lambda a: a.code == "200001").tag_ids = tag
+
+        options = self._generate_options(
+            report, "2020-01-01", "2020-01-01", default_options={"unfold_all": True}
+        )
+        report_lines = report._get_lines(options)
+        self.assertLinesValues(report_lines, [0, 1], [("test_line_1", 0.0)], options)
+
+        action_dict = report.action_audit_cell(
+            options,
+            self._get_audit_params_from_report_line(
+                options, report.line_ids, report_lines[0]
+            ),
+        )
+        self.assertFalse(move.line_ids.filtered_domain(action_dict["domain"]))
+
+    def test_engine_account_codes_formula_is_checked_on_engine_change(self):
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_domain(
+                        [("account_id.code", "=like", "1%")], "sum"
+                    ),
+                ),
+            ]
+        )
+        expression = report.line_ids.expression_ids
+        with self.assertRaises(ValidationError), self.env.cr.savepoint():
+            expression.engine = "account_codes"
+        with self.assertRaises(ValidationError), self.env.cr.savepoint():
+            expression.write({"engine": "account_codes", "formula": r"121\(1219,)"})
+        expression.write({"engine": "account_codes", "formula": r"121\(1219)"})
+
+    def test_external_value_lock_date(self):
+        report = self._create_report(
+            [
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_external(
+                        "sum",
+                        [self._prepare_test_external_values(100.0, "2020-01-01")],
+                    ),
+                ),
+            ]
+        )
+        external_value = self.env["report.formula.external.value"].search(
+            [("target_report_expression_id", "in", report.line_ids.expression_ids.ids)]
+        )
+        self.env.company.account_config_id.fiscalyear_lock_date = "2020-12-31"
+
+        with self.assertRaisesRegex(ValidationError, "locked by"):
+            external_value.value = 200.0
+        with self.assertRaisesRegex(ValidationError, "locked by"):
+            external_value.unlink()
+        self.assertTrue(external_value.exists())
