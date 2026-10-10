@@ -102,9 +102,13 @@ class IrAttachment(models.Model):
     def _s3_delete_unused_blobs(self, urls) -> None:
         if not urls:
             return
-        still_used = set(
-            self.sudo()._with_field_rows().search([("url", "in", urls)]).mapped("url")
+        # whether any row still points at a blob is asked of every row,
+        # whoever wrote the one that stopped
+        self.flush_model(["url"])
+        self.env.cr.execute(
+            "SELECT url FROM ir_attachment WHERE url = ANY(%s)", [list(set(urls))]
         )
+        still_used = {row[0] for row in self.env.cr.fetchall()}
         endpoint = s3.get_endpoint(self.env)
         blobs = defaultdict(list)
         for url in set(urls) - still_used:
