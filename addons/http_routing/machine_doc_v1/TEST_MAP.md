@@ -28,7 +28,7 @@ Give each concurrent run its own `-d` and its own `-p` / `--gevent-port`.
 | | `TestUrlRewrite` | unit | `MethodNotAllowed`, redirect loops, cache non-poisoning, request-free use |
 | `test_lang.py` | `TestNearestLang` | unit | base-language matching (`kab` ≠ `ka`, `sr@latin` ↔ `sr`) |
 | | `TestRedirectLang` | unit | the single 3xx exit: status, Location, cookie, repeated query params |
-| | `TestRerouteLadder` | unit | **the ladder as a table** — cases /2../9 plus a sweep asserting no input reaches the "couldn't route" branch |
+| | `TestRerouteLadder` | unit | **the ladder as a table** — cases /2../9, incl. an alias of the default language leaving in one hop |
 | | `TestLangLadder` | HttpCase | the same ladder end to end: proof it is wired into dispatch, plus the `//` merge and unsafe methods |
 | `test_slug.py` | `TestSlug` | unit | the `name-id` grammar: unicode, id 0, negative ids, query/fragment/trailing slash |
 | | `TestModelConverter` | unit | id-0 rejection, `abs()` fallback, and both halves of the `rule.build` guard |

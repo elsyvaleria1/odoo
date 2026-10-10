@@ -171,6 +171,18 @@ class TestErrorStatusEndToEnd(HttpCase):
                 self.assertEqual(response.status_code, code)
                 self.assertIn(heading, response.text)
 
+    def test_an_unrenderable_status_page_keeps_the_status(self):
+        IrHttp = self.registry["ir.http"]
+        self.patch(
+            IrHttp,
+            "_get_error_html",
+            classmethod(lambda cls, env, code, values: 1 / 0),
+        )
+        self._raise(werkzeug.exceptions.NotFound())
+        with self.assertLogs("odoo.addons.http_routing.models.ir_http", "ERROR"):
+            response = self.url_open(self.EP, allow_redirects=False)
+        self.assertEqual(response.status_code, 404)
+
     def test_odoo_exception_keeps_its_http_status(self):
         self._raise(exceptions.ValidationError("nope"))
         response = self.url_open(self.EP, allow_redirects=False)

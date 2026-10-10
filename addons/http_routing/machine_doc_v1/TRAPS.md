@@ -144,3 +144,36 @@ the request a frontend one first; flagging each such route `website=True`
 instead also changes its whole dispatch (the website's companies in the
 context, `website_id`, the multilang redirect).
 → `test_website`'s `tests/test_error.py`
+
+## 12. `_url_lang` treats a named language and a context language differently
+
+`_url_for(url)` takes the language from the context, `_url_for(url, code)` from
+the caller. When the site does not serve that language, the first gets **no**
+prefix and the second keeps the language, as its `url_code`:
+
+```python
+# website serves en_US + fr_FR; a backend user reads in de_DE
+_url_for("/slides/embed/7")             # -> "/slides/embed/7"
+_url_for("/survey/print/tok", "de_DE")  # -> "/de/survey/print/tok"
+```
+
+The named case must keep it: `survey` serves every installed language on its
+own paths (`web_force_installed_langs`), so `/de/survey/…` resolves there while
+`/de/contactus` 404s. The context case must not: a link built in a backend
+request (a slide's embed code, `website.get_suggested_controllers`) carried the
+backend user's language, and every one of them 404'd on the website.
+
+That second defect needed **two** halves, and neither alone fixes it. Off the
+frontend, `website` used to answer "served languages" with every *active*
+language and "default" with `ir.default`, so `de_DE` counted as served and the
+link came out `/de/…` without ever reaching the fallback above. `website` now
+answers both from the website even off the frontend (its `_frontend_url_codes`
+and `_get_default_lang`), which is what makes the fallback reachable there. A
+probe that simulates the backend with a *frontend* `MockRequest` exercises
+neither half: it is how the first version of this fix was wrongly believed
+complete.
+
+Unifying the named and context cases in either direction breaks one of them.
+→ `TestUrlLangContext.test_unserved_context_lang_is_not_put_in_the_url`,
+`TestUrlLangContext.test_unserved_lang_named_by_the_caller_is_kept`, and the
+backend cases in `website`'s `tests/test_lang_url.py`

@@ -184,6 +184,22 @@ class TestUrlLangContext(TestUrlCommon):
                 self.IrHttp._url_for(self.EP, "[lang]"), "/[lang]" + self.EP
             )
 
+    UNSERVED = "it_IT"
+
+    def test_unserved_context_lang_is_not_put_in_the_url(self):
+        self.assertNotIn(self.UNSERVED, self.env["res.lang"]._get_frontend())
+        with MockRequest(self.env, context={"lang": "en_US"}, mock_router=False) as req:
+            self._with_ctx_lang(req, self.UNSERVED)
+            self.assertEqual(self.IrHttp._url_for(self.EP), self.EP)
+
+    def test_unserved_lang_named_by_the_caller_is_kept(self):
+        self.assertNotIn(self.UNSERVED, self.env["res.lang"]._get_frontend())
+        with MockRequest(self.env, context={"lang": "en_US"}, mock_router=False):
+            self.assertEqual(
+                self.IrHttp._url_for(self.EP, self.UNSERVED),
+                f"/{self.UNSERVED}{self.EP}",
+            )
+
 
 class TestLangUrlPrefix(TestUrlCommon):
     def test_prefixes_a_path(self):
@@ -627,6 +643,25 @@ class TestUrlRewrite(TestUrlCommon):
         self.assertEqual(path, "/loop/b")
         self.assertFalse(func)
         self.assertIn("Redirect loop", capture.output[0])
+
+    def test_redirect_chain_reports_its_last_hop(self):
+        endpoint = Mock()
+        targets = {"/chain/a": "/chain/b", "/chain/b": "/chain/c"}
+
+        def fake_match(path, method=None):
+            if path in targets:
+                raise werkzeug.routing.RequestRedirect("http://x" + targets[path])
+            return endpoint, {}
+
+        router = MagicMock()
+        router.return_value.bind.return_value.match.side_effect = fake_match
+        with (
+            MockRequest(self.env, mock_router=False),
+            patch("odoo.http.root.get_routing_map", router),
+        ):
+            self.assertEqual(
+                self.env["ir.http"].url_rewrite("/chain/a"), ("/chain/c", endpoint)
+            )
 
     def test_redirect_loop_does_not_poison_sibling_cache(self):
         targets = {"/loop/a": "/loop/b", "/loop/b": "/loop/a"}

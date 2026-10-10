@@ -67,7 +67,7 @@ all eight at once -- on the branch, that cannot happen.
 | /3 | no | ≠ default, UA is a bot | — | **serve** as-is, forced to the default lang |
 | /4 | no | ≠ default | no | **serve** as-is |
 | /5 | no | ≠ default | yes | **303** → `/<lang>` + path |
-| /6 | yes, = default | — | yes | **303** → path without the prefix |
+| /6 | yes, the default or an alias of it (`en_US`) | — | yes | **303** → path without the prefix, in one hop |
 | /7 | yes, an alias (`fr_FR`) | — | yes | **301** → `/<url_code>` + path |
 | /8 | yes, bare `/<lang>/` | — | yes | **301** → `/<lang>` |
 | /9 | yes, canonical *or* redirecting forbidden | — | — | **rewrite**: strip the prefix, serve |
@@ -78,9 +78,13 @@ Three properties hold and are pinned by tests:
   lets a client replay a 301/302 on an unsafe method as `GET`, and a 303
   *mandates* it — so redirecting a `POST` silently drops the body. `OPTIONS` is
   excluded too: a browser never follows a redirect on a CORS preflight.
-- **Case /9 is the catch-all for unsafe methods.** Its `or not allow_redirect`
-  is what makes `POST /fr_FR/x` reach dispatch instead of 404ing on a prefix
-  nothing would strip.
+- **Case /9 is the catch-all for unsafe methods.** /6../8 are tried only under
+  `allow_redirect`, and whatever none of them took is rewritten, so
+  `POST /fr_FR/x` reaches dispatch instead of 404ing on a prefix nothing would
+  strip. No input is left undecided: there is no "couldn't route" branch.
+- **/6 compares the resolved language, not the URL segment.** `/en_US/x` used
+  to 301 to `/en/x` (case /7) and only then 303 to `/x`: two round trips, the
+  first of them cached permanently by the browser.
 - **Every 3xx exits through `_redirect_lang`**, which carries the query string
   and pins the `frontend_lang` cookie to `request.lang` — the same value
   `_frontend_pre_dispatch` writes on the request that is finally served, so the
@@ -96,6 +100,7 @@ four primitives, and everything else is required to go through them.
 |---|---|
 | `_url_split_suffix(url)` | RFC 3986 `path[?query][#fragment]`. The fragment starts at the **first** `#`; a `?` after it belongs to the fragment. |
 | `_lang_url_prefix(path, url_code)` | gluing a language onto a path (`/` → `/fr`, never `/fr/`) |
+| `_lang_url_prefix_unless_default(path, lang, force_default_lang=False)` | the same, but the default language takes no prefix. Every "path in this language" answer goes through it: `_url_localized`, the canonical-slug 301 in `_pre_dispatch`, `website`'s trailing-slash 301 |
 | `_lang_url_split(path, url_codes=None)` | the inverse: recognizing a leading `url_code`. Only `url_code`, never the full `code` — `/fr_FR/…` is case /7's business |
 | `_frontend_url_codes()` | *what may appear* as a language prefix. `website` narrows it per site, so all three above narrow with it |
 
@@ -105,11 +110,19 @@ Built on them:
 |---|---|
 | `_url_for` / `_url_lang` | "make this href right for the current page's language" — every href of every frontend page (`ir.qweb._post_processing_att`) |
 | `_url_localized` | "give me this URL *in* language X", re-slugging its `<model(…)>` segments |
-| `_is_multilang_url` | "is the content at this path translated?" |
+| `_is_multilang_url` | "is the content at this path translated?" — never for `_is_asset_or_webclient_path`, which `website`'s rewriting `_url_for` excludes on the same test |
 | `url_rewrite` | "what does the routing table say this path resolves to?" (ormcached, request-free) |
 
 `_lang_url_split` takes the codes explicitly so a **request-free** caller — a
 sitemap builder, a cron, `_is_multilang_url` — can ask at all.
+
+`_url_lang` puts a language in a URL only when the site serves it, with one
+deliberate exception: a language the *caller named* (`_url_for(url, "de_DE")`)
+is kept, as its `url_code`, even when the site does not list it, because the
+target may serve more languages than the site does — `survey` serves every
+installed one. A language that merely came from the context, typically a backend
+user's, falls back to the default. With `website` installed, "served" and
+"default" mean the website's even in a backend request (`TRAPS.md` §12).
 
 ## The error page
 
@@ -130,9 +143,11 @@ is load-bearing: `_handle_error` keys the `_serve_fallback` attempt off the
 To render a different page for the same status, override `_get_error_template`.
 
 `_get_error_html` degrades to `http_routing.4xx` / `http_routing.http_error`
-when no template matches the status, **keeping the status**. Reporting a 503 as
-`418 I'm a teapot` misleads caches, monitors and crawlers alike; that last-resort
-branch is for "rendering itself blew up".
+when no template matches the status, **keeping the status**. So does
+`_handle_error` when the status page itself fails to render: it logs, falls
+back to `http_routing.http_error`, and still answers the original status. It
+used to answer `418 I'm a teapot` there, which turned a broken 404 template into
+a site where every missing URL told crawlers and monitors something else.
 
 ### The templates
 

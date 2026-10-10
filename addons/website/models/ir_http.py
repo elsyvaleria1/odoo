@@ -53,11 +53,13 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _slug(cls, value: models.BaseModel | tuple[int, str]) -> str:
-        try:
-            if value.id and value.seo_name:
-                return super()._slug((value.id, value.seo_name))
-        except AttributeError:
-            pass
+        if (
+            isinstance(value, models.BaseModel)
+            and "seo_name" in value._fields
+            and value.id
+            and value.seo_name
+        ):
+            return super()._slug((value.id, value.seo_name))
         return super()._slug(value)
 
     @classmethod
@@ -70,9 +72,7 @@ class IrHttp(models.AbstractModel):
 
     @classmethod
     def _url_for(cls, url_from: str, lang_code: str | None = None) -> str:
-        head, hash_, fragment = (url_from or "").partition("#")
-        path, qmark, query = head.partition("?")
-        suffix = qmark + query + hash_ + fragment
+        path, suffix = cls._url_split_suffix(url_from or "")
 
         rewrite_count = (
             request.env["ir.http"]._get_rewrite_count(request.website_routing)
@@ -82,8 +82,7 @@ class IrHttp(models.AbstractModel):
         eligible = (
             len(path) > 1
             and path.startswith("/")
-            and "/static/" not in path
-            and not path.startswith("/web/")
+            and not cls._is_asset_or_webclient_path(path)
         )
         rewriting = bool(path and rewrite_count and eligible)
         rewritten = path
@@ -381,11 +380,29 @@ class IrHttp(models.AbstractModel):
         )
 
     @api.model
+    def _get_url_website(self):
+        return self.env["website"].sudo().get_current_website()
+
+    # Off the frontend these two answer only the URL generation of a website
+    # link built in a backend request (a slide's embed code, a menu
+    # suggestion): that link is judged by the website it points into, not by
+    # the backend's active languages and ir.default, or a backend user's
+    # language lands in it as a prefix the website 404s.
+    @api.model
+    def _frontend_url_codes(self) -> list[str]:
+        if request and not getattr(request, "is_frontend", True):
+            Lang = self.env["res.lang"]
+            return [
+                Lang._get_data(id=id_).url_code
+                for id_ in self._get_url_website().language_ids.ids
+            ]
+        return super()._frontend_url_codes()
+
+    @api.model
     def _get_default_lang(self):
-        if request and getattr(request, "is_frontend", True):
-            website = self.env["website"].sudo().get_current_website()
+        if request:
             return self.env["res.lang"]._get_data(
-                id=website._get_cached("default_lang_id")
+                id=self._get_url_website()._get_cached("default_lang_id")
             )
         return super()._get_default_lang()
 
@@ -422,11 +439,9 @@ class IrHttp(models.AbstractModel):
             return request.redirect(page_info["url"])
 
         if not page_info and req_page != "/" and req_page.endswith("/"):
-            path = request.httprequest.path[:-1]
-            if request.lang != request.env["ir.http"]._get_default_lang():
-                path = request.env["ir.http"]._lang_url_prefix(
-                    path, request.lang.url_code
-                )
+            path = cls._lang_url_prefix_unless_default(
+                request.httprequest.path[:-1], request.lang
+            )
             if request.httprequest.query_string:
                 path += "?" + request.httprequest.query_string.decode("utf-8")
             _debug.logic("serve_page", verdict="trailing_slash", path=req_page, to=path)

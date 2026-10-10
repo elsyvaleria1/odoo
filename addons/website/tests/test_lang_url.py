@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 import lxml.html
 
 from odoo.libs.json import loads as json_loads
-from odoo.tests import HttpCase, tagged
+from odoo.tests import HttpCase, TransactionCase, tagged
 
 from odoo.addons.http_routing.tests.common import MockRequest
 
@@ -258,3 +258,44 @@ class TestControllerRedirect(TestLangUrlCommon):
             "the /fr/ -> /fr redirect must remember the destination lang "
             "(fr_FR), not the website default (en_US)",
         )
+
+
+@tagged("-at_install", "post_install")
+class TestBackendLangUrl(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.website = cls.env.ref("website.default_website")
+        cls.en = cls.env.ref("base.lang_en")
+        cls.fr = cls.env["res.lang"]._activate_lang("fr_FR")
+        cls.fr.url_code = "fr"
+        cls.de = cls.env["res.lang"]._activate_lang("de_DE")
+        cls.de.url_code = "de"
+        cls.website.language_ids = cls.en + cls.fr
+        cls.website.default_lang_id = cls.en
+        cls.IrHttp = cls.env["ir.http"]
+
+    def _url_for(self, ctx_lang, *args):
+        with MockRequest(
+            self.env,
+            website=self.website,
+            is_frontend=False,
+            context={"lang": ctx_lang},
+            mock_router=False,
+        ):
+            return self.IrHttp._url_for("/contactus", *args)
+
+    def test_backend_user_lang_the_website_does_not_serve_gets_no_prefix(self):
+        self.assertEqual(self._url_for("de_DE"), "/contactus")
+
+    def test_backend_user_lang_the_website_serves_is_prefixed(self):
+        self.assertEqual(self._url_for("fr_FR"), "/fr/contactus")
+        self.assertEqual(self._url_for("en_US"), "/contactus")
+
+    def test_backend_link_follows_the_website_default_not_ir_default(self):
+        self.website.default_lang_id = self.fr
+        self.assertEqual(self._url_for("fr_FR"), "/contactus")
+        self.assertEqual(self._url_for("en_US"), "/en/contactus")
+
+    def test_named_unserved_lang_is_kept_as_its_url_code(self):
+        self.assertEqual(self._url_for("en_US", "de_DE"), "/de/contactus")

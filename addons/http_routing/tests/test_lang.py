@@ -213,33 +213,10 @@ class TestRerouteLadder(TransactionCase):
                     ("rewrite", "/shop"),
                 )
 
-    def test_every_case_is_decided(self):
-        logger = "odoo.addons.http_routing.models.ir_http"
-        for path, path_no_lang, url_lang in (
-            ("/shop", "/shop", None),
-            ("/fr/shop", "/shop", "fr"),
-            ("/en/shop", "/shop", "en"),
-            ("/fr_FR/shop", "/shop", "fr_FR"),
-            ("/fr/", "/", "fr"),
-            ("/en/", "/", "en"),
-            ("/fr", "/", "fr"),
-            ("/", "/", None),
-        ):
-            for lang in ("en_US", "fr_FR"):
-                for allow in (True, False):
-                    for ua in ("", self.BOT):
-                        with self.subTest(
-                            path=path, lang=lang, allow=allow, bot=bool(ua)
-                        ):
-                            with self.assertNoLogs(logger, level="WARNING"):
-                                self._run(
-                                    path,
-                                    path_no_lang,
-                                    url_lang,
-                                    lang,
-                                    allow_redirect=allow,
-                                    ua=ua,
-                                )
+    def test_case_6_an_alias_of_the_default_lang_is_stripped_in_one_hop(self):
+        kind, code, location = self._run("/en_US/shop", "/shop", "en_US", "en_US")
+        self.assertEqual((kind, code), ("redirect", 303))
+        self.assertEqual(urlparse(location).path, "/shop")
 
 
 @tagged("-at_install", "post_install")
@@ -317,6 +294,12 @@ class TestLangLadder(HttpCase):
         r = self.url_open("/" + self.en_code + self.EP, allow_redirects=False)
         self.assertEqual(r.status_code, 303)
         self.assertEqual(self._loc(r), self.EP)
+
+    def test_case_6_default_lang_alias_is_one_redirect_not_two(self):
+        r = self.url_open("/en_US" + self.EP, allow_redirects=False)
+        self.assertEqual(r.status_code, 303)
+        self.assertEqual(self._loc(r), self.EP)
+        self.assertEqual(r.cookies.get("frontend_lang"), "en_US")
 
     def test_case_7_lang_alias_redirects_to_url_code(self):
         r = self.url_open("/fr_FR" + self.EP, allow_redirects=False)

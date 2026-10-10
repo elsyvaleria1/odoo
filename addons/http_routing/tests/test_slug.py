@@ -39,6 +39,16 @@ class TestSlug(TransactionCase):
             self.IrHttp._slug(lang), self.IrHttp._slug((lang.id, lang.display_name))
         )
 
+    def test_slug_does_not_mask_an_attribute_error_of_the_record(self):
+        partner = self.env["res.partner"].create({"name": "Masked"})
+
+        def broken(records):
+            raise AttributeError("raised inside display_name")
+
+        self.patch(type(partner), "_compute_display_name", broken)
+        with self.assertRaisesRegex(AttributeError, "raised inside display_name"):
+            self.env["ir.http"]._slug(partner)
+
     def test_slug_zero_id_raises(self):
         with self.assertRaises(ValueError):
             self.IrHttp._slug((0, "whatever"))

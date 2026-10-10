@@ -4,14 +4,13 @@ from odoo import http
 from odoo.http import request
 
 from odoo.addons.http_routing.models.ir_http import FRONTEND_TRANSLATIONS_ROUTE
-from odoo.addons.web.controllers.home import Home
 from odoo.addons.web.controllers.session import Session
 from odoo.addons.web.controllers.webclient import WebClient
 
 _logger = logging.getLogger(__name__)
 
 
-class Routing(Home):
+class Routing(http.Controller):
     @http.route(
         FRONTEND_TRANSLATIONS_ROUTE,
         type="http",
@@ -20,8 +19,7 @@ class Routing(Home):
         sitemap=False,
     )
     def get_website_translations(self, hash=None, lang=None, mods=None):
-        IrHttp = request.env["ir.http"].sudo()
-        modules = IrHttp.get_translation_frontend_modules()
+        modules = request.env["ir.http"]._get_translation_frontend_modules_name()
         if mods:
             _logger.debug(
                 "Ignoring caller-supplied mods=%r on %s; serving %s",
