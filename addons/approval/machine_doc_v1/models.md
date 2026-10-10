@@ -1265,7 +1265,11 @@ change of its `group_id`, `active` or `category_id`, and a member's create or
 `user_id` change call `ir.access.sod.rule._check_users` for the users concerned,
 as a grant does, so a blocking rule refuses the change that would make someone
 hold both duties. `data/ir_access_sod_data.xml` ships "manage access and approve"
-(base.group_erp_manager against any step pool), as a warning.
+(base.group_erp_manager against any step pool), as a warning. `_get_holder_ids`
+also counts as holders the delegates standing in, until their `delegate_end_date`,
+on pending or waiting approvers of pending requests in the duty's categories, unless they hold
+an excluded group; it reads them under
+`with_privilege("approval.privilege_read_delegations")`.
 
 | Field | Type | Stored | Required | Key Attributes |
 |-------|------|--------|----------|----------------|
