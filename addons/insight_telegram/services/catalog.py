@@ -229,6 +229,7 @@ def _parse_date(value):
 
 
 def _label(ask, value):
+    """A grouping value as the answer names it."""
     if isinstance(value, date):
         return ask.format_month(value)
     if hasattr(value, "display_name"):
@@ -284,9 +285,10 @@ def _ranked(ask, items, show, by_date=False):
 
 
 def run_sales(ask):
+    """Confirmed sales orders of the period: total, then the asked grouping."""
     filters = ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "warehouse": ("warehouse_id", "stock.warehouse", ("name", "code"), None),
             "partner": ("partner_id", "res.partner", ("name",), None),
             "salesperson": ("user_id", "res.users", ("name",), None),
@@ -336,9 +338,10 @@ def run_sales(ask):
 
 
 def run_pos_sales(ask):
+    """Counter (point of sale) sales of the period: total, then the asked grouping."""
     filters = ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "warehouse": (
                 "config_id.warehouse_id",
                 "stock.warehouse",
@@ -394,13 +397,14 @@ def run_pos_sales(ask):
 
 
 def run_invoicing(ask):
+    """Customer invoicing of the period, net of credit notes."""
     domain = [
         ("move_type", "in", ("out_invoice", "out_refund")),
         ("state", "=", "posted"),
     ]
     domain += ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "partner": ("partner_id", "res.partner", ("name",), None),
             "salesperson": ("invoice_user_id", "res.users", ("name",), None),
         }
@@ -423,6 +427,7 @@ def run_invoicing(ask):
 
 
 def _balance_report(ask, title, move_types, sign):
+    """Open balances of `move_types`, overdue part included, by the asked grouping."""
     domain = [
         ("move_type", "in", move_types),
         ("state", "=", "posted"),
@@ -430,7 +435,7 @@ def _balance_report(ask, title, move_types, sign):
     ]
     domain += ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "partner": ("partner_id", "res.partner", ("name",), None),
         }
     )
@@ -486,6 +491,7 @@ def _balance_report(ask, title, move_types, sign):
 
 
 def run_receivables(ask):
+    """What customers owe now, and how much of it is overdue."""
     return _balance_report(
         ask,
         ask.env._("Accounts receivable from customers"),
@@ -495,6 +501,7 @@ def run_receivables(ask):
 
 
 def run_payables(ask):
+    """What is owed to suppliers now, and how much of it is overdue."""
     return _balance_report(
         ask,
         ask.env._("Accounts payable to suppliers"),
@@ -504,9 +511,10 @@ def run_payables(ask):
 
 
 def run_purchases(ask):
+    """Confirmed purchase orders of the period: total, then the asked grouping."""
     filters = ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "warehouse": (
                 "picking_type_id.warehouse_id",
                 "stock.warehouse",
@@ -561,10 +569,11 @@ def run_purchases(ask):
 
 
 def run_stock(ask):
+    """Stock on hand per product, in internal locations; never added up across units."""
     domain = [("location_id.usage", "=", "internal")]
     domain += ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "warehouse": (
                 "location_id.warehouse_id",
                 "stock.warehouse",
@@ -624,8 +633,9 @@ def run_stock(ask):
 
 
 def run_cash(ask):
+    """Bank and cash balances, per journal."""
     company_domain = ask.filter_domain(
-        {"company": ("company_id", "res.company", ("name",), None)}
+        {"company": ("company_id", "res.company", ("code", "name"), None)}
     )
     journals = ask.env["account.journal"].search(
         [("type", "in", ("bank", "cash")), ("default_account_id", "!=", False)]
@@ -667,13 +677,14 @@ def run_cash(ask):
 
 
 def run_deliveries(ask):
+    """Outgoing deliveries not done yet (neither draft nor cancelled)."""
     domain = [
         ("picking_type_id.code", "=", "outgoing"),
         ("state", "not in", ("draft", "done", "cancel")),
     ]
     domain += ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "warehouse": (
                 "picking_type_id.warehouse_id",
                 "stock.warehouse",
@@ -714,10 +725,11 @@ def run_deliveries(ask):
 
 
 def run_production(ask):
+    """What manufacturing produced in the period: finished moves of done orders."""
     domain = [("production_id", "!=", False), ("state", "=", "done")]
     domain += ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "product": (
                 "product_id",
                 "product.product",
@@ -759,8 +771,9 @@ def run_production(ask):
 
 
 def run_headcount(ask):
+    """Active employees, by department or company."""
     domain = ask.filter_domain(
-        {"company": ("company_id", "res.company", ("name",), None)}
+        {"company": ("company_id", "res.company", ("code", "name"), None)}
     )
     employees = ask.env["hr.employee"].search(domain)
     lines = [
@@ -783,9 +796,10 @@ def run_headcount(ask):
 
 
 def run_salaries(ask):
+    """What employees earn by their current contract: one, or totals."""
     domain = ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "employee": ("id", "hr.employee", ("name",), None),
         }
     )
@@ -857,7 +871,7 @@ def run_payments(ask):
     domain = [("state", "in", ("in_process", "paid"))]
     domain += ask.filter_domain(
         {
-            "company": ("company_id", "res.company", ("name",), None),
+            "company": ("company_id", "res.company", ("code", "name"), None),
             "partner": ("partner_id", "res.partner", ("name", "vat"), None),
         }
     )
@@ -1051,7 +1065,7 @@ def run_statement(ask):
     partner = partners[:1].commercial_partner_id
     ask.extras["statement_partner_id"] = partner.id
     company_domain = ask.filter_domain(
-        {"company": ("company_id", "res.company", ("name",), None)}
+        {"company": ("company_id", "res.company", ("code", "name"), None)}
     )
     if ask.params.get("date_from") or ask.params.get("date_to"):
         start, end = ask.period()
@@ -1328,6 +1342,7 @@ def _place_text(device, live):
 
 
 def run_location(ask):
+    """Where tracked people and vehicles are now, by their GPS units."""
     tracked = _tracked_devices(ask.env)
     value = (ask.params.get("employee") or "").strip()
     devices = _whose(ask, tracked, value) if value else list(tracked)

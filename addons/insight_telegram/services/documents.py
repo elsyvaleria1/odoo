@@ -111,7 +111,8 @@ STATEMENT_REPORT = "account.customer_statement_report"
 
 def statement_companies(env, partner):
     """The companies where `partner` has open receivable or payable entries,
-    else the current one: each has its own statement."""
+    else the partner's own company or the current one: each has its own
+    statement."""
     lines = env["account.move.line"].search(
         [
             ("partner_id", "child_of", partner.commercial_partner_id.id),
@@ -120,17 +121,24 @@ def statement_companies(env, partner):
             ("reconciled", "=", False),
         ]
     )
-    return lines.company_id.sorted("id") or env.company
+    return lines.company_id.sorted("id") or partner.company_id or env.company
 
 
-def statements(env, partner) -> list:
+def statements(env, partner, companies=None) -> list:
     """``[(filename, bytes)]``: the Customer Statement of `partner` as Odoo
-    exports it to PDF, one per company where it has something open."""
+    exports it to PDF, one per company where it has something open.
+
+    :param env: a read-write environment over every company
+    :param partner: the customer or supplier
+    :param companies: the companies asked for, else every one with something open
+    :return: the files
+    :rtype: list
+    """
     report = env.ref(STATEMENT_REPORT, raise_if_not_found=False)
     if not report:
         raise NotFound(env._("That document cannot be printed on this database."))
     partner = partner.commercial_partner_id
-    companies = statement_companies(env, partner)
+    companies = companies or statement_companies(env, partner)
     files = []
     for company in companies:
         scoped = env(context={**env.context, "allowed_company_ids": company.ids})
@@ -144,10 +152,20 @@ def statements(env, partner) -> list:
     return files
 
 
+def _asked_companies(env, params):
+    """The companies a request names (e.g. "the statement in LMMR"), or
+    nothing when it names none."""
+    name = (params.get("company") or "").strip()
+    return find(env, "res.company", name, ("code", "name")) if name else None
+
+
 def _printed(env, kind, params):
     if kind == "statement":
         partner = _partner(env, params)
-        return statements(env, partner), partner.mapped("display_name")
+        return (
+            statements(env, partner, _asked_companies(env, params)),
+            partner.mapped("display_name"),
+        )
     model = PRINTED_KINDS[kind]
     report = _first_report(env, model, MAIN_REPORTS[model]) if model in env else None
     if not report:
