@@ -82,6 +82,8 @@ export class WebsocketWorker {
      * `_retryConnectionWithDelay`.
      */
     RECONNECT_JITTER = 30_000;
+    /** Time a connection stays open before its backoff starts over. */
+    STABLE_CONNECTION_DELAY = 10_000;
     CONNECTION_CHECK_DELAY = 60_000;
     // How often dead clients are looked for, and how long a client may stay
     // silent before it is pinged (half the timeout) then evicted (full
@@ -142,6 +144,7 @@ export class WebsocketWorker {
         this._startClientLivenessSweep();
         this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
         this.connectTimeout = null;
+        this._stableTimeout = null;
         this.debugModeByClient = new Map();
         this.isDebug = false;
         this.active = true;
@@ -200,7 +203,7 @@ export class WebsocketWorker {
                 reason instanceof Error
                     ? [reason.constructor.name, reason.stack]
                     : [reason];
-            this._logDebug("Unhandled rejection", params);
+            this._logDebug("Unhandled rejection", ...params);
         });
     }
 
@@ -682,6 +685,7 @@ export class WebsocketWorker {
         }
         const { code, reason } = ev;
         clearInterval(this._connectionCheckInterval);
+        clearTimeout(this._stableTimeout);
         this._logDebug("_onWebsocketClose", code, reason);
         this._updateState(CONNECTION_STATE.DISCONNECTED);
         // Flush any callback chained on this connection's subscribe gate:
@@ -704,9 +708,9 @@ export class WebsocketWorker {
             this.connectRetryDelay = 0;
         }
         if (this.isReconnecting) {
-            // Connection was not established but the close event was
-            // triggered anyway. Let the onWebsocketError method handle
-            // this case.
+            // Another attempt of a reconnect failed: everything but the next
+            // retry was reported by the first close.
+            this._retryConnectionWithDelay();
             return;
         }
         this.broadcast("BUS:DISCONNECT", { code, reason });
@@ -757,8 +761,8 @@ export class WebsocketWorker {
         if (this._isStaleSocketEvent(ev)) {
             return;
         }
+        // The close that always follows schedules the retry.
         this._logDebug("_onWebsocketError");
-        this._retryConnectionWithDelay();
     }
 
     /**
@@ -895,7 +899,12 @@ export class WebsocketWorker {
         this._updateState(CONNECTION_STATE.CONNECTED);
         this.broadcast(this.isReconnecting ? "BUS:RECONNECT" : "BUS:CONNECT");
         this._debouncedUpdateChannels();
-        this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
+        // A server that accepts and then closes at once (stopping, rate
+        // limiting, failing) must not reset the backoff of its clients.
+        clearTimeout(this._stableTimeout);
+        this._stableTimeout = setTimeout(() => {
+            this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
+        }, this.STABLE_CONNECTION_DELAY);
         // Actually cancel any pending retry, don't just drop the handle: an
         // orphaned timer would survive a later BUS:STOP (offline), fire,
         // reconnect the stopped worker, and — through the error path — re-arm
@@ -1000,10 +1009,9 @@ export class WebsocketWorker {
      * happens once clients start succeeding.
      */
     _retryConnectionWithDelay() {
-        // Cancel any pending retry first: a failed connection fires both
-        // `error` and `close`, each of which schedules a retry. Without this,
-        // the first timer would be orphaned (untracked by `connectTimeout`,
-        // so uncancellable by `_stop`), leaking a zombie reconnect.
+        // Cancel any pending retry first: a second schedule would otherwise
+        // orphan the first timer (untracked by `connectTimeout`, so
+        // uncancellable by `_stop`), leaking a zombie reconnect.
         clearTimeout(this.connectTimeout);
         // `connectRetryDelay` is the jitter-free exponential base: keeping
         // jitter out of it stops the base from drifting and makes
@@ -1087,7 +1095,6 @@ export class WebsocketWorker {
         if (this._isWebsocketClosing()) {
             // The close event didn’t trigger. Trigger manually to maintain
             // correct state and lifecycle handling.
-            const wasReconnecting = this.isReconnecting;
             // Synthetic close for the CURRENT connection (no `currentTarget`, so
             // it is not treated as a stale-socket event).
             this._onWebsocketClose(
@@ -1096,13 +1103,6 @@ export class WebsocketWorker {
                 }),
             );
             this._connection = null;
-            if (wasReconnecting) {
-                // `_onWebsocketClose` early-returns while reconnecting because
-                // it expects a real `error` event to drive the retry — but this
-                // synthetic close has none. Schedule the retry explicitly so
-                // the reconnect loop doesn't stall until an external BUS:START.
-                this._retryConnectionWithDelay();
-            }
             return;
         }
         const socket = new WebSocket(this.websocketURL);
@@ -1137,6 +1137,7 @@ export class WebsocketWorker {
         // next connection's open-time update would inherit it and force a
         // subscribe that nothing asked for.
         this._forceNextUpdate = false;
+        clearTimeout(this._stableTimeout);
         this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
         this.isReconnecting = false;
         const connection = this._connection;

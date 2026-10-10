@@ -332,8 +332,8 @@ export class Store extends BaseStore {
                         this._initializePromise = undefined;
                         throw error;
                     }
-                    debugLog.logic("initialize waiting for bus reconnect");
-                    await this._busReconnected();
+                    debugLog.logic("initialize waiting for the bus to connect");
+                    await this._nextBusConnection();
                 }
             }
             this.isReady.resolve();
@@ -346,12 +346,19 @@ export class Store extends BaseStore {
         return ["init_messaging"];
     }
 
-    _busReconnected() {
-        return new Promise((resolve) =>
-            this.env.services.bus_service.addEventListener("BUS:RECONNECT", resolve, {
-                once: true,
-            }),
-        );
+    _nextBusConnection() {
+        // A connection the browser reported lost (offline, then online) comes
+        // back as BUS:CONNECT, one the server dropped as BUS:RECONNECT.
+        const bus = this.env.services.bus_service;
+        return new Promise((resolve) => {
+            const connected = () => {
+                bus.removeEventListener("BUS:CONNECT", connected);
+                bus.removeEventListener("BUS:RECONNECT", connected);
+                resolve();
+            };
+            bus.addEventListener("BUS:CONNECT", connected);
+            bus.addEventListener("BUS:RECONNECT", connected);
+        });
     }
 
     /**

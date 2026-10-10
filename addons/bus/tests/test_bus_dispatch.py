@@ -138,6 +138,9 @@ class TestImDispatchChannelManagement(TransactionCase):
     def _make_dispatch(self):
         d = ImDispatch()
         d._channels_to_ws = {}
+        # Started, it would LISTEN on a connection of its own until the
+        # process exits.
+        d._start_if_stopped = lambda: None
         return d
 
     def _make_ws(self):
@@ -263,6 +266,18 @@ class TestImDispatchChannelManagement(TransactionCase):
         d._dispatch_to_all()
         ws1.trigger_notification_dispatching.assert_called_once()
         ws2.trigger_notification_dispatching.assert_called_once()
+
+    def test_every_listen_catches_up_its_subscribers(self):
+        d = self._make_dispatch()
+        stopped = threading.Event()
+        stopped.set()
+        with (
+            patch.object(bus_module, "stop_event", stopped),
+            patch.object(d, "_dispatch_to_all") as catch_up,
+        ):
+            d.loop()
+            d.loop()
+        self.assertEqual(catch_up.call_count, 2)
 
     def test_dispatch_to_all_without_subscribers(self):
         d = self._make_dispatch()

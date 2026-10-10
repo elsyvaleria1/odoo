@@ -89,7 +89,7 @@ class TestBusPoll(TransactionCase):
         last_id = Bus._bus_last_id()
         Bus._sendone("test_channel", "type_c", {"seq": 3})
         self.env.cr.precommit.run()
-        notifications = Bus._poll(["test_channel"], last=last_id)
+        notifications = Bus._poll(["test_channel"], last=last_id)[0]
         self.assertEqual(len(notifications), 1)
         self.assertEqual(notifications[0]["message"]["type"], "type_c")
 
@@ -98,7 +98,7 @@ class TestBusPoll(TransactionCase):
         Bus.search([]).unlink()
         Bus._sendone("fresh_channel", "recent", {"data": True})
         self.env.cr.precommit.run()
-        notifications = Bus._poll(["fresh_channel"], last=0)
+        notifications = Bus._poll(["fresh_channel"], last=0)[0]
         self.assertGreaterEqual(len(notifications), 1)
 
     def test_poll_ignores_other_channels(self):
@@ -107,7 +107,7 @@ class TestBusPoll(TransactionCase):
         Bus._sendone("channel_a", "a_notif", {})
         Bus._sendone("channel_b", "b_notif", {})
         self.env.cr.precommit.run()
-        notifications = Bus._poll(["channel_a"], last=0)
+        notifications = Bus._poll(["channel_a"], last=0)[0]
         types = [n["message"]["type"] for n in notifications]
         self.assertIn("a_notif", types)
         self.assertNotIn("b_notif", types)
@@ -119,16 +119,16 @@ class TestBusPoll(TransactionCase):
         Bus._sendone("ignore_channel", "b", {})
         Bus._sendone("ignore_channel", "c", {})
         self.env.cr.precommit.run()
-        all_ids = [n["id"] for n in Bus._poll(["ignore_channel"], last=0)]
+        all_ids = [n["id"] for n in Bus._poll(["ignore_channel"], last=0)[0]]
         self.assertEqual(len(all_ids), 3)
-        kept = Bus._poll(["ignore_channel"], last=0, ignore_ids=[all_ids[1]])
+        kept = Bus._poll(["ignore_channel"], last=0, ignore_ids=[all_ids[1]])[0]
         self.assertEqual(
             [n["id"] for n in kept],
             [all_ids[0], all_ids[2]],
             "The ignored id must be excluded, the others kept in id order",
         )
         self.assertEqual(
-            [n["id"] for n in Bus._poll(["ignore_channel"], last=0, ignore_ids=[])],
+            [n["id"] for n in Bus._poll(["ignore_channel"], last=0, ignore_ids=[])[0]],
             all_ids,
         )
 
@@ -212,7 +212,7 @@ class TestIdsDrawnAtCommit(BaseCase):
 
     def _ids(self):
         with self.db.cursor() as cr:
-            notifications = self._env(cr)["bus.bus"]._poll([self.CHANNEL], last=1)
+            notifications = self._env(cr)["bus.bus"]._poll([self.CHANNEL], last=1)[0]
         return {n["message"]["payload"]: n["id"] for n in notifications}
 
     def test_a_long_transaction_flushed_by_a_savepoint_is_still_delivered(self):
@@ -227,7 +227,7 @@ class TestIdsDrawnAtCommit(BaseCase):
 
         def dispatch():
             with self.db.cursor() as cr:
-                notifications, _truncated = self._env(cr)["bus.bus"]._poll_batch(
+                notifications, _truncated = self._env(cr)["bus.bus"]._poll(
                     [self.CHANNEL], state.last_id, state.ignore_ids
                 )
             if notifications:
@@ -259,7 +259,7 @@ class TestIdsDrawnAtCommit(BaseCase):
             patch.object(bus_module, "POLL_LOOKBACK_SECONDS", 1),
             self.db.cursor() as cr,
         ):
-            notifications = self._env(cr)["bus.bus"]._poll([self.CHANNEL], last=0)
+            notifications = self._env(cr)["bus.bus"]._poll([self.CHANNEL], last=0)[0]
         self.assertEqual([n["message"]["payload"] for n in notifications], ["long"])
 
     def _read_watermark_after_inserting(self, seconds):

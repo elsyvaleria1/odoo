@@ -15,7 +15,7 @@ import { Deferred } from "@web/core/utils/concurrency";
 describe.current.tags("desktop");
 defineMailModels();
 
-test("initialize waits for the bus to come back after a lost connection", async () => {
+async function assertInitializeResumesOn(busEvent) {
     await start();
     const store = getService("mail.store");
     await store.isReady;
@@ -37,12 +37,18 @@ test("initialize waits for the bus to come back after a lost connection", async 
     await runAllTimers();
     expect(attempts).toBe(1);
     expect(ready).toBe(false);
-    getService("bus_service").trigger("BUS:RECONNECT");
+    getService("bus_service").trigger(busEvent);
     await animationFrame();
     await runAllTimers();
     await store.isReady;
     expect(attempts).toBe(2);
-});
+}
+
+test("initialize waits for the bus to come back after a lost connection", () =>
+    assertInitializeResumesOn("BUS:RECONNECT"));
+
+test("initialize resumes when the browser brings the connection back", () =>
+    assertInitializeResumesOn("BUS:CONNECT"));
 
 test("the store follows the colour scheme until its env is destroyed", async () => {
     await start();

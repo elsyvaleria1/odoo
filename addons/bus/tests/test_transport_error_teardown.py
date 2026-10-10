@@ -52,6 +52,19 @@ class TestTransportErrorTeardown(BaseCase):
         self.assertFalse(any("ERROR" in line for line in capture.output))
         self.assertEqual(ws.state, ConnectionState.CLOSING)
 
+    def test_a_server_error_on_the_loop_thread_asks_no_registry(self):
+        ws = self._make_ws()
+        ws.sock.send = MagicMock(side_effect=len)
+        ws._hub = MagicMock()
+        ws._hub.in_loop.return_value = True
+        with (
+            patch("odoo.addons.bus.websocket.Registry") as registry,
+            self.assertLogs("odoo.addons.bus.websocket", level="ERROR"),
+        ):
+            ws._handle_transport_error(RuntimeError("boom"))
+        registry.assert_not_called()
+        self.assertEqual(ws.state, ConnectionState.CLOSING)
+
     def test_send_close_frame_failure_falls_back_to_terminate(self):
         ws = self._make_ws()
 

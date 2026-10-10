@@ -498,7 +498,7 @@ class TestSessionValidityCache(BaseCase):
     @contextmanager
     def _dispatch_env(self, check_session_return=True):
         env = MagicMock()
-        env.__getitem__.return_value._poll_batch.return_value = ([], False)
+        env.__getitem__.return_value._poll.return_value = ([], False)
 
         @contextmanager
         def fake_acquire_cursor(db):

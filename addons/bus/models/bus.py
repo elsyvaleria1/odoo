@@ -14,6 +14,7 @@ from psycopg import InterfaceError
 import odoo
 from odoo import api, fields, models
 from odoo.libs import backoff
+from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.service.server import CommonServer
@@ -23,6 +24,7 @@ from odoo.tools.json import json_default
 from ..tools.websocket_codec import ConnectionState
 
 _logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
 
 POLL_LOOKBACK_SECONDS = 50
 DISPATCHER_SELECT_TIMEOUT = 50
@@ -254,6 +256,7 @@ class BusBus(models.Model):
             (timeout_ago, GC_MESSAGES_BATCH_SIZE),
         )
         deleted = self.env.cr.rowcount
+        _debug.lifecycle("gc", deleted=deleted, retention=gc_retention_seconds)
         return deleted, deleted == GC_MESSAGES_BATCH_SIZE
 
     @api.model
@@ -291,6 +294,9 @@ class BusBus(models.Model):
                 _warn_if_watermark_overtaken(cr.postcommit.data)
                 channels = list(cr.postcommit.data.pop("bus.bus.channels"))
                 payloads = get_notify_payloads(channels)
+                _debug.pipeline(
+                    "notify_sent", channels=len(channels), payloads=len(payloads)
+                )
                 if len(payloads) > 1:
                     _logger.info(
                         "The imbus notification payload was too large, it's been split into %d payloads.",
@@ -306,12 +312,6 @@ class BusBus(models.Model):
 
     @api.model
     def _poll(
-        self, channels, last=0, ignore_ids=None, limit=MAX_NOTIFICATIONS_PER_POLL
-    ):
-        return self._poll_batch(channels, last, ignore_ids, limit)[0]
-
-    @api.model
-    def _poll_batch(
         self,
         channels,
         last=0,
@@ -342,6 +342,13 @@ class BusBus(models.Model):
         rows = self.env.cr.fetchall()
         truncated = len(rows) > limit
         del rows[limit:]
+        _debug.perf.count(
+            "polled",
+            channels=len(channels),
+            last=last,
+            rows=len(rows),
+            truncated=truncated,
+        )
         notifications = []
         payload_bytes = 0
         for notification_id, message, size in rows:
@@ -356,10 +363,12 @@ class BusBus(models.Model):
 
     def _bus_last_id(self):
         cr = self.env.cr
-        if "bus.bus.transaction_began" in cr.postcommit.data:
-            cr.postcommit.data.setdefault(
-                "bus.bus.watermark_read_at", "".join(traceback.format_stack(limit=8))
-            )
+        data = cr.postcommit.data
+        if (
+            "bus.bus.transaction_began" in data
+            and "bus.bus.watermark_read_at" not in data
+        ):
+            data["bus.bus.watermark_read_at"] = "".join(traceback.format_stack(limit=8))
         cr.execute("SELECT COALESCE(MAX(id), 0) FROM bus_bus")
         return cr.fetchone()[0]
 
@@ -403,7 +412,6 @@ class ImDispatch(threading.Thread):
         super().__init__(daemon=True, name=f"{__name__}.Bus")
         self._channels_to_ws = {}
         self._lock = threading.Lock()
-        self._first_listen = True
         self._ever_started = False
         self._poll_round = 0
         self._poll_memo = {}
@@ -466,10 +474,14 @@ class ImDispatch(threading.Thread):
         with self._lock:
             if websocket.state is not ConnectionState.OPEN:
                 return
-            self._discard(websocket, websocket._channels - channels)
+            dropped = websocket._channels - channels
+            self._discard(websocket, dropped)
             for channel in channels:
                 self._channels_to_ws.setdefault(channel, set()).add(websocket)
             websocket._channels = channels
+        _debug.lifecycle(
+            "subscribed", channels=len(channels), dropped=len(dropped), last=last
+        )
         websocket.subscribe(last)
         self._start_if_stopped()
 
@@ -494,18 +506,25 @@ class ImDispatch(threading.Thread):
         ):
             _keep_session_alive_while_idle(conn)
             conn.execute("LISTEN imbus")
+            _debug.lifecycle("listening", channels=len(self._channels_to_ws))
             sel.register(conn, selectors.EVENT_READ)
-            if self._first_listen:
-                self._first_listen = False
-            else:
-                self._dispatch_to_all()
+            # Whatever committed before LISTEN -- the first subscriber's poll
+            # included -- woke nobody.
+            self._dispatch_to_all()
             while not stop_event.is_set():
                 if sel.select(DISPATCHER_SELECT_TIMEOUT):
                     channels = []
                     for notif in conn.notifies(timeout=0):
                         channels.extend(self._parse_imbus_payload(notif.payload))
                     poll_round = self.open_poll_round()
-                    self._wake(self._collect_websockets(channels), poll_round)
+                    websockets = self._collect_websockets(channels)
+                    _debug.pipeline(
+                        "notify_received",
+                        round=poll_round,
+                        channels=len(channels),
+                        websockets=len(websockets),
+                    )
+                    self._wake(websockets, poll_round)
 
     @staticmethod
     def _parse_imbus_payload(payload):

@@ -233,7 +233,7 @@ class TestWebsocketHub(BaseCase):
         self.assertTrue(_wait_until(lambda: self.running == 1))
         notifications = [{"id": 7, "message": {"type": "t", "payload": 1}}]
         env = MagicMock()
-        poll = env.__getitem__.return_value._poll_batch
+        poll = env.__getitem__.return_value._poll
         poll.return_value = (notifications, False)
         cursor = MagicMock()
         cursor.__enter__.return_value = MagicMock()
@@ -268,7 +268,7 @@ class TestWebsocketHub(BaseCase):
         expired[0]._session_validated_until = 0.0
         notifications = [{"id": 9, "message": {"type": "t", "payload": 1}}]
         env = MagicMock()
-        poll = env.__getitem__.return_value._poll_batch
+        poll = env.__getitem__.return_value._poll
         poll.return_value = (notifications, False)
         cursor = MagicMock()
         cursor.__enter__.return_value = MagicMock()
@@ -329,7 +329,7 @@ class TestWebsocketHub(BaseCase):
             ws._session_validated_until = 0.0
         notifications = [{"id": 11, "message": {"type": "t", "payload": 1}}]
         env = MagicMock()
-        poll = env.__getitem__.return_value._poll_batch
+        poll = env.__getitem__.return_value._poll
         poll.return_value = (notifications, False)
         cursor = MagicMock()
         cursor.__enter__.return_value = MagicMock()

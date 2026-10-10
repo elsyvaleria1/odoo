@@ -30,6 +30,14 @@ import { WebsocketWorker } from "./websocket_worker.js";
         // The script is running in a simple web worker (SharedWorker missing
         // or its construction failed — see worker_service `onInitError`).
         self.addEventListener("message", (ev) => baseWorker.handleMessage(ev));
+        // Left unhandled, an error a handler throws reaches the page as
+        // `worker.onerror`, where worker_service takes the worker, alive as it
+        // is, for dead and drops the tab's bus for good. Handled, it would no
+        // longer reach the console either.
+        self.addEventListener("error", (ev) => {
+            ev.preventDefault();
+            console.error(ev.error ?? ev.message);
+        });
         websocketWorker.registerClient(self);
     }
 })();

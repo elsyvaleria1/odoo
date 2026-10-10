@@ -4,7 +4,7 @@ import struct
 import time
 import weakref
 from threading import Event
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from odoo import http
 from odoo.libs.json import dumps as json_dumps
@@ -473,9 +473,11 @@ class TestWebsocketCaryall(WebsocketCase):
         new_test_user(self.env, login="test_user", password="Password!1")
         user_session = self.authenticate("test_user", "Password!1")
         websocket = self.websocket_connect(cookie=f"session_id={user_session.sid};")
-        with patch(
-            "odoo.addons.bus.websocket.is_session_valid", wraps=is_session_valid
-        ) as check_session_spy:
+        check_session_spy = MagicMock(wraps=is_session_valid)
+        with (
+            patch("odoo.addons.bus.websocket.is_session_valid", check_session_spy),
+            patch("odoo.service.security.is_session_valid", check_session_spy),
+        ):
             self.subscribe(
                 websocket,
                 [self.channel("ttl_channel")],
@@ -484,7 +486,7 @@ class TestWebsocketCaryall(WebsocketCase):
             self.assertEqual(
                 check_session_spy.call_count,
                 1,
-                "The post-subscribe dispatch should have validated the session",
+                "The subscribe checks the session, and its dispatch trusts that",
             )
             self.env["bus.bus"]._sendone(
                 self.target("ttl_channel"), "notif_type", "message"
@@ -505,7 +507,7 @@ class TestWebsocketCaryall(WebsocketCase):
             self.assertEqual(
                 check_session_spy.call_count,
                 2,
-                "A resubscribe should force an immediate re-validation",
+                "A resubscribe checks the session again",
             )
 
     def test_session_validity_ttl_zero_validates_every_dispatch(self):

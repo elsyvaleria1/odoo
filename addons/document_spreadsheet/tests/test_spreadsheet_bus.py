@@ -17,7 +17,7 @@ class TestSpreadsheetBus(SpreadsheetTestCommon, MailCase):
             ]._add_spreadsheet_collaborative_bus_channels(channels)
         ]
         self.env.cr.precommit.run()  # trigger the creation of bus.bus records
-        return self.env["bus.bus"]._poll(channels, last)
+        return self.env["bus.bus"]._poll(channels, last)[0]
 
     def poll_spreadsheet(self, spreadsheet_id, access_token=None):
         if access_token:

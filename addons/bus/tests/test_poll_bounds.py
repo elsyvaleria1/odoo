@@ -33,19 +33,19 @@ class TestPollBounds(TransactionCase):
 
     def test_poll_is_capped_by_count(self):
         ids = self._seed(MAX_NOTIFICATIONS_PER_POLL + 25)
-        notifications = self.env["bus.bus"]._poll([self.CHANNEL], last=ids[0] - 1)
+        notifications = self.env["bus.bus"]._poll([self.CHANNEL], last=ids[0] - 1)[0]
         self.assertEqual(len(notifications), MAX_NOTIFICATIONS_PER_POLL)
         self.assertEqual(
             [n["id"] for n in notifications], ids[:MAX_NOTIFICATIONS_PER_POLL]
         )
 
-    def test_poll_batch_reports_truncation(self):
+    def test_poll_reports_truncation(self):
         ids = self._seed(30)
-        _notifications, truncated = self.env["bus.bus"]._poll_batch(
+        _notifications, truncated = self.env["bus.bus"]._poll(
             [self.CHANNEL], last=ids[0] - 1, limit=10
         )
         self.assertTrue(truncated)
-        notifications, truncated = self.env["bus.bus"]._poll_batch(
+        notifications, truncated = self.env["bus.bus"]._poll(
             [self.CHANNEL], last=ids[0] - 1, limit=30
         )
         self.assertEqual(len(notifications), 30)
@@ -57,7 +57,7 @@ class TestPollBounds(TransactionCase):
         body = 8 * 1024
         expected_max = MAX_NOTIFICATION_BYTES_PER_POLL // body + 1
         ids = self._seed(MAX_NOTIFICATIONS_PER_POLL - 1, body_size=body)
-        notifications, truncated = self.env["bus.bus"]._poll_batch(
+        notifications, truncated = self.env["bus.bus"]._poll(
             [self.CHANNEL], last=ids[0] - 1
         )
         self.assertTrue(truncated)
@@ -72,7 +72,7 @@ class TestPollBounds(TransactionCase):
         body = 8 * 1024
         expected_max = MAX_NOTIFICATION_BYTES_PER_POLL // (2 * body) + 1
         ids = self._seed(100, body_size=body, char="é")
-        notifications, truncated = self.env["bus.bus"]._poll_batch(
+        notifications, truncated = self.env["bus.bus"]._poll(
             [self.CHANNEL], last=ids[0] - 1
         )
         self.assertTrue(truncated)
@@ -80,7 +80,7 @@ class TestPollBounds(TransactionCase):
 
     def test_a_single_oversized_notification_is_still_returned(self):
         ids = self._seed(2, body_size=MAX_NOTIFICATION_BYTES_PER_POLL + 1000)
-        notifications, truncated = self.env["bus.bus"]._poll_batch(
+        notifications, truncated = self.env["bus.bus"]._poll(
             [self.CHANNEL], last=ids[0] - 1
         )
         self.assertEqual([n["id"] for n in notifications], ids[:1])
@@ -94,7 +94,7 @@ class TestPollBounds(TransactionCase):
         while True:
             rounds += 1
             self.assertLess(rounds, 200, "draining the backlog did not terminate")
-            notifications, truncated = self.env["bus.bus"]._poll_batch(
+            notifications, truncated = self.env["bus.bus"]._poll(
                 [self.CHANNEL], state.last_id, state.ignore_ids, limit=50
             )
             if not notifications:
@@ -117,7 +117,7 @@ class TestPollBounds(TransactionCase):
         while True:
             rounds += 1
             self.assertLess(rounds, 500, "draining the backlog did not terminate")
-            notifications, truncated = self.env["bus.bus"]._poll_batch(
+            notifications, truncated = self.env["bus.bus"]._poll(
                 [self.CHANNEL], state.last_id, state.ignore_ids
             )
             if not notifications:
@@ -152,7 +152,7 @@ class TestDispatchRearm(BaseCase):
         ws._session_validated_until = float("inf")
         ws._validated_session_sid = "sid"
         env = MagicMock()
-        env.__getitem__.return_value._poll_batch.return_value = (
+        env.__getitem__.return_value._poll.return_value = (
             notifications,
             truncated,
         )
@@ -223,7 +223,7 @@ class TestDispatchRoundSharesOnePoll(BaseCase):
 
     def _dispatch_all(self, sockets):
         env = MagicMock()
-        poll = env.__getitem__.return_value._poll_batch
+        poll = env.__getitem__.return_value._poll
         poll.return_value = (self.NOTIFICATIONS, False)
         cursor = MagicMock()
         cursor.__enter__.return_value = MagicMock()

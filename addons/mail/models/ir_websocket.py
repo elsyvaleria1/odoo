@@ -56,7 +56,6 @@ class IrWebsocket(models.AbstractModel):
                 PRESENCE_CHANNEL_PREFIX
             ):
                 continue
-            data["channels"].discard(channel)
             if not (match := re.match(PRESENCE_CHANNEL_REGEX, channel)):
                 _debug.logic("presence_channel_malformed", channel=channel[:80])
                 _logger.warning("Malformed presence channel: %s", channel)
@@ -131,6 +130,7 @@ class IrWebsocket(models.AbstractModel):
         return data
 
     def _after_subscribe_data(self, data: dict) -> None:
+        super()._after_subscribe_data(data)
         current_partner, current_guest = self.env["res.partner"]._get_current_persona()
         if current_partner or current_guest:
             data["missed_presences"]._send_presence(

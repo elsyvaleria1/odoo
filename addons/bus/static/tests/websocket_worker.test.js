@@ -1052,3 +1052,36 @@ test("reconnect spread widens with the attempt and never delays the first retry"
         expect(delay).toBeLessThan(2 * 60_000);
     }
 });
+
+test("a failed attempt is retried once, by the close that follows its error", async () => {
+    const worker = await startWebSocketWorker();
+    patchWithCleanup(worker, {
+        _retryConnectionWithDelay() {
+            asyncStep("retry");
+        },
+    });
+    worker._onWebsocketError(new Event("error"));
+    await waitForSteps([]);
+    worker.websocket.close(WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+    await waitForSteps(["retry"]);
+    worker._onWebsocketError(new Event("error"));
+    worker._onWebsocketClose(new CloseEvent("close", { code: 1006 }));
+    await waitForSteps(["retry"]);
+});
+
+test("the backoff starts over only once a connection stayed open", async () => {
+    const worker = await startWebSocketWorker((type) => {
+        if (type === "BUS:RECONNECT") {
+            asyncStep(type);
+        }
+    });
+    worker.websocket.close(WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
+    await waitUntil(() => worker.isReconnecting);
+    const grown = worker.connectRetryDelay;
+    expect(grown).toBeGreaterThan(worker.INITIAL_RECONNECT_DELAY);
+    await advanceTime(2 * worker.INITIAL_RECONNECT_DELAY);
+    await waitForSteps(["BUS:RECONNECT"]);
+    expect(worker.connectRetryDelay).toBe(grown);
+    await advanceTime(worker.STABLE_CONNECTION_DELAY);
+    expect(worker.connectRetryDelay).toBe(worker.INITIAL_RECONNECT_DELAY);
+});

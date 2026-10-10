@@ -7,7 +7,6 @@ import os
 import random
 import selectors
 import socket
-import sys
 import threading
 import time
 from collections import deque
@@ -30,6 +29,7 @@ from odoo.http import (
     prepare_default_session,
     root,
 )
+from odoo.libs.debug_log import DebugLog
 from odoo.modules.registry import Registry
 from odoo.service import (
     get_env_float,
@@ -66,6 +66,7 @@ if TYPE_CHECKING:
     from odoo.http.session import Session
 
 _logger = logging.getLogger(__name__)
+_debug = DebugLog(__name__)
 
 
 MAX_TRY_ON_POOL_ERROR = 10
@@ -75,24 +76,24 @@ JITTER_ON_POOL_ERROR = 0.3
 
 @contextmanager
 def acquire_cursor(db):
+    with _borrow_cursor(db) as cr:
+        yield cr
+
+
+def _borrow_cursor(db):
     delay = DELAY_ON_POOL_ERROR
-    for attempt in range(1, MAX_TRY_ON_POOL_ERROR + 1):
+    for _attempt in range(MAX_TRY_ON_POOL_ERROR - 1):
         try:
-            cm = db_connect(db).cursor()
-            cr = cm.__enter__()
+            return db_connect(db).cursor()
         except PoolError:
-            if attempt == MAX_TRY_ON_POOL_ERROR:
-                raise PoolError(
-                    f"Failed to acquire cursor after {MAX_TRY_ON_POOL_ERROR} retries"
-                ) from None
-        else:
-            try:
-                yield cr
-                return
-            finally:
-                cm.__exit__(*sys.exc_info())
-        time.sleep(delay + random.uniform(0, JITTER_ON_POOL_ERROR))
-        delay *= 1.5
+            time.sleep(delay + random.uniform(0, JITTER_ON_POOL_ERROR))
+            delay *= 1.5
+    try:
+        return db_connect(db).cursor()
+    except PoolError:
+        raise PoolError(
+            f"Failed to acquire cursor after {MAX_TRY_ON_POOL_ERROR} retries"
+        ) from None
 
 
 class UpgradeRequired(HTTPException):
@@ -387,7 +388,6 @@ class Websocket:
         self._on_loop(self._close_if_open, code, reason)
 
     def subscribe(self, last) -> None:
-        self._session_validated_until = 0.0
         self._dispatch_state.initialize_last_id(last)
         self.trigger_notification_dispatching()
 
@@ -691,6 +691,9 @@ class Websocket:
             return
         self.state = ConnectionState.CLOSING
         self._close_sent = True
+        _debug.lifecycle(
+            "close_sent", code=frame.code, received=self._close_received, db=self._db
+        )
         self._drop_messages()
         if (
             frame.code in (CloseCode.ABNORMAL_CLOSURE, CloseCode.KILL_NOW)
@@ -940,23 +943,27 @@ class Websocket:
             code = CloseCode.SESSION_EXPIRED
         if code is CloseCode.SERVER_ERROR:
             reason = None
-            try:
-                registry = Registry(self._db)
-                sequence = registry.registry_sequence
-                registry = registry.check_signaling()
-                registry_reloaded = sequence != registry.registry_sequence
-            except Exception:
-                _logger.debug(
-                    "Registry signaling check failed for %s",
-                    self._db,
-                    exc_info=True,
-                )
-                registry_reloaded = False
-            if registry_reloaded:
+            if self._registry_reloaded():
                 _logger.warning("Bus operation aborted; registry has been reloaded")
             else:
                 _logger.error("Unhandled exception in websocket handler", exc_info=exc)
         self._on_loop(self._close_after_error, code, reason)
+
+    def _registry_reloaded(self) -> bool:
+        # The check queries the database, or loads the registry: never on the
+        # loop thread, which every connection of the process waits on.
+        hub = self._hub
+        if hub is not None and hub.in_loop():
+            return False
+        try:
+            registry = Registry(self._db)
+            sequence = registry.registry_sequence
+            return sequence != registry.check_signaling().registry_sequence
+        except Exception:
+            _logger.debug(
+                "Registry signaling check failed for %s", self._db, exc_info=True
+            )
+            return False
 
     def _close_after_error(self, code, reason) -> None:
         if self.state is ConnectionState.OPEN:
@@ -1007,23 +1014,26 @@ class Websocket:
         try:
             session = _follow_session_chain(self._session)
         except SessionExpiredException:
+            _debug.logic("session_gone", uid=self._session.uid)
             return False
         self._session = SessionView.of(session)
         if session.uid is not None and not is_session_valid(
             session, self.new_env(cr, session), fresh_primary_cr=cr
         ):
             return False
+        self._trust_session(session.sid, now)
+        return True
+
+    def _trust_session(self, sid, now) -> None:
         # Up to SESSION_VALIDITY_TTL, never past it: connections that
         # subscribed together must not all come due together.
         self._session_validated_until = now + self.SESSION_VALIDITY_TTL * (
             1 - self.SESSION_VALIDITY_JITTER * random.random()
         )
-        self._validated_session_sid = session.sid
-        return True
+        self._validated_session_sid = sid
 
     def _dispatch_bus_notifications(self) -> None:
         now = self._clock()
-        must_validate = self._session_check_due(now)
         self._waiting_for_dispatch = False
         # Subscribers to a busy channel converge on one cursor, so a dispatch
         # round asks the same question once per connection. Each wake
@@ -1034,26 +1044,12 @@ class Websocket:
         # anything later wakes the connection again, because
         # _waiting_for_dispatch is cleared above.
         # The result is read-only downstream -- _send only serialises it.
-        poll_round = self._poll_round
-        self._poll_round = None
-        memo_key = self._dispatch_key()
-        cached = None
-        if poll_round is not None:
-            cached = dispatch.poll_memo_get(poll_round, memo_key)
-        if must_validate or cached is None:
-            with acquire_cursor(self._db) as cr:
-                if must_validate and not self._revalidate_session(cr, now):
-                    raise SessionExpiredException
-                if cached is None:
-                    env = self.new_env(cr, self._session)
-                    cached = env["bus.bus"]._poll_batch(
-                        self._channels,
-                        self._dispatch_state.last_id,
-                        self._dispatch_state.ignore_ids,
-                    )
-                    if poll_round is not None:
-                        dispatch.poll_memo_set(poll_round, memo_key, cached)
-        notifications, truncated = cached
+        poll_round, self._poll_round = self._poll_round, None
+        notifications, truncated, expired = _answer_round(
+            [self], self._dispatch_key(), poll_round, now
+        )
+        if expired:
+            raise SessionExpiredException
         if not notifications:
             return
         self._dispatch_state.record_dispatched([notif["id"] for notif in notifications])
@@ -1079,11 +1075,10 @@ class Websocket:
         )
 
     def new_env(self, cr, session, *, set_lang=False):
-        uid = session.uid
         ctx = dict(session.context, lang=None)
-        env = api.Environment(cr, uid, ctx)
+        env = api.Environment(cr, session.uid, ctx)
         if set_lang:
-            lang = env["res.lang"]._get_code(ctx["lang"])
+            lang = env["res.lang"]._get_code(session.context.get("lang"))
             env = env(context=dict(ctx, lang=lang))
         if not env.transaction.default_env:
             env.transaction.default_env = env
@@ -1258,7 +1253,12 @@ class WebsocketRequest:
         ) as exc:
             raise InvalidDatabaseError from exc
 
-        with acquire_cursor(self.db) as cr:
+        with (
+            acquire_cursor(self.db) as cr,
+            _debug.perf(
+                "message_served", cr=cr, event_name=event_name, uid=self.session.uid
+            ),
+        ):
             self.env = self.ws.new_env(cr, self.session, set_lang=True)
             retrying(
                 functools.partial(self._serve_ir_websocket, event_name, data),
@@ -1267,6 +1267,9 @@ class WebsocketRequest:
 
     def _serve_ir_websocket(self, event_name, data):
         self.env["ir.websocket"]._authenticate()
+        # The message has just checked the session its dispatches would
+        # check again.
+        self.ws._trust_session(self.session.sid, self.ws._clock())
         if event_name == "subscribe":
             self.env["ir.websocket"]._subscribe(data)
         self.env["ir.websocket"]._serve_ir_websocket(event_name, data)
@@ -1348,6 +1351,14 @@ class WebsocketConnectionHandler:
                 gauge=gauge,
             )
             httprequest.raw_environ[UPGRADE_ADOPT_KEY] = websocket._adopt
+            _debug.lifecycle(
+                "opened",
+                db=websocket._db,
+                uid=websocket._session.uid,
+                public=public_session is not None,
+                outdated=websocket._outdated,
+                connections=gauge.count,
+            )
             response.call_on_close(websocket._abandon)
             if public_session is None and request.session.can_save:
                 # The websocket authenticates from the stored session; marking
@@ -1381,14 +1392,13 @@ class WebsocketConnectionHandler:
         origin = request.httprequest.headers.get("origin", "")
         if cls._is_trusted_origin(origin, request):
             return None
-        _logger.warning(
-            "Downgrading websocket session. Host=%(host)s, Origin=%(origin)s, "
-            "Scheme=%(scheme)s.",
-            {
-                "host": request.httprequest.host,
-                "origin": origin,
-                "scheme": request.httprequest.scheme,
-            },
+        # Every handshake of a page embedded on another site (a live chat)
+        # comes here: the downgrade is the defence, the event no incident.
+        _debug.logic(
+            "session_downgraded",
+            host=request.httprequest.host,
+            origin=origin,
+            scheme=request.httprequest.scheme,
         )
         return cls._get_shared_public_session(request.session.db)
 
@@ -1523,28 +1533,42 @@ def _trigger_dispatch(websockets, poll_round) -> None:
                 websocket._job = None
 
 
+def _answer_round(members, key, poll_round, now) -> tuple:
+    due = [websocket for websocket in members if websocket._session_check_due(now)]
+    answer = dispatch.poll_memo_get(poll_round, key)
+    shared = answer is not None
+    expired = set()
+    if due or answer is None:
+        db, channels, last_id, ignore_ids = key
+        with acquire_cursor(db) as cr:
+            expired = {
+                websocket
+                for websocket in due
+                if not websocket._revalidate_session(cr, now)
+            }
+            valid = [websocket for websocket in members if websocket not in expired]
+            if answer is None and valid:
+                env = valid[0].new_env(cr, valid[0]._session)
+                answer = env["bus.bus"]._poll(channels, last_id, list(ignore_ids))
+                dispatch.poll_memo_set(poll_round, key, answer)
+    notifications, truncated = answer or ([], False)
+    _debug.perf.count(
+        "dispatched",
+        members=len(members),
+        due=len(due),
+        expired=len(expired),
+        rows=len(notifications),
+        truncated=truncated,
+        shared=shared,
+    )
+    return notifications, truncated, expired
+
+
 def _run_batch(hub, key, members, poll_round, woken_at) -> None:
     try:
-        now = members[0]._clock()
-        due = [websocket for websocket in members if websocket._session_check_due(now)]
-        answer = dispatch.poll_memo_get(poll_round, key)
-        expired = set()
-        if due or answer is None:
-            db, channels, last_id, ignore_ids = key
-            with acquire_cursor(db) as cr:
-                expired = {
-                    websocket
-                    for websocket in due
-                    if not websocket._revalidate_session(cr, now)
-                }
-                valid = [websocket for websocket in members if websocket not in expired]
-                if answer is None and valid:
-                    env = valid[0].new_env(cr, valid[0]._session)
-                    answer = env["bus.bus"]._poll_batch(
-                        channels, last_id, list(ignore_ids)
-                    )
-                    dispatch.poll_memo_set(poll_round, key, answer)
-        notifications, truncated = answer or ([], False)
+        notifications, truncated, expired = _answer_round(
+            members, key, poll_round, members[0]._clock()
+        )
         frame = Frame(Opcode.TEXT, notifications)
         data = encode_frame(frame) if notifications else None
     except Exception:
