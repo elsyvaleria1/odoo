@@ -414,3 +414,45 @@ onlineTest(
         network.close();
     },
 );
+
+test("an offer accepted after leaving the call creates no peer", async () => {
+    await mountWebClient();
+    onRpc("/late/offer/notification", () => {});
+    const p2p = new PeerToPeer({ notificationRoute: "/late/offer/notification" });
+    p2p.connect(1, 5);
+    /** @type {(accepted: boolean) => void} */
+    let accept;
+    p2p.acceptOffer = () => new Promise((resolve) => (accept = resolve));
+    const offer = JSON.stringify({
+        event: "offer",
+        channelId: 5,
+        payload: { sequence: 1, sdp: { type: "offer", sdp: "" } },
+    });
+    const handled = p2p.handleNotification(2, offer);
+    p2p.disconnect();
+    accept(true);
+    await handled;
+    expect(p2p.peers.has(2)).toBe(false);
+});
+
+test("an offer accepted after rejoining as another session creates no peer", async () => {
+    await mountWebClient();
+    onRpc("/late/offer/notification", () => {});
+    const p2p = new PeerToPeer({ notificationRoute: "/late/offer/notification" });
+    p2p.connect(1, 5);
+    /** @type {(accepted: boolean) => void} */
+    let accept;
+    p2p.acceptOffer = () => new Promise((resolve) => (accept = resolve));
+    const offer = JSON.stringify({
+        event: "offer",
+        channelId: 5,
+        payload: { sequence: 1, sdp: { type: "offer", sdp: "" } },
+    });
+    const handled = p2p.handleNotification(2, offer);
+    p2p.disconnect();
+    p2p.connect(3, 5);
+    accept(true);
+    await handled;
+    expect(p2p.peers.has(2)).toBe(false);
+    p2p.disconnect();
+});

@@ -15,7 +15,9 @@ import { pttExtensionServiceInternal } from "@mail/discuss/call/common/ptt_exten
 import { PTT_RELEASE_DURATION } from "@mail/discuss/call/common/rtc_service";
 import {
     advanceTime,
+    expect,
     freezeTime,
+    getFixture,
     keyDown,
     mockTouch,
     mockUserAgent,
@@ -167,5 +169,43 @@ test("Can push-to-talk", async () => {
     await advanceTime(1000);
     await keyDown("f");
     await advanceTime(PTT_RELEASE_DURATION);
+    await contains(".o-discuss-CallParticipantCard .o-isTalking");
+});
+
+test.tags("desktop");
+test("a key released in another window's realm is judged by its key", async () => {
+    mockGetMedia();
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    pyEnv["res.users.settings"].create({
+        use_push_to_talk: true,
+        user_id: serverState.userId,
+        push_to_talk_key: "...f",
+    });
+    patchWithCleanup(pttExtensionServiceInternal, {
+        onAnswerIsEnabled(pttService) {
+            pttService.isEnabled = false;
+        },
+    });
+    freezeTime();
+    const env = await start();
+    await openDiscuss(channelId);
+    await advanceTime(1000);
+    await click("[title='Start Call']");
+    await advanceTime(1000);
+    await click(".o-discuss-Call");
+    await advanceTime(1000);
+    await keyDown("f");
+    await advanceTime(PTT_RELEASE_DURATION);
+    await contains(".o-discuss-CallParticipantCard .o-isTalking");
+    // a picture-in-picture window is another realm: its events are instances
+    // of its own KeyboardEvent, as an iframe's are
+    const frame = document.createElement("iframe");
+    getFixture().append(frame);
+    const ForeignKeyboardEvent = frame.contentWindow.KeyboardEvent;
+    const otherKey = new ForeignKeyboardEvent("keyup", { key: "a" });
+    expect(otherKey instanceof KeyboardEvent).toBe(false);
+    env.services["discuss.rtc"].onKeyUp(otherKey);
+    await advanceTime(PTT_RELEASE_DURATION + 1000);
     await contains(".o-discuss-CallParticipantCard .o-isTalking");
 });

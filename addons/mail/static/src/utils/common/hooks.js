@@ -4,7 +4,6 @@ import { provideMailContext } from "@mail/utils/common/mail_context";
 import { monitorAudio } from "@mail/utils/common/media_monitoring";
 import { awaitScrollEnd, onChange } from "@mail/utils/common/misc";
 import {
-    Component,
     onMounted,
     onPatched,
     onWillDestroy,
@@ -14,7 +13,6 @@ import {
     t,
     toRaw,
     useProps,
-    xml,
 } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { makeLogger } from "@web/core/debug/debug_logger";
@@ -22,10 +20,8 @@ import { _t } from "@web/core/translation";
 import { Deferred, delay } from "@web/core/utils/concurrency";
 import { makeDraggableHook } from "@web/core/utils/dnd";
 import { closestScrollableY } from "@web/core/utils/dom/scrolling";
-import { elementRef } from "@web/core/utils/element_ref";
 import { useService } from "@web/core/utils/hooks";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
-import { useOverlayScope } from "@web/ui/overlay/overlay_container";
 
 const log = makeLogger("mail.thread.ui");
 /**
@@ -145,14 +141,6 @@ function hoverTargetContaining(rawTargets, node) {
     return null;
 }
 /**
- * @param {((target: EventTarget|null) => boolean)[]} containsFns
- * @param {EventTarget|null} node
- * @returns {boolean}
- */
-function overlayContaining(containsFns, node) {
-    return containsFns.some((contains) => contains(node));
-}
-/**
  * @param {any} state
  * @param {Object} callbacks
  * @param {() => void} [callbacks.onHover]
@@ -215,12 +203,8 @@ function useHoverTargets(refs) {
     }
     return targets;
 }
-/**
- * @param {HoverTarget[]} targets
- * @param {(ev: MouseEvent) => void} onEnter
- * @param {(ev: MouseEvent) => void} onLeave
- */
-function makeHoverState(targets, onEnter, onLeave) {
+/** @param {HoverTarget[]} targets */
+function makeHoverState(targets) {
     const state = proxy({
         /** @param {boolean} newIsHover */
         set isHover(newIsHover) {
@@ -233,29 +217,9 @@ function makeHoverState(targets, onEnter, onLeave) {
             void this._count;
             return this._isHover;
         },
-        _contains: /** @type {((target: EventTarget|null) => boolean)[]} */ ([]),
         _count: 0,
         _isHover: false,
         _targets: targets,
-        /**
-         * @param {HoverTarget} target
-         * @returns {() => void}
-         */
-        addTarget(target) {
-            state._targets.push(target);
-            const handleMouseenter = (/** @type {MouseEvent} */ ev) => onEnter(ev);
-            const handleMouseleave = (/** @type {MouseEvent} */ ev) => onLeave(ev);
-            target.ref.el.addEventListener("mouseenter", handleMouseenter, true);
-            target.ref.el.addEventListener("mouseleave", handleMouseleave, true);
-            return () => {
-                target.ref.el.removeEventListener("mouseenter", handleMouseenter, true);
-                target.ref.el.removeEventListener("mouseleave", handleMouseleave, true);
-                const idx = state._targets.indexOf(target);
-                if (idx !== -1) {
-                    state._targets.splice(idx, 1);
-                }
-            };
-        },
     });
     return state;
 }
@@ -293,11 +257,7 @@ export function useHover(refs, { onHover, onAway, stateObserver, onHovering } = 
     const targets = useHoverTargets(refs);
     /** @type {HoverTarget|null} */
     let lastHoveredTarget;
-    const state = makeHoverState(
-        targets,
-        (ev) => onmouseenter(ev),
-        (ev) => onmouseleave(ev),
-    );
+    const state = makeHoverState(targets);
     const { setHover, clearTimers } = makeHoverSwitch(state, {
         onHover,
         onAway,
@@ -313,10 +273,6 @@ export function useHover(refs, { onHover, onAway, stateObserver, onHovering } = 
         if (target) {
             setHover(true);
             lastHoveredTarget = target;
-            return;
-        }
-        if (overlayContaining(rawState._contains, ev.target)) {
-            setHover(true);
         }
     }
     /** @param {MouseEvent} ev */
@@ -326,9 +282,6 @@ export function useHover(refs, { onHover, onAway, stateObserver, onHovering } = 
         }
         const rawState = toRaw(state);
         if (hoverTargetContaining(rawState._targets, ev.relatedTarget)) {
-            return;
-        }
-        if (overlayContaining(rawState._contains, ev.relatedTarget)) {
             return;
         }
         setHover(false);
@@ -348,33 +301,6 @@ export function useHover(refs, { onHover, onAway, stateObserver, onHovering } = 
         );
     }
     return state;
-}
-
-export class UseHoverOverlay extends Component {
-    static props = { slots: t.any(), hover: t.any() };
-    static template = xml`<div t-ref="this.root"><t t-call-slot="default"/></div>`;
-    props = useProps(this.constructor.props);
-
-    setup() {
-        super.setup();
-        this.root = elementRef();
-        const overlayContains = toRaw(useOverlayScope().contains);
-        /** @type {(() => void)|undefined} */
-        let removeTarget;
-        onMounted(() => {
-            this.props.hover._contains.push(overlayContains);
-            removeTarget = this.props.hover.addTarget({
-                ref: { el: this.root.el.closest(".o-overlay-item") },
-            });
-        });
-        onWillUnmount(() => {
-            const idx = this.props.hover._contains.indexOf(overlayContains);
-            if (idx !== -1) {
-                this.props.hover._contains.splice(idx, 1);
-            }
-            removeTarget?.();
-        });
-    }
 }
 
 /**

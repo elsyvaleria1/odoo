@@ -647,6 +647,7 @@ export class PeerToPeer extends EventTarget {
      * @param {NotificationPayload} payload
      */
     async _handleOffer(id, peer, payload) {
+        const { channelId, selfId } = this;
         try {
             const accepted = await this.acceptOffer(id, payload.sequence);
             if (!accepted) {
@@ -657,6 +658,13 @@ export class PeerToPeer extends EventTarget {
             this._emitLog(id, `offer rejected: ${error}`, LOG_LEVEL.INFO);
             return;
         }
+        // accepting can wait for the session record: the call may have been
+        // left, or left and joined again as another session, meanwhile
+        if (!this.isActive || this.channelId !== channelId || this.selfId !== selfId) {
+            this._emitLog(id, "offer accepted after leaving the call", LOG_LEVEL.INFO);
+            return;
+        }
+        peer = this.peers.get(id);
         if (!peer) {
             peer = this._createPeer(id, { sequence: payload.sequence });
         }

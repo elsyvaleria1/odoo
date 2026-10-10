@@ -7,12 +7,6 @@ import { patch } from "@web/core/utils/patch";
 const messagePatch = {
     setup() {
         super.setup();
-        this.hasEveryoneSeen = fields.Attr(false, {
-            /** @this {import("models").Message} */
-            compute() {
-                return this.thread?.membersThatCanSeen.every((m) => m.hasSeen(this));
-            },
-        });
         this.hasNewMessageSeparator = fields.Attr(false, {
             /** @this {import("models").Message} */
             compute() {
@@ -22,74 +16,51 @@ const messagePatch = {
                 );
             },
         });
-        this.hasSomeoneFetched = fields.Attr(false, {
-            /** @this {import("models").Message} */
-            compute() {
-                if (this.isSelfAuthored && this.thread) {
-                    return (
-                        this.thread.channel?.maxFetchedMessageIdByOthers >=
-                        Number(this.id)
-                    );
-                }
-                return this.thread?.channel?.channel_member_ids?.some(
-                    (m) =>
-                        m.persona?.notEq(this.author) &&
-                        m.fetched_message_id?.id >= this.id,
-                );
-            },
-        });
-        this.hasSomeoneSeen = fields.Attr(false, {
-            /** @this {import("models").Message} */
-            compute() {
-                if (this.isSelfAuthored && this.thread) {
-                    return (
-                        this.thread.channel?.maxSeenMessageIdByOthers >= Number(this.id)
-                    );
-                }
-                return this.thread?.membersThatCanSeen
-                    .filter((member) => member.persona?.notEq(this.author))
-                    .some((m) => m.hasSeen(this));
-            },
-        });
-        this.isMessagePreviousToLastSelfMessageSeenByEveryone = fields.Attr(false, {
-            /** @this {import("models").Message} */
-            compute() {
-                if (!this.thread?.channel?.lastSelfMessageSeenByEveryone) {
-                    return false;
-                }
-                return this.id < this.thread.channel.lastSelfMessageSeenByEveryone.id;
-            },
-        });
-        /** @type {Promise<import("models").Thread>[]} */
-        this.mentionedChannelPromises = [];
         this.threadAsFirstUnread = fields.One("discuss.channel", {
             inverse: "firstUnreadMessage",
         });
+    },
+    // the seen states below are getters, not computed fields: computes are
+    // eager, and these walk the channel's members for every loaded message
+    // while only the seen indicator of a self-authored message reads them
+    /** @returns {boolean} */
+    get hasEveryoneSeen() {
+        return Boolean(this.thread?.membersThatCanSeen.every((m) => m.hasSeen(this)));
+    },
+    /** @returns {boolean} */
+    get hasSomeoneFetched() {
+        if (this.isSelfAuthored && this.thread) {
+            return this.thread.channel?.maxFetchedMessageIdByOthers >= Number(this.id);
+        }
+        return Boolean(
+            this.thread?.channel?.channel_member_ids?.some(
+                (m) =>
+                    m.persona?.notEq(this.author) &&
+                    m.fetched_message_id?.id >= this.id,
+            ),
+        );
+    },
+    /** @returns {boolean} */
+    get hasSomeoneSeen() {
+        if (this.isSelfAuthored && this.thread) {
+            return this.thread.channel?.maxSeenMessageIdByOthers >= Number(this.id);
+        }
+        return Boolean(
+            this.thread?.membersThatCanSeen.some(
+                (m) => m.persona?.notEq(this.author) && m.hasSeen(this),
+            ),
+        );
+    },
+    /** @returns {boolean} */
+    get isMessagePreviousToLastSelfMessageSeenByEveryone() {
+        const lastSeen = this.thread?.channel?.lastSelfMessageSeenByEveryone;
+        return Boolean(lastSeen) && this.id < lastSeen.id;
     },
     /** @returns {import("models").ChannelMember[]} */
     get channelMemberHaveSeen() {
         return this.thread.membersThatCanSeen.filter(
             (m) => m.hasSeen(this) && m.persona.notEq(this.author),
         );
-    },
-    /**
-     * @param {string|import("@odoo/owl").Markup} body
-     * @param {import("models").Attachment[]} [attachments=[]]
-     * @param {Object} [mentions]
-     * @param {import("models").Thread[]} [mentions.mentionedChannels=[]]
-     * @param {import("models").Persona[]} [mentions.mentionedPartners=[]]
-     * @param {Object[]} [mentions.mentionedRoles=[]]
-     */
-    async edit(
-        body,
-        attachments = [],
-        { mentionedChannels = [], mentionedPartners = [], mentionedRoles = [] } = {},
-    ) {
-        return await super.edit(body, attachments, {
-            mentionedChannels,
-            mentionedPartners,
-            mentionedRoles,
-        });
     },
 };
 patch(Message.prototype, messagePatch);

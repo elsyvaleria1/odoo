@@ -22,12 +22,11 @@ declare module "models" {
     }
     export interface Message {
         channelMemberHaveSeen: Readonly<ChannelMember[]>;
-        hasEveryoneSeen: boolean | undefined;
+        readonly hasEveryoneSeen: boolean;
         hasNewMessageSeparator: boolean;
-        hasSomeoneFetched: boolean | undefined;
-        hasSomeoneSeen: boolean | undefined;
-        isMessagePreviousToLastSelfMessageSeenByEveryone: boolean;
-        mentionedChannelPromises: Promise<Thread>[];
+        readonly hasSomeoneFetched: boolean;
+        readonly hasSomeoneSeen: boolean;
+        readonly isMessagePreviousToLastSelfMessageSeenByEveryone: boolean;
         threadAsFirstUnread: DiscussChannel;
     }
     export interface ResPartner {

@@ -16,10 +16,13 @@ import {
     startServer,
 } from "@mail/../tests/mail_test_helpers";
 import { mailDataHelpers } from "@mail/../tests/mock_server/mail_mock_server";
+import { ChannelMember } from "@mail/discuss/core/common/channel_member_model";
 import { describe, expect, test } from "@odoo/hoot";
+import { animationFrame } from "@odoo/hoot-dom";
 import {
     Command,
     getService,
+    patchWithCleanup,
     serverState,
     withUser,
 } from "@web/../tests/web_test_helpers";
@@ -551,4 +554,42 @@ test("show seen indicator on previous message when last message is notification"
     await openDiscuss(channelId);
     await contains(".o-mail-MessageSeenIndicator");
     await contains(".o-mail-MessageSeenIndicator .fa-check", { count: 2 });
+});
+
+test("moving one member's seen pointer does not walk the members of every message", async () => {
+    const pyEnv = await startServer();
+    const partnerIds = pyEnv["res.partner"].create(
+        Array.from({ length: 30 }, (_, index) => ({ name: `Member ${index}` })),
+    );
+    const channelId = createChannel(pyEnv, {
+        name: "crowded",
+        members: ["self", ...partnerIds],
+        channel_type: "group",
+    });
+    const messageIds = createChannelMessages(
+        pyEnv,
+        channelId,
+        partnerIds.map((partnerId, index) => ({
+            author_id: partnerId,
+            body: `<p>message ${index}</p>`,
+        })),
+    );
+    const env = await start();
+    await openDiscuss(channelId);
+    await contains(".o-mail-Message", { count: 30 });
+    let calls = 0;
+    patchWithCleanup(ChannelMember.prototype, {
+        /** @param {import("models").Message} message */
+        hasSeen(message) {
+            calls++;
+            return super.hasSeen(message);
+        },
+    });
+    const store = env.services["mail.store"];
+    const member = store["discuss.channel.member"].get(
+        getMemberId(pyEnv, channelId, partnerIds[0]),
+    );
+    member.seen_message_id = store["mail.message"].get(messageIds.at(-1));
+    await animationFrame();
+    expect(calls).toBeLessThan(31);
 });

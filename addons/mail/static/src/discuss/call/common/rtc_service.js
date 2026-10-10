@@ -591,14 +591,17 @@ export class Rtc extends Record {
     }
 
     /**
-     * @param {KeyboardEvent|Event} [ev]
+     * The key test reads the event, not its class: a picture-in-picture
+     * window's events are instances of that window's KeyboardEvent.
+     *
+     * @param {KeyboardEvent} [ev] absent when the window lost focus
      * @returns {boolean}
      */
     isPushToTalkRelease(ev) {
         if (
             !this.state.channel ||
             !this.store.settings.use_push_to_talk ||
-            (ev instanceof KeyboardEvent && !this.store.settings.isPushToTalkKey(ev)) ||
+            (ev && !this.store.settings.isPushToTalkKey(ev)) ||
             !this.localSession?.isTalking ||
             this.pttExtService.voiceActivated
         ) {
@@ -1788,14 +1791,19 @@ export class Rtc extends Record {
             deviceId,
             sessions: this.state.channel.rtc_session_ids.length,
         }));
-        const promises = [];
-        for (const session of this.state.channel.rtc_session_ids) {
-            if (!session.audioElement) {
-                continue;
-            }
-            promises.push(session.audioElement.setSinkId(deviceId));
+        const results = await Promise.allSettled(
+            this.state.channel.rtc_session_ids
+                .filter((session) => session.audioElement?.setSinkId)
+                .map((session) => session.audioElement.setSinkId(deviceId)),
+        );
+        const refused = results.filter((result) => result.status === "rejected");
+        if (refused.length) {
+            log.logic("setOutputDevice refused", () => ({
+                deviceId,
+                refused: refused.length,
+                reason: String(refused[0].reason),
+            }));
         }
-        await Promise.all(promises);
     }
 
     /** @param {Boolean} is_muted */

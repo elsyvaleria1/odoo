@@ -627,7 +627,7 @@ export class Message extends Record {
             thread: this.thread,
         });
         const hadLink = this.hasLink;
-        const allAttachments = attachments.concat(this.attachment_ids);
+        const allAttachments = [...attachments, ...this.attachment_ids];
         const updateData = {
             attachment_ids: allAttachments.map((attachment) => attachment.id),
             attachment_tokens: allAttachments.map(

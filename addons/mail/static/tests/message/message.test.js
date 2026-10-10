@@ -548,6 +548,38 @@ test("Do not call server on save if no changes", async () => {
     await waitForSteps([]);
 });
 
+test("editing a message without new attachments sends its own attachment ids", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({
+        name: "general",
+        channel_type: "channel",
+    });
+    const attachmentId = pyEnv["ir.attachment"].create({
+        mimetype: "text/plain",
+        name: "kept.txt",
+        res_id: channelId,
+        res_model: "discuss.channel",
+    });
+    const messageId = pyEnv["mail.message"].create({
+        attachment_ids: [attachmentId],
+        author_id: serverState.partnerId,
+        body: "Hello world",
+        message_type: "comment",
+        model: "discuss.channel",
+        res_id: channelId,
+    });
+    const sentAttachmentIds = [];
+    onRpcBefore("/mail/message/update_content", (args) =>
+        sentAttachmentIds.push(args.update_data.attachment_ids),
+    );
+    const env = await start();
+    await openDiscuss(channelId);
+    await contains(".o-mail-Message", { text: "Hello world" });
+    const message = env.services["mail.store"]["mail.message"].get(messageId);
+    await message.edit("Goodbye world");
+    expect(JSON.parse(JSON.stringify(sentAttachmentIds))).toEqual([[attachmentId]]);
+});
+
 test("Update the link previews when a message is edited", async () => {
     const pyEnv = await startServer();
     const channelId = pyEnv["discuss.channel"].create({
