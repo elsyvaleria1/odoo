@@ -20,7 +20,7 @@ import { isMobileOS } from "@web/core/browser/feature_detection";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { useLifecycleLog } from "@web/core/debug/logger_hooks";
 import { normalize } from "@web/core/l10n/utils";
-import { _t } from "@web/core/translation";
+import { _t, appTranslateFn } from "@web/core/translation";
 import { Deferred } from "@web/core/utils/concurrency";
 import { markEventHandled } from "@web/core/utils/dom/events";
 import { elementRef } from "@web/core/utils/element_ref";
@@ -104,8 +104,8 @@ export async function loadEmoji() {
         await loader.loadEmoji();
         const { getCategories, getEmojis } =
             await import("@web/components/emoji_picker/emoji_data");
-        res.categories = getCategories();
-        res.emojis = getEmojis();
+        res.categories = getCategories(appTranslateFn);
+        res.emojis = getEmojis(appTranslateFn);
         loader.data = res;
         if (!loader.loaded) {
             /** @type {{[key: string]: string[]}} */

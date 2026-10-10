@@ -391,8 +391,12 @@ class AssetsBundle:
         exported_specs: Collection[str] | None = None,
         registered_reach: Mapping[str, str] | None = None,
         excluded_specs: Collection[str] = (),
+        standalone: bool = False,
     ) -> EsbuildCompiler:
         registry = esm_registry()
+        # A bundle declared standalone always is; one a route serves on its
+        # own (the live chat embed's emoji data) is only for that build.
+        standalone = standalone or self.name in registry.standalone_bundles
         native_modules = self.native_modules
         if excluded_specs:
             native_modules = [
@@ -406,7 +410,7 @@ class AssetsBundle:
             modules=len(native_modules),
             legacy=len(self.javascripts),
             included=self.name in registry.import_map_included_bundles,
-            standalone=self.name in registry.standalone_bundles,
+            standalone=standalone,
         )
         return EsbuildCompiler(
             self.name,
@@ -414,7 +418,7 @@ class AssetsBundle:
             self.javascripts,
             import_map_included=self.name in registry.import_map_included_bundles,
             skip_legacy_test_imports=self.name in registry.import_map_includes,
-            standalone=self.name in registry.standalone_bundles,
+            standalone=standalone,
             addon_flags_provider=self._get_esbuild_addon_flags,
             exported_specs=exported_specs,
             registered_reach=registered_reach,
@@ -430,6 +434,7 @@ class AssetsBundle:
         exported_specs: Collection[str] | None = None,
         registered_reach: Mapping[str, str] | None = None,
         excluded_specs: Collection[str] = (),
+        standalone: bool = False,
     ) -> EsbuildResult:
         with _debug.perf(
             "esbuild_native_bundle",
@@ -441,7 +446,7 @@ class AssetsBundle:
             exported=len(exported_specs or ()),
         ) as span:
             result = self._prepare_esbuild_compiler(
-                exported_specs, registered_reach, excluded_specs
+                exported_specs, registered_reach, excluded_specs, standalone
             ).compile(
                 timeout_s=timeout_s,
                 target=target,

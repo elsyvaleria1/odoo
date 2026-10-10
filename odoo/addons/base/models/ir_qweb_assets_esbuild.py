@@ -212,6 +212,7 @@ class IrQweb(models.AbstractModel):
         secondary_stubs: dict[str, str],
         exported_specs: frozenset[str] | None = None,
         registered_reach: dict[str, str] | None = None,
+        standalone: bool = False,
     ) -> EsbuildResult:
         config = self._get_esbuild_config()
         excluded_specs = frozenset(
@@ -241,6 +242,7 @@ class IrQweb(models.AbstractModel):
                     exported_specs=exported_specs,
                     registered_reach=registered_reach,
                     excluded_specs=excluded_specs,
+                    standalone=standalone,
                 )
                 span.set(chars=len(result.code) if result.code else 0)
         except Exception as exc:
@@ -386,6 +388,7 @@ class IrQweb(models.AbstractModel):
                 secondary_stubs,
                 exported_specs,
                 registered_reach,
+                standalone=standalone,
             )
             if result.code:
                 if self._is_classic_page(bundle, standalone):

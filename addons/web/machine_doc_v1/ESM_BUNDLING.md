@@ -442,7 +442,10 @@ differently is an error. That table is the only source of specifier
 resolution: esbuild leaves every `@odoo/*` specifier and every declared bare
 specifier external (`external_bare_specifiers()`) and the page's import map
 resolves them, a standalone bundle aliases each of them to its declared file
-(`_standalone_alias_flags`), and a bundle whose member is a declared library
+(`_standalone_alias_flags`) -- a bundle declared in `standalone_bundles`, or
+one `_get_standalone_bundle` builds on its own for a route (the live chat
+embed's emoji data, a dynamic child of the page bundles everywhere else): the
+build follows the call, so such a bundle carries no bare specifier --, and a bundle whose member is a declared library
 file (`web.assets_unit_tests_setup` carries hoot) also registers the library
 under its declared specifier — `external_lib_aliases()` reads each URL as a
 specifier, so `@odoo/hoot` is `@web/../lib/hoot/hoot` without a second table

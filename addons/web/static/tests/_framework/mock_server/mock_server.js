@@ -458,8 +458,8 @@ let impl = null;
 // only order that works -- the reset has to precede the parse) would otherwise
 // keep whatever an earlier test parsed under different translations.
 let resetPending = false;
-export function getCategories() { return impl ? impl.getCategories() : categories; }
-export function getEmojis() { return impl ? impl.getEmojis() : emojis; }
+export function getCategories(translate) { return impl ? impl.getCategories(translate) : categories; }
+export function getEmojis(translate) { return impl ? impl.getEmojis(translate) : emojis; }
 export function resetEmojiData() {
     if (impl) {
         impl.resetEmojiData?.();

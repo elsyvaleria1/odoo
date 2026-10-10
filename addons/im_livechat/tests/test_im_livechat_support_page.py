@@ -79,3 +79,12 @@ class TestImLivechatSupportPage(TestGetOperatorCommon):
         self.env["ir.config_parameter"].set_param("web.base.url.freeze", True)
         policy = self.url_open(url).headers["Content-Security-Policy"]
         self.assertIn("'unsafe-eval'", policy, "the embed comes from another origin")
+
+    def test_the_embed_s_emoji_bundle_needs_no_import_map(self):
+        # A page of another site has none: a bare specifier left in the
+        # bundle fails there, and the embed's emoji picker stayed empty.
+        response = self.url_open("/im_livechat/emoji_bundle")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            re.findall(r'(?:from|import)\s*"(?![./]|https?:)[^"]+"', response.text), []
+        )

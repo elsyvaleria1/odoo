@@ -1,9 +1,23 @@
 // @ts-check
 /** @odoo-module native */
 
-import { appTranslateFn } from "@web/core/translation";
-const _t = (/** @type {string} */ str) =>
-    JSON.stringify(appTranslateFn(str, "web")).slice(1, -1);
+// The caller's translation function, not an import: importing nothing, a
+// standalone build of this module (the live chat embedded on another site)
+// carries no second owl and no second translation module, and reads the
+// translations its caller has loaded.
+/** @typedef {(source: string, moduleName: string) => string} TranslateFn */
+let _t = (/** @type {string} */ str) => str;
+
+/** @param {TranslateFn} [translate] */
+function translateWith(translate) {
+    // A page loaded before this module changed calls it without one: its
+    // emoji names stay untranslated rather than its picker failing.
+    if (typeof translate !== "function") {
+        _t = (str) => str;
+        return;
+    }
+    _t = (str) => JSON.stringify(translate(str, "web")).slice(1, -1);
+}
 
 const _getCategories = () =>
     [
@@ -35922,8 +35936,10 @@ let parsedCategories;
 /** @type {any} */
 let parsedEmojis;
 
-export function getEmojis() {
+/** @param {TranslateFn} [translate] */
+export function getEmojis(translate) {
     if (!parsedEmojis) {
+        translateWith(translate);
         parsedEmojis = JSON.parse(`[
             ${_getEmojisData1()}
             ${_getEmojisData2()}
@@ -35938,8 +35954,10 @@ export function getEmojis() {
     return parsedEmojis;
 }
 
-export function getCategories() {
+/** @param {TranslateFn} [translate] */
+export function getCategories(translate) {
     if (!parsedCategories) {
+        translateWith(translate);
         parsedCategories = JSON.parse(_getCategories());
     }
     return parsedCategories;
