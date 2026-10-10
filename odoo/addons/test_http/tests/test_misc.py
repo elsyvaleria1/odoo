@@ -634,6 +634,40 @@ class TestHttpCorsCredentials(TestHttpBase):
 
 
 @tagged("post_install", "-at_install")
+class TestHttpRawQueryOctets(TestHttpBase):
+    def _get_raw(self, target: bytes) -> bytes:
+        port = self.http_port()
+        cookies = "; ".join(f"{k}={v}" for k, v in self.opener.cookies.items())
+        head = (
+            b"GET "
+            + target
+            + b" HTTP/1.1\r\n"
+            + (
+                f"Host: {HOST}:{port}\r\nCookie: {cookies}\r\nConnection: close\r\n\r\n"
+            ).encode()
+        )
+        with socket.create_connection((HOST, port)) as sock:
+            sock.settimeout(10)
+            sock.sendall(head)
+            buf = b""
+            while chunk := sock.recv(65536):
+                buf += chunk
+        return buf
+
+    def test_a_raw_non_utf8_query_octet_is_read_percent_encoded(self):
+        with self.allow_requests(), self.assertNoLogs("odoo", "ERROR"):
+            raw = self._get_raw(b"/test_http/echo-http-get?q=\xe9&a=1")
+        self.assertTrue(raw.startswith(b"HTTP/1.1 200 "), raw[:200])
+        self.assertIn(b"{'q': '%E9', 'a': '1'}", raw)
+
+    def test_a_raw_utf8_query_reads_as_its_characters(self):
+        with self.allow_requests():
+            raw = self._get_raw("/test_http/echo-http-get?q=é".encode())
+        self.assertTrue(raw.startswith(b"HTTP/1.1 200 "), raw[:200])
+        self.assertIn("{'q': 'é'}".encode(), raw)
+
+
+@tagged("post_install", "-at_install")
 class TestHttpBodyBudget(TestHttpBase):
     def _post_dripping(self, body: bytes, pause: float) -> bytes:
         port = self.http_port()

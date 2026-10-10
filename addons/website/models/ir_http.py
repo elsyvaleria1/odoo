@@ -472,10 +472,15 @@ class IrHttp(models.AbstractModel):
         query = request.httprequest.query_string.decode("utf-8")
         req_page_with_qs = f"{req_page}?{query}" if query else req_page
         Rewrite = request.env["website.rewrite"].sudo()
+        if req_page != "/" and req_page.endswith("/"):
+            # a slashed URL is matched as spelled: its slashless twin, which a
+            # page or a route may still serve, is judged after the slash
+            # redirect, or /x/ would follow a stale rule for /x that /x ignores
+            sources = (req_page_with_qs, req_page)
+        else:
+            sources = Rewrite._get_redirect_source_urls(req_page, req_page_with_qs)
         domain = Domain("redirect_type", "in", ("301", "302")) & Domain(
-            "url_from",
-            "in",
-            Rewrite._get_redirect_source_urls(req_page, req_page_with_qs),
+            "url_from", "in", sources
         )
         return Rewrite.search(
             domain & Domain("website_id", "=", request.website.id),
@@ -504,7 +509,7 @@ class IrHttp(models.AbstractModel):
             return website_page
 
         # before the trailing-slash redirect: a rule written for /old/ answers
-        # /old/ in one hop, not through /old
+        # /old/ in one hop, not through /old (see _serve_redirect)
         redirect = cls._serve_redirect()
         if redirect:
             target = redirect.url_to

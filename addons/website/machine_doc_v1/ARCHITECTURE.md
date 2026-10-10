@@ -75,9 +75,11 @@ ir.http._dispatch  (models/ir_http.py — website=True routes)
 Route match (website.rewrite 308/404 are routing-map rules)
    / _serve_fallback, first hit wins:
    ├─ website.page hit?    → _serve_page
-   ├─ 301/302 rule hit?    → _serve_redirect, matched on the routed path;
-   │                         a target with no language prefix is followed
-   │                         in the visitor's language
+   ├─ 301/302 rule hit?    → _serve_redirect, matched on the routed path
+   │                         (a slashed one only as spelled: its twin is
+   │                         judged after the slash redirect); a target
+   │                         with no language prefix is followed in the
+   │                         visitor's language
    └─ path ends in "/"?    → _serve_without_trailing_slash (301)
    _serve_page:
                               │

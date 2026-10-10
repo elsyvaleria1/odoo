@@ -2,6 +2,7 @@ import contextlib
 import functools
 import logging
 import math
+import re
 import threading
 import time
 from collections.abc import Callable, Iterable
@@ -89,6 +90,7 @@ def _prepare_proxy_fix(hops: int) -> ProxyFix_:
 _UNSET = object()
 
 _URI_PATH_SAFE = "/:@!$&'()*+,;="
+_NON_ASCII = re.compile(r"[^\x00-\x7f]")
 
 
 @functools.lru_cache(maxsize=4096)
@@ -405,11 +407,25 @@ class Application:
                 remote_addr=environ.get("REMOTE_ADDR"),
             )
 
+    def _apply_ascii_query_string(self, environ: dict[str, object]) -> None:
+        # The transport accepts a raw octet over 0x7f in the target (obs-text);
+        # QUERY_STRING carries it as a latin-1 character, and werkzeug's args,
+        # like every query_string.decode() of the addons, decodes it as strict
+        # UTF-8: a 500 on any route that reads a parameter. Percent-encoded it
+        # unquotes to the same bytes, and werkzeug keeps an invalid sequence
+        # percent-encoded instead of raising.
+        query = environ.get("QUERY_STRING")
+        if not isinstance(query, str) or query.isascii():
+            return
+        quoted = _NON_ASCII.sub(lambda m: f"%{ord(m[0]):02X}", query)
+        environ["QUERY_STRING"] = quoted
+        _debug.logic("http.query_string.quoted", query=quoted)
+
     def _apply_request_uri(self, environ: dict[str, object]) -> None:
         # The request target as the client sent it. PEP 3333 does not define
         # it, the transport and werkzeug's server set it, and a caller reading
-        # the original URI after a reroute (website's redirects and canonical
-        # URL) must not depend on which server, or test builder, ran it.
+        # the original URI after a reroute (website's canonical URL) must not
+        # depend on which server, or test builder, ran it.
         if "REQUEST_URI" in environ:
             return
         uri = environ.get("RAW_URI")
@@ -570,6 +586,7 @@ class Application:
     ) -> Iterable[bytes]:
         self._clear_thread_state()
         self._apply_proxy_fix(environ)
+        self._apply_ascii_query_string(environ)
         self._apply_request_uri(environ)
 
         httprequest = HTTPRequest(environ)

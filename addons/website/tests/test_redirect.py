@@ -506,6 +506,14 @@ class TestWebsiteRedirectFallback(HttpCase):
         self._rule("/challenge-slashed/")
         self.assertURLEqual(self._location("/challenge-slashed/"), "/contactus")
 
+    def test_a_slashed_url_goes_to_its_live_page_not_to_a_stale_rule(self):
+        website = self.env.ref("website.default_website")
+        page = website.with_context(website_id=website.id).new_page("challenge-live")
+        self.env["website.page"].browse(page["page_id"]).is_published = True
+        self._rule(page["url"])
+        self.assertURLEqual(self._location(page["url"] + "/"), page["url"])
+        self.assertEqual(self.url_open(page["url"]).status_code, 200)
+
     def test_an_unmatched_slashed_url_still_drops_its_slash(self):
         self.assertURLEqual(
             self._location("/fr/challenge-nothing/?q=1"), "/fr/challenge-nothing?q=1"

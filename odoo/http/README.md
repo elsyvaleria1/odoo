@@ -76,7 +76,11 @@ body may still read an upload the reroute handed over. `REQUEST_URI`, the
 request target as the client sent it, is guaranteed on the environ (`RAW_URI`,
 else the quoted path and query): PEP 3333 does not define it, the transport and
 werkzeug's server set it, and website reads the original URI through it after a
-reroute.
+reroute. `QUERY_STRING` is made ASCII first: the transport accepts a raw octet
+over 0x7f in the target, and werkzeug's `args`, like every
+`query_string.decode()`, decodes it as strict UTF-8, so such a query would 500
+any route reading a parameter. It is percent-encoded instead, which unquotes to
+the same bytes.
 
 When the database cannot be reached (`RegistryError`), the entry point tells a
 database that is gone from one that is out of reach for now. Gone (not in the
