@@ -21,7 +21,7 @@ class ImStatusController(http.Controller):
         user.manual_im_status = False if status == "online" else status
         _debug.lifecycle("manual_im_status", user=user.id, status=status)
         user._bus_send(
-            "bus.bus/im_status_updated",
+            "mail.presence/im_status_updated",
             {
                 "debounce": False,
                 "im_status": user.partner_id.im_status,

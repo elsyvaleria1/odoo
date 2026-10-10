@@ -126,6 +126,8 @@ class TestInvalidDatabase(WebsocketCase):
         req.db = self.env.registry.db_name
         req.ws = MagicMock()
         req.ws._session = MagicMock()
+        req.ws.new_env.return_value.cr.closed = False
+        req.ws.new_env.return_value.cr.commit_count = 0
         registry = self.env.registry
         reloaded = MagicMock(db_name=registry.db_name)
 

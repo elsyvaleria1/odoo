@@ -26,7 +26,7 @@ from odoo.tools.image import (
 from odoo.tools.misc import file_open
 
 from ..models.ir_attachment import SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_IMAGE_MIMETYPES
-from odoo.addons.html_editor.tools import get_video_url_data
+from odoo.addons.html_editor.tools import collaboration_channel, get_video_url_data
 from odoo.addons.iap.tools import iap_tools
 from odoo.addons.mail.tools import link_preview
 
@@ -809,13 +809,7 @@ class HTML_Editor(http.Controller):
         document._check_field_access(field, "read")
         document._check_field_access(field, "write")
 
-        channel = (
-            request.db,
-            "editor_collaboration",
-            model_name,
-            field_name,
-            int(res_id),
-        )
+        channel = collaboration_channel(request.db, model_name, field_name, res_id)
         bus_data.update(
             {"model_name": model_name, "field_name": field_name, "res_id": res_id}
         )

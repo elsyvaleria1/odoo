@@ -25,8 +25,8 @@ export class ImStatusService {
         this.busService.addEventListener("BUS:RECONNECT", () =>
             this.updateBusPresence(),
         );
-        this.busService.subscribe("bus.bus/im_status_updated", (payload) => {
-            log.pipeline("bus.bus/im_status_updated", () => payload);
+        this.busService.subscribe("mail.presence/im_status_updated", (payload) => {
+            log.pipeline("mail.presence/im_status_updated", () => payload);
             this.onImStatusUpdated(payload);
         });
         this.presence.bus.addEventListener("presence", () => {

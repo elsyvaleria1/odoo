@@ -754,7 +754,10 @@ class TestFrameCodec(BaseCase):
 
         sock.recv = ticking_recv
 
-        with self.assertRaises(ConnectionClosedError):
+        with (
+            self.assertRaises(ConnectionClosedError),
+            self.assertLogs("odoo.addons.bus.websocket", "WARNING"),
+        ):
             while True:
                 list(ws._read_messages())
                 ws._check_frame_deadline()

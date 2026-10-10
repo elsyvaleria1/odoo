@@ -28,6 +28,9 @@
         "views/device_menu.xml",
     ],
     "assets": {
+        "web.assets_unit_tests": [
+            "device_gps_geoengine/static/tests/**/*",
+        ],
         "web.assets_backend": [
             "device_gps_geoengine/static/src/geoengine_device_trail.js",
             "device_gps_geoengine/static/src/geoengine_device_trail.xml",

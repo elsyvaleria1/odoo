@@ -22,6 +22,7 @@ from odoo.tools import SQL
 from odoo.tools.json import json_default
 
 from ..tools.websocket_codec import ConnectionState
+from odoo.addons.base.models.ir_cron import ODOO_NOTIFY_FUNCTION
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -32,8 +33,6 @@ MAX_DISPATCHER_RETRY_DELAY = 50
 DEFAULT_GC_RETENTION_SECONDS = 60 * 60 * 24
 GC_MESSAGES_BATCH_SIZE = 10000
 NOTIFICATION_HOLD_BACK_SECONDS = 10
-
-ODOO_NOTIFY_FUNCTION = os.getenv("ODOO_NOTIFY_FUNCTION", "pg_notify")
 
 
 def get_notify_payload_max_length(default=8000):

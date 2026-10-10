@@ -26,6 +26,7 @@ class TestTerminateTeardownRobustness(BaseCase):
                 side_effect=PoolError("pool exhausted during teardown"),
             ),
             patch("odoo.addons.bus.websocket.dispatch"),
+            self.assertLogs("odoo.addons.bus.websocket", "WARNING"),
         ):
             ws._terminate()
             ws._teardown()
@@ -40,6 +41,7 @@ class TestTerminateTeardownRobustness(BaseCase):
                 side_effect=PoolError("pool exhausted"),
             ),
             patch("odoo.addons.bus.websocket.dispatch"),
+            self.assertLogs("odoo.addons.bus.websocket", "WARNING"),
         ):
             ws._handle_transport_error(OSError("connection reset"))
             ws._teardown()
@@ -72,6 +74,8 @@ class TestTerminateTeardownRobustness(BaseCase):
     def test_on_websocket_closed_invoked_on_happy_path(self):
         ws = self._make_ws()
         env = MagicMock()
+        env.cr.closed = False
+        env.cr.commit_count = 0
 
         @contextmanager
         def fake_acquire_cursor(db):

@@ -370,6 +370,15 @@ Knobs, read from the environment:
 | `ODOO_WEBSOCKET_DRAIN_TIMEOUT` | `3 s` | how long a stopping process waits for its websockets to answer the `1001` it sent each before it cuts them |
 | `ODOO_WEBSOCKET_DB_THREADS` | `max(2, pool - 2 x HTTP threads - listeners)`, the pool being `db_maxconn_gevent` or `db_maxconn` | threads running websocket database work (messages, notification dispatch, open and close hooks); a job waits for one rather than racing the HTTP threads for a connection |
 | `ODOO_WEBSOCKET_MAX_CONNECTIONS` | `10000` | websockets one process holds, counted from the handshake; past it the handshake is answered `503` with `Retry-After: 5` before any `101`. `0` is unbounded |
+| `ODOO_BUS_TRUSTED_ORIGINS` | empty | comma-separated origins whose websocket handshakes keep the browser's session. Any other cross-origin handshake -- every page of a site embedding the live chat -- is served as the public user |
+| `ODOO_NOTIFY_FUNCTION` | `pg_notify` | the SQL function `bus` and the cron trigger send their `NOTIFY` through, for a connection pooler that needs a wrapper |
+| `ODOO_NOTIFY_PAYLOAD_MAX_LENGTH` | `8000` | bytes per `imbus` `NOTIFY` payload: a commit's channels are split across payloads under it, and a single channel past it is dropped and logged |
+
+A notification row lives `bus.gc_retention_seconds` (a system setting, default
+`86400` s) for clients that reconnect late; past it, a client whose last id is
+gone is told its page is out of date. `/websocket/health` answers `200`
+`{"status": "pass"}` while the process's notification dispatcher runs, `503`
+once it died -- the probe for a load balancer in front of the websocket port.
 
 **What the parser refuses**, each with the connection closed: conflicting
 `Content-Length`, whitespace before a header colon, obsolete line folding,

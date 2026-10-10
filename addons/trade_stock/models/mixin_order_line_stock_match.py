@@ -300,8 +300,7 @@ class MixinOrderLineStockMatch(models.AbstractModel):
             )
             for order_line, move, excess in over_transferred
         )
-        self.env["bus.bus"]._sendone(
-            self.env.user.partner_id,
+        self.env.user._bus_send(
             "simple_notification",
             {
                 "type": "warning",

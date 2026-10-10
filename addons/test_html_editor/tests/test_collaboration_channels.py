@@ -1,4 +1,3 @@
-from odoo.exceptions import AccessDenied
 from odoo.tests import TransactionCase, new_test_user, tagged
 
 from odoo.addons.bus.tests.common import channel_keys
@@ -52,12 +51,17 @@ class TestCollaborationChannels(TransactionCase):
             keys,
         )
 
-    def test_public_user_is_denied(self):
+    def test_public_user_is_refused_the_channel_alone(self):
         public = self.env.ref("base.public_user")
-        with self.assertRaises(AccessDenied):
-            self.env["ir.websocket"].with_user(public)._get_bus_channels(
-                [self._channel()],
-            )
+        keys = self._subscribe(public, [self._channel(), ("custom", "channel")])
+        self.assertFalse(self._editor_channels(keys))
+        self.assertIn(("custom", "channel"), keys)
+
+    def test_an_unknown_model_is_refused_alone(self):
+        keys = self._subscribe(
+            self.admin, [self._channel(model="no.such.model"), self._channel()]
+        )
+        self.assertEqual(len(self._editor_channels(keys)), 1)
 
     def test_user_without_document_access_is_skipped(self):
         keys = self._subscribe(self.plain, [self._channel()])

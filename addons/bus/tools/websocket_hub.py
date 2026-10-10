@@ -107,12 +107,13 @@ class DbExecutor:
         return dropped
 
     def wait_idle(self, deadline: float) -> bool:
-        while self._clock() < deadline:
-            with self._cond:
-                if not self.busy and not self._jobs:
-                    return True
-            time.sleep(0.01)
-        return False
+        with self._cond:
+            while self.busy or self._jobs:
+                remaining = deadline - self._clock()
+                if remaining <= 0:
+                    return False
+                self._cond.wait(remaining)
+            return True
 
     def _next(self):
         with self._cond:
@@ -152,6 +153,8 @@ class DbExecutor:
                 me.name = idle_name
                 with self._cond:
                     self.busy -= 1
+                    if not self.busy and not self._jobs:
+                        self._cond.notify_all()
 
 
 class WebsocketHub:

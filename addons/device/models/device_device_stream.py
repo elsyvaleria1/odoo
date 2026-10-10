@@ -138,7 +138,3 @@ class DeviceDeviceStream(models.Model):
         self.check_singleton()
         connection_state = self._STREAM_STATES.get(state, "error")
         self._set_connection_state(connection_state, message or False)
-        self._bus_send(
-            "device_status",
-            {"connection_state": connection_state, "device_id": self.id},
-        )

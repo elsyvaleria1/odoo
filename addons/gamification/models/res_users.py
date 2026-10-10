@@ -247,16 +247,7 @@ class ResUsers(models.Model):
         :param notif_type: one of 'badge', 'streak', 'level_up', 'achievement'.
         :param data: notification payload (title, message, etc.).
         """
-        bus = self.env["bus.bus"]
-        for user in self:
-            bus._sendone(
-                user.partner_id,
-                "gamification/notification",
-                {
-                    "type": notif_type,
-                    **data,
-                },
-            )
+        self._bus_send("gamification/notification", {"type": notif_type, **data})
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:

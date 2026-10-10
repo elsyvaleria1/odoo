@@ -58,8 +58,7 @@ class IrActionsServer(models.Model):
                 )
 
             if self.env.user.active:
-                self.env["bus.bus"]._sendone(
-                    self.env.user.partner_id,
+                self.env.user._bus_send(
                     "ai_document.auto_sort_notification",
                     {
                         "message": str(error),
@@ -80,8 +79,7 @@ class IrActionsServer(models.Model):
                 "ai_run_outcome", by="success", tools=len(tool_calls_history)
             )
 
-            self.env["bus.bus"]._sendone(
-                self.env.user.partner_id,
+            self.env.user._bus_send(
                 "ai_document.auto_sort_notification",
                 {
                     "message": message,

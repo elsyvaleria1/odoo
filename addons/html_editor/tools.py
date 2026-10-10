@@ -231,6 +231,10 @@ def get_video_thumbnail(video_url):
 diverging_history_regex = 'data-last-history-steps="([0-9,]+)"'
 
 
+def collaboration_channel(dbname, model_name, field_name, res_id) -> tuple:
+    return (dbname, "editor_collaboration", model_name, field_name, int(res_id))
+
+
 def handle_history_divergence(record, html_field_name, vals) -> None:
     if html_field_name not in vals:
         return
@@ -242,12 +246,8 @@ def handle_history_divergence(record, html_field_name, vals) -> None:
     def _notify_bus(last_step_id):
         if not request:
             return
-        channel = (
-            request.db,
-            "editor_collaboration",
-            record._name,
-            html_field_name,
-            record.id,
+        channel = collaboration_channel(
+            request.db, record._name, html_field_name, record.id
         )
         bus_data = {
             "model_name": record._name,

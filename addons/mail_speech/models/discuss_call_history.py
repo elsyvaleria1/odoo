@@ -1,11 +1,4 @@
-from __future__ import annotations
-
-import typing
-
 from odoo import fields, models
-
-if typing.TYPE_CHECKING:
-    from odoo.addons.base.models.ir_attachment import IrAttachment
 
 
 class DiscussCallHistory(models.Model):
@@ -26,19 +19,3 @@ class DiscussCallHistory(models.Model):
         help="Where the current recording starts in this call's timeline: the "
         "recorder counts from zero, the timeline does not.",
     )
-
-    def _on_media_fully_transcribed(self) -> None:
-        super()._on_media_fully_transcribed()
-        for history in self:
-            history.channel_id._bus_send(
-                "discuss.call.history/transcribed",
-                {"id": history.id, "transcript": history.timeline_transcript},
-            )
-
-    def _on_media_transcribed(self, attachment: IrAttachment) -> None:
-        super()._on_media_transcribed(attachment)
-        for history in self:
-            history.channel_id._bus_send(
-                "discuss.call.history/segment_transcribed",
-                {"id": history.id, "attachment_id": attachment.id},
-            )

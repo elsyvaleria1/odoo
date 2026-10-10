@@ -188,7 +188,7 @@ class MailPresence(models.Model):
             else {"partner_id": guest_or_user.partner_id.id}
         )
         (bus_target or guest_or_user)._bus_send(
-            "bus.bus/im_status_updated",
+            "mail.presence/im_status_updated",
             {
                 "presence_status": status,
                 "im_status": guest_or_user.im_status,

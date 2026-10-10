@@ -73,11 +73,14 @@ class TestBusGC(TransactionCase):
                 mock_logger.warning.assert_called_once()
             self.assertEqual(self.env["bus.bus"].search_count([]), 2)
 
-        with freeze_time(
-            _utcnow() + timedelta(seconds=DEFAULT_GC_RETENTION_SECONDS + 1)
+        with (
+            freeze_time(
+                _utcnow() + timedelta(seconds=DEFAULT_GC_RETENTION_SECONDS + 1)
+            ),
+            self.assertLogs("odoo.addons.bus.models.bus", "WARNING"),
         ):
             self.env["bus.bus"]._gc_messages()
-            self.assertEqual(self.env["bus.bus"].search_count([]), 1)
+        self.assertEqual(self.env["bus.bus"].search_count([]), 1)
 
     def test_non_numeric_gc_retention_falls_back_to_default(self):
         self.env["ir.config_parameter"].set_param(
@@ -95,11 +98,14 @@ class TestBusGC(TransactionCase):
                 self.assertEqual(warned_value, "not_a_number")
             self.assertEqual(self.env["bus.bus"].search_count([]), 2)
 
-        with freeze_time(
-            _utcnow() + timedelta(seconds=DEFAULT_GC_RETENTION_SECONDS + 1)
+        with (
+            freeze_time(
+                _utcnow() + timedelta(seconds=DEFAULT_GC_RETENTION_SECONDS + 1)
+            ),
+            self.assertLogs("odoo.addons.bus.models.bus", "WARNING"),
         ):
             self.env["bus.bus"]._gc_messages()
-            self.assertEqual(self.env["bus.bus"].search_count([]), 1)
+        self.assertEqual(self.env["bus.bus"].search_count([]), 1)
 
     def test_collecting_every_old_message_keeps_the_last_id(self):
         self._create_two_bus_messages()

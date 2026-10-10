@@ -56,6 +56,14 @@ class IrWebsocket(models.AbstractModel):
                 "spreadsheet_channel_refused", reason="unknown_model", model=model_name
             )
             return None
+        if not isinstance(self.env[model_name], self.pool["mixin.spreadsheet"]):
+            # Raising here would fail the whole subscription of the worker.
+            _debug.logic(
+                "spreadsheet_channel_refused",
+                reason="not_a_spreadsheet",
+                model=model_name,
+            )
+            return None
         if len(params) == 4:
             access_token = params[3]
         else:

@@ -31,7 +31,7 @@ class TestIrWebsocket(WebsocketCase):
         self.env["mail.presence"]._update_presence(bob)
         self.trigger_notification_dispatching([(bob.partner_id, "presence")])
         message = json_loads(websocket.recv())[0]["message"]
-        self.assertEqual(message["type"], "bus.bus/im_status_updated")
+        self.assertEqual(message["type"], "mail.presence/im_status_updated")
         self.assertEqual(message["payload"]["im_status"], "online")
         self.assertEqual(message["payload"]["presence_status"], "online")
         self.assertEqual(message["payload"]["partner_id"], bob.partner_id.id)
@@ -40,7 +40,7 @@ class TestIrWebsocket(WebsocketCase):
             self.env["mail.presence"]._update_presence(bob, (AWAY_TIMER + 1) * 1000)
             self.trigger_notification_dispatching([(bob.partner_id, "presence")])
             message = json_loads(websocket.recv())[0]["message"]
-            self.assertEqual(message["type"], "bus.bus/im_status_updated")
+            self.assertEqual(message["type"], "mail.presence/im_status_updated")
             self.assertEqual(message["payload"]["im_status"], "away")
             self.assertEqual(message["payload"]["presence_status"], "away")
             self.assertEqual(message["payload"]["partner_id"], bob.partner_id.id)
@@ -49,7 +49,7 @@ class TestIrWebsocket(WebsocketCase):
             self.env["mail.presence"]._update_presence(bob)
             self.trigger_notification_dispatching([(bob.partner_id, "presence")])
             message = json_loads(websocket.recv())[0]["message"]
-            self.assertEqual(message["type"], "bus.bus/im_status_updated")
+            self.assertEqual(message["type"], "mail.presence/im_status_updated")
             self.assertEqual(message["payload"]["im_status"], "online")
             self.assertEqual(message["payload"]["presence_status"], "online")
             self.assertEqual(message["payload"]["partner_id"], bob.partner_id.id)
@@ -84,7 +84,7 @@ class TestIrWebsocket(WebsocketCase):
             bus_record.channel,
             json_dump(channel_with_db(self.env.cr.dbname, bob.partner_id)),
         )
-        self.assertEqual(notification["message"]["type"], "bus.bus/im_status_updated")
+        self.assertEqual(notification["message"]["type"], "mail.presence/im_status_updated")
         self.assertEqual(notification["message"]["payload"]["im_status"], "online")
         self.assertEqual(
             notification["message"]["payload"]["presence_status"], "online"
@@ -113,7 +113,7 @@ class TestIrWebsocket(WebsocketCase):
             bus_record.channel,
             json_dump(channel_with_db(self.env.cr.dbname, bob.partner_id)),
         )
-        self.assertEqual(notification["message"]["type"], "bus.bus/im_status_updated")
+        self.assertEqual(notification["message"]["type"], "mail.presence/im_status_updated")
         self.assertEqual(notification["message"]["payload"]["im_status"], "away")
         self.assertEqual(notification["message"]["payload"]["presence_status"], "away")
         self.assertEqual(

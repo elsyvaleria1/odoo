@@ -49,7 +49,7 @@ class TestMailPresence(WebsocketCase, MailCommon):
             ),
         )
         self.assertEqual(
-            notifications[0]["message"]["type"], "bus.bus/im_status_updated"
+            notifications[0]["message"]["type"], "mail.presence/im_status_updated"
         )
         self.assertEqual(notifications[0]["message"]["payload"]["im_status"], "online")
         self.assertEqual(

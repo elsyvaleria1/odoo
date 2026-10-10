@@ -30,6 +30,7 @@ from odoo.http import (
     root,
 )
 from odoo.libs.debug_log import DebugLog
+from odoo.libs.worker_thread import working_on_database
 from odoo.modules.registry import Registry
 from odoo.service import (
     get_env_float,
@@ -641,7 +642,10 @@ class Websocket:
 
     def _run_job(self, job) -> None:
         try:
-            job()
+            # A job thread serves every database's connections: its log lines
+            # name the one it works for now.
+            with working_on_database(self._db):
+                job()
         except Exception as exc:
             self._handle_transport_error(exc)
         finally:
@@ -903,7 +907,7 @@ class Websocket:
         if self._hub is not None and self._hub.stopping:
             return
         try:
-            with acquire_cursor(self._db) as cr:
+            with working_on_database(self._db), acquire_cursor(self._db) as cr:
                 env = self.new_env(cr, self._session)
                 retrying(
                     functools.partial(
@@ -1566,9 +1570,10 @@ def _answer_round(members, key, poll_round, now) -> tuple:
 
 def _run_batch(hub, key, members, poll_round, woken_at) -> None:
     try:
-        notifications, truncated, expired = _answer_round(
-            members, key, poll_round, members[0]._clock()
-        )
+        with working_on_database(key[0]):
+            notifications, truncated, expired = _answer_round(
+                members, key, poll_round, members[0]._clock()
+            )
         frame = Frame(Opcode.TEXT, notifications)
         data = encode_frame(frame) if notifications else None
     except Exception:

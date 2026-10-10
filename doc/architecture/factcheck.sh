@@ -260,6 +260,16 @@ def bus_constant(name, module="websocket.py"):
     raise LookupError(name)
 
 
+def bus_notify_payload_default():
+    import ast
+
+    tree = ast.parse((pages / "../../addons/bus/models/bus.py").read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == "get_notify_payload_max_length":
+            return node.args.defaults[0].value
+    raise LookupError("get_notify_payload_max_length")
+
+
 def contains(label, text):
     print(f"OK|{label}" if text in deployment else f"BAD|deployment.md does not state {label} ({text!r})")
 
@@ -298,6 +308,8 @@ for label, text in {
     "websocket drain timeout": f"| `ODOO_WEBSOCKET_DRAIN_TIMEOUT` | `{bus_constant('DRAIN_TIMEOUT'):g} s` |",
     "websocket drain timeout in prose": f"`ODOO_WEBSOCKET_DRAIN_TIMEOUT`\n({bus_constant('DRAIN_TIMEOUT'):g} s)",
     "websocket lane depth": f"at most {bus_constant('LANE_DEPTH')} queued frames",
+    "notify payload cap": f"| `ODOO_NOTIFY_PAYLOAD_MAX_LENGTH` | `{bus_notify_payload_default()}` |",
+    "bus gc retention": f"default\n`{bus_constant('DEFAULT_GC_RETENTION_SECONDS', 'models/bus.py')}` s)",
     "websocket send buffer": f"kernel send buffer is capped at {bus_constant('SEND_BUFFER') // 1024} KiB",
     "websocket write buffer limit": f"more than {bus_constant('WRITE_BUFFER_LIMIT') // 1024} KiB its client has not read",
     "websocket outbound limit": f"while the process holds {bus_constant('OUTBOUND_LIMIT', 'tools/websocket_hub.py') // MIB} MiB",

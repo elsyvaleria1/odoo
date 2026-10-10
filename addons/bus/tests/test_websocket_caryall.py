@@ -592,7 +592,7 @@ class TestWebsocketCaryall(WebsocketCase):
             patch.object(Websocket, "_terminate", terminate_wrapper),
         ):
             ws = self.websocket_connect(ping_after_connect=False)
-            ws.send(b"\x00")
+            ws.send_binary(b"\x00")
             self.assertTrue(
                 disconnect_done_event.wait(timeout=5),
                 "Server should have initiated the closing handshake as the keep alive timeout is exceeded.",
