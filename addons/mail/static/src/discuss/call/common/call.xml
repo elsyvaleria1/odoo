@@ -66,6 +66,7 @@
             </div>
             <CallParticipantCard
                 t-if="this.channel.videoCount > 0 and this.insetCard"
+                t-key="this.insetCard.key"
                 cardData="this.insetCard"
                 className="'o-discuss-Call-mainCardStyle o-bg-black'"
                 thread="this.channel"

@@ -754,14 +754,18 @@ export class Rtc extends Record {
             channel: channel?.id,
             current: this.state.channel?.id,
         }));
-        if (channel.eq(this.state.channel)) {
+        const isCurrent = channel.eq(this.state.channel);
+        // an invitation timing out while a join or leave is in flight must not
+        // release that request's guard nor forget the session it is leaving
+        const holdsGuard = isCurrent || !this.state.hasPendingRequest;
+        const leavingSession = isCurrent ? this.localSession : undefined;
+        if (isCurrent) {
             this.store.fullscreenChannel = null;
+            this._leavingSessionId = leavingSession?.id;
         }
-        this.state.hasPendingRequest = true;
-        const leavingSession = channel.eq(this.state.channel)
-            ? this.localSession
-            : undefined;
-        this._leavingSessionId = leavingSession?.id;
+        if (holdsGuard) {
+            this.state.hasPendingRequest = true;
+        }
         const endLeave = log.perf("rpcLeaveCall");
         try {
             await this.rpcLeaveCall(channel, leavingSession);
@@ -769,8 +773,12 @@ export class Rtc extends Record {
         } catch {
             endLeave({ channel: channel?.id, failed: true });
         } finally {
-            this.state.hasPendingRequest = false;
-            this._leavingSessionId = undefined;
+            if (holdsGuard) {
+                this.state.hasPendingRequest = false;
+            }
+            if (isCurrent) {
+                this._leavingSessionId = undefined;
+            }
         }
         this.endCall(channel);
     }
@@ -1327,9 +1335,14 @@ export class Rtc extends Record {
                 message: error?.message,
             }));
         }
-        browser.setTimeout(() => {
-            this.updateVideoDownload(session);
-        }, 2000);
+        browser.clearTimeout(this.downloadTimeouts.get(session.id));
+        this.downloadTimeouts.set(
+            session.id,
+            browser.setTimeout(() => {
+                this.downloadTimeouts.delete(session.id);
+                this.updateVideoDownload(session);
+            }, 2000),
+        );
     }
     /** @param {Extract<import("./peer_to_peer_types").PeerUpdate, {name: "recovery"}>["payload"]} payload */
     _onNetworkRecovery(payload) {

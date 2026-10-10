@@ -1515,6 +1515,75 @@ test("the server ending the session being left is not reported as a disconnectio
     expect(".o_notification").toHaveCount(0);
 });
 
+test("an invitation timing out during a leave keeps that leave's guard and session", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    const otherChannelId = pyEnv["discuss.channel"].create({ name: "Other" });
+    /** @type {() => void} */
+    let releaseLeave;
+    /** @type {Promise<void>} */
+    const leaveReleased = new Promise((resolve) => (releaseLeave = () => resolve()));
+    onRpc("/mail/rtc/channel/leave_call", async (request) => {
+        const { params } = await request.clone().json();
+        if (params.channel_id === channelId) {
+            await leaveReleased;
+        }
+    });
+    await start();
+    await openDiscuss(channelId);
+    await click("[title='Start Call']");
+    await contains(".o-discuss-Call");
+    const rtc = getService("discuss.rtc");
+    const sessionId = rtc.localSession.id;
+    const leave = rtc.leaveCall();
+    const otherChannel = getService("mail.store")["discuss.channel"].insert({
+        id: otherChannelId,
+    });
+    await rtc.leaveCall(otherChannel);
+    expect(rtc.state.hasPendingRequest).toBe(true);
+    expect(rtc._leavingSessionId).toBe(sessionId);
+    releaseLeave();
+    await leave;
+    expect(rtc.state.hasPendingRequest).toBe(false);
+    expect(rtc._leavingSessionId).toBe(undefined);
+});
+
+test("leaving cancels the download update a received track scheduled", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    await start();
+    await openDiscuss(channelId);
+    await click("[title='Start Call']");
+    await contains(".o-discuss-Call");
+    const rtc = getService("discuss.rtc");
+    const store = getService("mail.store");
+    const session = store["discuss.channel.rtc.session"].insert({
+        id: 101,
+        channel_member_id: {
+            id: 1101,
+            channel_id: store["discuss.channel"].insert({ id: channelId }),
+            partner_id: { id: 2101, name: "P101" },
+        },
+    });
+    await rtc._onNetworkTrack({
+        sessionId: session.id,
+        type: "camera",
+        track: createVideoStream().getVideoTracks()[0],
+        active: true,
+    });
+    await rtc.leaveCall();
+    await animationFrame();
+    const updates = [];
+    patchWithCleanup(rtc, {
+        updateVideoDownload(rtcSession) {
+            updates.push(rtcSession.id);
+            return super.updateVideoDownload(...arguments);
+        },
+    });
+    await advanceTime(2_000);
+    expect(updates).toEqual([]);
+});
+
 test("deafening without a microphone track still reaches the peers", async () => {
     patchWithCleanup(browser.navigator.mediaDevices, {
         async getUserMedia(constraints) {
@@ -1563,4 +1632,46 @@ test("undeafening keeps a deliberate mute", async () => {
     const selfSession = getService("discuss.rtc").selfSession;
     expect(selfSession.is_muted).toBe(true);
     expect(selfSession.is_deaf).toBe(false);
+});
+
+test("focusing another screen share moves the inset card's video download with it", async () => {
+    const pyEnv = await startServer();
+    const channelId = pyEnv["discuss.channel"].create({ name: "General" });
+    await start();
+    await openDiscuss(channelId);
+    await click("[title='Start Call']");
+    await contains(".o-discuss-Call");
+    const store = getService("mail.store");
+    const channel = store["discuss.channel"].insert({ id: channelId });
+    const [sessionA, sessionB] = [101, 102].map((id) => {
+        const session = store["discuss.channel.rtc.session"].insert({
+            id,
+            channel_member_id: {
+                id: 1000 + id,
+                channel_id: channel,
+                partner_id: { id: 2000 + id, name: `P${id}` },
+            },
+            is_screen_sharing_on: true,
+            is_camera_on: true,
+        });
+        session.videoStreams.set("screen", new MediaStream());
+        session.videoStreams.set("camera", new MediaStream());
+        session.mainVideoStreamType = "screen";
+        return session;
+    });
+    channel.rtc_session_ids.add(sessionA, sessionB);
+    await animationFrame();
+    const unfocusedCounts = [
+        sessionA.videoComponentCount,
+        sessionB.videoComponentCount,
+    ];
+    channel.activeRtcSession = sessionA;
+    await contains(".o-discuss-CallParticipantCard.o-inset");
+    channel.activeRtcSession = sessionB;
+    await animationFrame();
+    channel.activeRtcSession = undefined;
+    await contains(".o-discuss-CallParticipantCard.o-inset", { count: 0 });
+    expect([sessionA.videoComponentCount, sessionB.videoComponentCount]).toEqual(
+        unfocusedCounts,
+    );
 });

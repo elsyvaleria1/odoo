@@ -182,24 +182,32 @@ export class LocalMediaController {
     async _applyBlurToStream(sourceStream, settings) {
         this.blurManager?.close();
         this.blurManager = undefined;
+        const selfSession = this.hooks.getSelfSession();
+        let timeout;
         try {
             this.blurManager = await this.applyBlurEffect(sourceStream);
             const blurredStream = await Promise.race([
                 this.blurManager.stream,
-                new Promise((_, reject) =>
-                    browser.setTimeout(
+                new Promise((_, reject) => {
+                    timeout = browser.setTimeout(
                         () => reject(new Error(_t("Blur is unavailable"))),
                         10_000,
-                    ),
-                ),
+                    );
+                }),
             ]);
             return blurredStream.getVideoTracks()[0];
         } catch (_e) {
-            this.hooks.notify(_e.message);
-            settings.setUseBlur(false);
             this.blurManager?.close();
             this.blurManager = undefined;
+            // leaving closes the manager, which rejects its stream: no reason to
+            // turn the user's blur preference off
+            if (this.hooks.getSelfSession() === selfSession) {
+                this.hooks.notify(_e.message);
+                settings.setUseBlur(false);
+            }
             return sourceStream.getVideoTracks()[0];
+        } finally {
+            browser.clearTimeout(timeout);
         }
     }
     /**
@@ -304,7 +312,15 @@ export class LocalMediaController {
             }
         }
         if (settings.useBlur && type === "camera") {
+            const selfSession = this.hooks.getSelfSession();
             outputTrack = await this._applyBlurToStream(sourceStream, settings);
+            if (this.hooks.getSelfSession() !== selfSession) {
+                log.logic("setVideo discards stream: left while blurring");
+                this.blurManager?.close();
+                this.blurManager = undefined;
+                closeStream(sourceStream);
+                return;
+            }
         } else if (!settings.useBlur && type === "camera") {
             this.blurManager?.close();
             this.blurManager = undefined;
@@ -372,6 +388,8 @@ export class LocalMediaController {
         }));
         this.state.micAudioTrack?.stop();
         this.state.micAudioTrack = undefined;
+        this.state.disconnectAudioMonitor?.();
+        this.state.disconnectAudioMonitor = undefined;
         if (
             this.state.audioTrack &&
             this.state.audioTrack !== this.state.screenAudioTrack

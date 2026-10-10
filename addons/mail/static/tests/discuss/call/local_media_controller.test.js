@@ -1,8 +1,9 @@
 // @ts-check
+import { MockBlurManager } from "@mail/../tests/discuss/call/mock_blur_manager";
 import { defineMailModels, mockGetMedia } from "@mail/../tests/mail_test_helpers";
 import { LocalMediaController } from "@mail/discuss/call/common/local_media_controller";
 import { describe, expect, test } from "@odoo/hoot";
-import { advanceTime } from "@odoo/hoot-mock";
+import { advanceTime, Deferred, tick } from "@odoo/hoot-mock";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
 
@@ -220,4 +221,89 @@ test("a reused camera source track toggles the video once when it ends", async (
     await advanceTime(10);
     expect(steps.toggles).toEqual([["camera", { force: false }]]);
     controller.dispose();
+});
+
+/**
+ * @param {(sourceStream: MediaStream) => Promise<MockBlurManager>} build
+ * @returns {MockBlurManager[]}
+ */
+function patchBlurEffect(build) {
+    const managers = [];
+    patchWithCleanup(LocalMediaController.prototype, {
+        async applyBlurEffect(sourceStream) {
+            const manager = await build(sourceStream);
+            managers.push(manager);
+            return manager;
+        },
+    });
+    return managers;
+}
+
+/** @param {LocalMediaController} controller */
+function leaveCall(controller) {
+    controller.hooks.getSelfSession = () => undefined;
+    controller.dispose();
+}
+
+test("leaving while the blur loads releases the camera and builds no pipeline", async () => {
+    const streams = mockGetMedia();
+    const { controller, state, settings } = makeController();
+    settings.useBlur = true;
+    const blurSettings = [];
+    settings.setUseBlur = (useBlur) => blurSettings.push(useBlur);
+    const loaded = new Deferred();
+    const managers = patchBlurEffect(async (sourceStream) => {
+        await loaded;
+        return new MockBlurManager(sourceStream);
+    });
+    const setVideo = controller.setVideo(undefined, "camera", { activateVideo: true });
+    await tick();
+    leaveCall(controller);
+    loaded.resolve();
+    await setVideo;
+    expect(streams[0].getVideoTracks()[0].readyState).toBe("ended");
+    expect(state.cameraTrack).toBe(undefined);
+    expect(state.sendCamera).toBe(false);
+    expect(managers.map((manager) => manager.closed)).toEqual([true]);
+    expect(controller.blurManager).toBe(undefined);
+    expect(blurSettings).toEqual([]);
+});
+
+test("leaving while the blurred stream is pending keeps the blur preference", async () => {
+    const streams = mockGetMedia();
+    const { controller, state, settings } = makeController();
+    settings.useBlur = true;
+    const blurSettings = [];
+    settings.setUseBlur = (useBlur) => blurSettings.push(useBlur);
+    patchBlurEffect(async (sourceStream) => {
+        const manager = new MockBlurManager(sourceStream);
+        const stream = new Deferred();
+        manager.stream = stream;
+        const close = manager.close;
+        manager.close = () => {
+            close.call(manager);
+            stream.reject(new Error("closed"));
+        };
+        return manager;
+    });
+    const setVideo = controller.setVideo(undefined, "camera", { activateVideo: true });
+    await tick();
+    leaveCall(controller);
+    await setVideo;
+    expect(streams[0].getVideoTracks()[0].readyState).toBe("ended");
+    expect(state.cameraTrack).toBe(undefined);
+    expect(state.sendCamera).toBe(false);
+    expect(blurSettings).toEqual([]);
+});
+
+test("a mic track that ends disconnects the voice activation monitor", async () => {
+    mockGetMedia();
+    const { controller, state } = makeController();
+    await controller.resetMicAudioTrack({ force: true });
+    const disconnects = [];
+    state.disconnectAudioMonitor = () => disconnects.push("disconnect");
+    state.micAudioTrack.dispatchEvent(new Event("ended"));
+    await advanceTime(10);
+    expect(disconnects).toEqual(["disconnect"]);
+    expect(state.disconnectAudioMonitor).toBe(undefined);
 });
