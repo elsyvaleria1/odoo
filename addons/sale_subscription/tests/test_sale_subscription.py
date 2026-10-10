@@ -3970,21 +3970,28 @@ class TestSubscription(TestSubscriptionCommon, MockEmail):
         a product template.
         """
         product = self.product_tmpl_2
-        product_attribute = self.env["product.attribute"].create(
-            {
-                "name": "Color",
-                "value_ids": [
-                    Command.create({"name": name}) for name in ("Blue", "Red")
-                ],
-            }
+        product_attributes = self.env["product.attribute"].create(
+            [
+                {
+                    "name": attribute_name,
+                    "value_ids": [
+                        Command.create({"name": name}) for name in value_names
+                    ],
+                }
+                for attribute_name, value_names in (
+                    ("Color", ("Blue", "Red")),
+                    ("Size", ("S", "M")),
+                )
+            ]
         )
-        product.attribute_line_ids = 2 * [
+        product.attribute_line_ids = [
             Command.create(
                 {
                     "attribute_id": product_attribute.id,
                     "value_ids": product_attribute.value_ids.ids,
                 }
             )
+            for product_attribute in product_attributes
         ]
         for i, variant in enumerate(product.product_variant_ids, start=1):
             self.env["product.pricelist.item"].create(

@@ -19,8 +19,6 @@ FEATURE_FLAG_MENUS = {
 
 MENUS_THE_ROLE_MAY_SEE_ALONE = {
     "sale.menu_sale_report",
-    "account.menu_action_account_payments_receivable",
-    "account.menu_action_account_payments_payable",
 }
 
 
@@ -210,24 +208,15 @@ class TestSaleGroupReadonly(TransactionCase):
 
     def test_role_outranks_a_salesperson_only_where_intended(self) -> None:
         menu_model = self.env["ir.ui.menu"]
-        visible_readonly = menu_model.with_user(
-            self.user_readonly
-        )._get_visible_menu_ids()
-        visible_salesman = menu_model.with_user(
-            self.user_salesman
-        )._get_visible_menu_ids()
+        visible_readonly = self._reachable_menu_ids(self.user_readonly)
+        visible_salesman = self._reachable_menu_ids(self.user_salesman)
         allowed_roots = [
-            menu.id
-            for menu in (
-                self.env.ref(xmlid, raise_if_not_found=False)
-                for xmlid in MENUS_THE_ROLE_MAY_SEE_ALONE
-            )
-            if menu
+            self.env.ref(xmlid).id for xmlid in MENUS_THE_ROLE_MAY_SEE_ALONE
         ]
         allowed = set(menu_model.search([("id", "child_of", allowed_roots)]).ids)
         unexpected = sorted(
             menu_model.browse(menu_id).complete_name
-            for menu_id in set(visible_readonly) - set(visible_salesman) - allowed
+            for menu_id in visible_readonly - visible_salesman - allowed
         )
         self.assertFalse(
             unexpected,
@@ -287,6 +276,12 @@ class TestSaleGroupReadonly(TransactionCase):
             if row.for_write or row.for_create or row.for_unlink
         ]
         self.assertFalse(writable, f"these rows are not read-only: {sorted(writable)}")
+
+    def _reachable_menu_ids(self, user) -> set[int]:
+        # a menu that passes its own gate under a parent the user cannot open
+        # is in _get_visible_menu_ids but never on screen: compare what loads
+        menus = self.env["ir.ui.menu"].with_user(user).load_menus(False)
+        return {menu_id for menu_id in menus if menu_id != "root"}
 
     def _tier_acl_rows(self):
         rows = self.env["ir.access"].search(
