@@ -94,6 +94,22 @@ export class BankRecStatementLine extends KanbanRecord {
         this.record.load();
     }
 
+    async acceptPartnerSuggestion() {
+        log.logic("acceptPartnerSuggestion", () => ({
+            resId: this.recordData.id,
+            partnerId: this.recordData.suggested_partner_id.id,
+        }));
+        await this.orm.call(
+            "account.bank.statement.line",
+            "action_accept_partner_suggestion",
+            [this.recordData.id],
+        );
+        await this.bankReconciliation.reloadAfterPartnerSet(
+            this.record,
+            this.model.root.records,
+        );
+    }
+
     async undoReconciliation() {
         log.logic("undoReconciliation", () => ({ resId: this.props.record.resId }));
         await this.orm.call(
@@ -235,6 +251,17 @@ export class BankRecStatementLine extends KanbanRecord {
 
     get partner() {
         return this.recordData.partner_id;
+    }
+
+    get suggestedPartner() {
+        return this.partner ? false : this.recordData.suggested_partner_id;
+    }
+
+    get partnerSuggestionSource() {
+        const source = this.recordData.partner_suggestion_source;
+        return this.record.fields.partner_suggestion_source.selection.find(
+            ([value]) => value === source,
+        )?.[1];
     }
 
     get hasForeignCurrencyAndSameCurrencyForAllLines() {

@@ -227,6 +227,17 @@ export class BankReconciliationService {
         endReload({ records: records.length });
     }
 
+    async reloadAfterPartnerSet(statementLine, records) {
+        const partnerName = statementLine.data.partner_name;
+        await this.reloadRecords(
+            partnerName
+                ? records.filter((record) => record.data.partner_name === partnerName)
+                : [statementLine],
+        );
+        await this.computeReconcileLineCountPerPartnerId(records);
+        this.reloadChatter();
+    }
+
     get statementLineMove() {
         return this.chatterState.statementLine?.data.move_id;
     }

@@ -16,6 +16,24 @@ COUNTERPARTY_KEY_MIN_PRECEDENTS = 2
 # name is as strong as the name lookup that runs before it.
 PARTNER_NAME_MIN_PRECEDENTS = 1
 COUNTERPARTY_KEY_PRECEDENTS_READ = 3
+PARTNER_SUGGESTION_SOURCES = [
+    (
+        "name_precedent_unreviewed",
+        "Earlier transactions with this name, not yet reviewed",
+    ),
+    (
+        "counterparty_unreviewed",
+        "Earlier transactions with this label, not yet reviewed",
+    ),
+    (
+        "name_precedent_open",
+        "Open transactions with this name, partner set by hand",
+    ),
+    (
+        "counterparty_open",
+        "Open transactions with this label, partner set by hand",
+    ),
+]
 
 
 class AccountBankStatementLine(models.Model):
@@ -30,6 +48,42 @@ class AccountBankStatementLine(models.Model):
         "blanked, unless the statement format knows a better identifier. A new "
         "transaction takes the partner of the earlier ones carrying the same key.",
     )
+    suggested_partner_id = fields.Many2one(
+        comodel_name="res.partner",
+        string="Suggested Partner",
+        copy=False,
+        readonly=True,
+        ondelete="set null",
+        check_company=True,
+        help="A partner the earlier transactions point at without anyone having "
+        "confirmed them. It is only shown: matching and reconciliation models "
+        "read the partner, never the suggestion.",
+    )
+    partner_suggestion_source = fields.Selection(
+        selection=PARTNER_SUGGESTION_SOURCES,
+        string="Suggested From",
+        copy=False,
+        readonly=True,
+    )
+    is_partner_manual = fields.Boolean(
+        string="Partner Set by Hand",
+        copy=False,
+        readonly=True,
+        help="Someone chose the partner of this transaction after it was "
+        "created, rather than the import, a partner lookup or a reconciliation "
+        "model giving it. Only such a partner, on a transaction still open, "
+        "suggests a partner to the later ones.",
+    )
+
+    def write(self, vals):
+        if "partner_id" in vals:
+            vals = {"is_partner_manual": bool(vals["partner_id"]), **vals}
+            if vals["partner_id"]:
+                vals |= {
+                    "suggested_partner_id": False,
+                    "partner_suggestion_source": False,
+                }
+        return super().write(vals)
 
     @api.depends("payment_ref")
     def _compute_counterparty_key(self) -> None:
@@ -136,12 +190,30 @@ class AccountBankStatementLine(models.Model):
             if (partner_id := self._first_unambiguous_partner(row, ranks))
         }
 
-    def _partners_by_precedents(self, key_field, min_precedents) -> dict:
+    def _get_precedent_condition(self, precedents) -> SQL:
+        match precedents:
+            case "reviewed":
+                return SQL("st_line.is_reconciled IS TRUE AND move.checked IS TRUE")
+            case "reconciled":
+                return SQL("st_line.is_reconciled IS TRUE")
+            case "open":
+                # creating a line never marks its partner manual, so neither
+                # the asking lines nor the batch imported with them count
+                return SQL(
+                    "st_line.is_reconciled IS NOT TRUE AND st_line.is_partner_manual IS TRUE"
+                )
+            case _:
+                raise ValueError(precedents)
+
+    def _partners_by_precedents(
+        self, key_field, min_precedents, precedents="reviewed"
+    ) -> dict:
         lines = self.filtered(key_field)
         _debug.pipeline(
             "precedents_lookup_started",
             stline=self,
             key_field=key_field,
+            precedents=precedents,
             with_key=len(lines),
         )
         if not lines:
@@ -160,12 +232,10 @@ class AccountBankStatementLine(models.Model):
                   FROM account_bank_statement_line st_line
                   JOIN res_partner partner ON partner.id = st_line.partner_id
                   JOIN account_move move ON move.id = st_line.move_id
-                 WHERE st_line.is_reconciled = TRUE
+                 WHERE %(condition)s
                    AND %(key)s = ANY(%(keys)s)
                    AND st_line.company_id = ANY(%(company_ids)s)
                    AND partner.active
-                   -- a match still awaiting review is a guess, not a precedent
-                   AND move.checked IS TRUE
             )
             SELECT MIN(partner_id) AS partner_id,
                    company_id,
@@ -177,6 +247,7 @@ class AccountBankStatementLine(models.Model):
                AND COUNT(*) >= %(minimum)s
         """,
             key=key,
+            condition=self._get_precedent_condition(precedents),
             keys=list(set(lines.mapped(key_field))),
             company_ids=lines.company_id.ids,
             read=COUNTERPARTY_KEY_PRECEDENTS_READ,
@@ -190,6 +261,7 @@ class AccountBankStatementLine(models.Model):
             "precedents_resolved",
             stline=self,
             key_field=key_field,
+            precedents=precedents,
             unanimous_keys=len(by_key),
         )
         return {
@@ -208,6 +280,30 @@ class AccountBankStatementLine(models.Model):
             "counterparty_key", COUNTERPARTY_KEY_MIN_PRECEDENTS
         )
 
+    @_debug.perf.timed
+    def _partners_by_unreviewed_earlier_transactions(self) -> dict:
+        return self._partners_by_precedents(
+            "partner_name", PARTNER_NAME_MIN_PRECEDENTS, precedents="reconciled"
+        )
+
+    @_debug.perf.timed
+    def _partners_by_unreviewed_counterparty_key(self) -> dict:
+        return self._partners_by_precedents(
+            "counterparty_key", COUNTERPARTY_KEY_MIN_PRECEDENTS, precedents="reconciled"
+        )
+
+    @_debug.perf.timed
+    def _partners_by_open_earlier_transactions(self) -> dict:
+        return self._partners_by_precedents(
+            "partner_name", PARTNER_NAME_MIN_PRECEDENTS, precedents="open"
+        )
+
+    @_debug.perf.timed
+    def _partners_by_open_counterparty_key(self) -> dict:
+        return self._partners_by_precedents(
+            "counterparty_key", COUNTERPARTY_KEY_MIN_PRECEDENTS, precedents="open"
+        )
+
     def _get_partner_lookups(self) -> list:
         """Return the names of the partner lookups, most trusted first.
 
@@ -220,6 +316,22 @@ class AccountBankStatementLine(models.Model):
             "_partners_by_transaction_name",
             "_partners_by_earlier_transactions",
             "_partners_by_counterparty_key",
+        ]
+
+    def _get_partner_suggestion_lookups(self) -> list:
+        """Return the lookups that only suggest a partner, with the source each
+        records, most trusted first.
+
+        They run on the lines no lookup of ``_get_partner_lookups`` settled.
+        """
+        return [
+            (
+                "_partners_by_unreviewed_earlier_transactions",
+                "name_precedent_unreviewed",
+            ),
+            ("_partners_by_unreviewed_counterparty_key", "counterparty_unreviewed"),
+            ("_partners_by_open_earlier_transactions", "name_precedent_open"),
+            ("_partners_by_open_counterparty_key", "counterparty_open"),
         ]
 
     def _set_partner_from_transaction(self) -> None:
@@ -240,11 +352,65 @@ class AccountBankStatementLine(models.Model):
                 decided_count=len(decided),
             )
             for partner_id, st_line_ids in decided.items():
-                self.browse(st_line_ids).partner_id = partner_id
+                self.browse(st_line_ids).write(
+                    {"partner_id": partner_id, "is_partner_manual": False}
+                )
 
             lines = lines.filtered(lambda st_line: not st_line.partner_id)
             if not lines:
                 return
+
+        lines._suggest_partner_from_transaction()
+
+    def _suggest_partner_from_transaction(self) -> None:
+        suggestions = {}
+        pending = self
+        for lookup, source in self._get_partner_suggestion_lookups():
+            found = getattr(pending, lookup)()
+            _debug.logic(
+                "_suggest_partner_from_transaction",
+                lookup=lookup,
+                source=source,
+                lines_count=len(pending),
+                suggested_count=len(found),
+            )
+            for st_line_id, partner_id in found.items():
+                suggestions[st_line_id] = (partner_id, source)
+            pending -= self.browse(list(found))
+            if not pending:
+                break
+
+        by_suggestion = defaultdict(list)
+        for st_line in self:
+            current = (
+                st_line.suggested_partner_id.id,
+                st_line.partner_suggestion_source,
+            )
+            wanted = suggestions.get(st_line.id, (False, False))
+            if current != wanted:
+                by_suggestion[wanted].append(st_line.id)
+        for (partner_id, source), st_line_ids in by_suggestion.items():
+            self.browse(st_line_ids).write(
+                {
+                    "suggested_partner_id": partner_id,
+                    "partner_suggestion_source": source,
+                }
+            )
+
+    def action_accept_partner_suggestion(self) -> None:
+        for partner, st_lines in (
+            self.filtered(
+                lambda st_line: st_line.suggested_partner_id and not st_line.partner_id
+            )
+            .grouped("suggested_partner_id")
+            .items()
+        ):
+            _debug.logic(
+                "action_accept_partner_suggestion",
+                stline=st_lines,
+                partner=partner,
+            )
+            st_lines.set_partner_bank_statement_line(partner.id)
 
     def _get_blacklisted_partners(self):
         partners = self.env.ref("base.partner_root")
@@ -275,10 +441,10 @@ class AccountBankStatementLine(models.Model):
                 & Domain("partner_id", "=", False)
             )
 
-        (all_statement_lines - self).move_id._track_set_author(
-            self.env.ref("base.partner_root")
-        )
-        all_statement_lines.with_context(
-            force_delete=True, skip_readonly_check=True
-        ).partner_id = partner_id
+        same_name_lines = all_statement_lines - self
+        same_name_lines.move_id._track_set_author(self.env.ref("base.partner_root"))
+        for st_lines, is_partner_manual in ((self, True), (same_name_lines, False)):
+            st_lines.with_context(force_delete=True, skip_readonly_check=True).write(
+                {"partner_id": partner_id, "is_partner_manual": is_partner_manual}
+            )
         all_statement_lines._try_auto_reconcile_statement_lines()

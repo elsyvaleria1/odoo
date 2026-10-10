@@ -83,23 +83,10 @@ export class BankRecButtonList extends Component {
             "set_partner_bank_statement_line",
             [this.statementLineData.id, partner_id],
         );
-        const recordsToLoad = [];
-        if (this.statementLineData.partner_name) {
-            recordsToLoad.push(
-                ...this.model.root.records.filter(
-                    (record) =>
-                        record.data.partner_name ===
-                        this.statementLineData.partner_name,
-                ),
-            );
-        } else {
-            recordsToLoad.push(this.props.statementLine);
-        }
-        await this.bankReconciliation.reloadRecords(recordsToLoad);
-        await this.bankReconciliation.computeReconcileLineCountPerPartnerId(
+        await this.bankReconciliation.reloadAfterPartnerSet(
+            this.props.statementLine,
             this.model.root.records,
         );
-        this.bankReconciliation.reloadChatter();
         this.restoreFocus();
     }
 

@@ -501,7 +501,9 @@ class AccountBankStatementLine(models.Model):
                 st_lines=sum(len(ids) for ids in mapped.values()),
             )
         for mapped_partner_id, st_line_ids in mapped.items():
-            self.browse(st_line_ids).partner_id = mapped_partner_id
+            self.browse(st_line_ids).write(
+                {"partner_id": mapped_partner_id, "is_partner_manual": False}
+            )
             _logger.info(
                 "try_auto_reconcile - partner mapping done for st_lines: %s and partner %s",
                 st_line_ids,

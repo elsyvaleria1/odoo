@@ -55,6 +55,7 @@
                                           t-out="this.recordData.payment_ref"
                                     />
                                 </span>
+                                <t t-call="account.BankRecStatementLine.PartnerSuggestion"/>
                             </div>
                             <div class="o_button_line d-none d-md-flex align-items-start">
                                 <BankRecButtonList t-props="this.buttonListProps" suspenseAccountLine="this.suspenseAccountLine" t-if="!this.recordData.is_reconciled or (this.userCanReview and !this.recordData.checked)"/>
@@ -88,9 +89,10 @@
                             <div class="d-none d-md-block" t-else=""/>                        </div>
 
                         <div class="o_row d-md-none">
-                            <span class="text-truncate o_payment_ref"
-                                  t-out="this.recordData.payment_ref"
-                            />
+                            <div class="text-truncate o_payment_ref">
+                                <span t-out="this.recordData.payment_ref"/>
+                                <t t-call="account.BankRecStatementLine.PartnerSuggestion"/>
+                            </div>
                         </div>
                         <t t-if="this.isUnfolded or !this.recordData.is_reconciled">
                             <t t-foreach="this.linesToReconcile" t-as="line" t-key="line_index">
@@ -118,5 +120,17 @@
                 </div>
             </article>
         </xpath>
+    </t>
+
+    <t t-name="account.BankRecStatementLine.PartnerSuggestion">
+        <div t-if="this.suggestedPartner" class="o_partner_suggestion text-wrap text-muted" name="partner_suggestion">
+            <i class="fa-regular fa-lightbulb me-1" role="img" aria-label="Suggestion"/>
+            <span>Suggested partner:</span>
+            <span class="fw-bold ms-1" t-out="this.suggestedPartner.display_name" name="suggested_partner_name"/>
+            <button type="button" class="btn btn-link p-0 ms-2 align-baseline o_accept_partner_suggestion" t-on-click.stop="this.acceptPartnerSuggestion">
+                Use this partner
+            </button>
+            <span class="ms-2 fst-italic" t-if="this.partnerSuggestionSource" t-out="this.partnerSuggestionSource" name="partner_suggestion_source"/>
+        </div>
     </t>
 </templates>

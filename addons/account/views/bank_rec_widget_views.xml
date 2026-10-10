@@ -223,6 +223,10 @@
                         name="auto_reconciled"
                         string="Matched Automatically"
                         domain="[('auto_reconcile_rule', '!=', False)]" />
+                    <filter
+                        name="partner_suggested"
+                        string="Partner Suggested"
+                        domain="[('suggested_partner_id', '!=', False)]" />
                     <separator />
                     <filter
                         name="no_statement"
@@ -296,6 +300,8 @@
                     <field name="checked" />
                     <field name="currency_id" />
                     <field name="partner_id" />
+                    <field name="suggested_partner_id" />
+                    <field name="partner_suggestion_source" />
                     <field name="amount" />
                     <field name="amount_currency" />
                     <field name="date" />
@@ -340,6 +346,8 @@
                         readonly="is_reconciled and amount != 0"
                         required="1" />
                     <field name="partner_id" readonly="is_reconciled and amount != 0" />
+                    <field name="suggested_partner_id" optional="hide" />
+                    <field name="partner_suggestion_source" optional="hide" />
                     <field name="account_number" optional="hide" />
                     <field
                         name="narration"

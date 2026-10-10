@@ -180,6 +180,8 @@ class TestBankStatementMatchingFixes(TestBankRecWidgetCommon):
             -12.0, payment_ref="another wire", partner_name="QQX TRANSFER NINE"
         )
         self.assertFalse(later.partner_id)
+        self.assertEqual(later.suggested_partner_id, self.partner_a)
+        self.assertEqual(later.partner_suggestion_source, "name_precedent_unreviewed")
 
     def test_reviewed_precedents_teach_a_partner_by_name(self):
         for index in range(2):
