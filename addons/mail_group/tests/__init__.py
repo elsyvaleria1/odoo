@@ -4,3 +4,4 @@ from . import test_mail_group_message
 from . import test_mail_group_moderation
 from . import test_mail_group_links
 from . import test_mail_group_ui
+from . import test_replies_pager

@@ -11,7 +11,12 @@ from odoo.tools.misc import get_lang
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.portal.controllers.portal import pager as portal_pager
-from odoo.addons.web.controllers.utils import Fragment, fragments_or_redirect
+from odoo.addons.web.controllers.utils import (
+    Fragment,
+    fragments_or_redirect,
+    render_fragments,
+    wants_fragments,
+)
 
 _lt = LazyTranslate(__name__)
 
@@ -224,20 +229,27 @@ class PortalMailGroup(http.Controller):
 
     @http.route(
         '/groups/<model("mail.group"):group>/<model("mail.group.message"):message>/get_replies',
-        type="jsonrpc",
+        type="http",
         auth="public",
         methods=["POST"],
         website=True,
     )
-    def group_message_get_replies(self, group, message, last_displayed_id, **post):
+    def group_message_get_replies(self, group, message, last_displayed_id=None, **post):
         if group != message.mail_group_id:
             raise werkzeug.exceptions.NotFound
+        try:
+            last_displayed_id = int(last_displayed_id)
+        except TypeError, ValueError:
+            raise werkzeug.exceptions.NotFound from None
+        if not wants_fragments():
+            slug = request.env["ir.http"]._slug
+            return request.redirect(f"/groups/{slug(group)}/{slug(message)}")
 
         replies_domain = Domain.AND(
             [
                 self._get_domain_not_rejected(),
                 [
-                    ("id", ">", int(last_displayed_id)),
+                    ("id", ">", last_displayed_id),
                     ("group_message_parent_id", "=", message.id),
                 ],
             ]
@@ -248,22 +260,29 @@ class PortalMailGroup(http.Controller):
             .sudo()
         )
         message_count = request.env["mail.group.message"].search_count(replies_domain)
-
-        if not replies_sudo:
-            return None
-
         message_sudo = message.sudo()
-
         self._generate_attachments_access_token(message_sudo | replies_sudo)
 
-        values = {
-            "group": group,
-            "parent_message": message_sudo,
-            "messages": replies_sudo,
-            "msg_more_count": message_count - self._replies_per_page,
-            "replies_per_page": self._replies_per_page,
-        }
-        return request.env["ir.qweb"]._render("mail_group.messages_short", values)
+        # the page answers the row that asked for it: its replies, and the row
+        # for the page after, under a key of its own
+        key = f"mail_group.replies.{message.id}.{last_displayed_id}"
+        return request.prepare_json_response(
+            render_fragments(
+                request.env,
+                Fragment(
+                    "mail_group.replies_page",
+                    {
+                        "fragment_key": key,
+                        "group": group,
+                        "parent_message": message_sudo,
+                        "messages": replies_sudo,
+                        "msg_more_count": message_count - self._replies_per_page,
+                        "replies_per_page": self._replies_per_page,
+                    },
+                    key=key,
+                ),
+            )
+        )
 
     # csrf=False: a mail client posts the one-click unsubscribe; auth="receiver" admits it
     @http.route(

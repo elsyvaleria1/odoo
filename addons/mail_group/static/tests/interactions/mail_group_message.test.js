@@ -5,12 +5,13 @@ import {
     setupInteractionWhiteList,
     startInteractions,
 } from "@web/../tests/public/helpers";
-import { onRpc } from "@web/../tests/web_test_helpers";
+import { patchWithCleanup } from "@web/../tests/web_test_helpers";
+import { browser } from "@web/core/browser/browser";
 
 setupInteractionWhiteList([
     "mail_group.mail_group_message",
     "mail_group.mail_group_toggle",
-    "mail_group.mail_group_read_more",
+    "web.fragment_form",
 ]);
 describe.current.tags("interaction_dev");
 
@@ -58,11 +59,52 @@ function message(id, body = "", replies = "") {
  */
 function messagesShort(items, lastId) {
     const more = lastId
-        ? `<p><button class="btn btn-link o_mg_read_more"
-                data-href="${REPLIES_ROUTE}"
-                data-last-displayed-id="${lastId}">more replies</button></p>`
+        ? `<div class="d-contents" data-fragment="mail_group.replies.1.${lastId}">
+                <form method="post" action="${REPLIES_ROUTE}" data-fragment-form="">
+                    <input type="hidden" name="last_displayed_id" value="${lastId}"/>
+                    <button type="submit" class="btn btn-link o_mg_read_more">more replies</button>
+                </form>
+            </div>`
         : "";
     return `<div><ul class="list-unstyled">${items}</ul>${more}</div>`;
+}
+
+/**
+ * What the route answers a row: its page of replies, under the key of the
+ * row that asked.
+ *
+ * @param {(lastId: string) => string} page the replies rendered after lastId
+ */
+function serveReplies(page) {
+    const fetch = browser.fetch;
+    patchWithCleanup(browser, {
+        fetch: async (url, init) => {
+            if (
+                new URL(String(url), browser.location.href).pathname !== REPLIES_ROUTE
+            ) {
+                return fetch(url, init);
+            }
+            const lastId = /** @type {FormData} */ (init.body).get("last_displayed_id");
+            expect.step(`post ${new URL(String(url)).pathname} after ${lastId}`);
+            return /** @type {Response} */ ({
+                ok: true,
+                status: 200,
+                headers: new Headers({ "Content-Type": "application/json" }),
+                json: async () => ({
+                    fragments: [
+                        {
+                            key: `mail_group.replies.1.${lastId}`,
+                            html: `<div class="d-contents" data-fragment="mail_group.replies.1.${lastId}">${page(lastId)}</div>`,
+                            swap: "morph",
+                        },
+                    ],
+                    events: [],
+                    redirect: null,
+                    data: {},
+                }),
+            });
+        },
+    });
 }
 
 const page = (inner) => `<div class="col-lg-9 o_mg_message">
@@ -70,48 +112,44 @@ const page = (inner) => `<div class="col-lg-9 o_mg_message">
     </div>`;
 
 describe("read more replies", () => {
-    test("appends the next page and replaces the button with the next one", async () => {
-        onRpc(REPLIES_ROUTE, async (request) => {
-            const { params } = JSON.parse(
-                new TextDecoder("utf-8").decode(await request.arrayBuffer()),
-            );
-            expect.step(`last_displayed_id=${params.last_displayed_id}`);
-            return messagesShort(message(3) + message(4), 4);
-        });
+    test("the row asks for the replies after it, and gives way to them and the next row", async () => {
+        serveReplies(() => messagesShort(message(3) + message(4), 4));
         await startInteractions(page(messagesShort(message(1) + message(2), 2)));
 
         await click(".o_mg_read_more");
         await animationFrame();
 
-        expect.verifySteps(["last_displayed_id=2"]);
+        expect.verifySteps([`post ${REPLIES_ROUTE} after 2`]);
         expect(
             queryAll(".o_mg_replies ul > li .o_mg_message").map(
                 (el) => el.dataset.testId,
             ),
         ).toEqual(["1", "2", "3", "4"]);
         expect(".o_mg_read_more").toHaveCount(1);
-        expect(".o_mg_read_more").toHaveAttribute("data-last-displayed-id", "4");
+        expect("input[name='last_displayed_id']").toHaveValue("4");
     });
 
     test("an inserted reply is interactive", async () => {
-        onRpc(REPLIES_ROUTE, () => messagesShort(message(3)));
+        serveReplies(() => messagesShort(message(3)));
         await startInteractions(page(messagesShort(message(1), 1)));
 
         await click(".o_mg_read_more");
         await animationFrame();
+        expect.verifySteps([`post ${REPLIES_ROUTE} after 1`]);
         await click("[data-test-id='3'] .o_mg_link_hide");
         await animationFrame();
 
         expect("[data-test-id='3'] .o_test_attachments").not.toHaveClass("d-none");
     });
 
-    test("removes the button when the server has no more replies", async () => {
-        onRpc(REPLIES_ROUTE, () => null);
+    test("the row goes when the server has no more replies", async () => {
+        serveReplies(() => "");
         await startInteractions(page(messagesShort(message(1), 1)));
 
         await click(".o_mg_read_more");
         await animationFrame();
 
+        expect.verifySteps([`post ${REPLIES_ROUTE} after 1`]);
         expect(".o_mg_read_more").toHaveCount(0);
         expect(".o_mg_replies ul > li").toHaveCount(1);
     });

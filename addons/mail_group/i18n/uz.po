@@ -1904,6 +1904,7 @@ msgstr "xabarni ko‘rib chiqish"
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.messages_short
 #, fuzzy
+#: model_terms:ir.ui.view,arch_db:mail_group.replies_more
 msgid "more replies"
 msgstr "ko‘proq javob"
 

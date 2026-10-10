@@ -1628,6 +1628,7 @@ msgstr "검토할 메시지"
 
 #. module: mail_group
 #: model_terms:ir.ui.view,arch_db:mail_group.messages_short
+#: model_terms:ir.ui.view,arch_db:mail_group.replies_more
 msgid "more replies"
 msgstr "추가 답글"
 
