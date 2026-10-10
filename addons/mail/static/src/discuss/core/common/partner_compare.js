@@ -8,28 +8,14 @@ partnerCompareRegistry.add(
      * @param {import("models").ResPartner} p1
      * @param {import("models").ResPartner} p2
      * @param {Object} params
-     * @param {import("@web/env").OdooEnv} params.env
-     * @param {{recentChatPartnerIds?: number[]}} params.context
+     * @param {{recentChatIndexByPartnerId: Map<number, number>}} params.context
      * @returns {number|undefined}
      */
-    (p1, p2, { env, context }) => {
-        const recentChatPartnerIds =
-            context.recentChatPartnerIds ||
-            env.services["mail.store"].getRecentChatPartnerIds();
-        const recentChatIndex_p1 = recentChatPartnerIds.findIndex(
-            (partnerId) => partnerId === p1.id,
-        );
-        const recentChatIndex_p2 = recentChatPartnerIds.findIndex(
-            (partnerId) => partnerId === p2.id,
-        );
-        if (recentChatIndex_p1 !== -1 && recentChatIndex_p2 === -1) {
-            return -1;
-        } else if (recentChatIndex_p1 === -1 && recentChatIndex_p2 !== -1) {
-            return 1;
-        } else if (recentChatIndex_p1 < recentChatIndex_p2) {
-            return -1;
-        } else if (recentChatIndex_p1 > recentChatIndex_p2) {
-            return 1;
+    (p1, p2, { context: { recentChatIndexByPartnerId } }) => {
+        const index1 = recentChatIndexByPartnerId.get(p1.id) ?? Infinity;
+        const index2 = recentChatIndexByPartnerId.get(p2.id) ?? Infinity;
+        if (index1 !== index2) {
+            return index1 < index2 ? -1 : 1;
         }
     },
     { sequence: 45 },

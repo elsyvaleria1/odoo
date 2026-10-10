@@ -2,32 +2,12 @@
 /** @odoo-module native */
 import { partnerCompareRegistry } from "@mail/core/common/partner_compare";
 import { cleanTerm } from "@mail/utils/common/format";
+import { byPrefixThenAlphaThenId, memoizeByItem } from "@mail/utils/common/misc";
 import { toRaw } from "@odoo/owl";
 import { loadEmoji } from "@web/components/emoji_picker";
 import { makeLogger } from "@web/core/debug/debug_logger";
 import { registry } from "@web/core/registry";
 import { fuzzyLookup } from "@web/core/utils/search";
-
-/**
- * @param {(item: any) => string} cleanedKeyFn
- * @param {string} cleanedSearchTerm
- * @returns {(a: any, b: any) => number}
- */
-function byPrefixThenAlphaThenId(cleanedKeyFn, cleanedSearchTerm) {
-    return (a, b) => {
-        const key1 = cleanedKeyFn(a);
-        const key2 = cleanedKeyFn(b);
-        const starts1 = key1.startsWith(cleanedSearchTerm);
-        const starts2 = key2.startsWith(cleanedSearchTerm);
-        if (starts1 !== starts2) {
-            return starts1 ? -1 : 1;
-        }
-        if (key1 !== key2) {
-            return key1 < key2 ? -1 : 1;
-        }
-        return a.id - b.id;
-    };
-}
 
 /** @typedef {import("@web/components/emoji_picker/emoji_picker").Emoji} Emoji */
 const log = makeLogger("mail.suggestion");
@@ -42,8 +22,8 @@ export class SuggestionService {
         this.env = env;
         this.orm = services.orm;
         this.store = services["mail.store"];
-        this.composer = services["mail.composer"];
-        this.emojis;
+        /** @type {Emoji[]|undefined} */
+        this.emojis = undefined;
     }
 
     /**
@@ -359,9 +339,27 @@ export class SuggestionService {
         return /** @type {T[]} */ ([...specials, ...regular]);
     }
 
-    /** @param {import("models").Thread} [thread] */
+    /**
+     * What the comparators would otherwise recompute on each of the sort's
+     * P·log(P) comparisons.
+     *
+     * @param {import("models").Thread} [thread]
+     */
     sortPartnerSuggestionsContext(thread) {
-        return {};
+        const followers = thread ? [...thread.followers, thread.selfFollower] : [];
+        return {
+            followerPartnerIds: new Set(
+                followers.map((follower) => follower?.partner_id?.id).filter(Boolean),
+            ),
+            cleanedName: memoizeByItem(
+                /** @param {import("models").ResPartner} partner */
+                (partner) => cleanTerm(partner.name),
+            ),
+            cleanedEmail: memoizeByItem(
+                /** @param {import("models").ResPartner} partner */
+                (partner) => cleanTerm(partner.email),
+            ),
+        };
     }
 
     /**
@@ -406,7 +404,7 @@ export class SuggestionService {
 }
 
 export const suggestionService = {
-    dependencies: ["orm", "mail.store", "mail.composer"],
+    dependencies: ["orm", "mail.store"],
     /**
      * @param {import("@web/env").OdooEnv} env
      * @param {import("services").ServiceFactories} services

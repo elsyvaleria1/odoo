@@ -143,6 +143,52 @@ export function compareDatetime(date1, date2) {
 }
 
 /**
+ * Keys starting with `prefix` first, then alphabetically.
+ *
+ * @param {string} key1
+ * @param {string} key2
+ * @param {string} prefix
+ * @returns {number} 0 for equal keys
+ */
+export function comparePrefixThenAlpha(key1, key2, prefix) {
+    const starts1 = key1.startsWith(prefix);
+    const starts2 = key2.startsWith(prefix);
+    if (starts1 !== starts2) {
+        return starts1 ? -1 : 1;
+    }
+    if (key1 !== key2) {
+        return key1 < key2 ? -1 : 1;
+    }
+    return 0;
+}
+
+/**
+ * @template T, V
+ * @param {(item: T) => V} fn
+ * @returns {(item: T) => V} `fn`, computed once per item
+ */
+export function memoizeByItem(fn) {
+    const values = new Map();
+    return (item) => {
+        if (!values.has(item)) {
+            values.set(item, fn(item));
+        }
+        return values.get(item);
+    };
+}
+
+/**
+ * @template {{id: number}} T
+ * @param {(item: T) => string} keyFn
+ * @param {string} prefix
+ * @returns {(a: T, b: T) => number}
+ */
+export function byPrefixThenAlphaThenId(keyFn, prefix) {
+    const keyOf = memoizeByItem(keyFn);
+    return (a, b) => comparePrefixThenAlpha(keyOf(a), keyOf(b), prefix) || a.id - b.id;
+}
+
+/**
  * @param {string} v1
  * @param {string} v2
  * @returns {number}

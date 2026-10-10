@@ -2,6 +2,7 @@
 /** @odoo-module native */
 import { SuggestionService } from "@mail/core/common/suggestion_service";
 import { cleanTerm } from "@mail/utils/common/format";
+import { byPrefixThenAlphaThenId } from "@mail/utils/common/misc";
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 const commandRegistry = registry.category("discuss.channel_commands");
@@ -119,34 +120,16 @@ const suggestionServicePatch = {
          * @param {ChannelCommandSuggestion} c2
          * @returns {number}
          */
+        const byName = byPrefixThenAlphaThenId(
+            /** @param {ChannelCommandSuggestion} c */
+            (c) => cleanTerm(c.name),
+            cleanedSearchTerm,
+        );
         const sortFunc = (c1, c2) => {
-            if (c1.channel_types && !c2.channel_types) {
-                return -1;
+            if (Boolean(c1.channel_types) !== Boolean(c2.channel_types)) {
+                return c1.channel_types ? -1 : 1;
             }
-            if (!c1.channel_types && c2.channel_types) {
-                return 1;
-            }
-            const cleanedName1 = cleanTerm(c1.name);
-            const cleanedName2 = cleanTerm(c2.name);
-            if (
-                cleanedName1.startsWith(cleanedSearchTerm) &&
-                !cleanedName2.startsWith(cleanedSearchTerm)
-            ) {
-                return -1;
-            }
-            if (
-                !cleanedName1.startsWith(cleanedSearchTerm) &&
-                cleanedName2.startsWith(cleanedSearchTerm)
-            ) {
-                return 1;
-            }
-            if (cleanedName1 < cleanedName2) {
-                return -1;
-            }
-            if (cleanedName1 > cleanedName2) {
-                return 1;
-            }
-            return c1.id - c2.id;
+            return byName(c1, c2);
         };
         return {
             type: "ChannelCommand",
@@ -159,7 +142,11 @@ const suggestionServicePatch = {
      */
     sortPartnerSuggestionsContext(thread) {
         return Object.assign(super.sortPartnerSuggestionsContext(...arguments), {
-            recentChatPartnerIds: this.store.getRecentChatPartnerIds(),
+            recentChatIndexByPartnerId: new Map(
+                this.store
+                    .getRecentChatPartnerIds()
+                    .map((partnerId, index) => [partnerId, index]),
+            ),
             memberPartnerIds: new Set(
                 thread?.channel?.channel_member_ids
                     .filter((member) => member.partner_id)

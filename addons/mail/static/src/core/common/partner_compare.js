@@ -1,6 +1,6 @@
 // @ts-check
 /** @odoo-module native */
-import { cleanTerm } from "@mail/utils/common/format";
+import { comparePrefixThenAlpha } from "@mail/utils/common/misc";
 import { registry } from "@web/core/registry";
 export const partnerCompareRegistry = registry.category("mail.partner_compare");
 
@@ -49,28 +49,15 @@ partnerCompareRegistry.add(
     /**
      * @param {import("models").ResPartner} p1
      * @param {import("models").ResPartner} p2
-     * @param {Object} context
-     * @param {*} context.thread
+     * @param {Object} params
+     * @param {{followerPartnerIds: Set<number>}} params.context
      * @returns {number|undefined}
      */
-    (p1, p2, { thread }) => {
-        if (thread) {
-            const followerList = [...thread.followers];
-            if (thread.selfFollower) {
-                followerList.push(thread.selfFollower);
-            }
-            const isFollower1 = followerList.some((follower) =>
-                p1.eq(follower.partner_id),
-            );
-            const isFollower2 = followerList.some((follower) =>
-                p2.eq(follower.partner_id),
-            );
-            if (isFollower1 && !isFollower2) {
-                return -1;
-            }
-            if (!isFollower1 && isFollower2) {
-                return 1;
-            }
+    (p1, p2, { context: { followerPartnerIds } }) => {
+        const isFollower1 = followerPartnerIds.has(p1.id);
+        const isFollower2 = followerPartnerIds.has(p2.id);
+        if (isFollower1 !== isFollower2) {
+            return isFollower1 ? -1 : 1;
         }
     },
     { sequence: 25 },
@@ -81,32 +68,14 @@ partnerCompareRegistry.add(
     /**
      * @param {import("models").ResPartner} p1
      * @param {import("models").ResPartner} p2
-     * @param {Object} context
-     * @param {*} context.searchTerm
+     * @param {Object} params
+     * @param {string} params.searchTerm
+     * @param {{cleanedName: (partner: import("models").ResPartner) => string}} params.context
      * @returns {number|undefined}
      */
-    (p1, p2, { searchTerm }) => {
-        const cleanedName1 = cleanTerm(p1.name);
-        const cleanedName2 = cleanTerm(p2.name);
-        if (
-            cleanedName1.startsWith(searchTerm) &&
-            !cleanedName2.startsWith(searchTerm)
-        ) {
-            return -1;
-        }
-        if (
-            !cleanedName1.startsWith(searchTerm) &&
-            cleanedName2.startsWith(searchTerm)
-        ) {
-            return 1;
-        }
-        if (cleanedName1 < cleanedName2) {
-            return -1;
-        }
-        if (cleanedName1 > cleanedName2) {
-            return 1;
-        }
-    },
+    (p1, p2, { searchTerm, context: { cleanedName } }) =>
+        comparePrefixThenAlpha(cleanedName(p1), cleanedName(p2), searchTerm) ||
+        undefined,
     { sequence: 50 },
 );
 
@@ -115,32 +84,14 @@ partnerCompareRegistry.add(
     /**
      * @param {import("models").ResPartner} p1
      * @param {import("models").ResPartner} p2
-     * @param {Object} context
-     * @param {*} context.searchTerm
+     * @param {Object} params
+     * @param {string} params.searchTerm
+     * @param {{cleanedEmail: (partner: import("models").ResPartner) => string}} params.context
      * @returns {number|undefined}
      */
-    (p1, p2, { searchTerm }) => {
-        const cleanedEmail1 = cleanTerm(p1.email);
-        const cleanedEmail2 = cleanTerm(p2.email);
-        if (
-            cleanedEmail1.startsWith(searchTerm) &&
-            !cleanedEmail2.startsWith(searchTerm)
-        ) {
-            return -1;
-        }
-        if (
-            !cleanedEmail1.startsWith(searchTerm) &&
-            cleanedEmail2.startsWith(searchTerm)
-        ) {
-            return 1;
-        }
-        if (cleanedEmail1 < cleanedEmail2) {
-            return -1;
-        }
-        if (cleanedEmail1 > cleanedEmail2) {
-            return 1;
-        }
-    },
+    (p1, p2, { searchTerm, context: { cleanedEmail } }) =>
+        comparePrefixThenAlpha(cleanedEmail(p1), cleanedEmail(p2), searchTerm) ||
+        undefined,
     { sequence: 55 },
 );
 

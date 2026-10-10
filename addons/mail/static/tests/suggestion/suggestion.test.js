@@ -1487,3 +1487,30 @@ test("keyboard selection in suggestion list survives an unrelated re-render", as
     await animationFrame();
     await contains(".o-mail-NavigableList-active", { text: "TestPartner2" });
 });
+
+test("sorting partner suggestions cleans each name once", async () => {
+    await start();
+    let nameReads = 0;
+    const partners = Array.from({ length: 200 }, (_, index) => {
+        const name = `Partner ${(index * 7919) % 200}`;
+        return {
+            id: index + 1,
+            active: true,
+            isInternalUser: true,
+            email: `p${index}@example.com`,
+            get name() {
+                nameReads++;
+                return name;
+            },
+        };
+    });
+    const sorted = getService("mail.suggestion").sortPartnerSuggestions(
+        /** @type {any} */ (partners),
+        "Partner 1",
+    );
+    expect(nameReads).toBe(200);
+    const names = sorted.map((partner) => partner.name.toLowerCase());
+    const matching = names.filter((name) => name.startsWith("partner 1"));
+    const others = names.filter((name) => !name.startsWith("partner 1"));
+    expect(names).toEqual([...matching.sort(), ...others.sort()]);
+});
