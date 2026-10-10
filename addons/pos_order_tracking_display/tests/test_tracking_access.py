@@ -88,15 +88,26 @@ class TestOrderTrackingAccess(HttpCase):
                 }
             })();
         """ % {"display": self.display.id}
-        calls = []
+        Display = type(self.display)
+        send = Display._send_orders_to_customer_display
+        notifying = []
 
         def get_pos_orders(_display):
-            # the first call renders the page: the order must come by the bus
-            calls.append(None)
-            pending = ["7031"] if len(calls) > 1 else []
+            # only what is sent can show the order: the page render gets none
+            pending = ["7031"] if notifying else []
             return {"done": [], "notDone": pending, "ordersCompletedReadyDate": {}}
 
-        with patch.object(type(self.display), "_get_pos_orders", get_pos_orders):
+        def send_orders(display):
+            notifying.append(True)
+            try:
+                return send(display)
+            finally:
+                notifying.pop()
+
+        with (
+            patch.object(Display, "_get_pos_orders", get_pos_orders),
+            patch.object(Display, "_send_orders_to_customer_display", send_orders),
+        ):
             self.browser_js(
                 f"/pos-order-tracking/?access_token={self.display._tracking_token()}",
                 code,
