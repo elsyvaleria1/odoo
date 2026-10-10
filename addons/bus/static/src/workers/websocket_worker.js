@@ -1,10 +1,10 @@
 /** @odoo-module native */
-import { debounce, Deferred, Logger } from "./bus_worker_utils.js";
+import { debounce, Deferred, Logger } from "@bus/workers/bus_worker_utils";
 import {
     CONNECTION_STATE,
     WEBSOCKET_CLOSE_CODES,
     WEBSOCKET_READY_STATE,
-} from "./websocket_worker_constants.js";
+} from "@bus/workers/websocket_worker_constants";
 
 /**
  * Type of events that can be sent from the worker to its clients.
