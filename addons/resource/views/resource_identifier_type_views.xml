@@ -11,6 +11,7 @@
                 <field name="code" />
                 <field name="pattern" />
                 <field name="unique_scope" />
+                <field name="kind_ids" widget="many2many_tags" />
             </list>
         </field>
     </record>

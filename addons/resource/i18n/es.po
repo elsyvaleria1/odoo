@@ -93,6 +93,8 @@ msgstr "Tarde"
 #: model_terms:ir.ui.view,arch_db:resource.resource_resource_form
 #: model_terms:ir.ui.view,arch_db:resource.view_resource_calendar_search
 #: model_terms:ir.ui.view,arch_db:resource.view_resource_resource_search
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
 msgid "Archived"
 msgstr "Archivado"
 
@@ -1106,6 +1108,7 @@ msgstr "Asignado a"
 #: model:ir.ui.menu,name:resource.menu_resource_assignment
 #: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_list
 #: model_terms:ir.ui.view,arch_db:resource.resource_assignment_view_search
+#: model:ir.ui.menu,name:resource.menu_asset_assignments
 msgid "Assignments"
 msgstr "Asignaciones"
 
@@ -1187,6 +1190,90 @@ msgstr "Tareas"
 #: model_terms:ir.ui.view,arch_db:resource.resource_reservation_view_search
 msgid "Work Orders"
 msgstr "Órdenes de trabajo"
+
+#. module: resource
+#: model:ir.actions.act_window,name:resource.action_resource_asset_kind
+#: model:ir.ui.menu,name:resource.menu_asset_kinds
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_kind_view_list
+msgid "Asset Kinds"
+msgstr "Clases de activo"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "Components"
+msgstr "Componentes"
+
+#. module: resource
+#: model:ir.ui.menu,name:resource.menu_asset_config
+msgid "Configuration"
+msgstr "Configuración"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_form
+msgid "Dispose"
+msgstr "Dar de baja"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "Draft"
+msgstr "Borrador"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "Held"
+msgstr "Retenido"
+
+#. module: resource
+#: model:ir.ui.menu,name:resource.menu_asset_identifier_types
+msgid "Identifier Types"
+msgstr "Tipos de identificador"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "In Service"
+msgstr "En servicio"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "Kind"
+msgstr "Clase"
+
+#. module: resource
+#: model:ir.ui.menu,name:resource.menu_asset_meters
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_form
+msgid "Meters"
+msgstr "Medidores"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_form
+msgid "Put in Service"
+msgstr "Poner en servicio"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "State"
+msgstr "Estado"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_form
+msgid "Take Out of Service"
+msgstr "Sacar de servicio"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "Unassigned"
+msgstr "Sin asignar"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_form
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "Under Maintenance"
+msgstr "En mantenimiento"
+
+#. module: resource
+#: model_terms:ir.ui.view,arch_db:resource.resource_asset_view_search
+msgid "Whole Assets"
+msgstr "Activos completos"
 
 #~ msgid "Group By"
 #~ msgstr "Agrupar por"

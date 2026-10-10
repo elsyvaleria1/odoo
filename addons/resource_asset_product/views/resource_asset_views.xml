@@ -4,14 +4,14 @@
     <record id="resource_asset_view_form_product" model="ir.ui.view">
         <field name="name">resource.asset.form.product</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
+        <field name="inherit_id" ref="resource.resource_asset_view_form" />
         <field name="arch" type="xml">
             <div name="button_box" position="inside">
                 <button
                     name="action_view_logs"
                     type="object"
                     icon="fa-book"
-                    groups="resource_asset.group_asset_user"
+                    groups="resource.group_asset_user"
                     class="oe_stat_button">
                     <field name="log_count" string="Ledger" widget="statinfo" />
                 </button>
@@ -20,13 +20,13 @@
                     type="object"
                     string="Parts"
                     icon="fa-cogs"
-                    groups="resource_asset.group_asset_user"
+                    groups="resource.group_asset_user"
                     class="oe_stat_button" />
                 <button
                     name="action_view_flagged_parts"
                     type="object"
                     icon="fa-flag"
-                    groups="resource_asset.group_asset_user"
+                    groups="resource.group_asset_user"
                     invisible="not part_flagged_count"
                     class="oe_stat_button text-danger">
                     <field
@@ -39,10 +39,7 @@
                 <field name="product_id" />
             </field>
             <page name="meters" position="after">
-                <page
-                    name="ledger"
-                    string="Ledger"
-                    groups="resource_asset.group_asset_user">
+                <page name="ledger" string="Ledger" groups="resource.group_asset_user">
                     <field name="log_ids">
                         <list>
                             <field name="date" />
@@ -62,7 +59,7 @@
     <record id="resource_asset_view_search_product" model="ir.ui.view">
         <field name="name">resource.asset.search.product</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource_asset.resource_asset_view_search" />
+        <field name="inherit_id" ref="resource.resource_asset_view_search" />
         <field name="arch" type="xml">
             <field name="kind_id" position="after">
                 <field name="product_id" />

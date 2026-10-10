@@ -22,7 +22,7 @@ class TestFleetVehicle(TransactionCase):
             {
                 "name": "Probe One",
                 "type": "consu",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
                 "manufacturer_id": cls.brand.id,
                 "seats": 5,
                 "fuel_type": "diesel",
@@ -42,7 +42,7 @@ class TestFleetVehicle(TransactionCase):
             .create(
                 {
                     "name": f"Probe {plate}",
-                    "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
+                    "kind_id": self.env.ref("resource.kind_vehicle").id,
                     "product_id": self.model.id,
                     "license_plate": plate,
                     **vals,
@@ -72,7 +72,7 @@ class TestFleetVehicle(TransactionCase):
             .create(
                 {
                     "name": "Drill",
-                    "kind_id": self.env.ref("resource_asset.kind_tool").id,
+                    "kind_id": self.env.ref("resource.kind_tool").id,
                 }
             )
             .kind_code
@@ -130,7 +130,7 @@ class TestFleetVehicle(TransactionCase):
             vehicle.message_ids.filtered(
                 lambda m: (
                     m.subtype_id
-                    == self.env.ref("resource_asset.mt_asset_operator_updated")
+                    == self.env.ref("resource_mail.mt_asset_operator_updated")
                 )
             )[:1].body,
         )
@@ -244,8 +244,8 @@ class TestVehicleIsItsOwnModel(TransactionCase):
         super().setUpClass()
         cls.Asset = cls.env["resource.resource"]
         cls.Vehicle = cls.env["resource.asset.vehicle"]
-        cls.vehicle_kind = cls.env.ref("resource_asset.kind_vehicle")
-        cls.tool_kind = cls.env.ref("resource_asset.kind_tool")
+        cls.vehicle_kind = cls.env.ref("resource.kind_vehicle")
+        cls.tool_kind = cls.env.ref("resource.kind_tool")
 
     def test_the_kind_code_is_the_only_name_the_model_needs(self):
         self.assertEqual(
@@ -352,12 +352,12 @@ class TestVehicleInheritsWhatBindsAnAsset(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.Vehicle = cls.env["resource.asset.vehicle"]
-        cls.kind = cls.env.ref("resource_asset.kind_vehicle")
+        cls.kind = cls.env.ref("resource.kind_vehicle")
         cls.other_company = cls.env["res.company"].create({"name": "Elsewhere"})
         cls.user = new_test_user(
             cls.env,
             login="vehicle_reader",
-            groups="resource_asset.group_asset_user,resource_asset_vehicle.fleet_group_user",
+            groups="resource.group_asset_user,resource_asset_vehicle.fleet_group_user",
         )
 
     def test_the_multi_company_rule_of_the_asset_binds_the_vehicle(self):
@@ -406,7 +406,7 @@ class TestFleetActionContexts(TransactionCase):
         self.assertEqual(empty, [])
 
     def test_the_vehicle_actions_default_what_they_promise(self):
-        vehicle_kind = self.env.ref("resource_asset.kind_vehicle")
+        vehicle_kind = self.env.ref("resource.kind_vehicle")
 
         vehicles = self.env.ref("resource_asset_vehicle.fleet_vehicle_action")
         models = self.env.ref("resource_asset_vehicle.fleet_vehicle_model_action")
@@ -436,7 +436,7 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
         tool = Asset.create(
             {
                 "name": "Tagged Tool",
-                "kind_id": self.env.ref("resource_asset.kind_tool").id,
+                "kind_id": self.env.ref("resource.kind_tool").id,
                 "license_plate": "TOOL-1",
             }
         )
@@ -446,7 +446,7 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
         van = Asset.create(
             {
                 "name": "Van",
-                "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
+                "kind_id": self.env.ref("resource.kind_vehicle").id,
                 "license_plate": "VAN-1",
             }
         )
@@ -456,11 +456,11 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
 
     def test_a_deliberate_retype_moves_the_row_and_keeps_the_id(self):
         Asset = self.env["resource.resource"]
-        tool_kind = self.env.ref("resource_asset.kind_tool")
+        tool_kind = self.env.ref("resource.kind_tool")
         van = Asset.create(
             {
                 "name": "Retyped",
-                "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
+                "kind_id": self.env.ref("resource.kind_vehicle").id,
                 "license_plate": "RTY-1",
             }
         )
@@ -473,7 +473,7 @@ class TestIdentifierColumnsLiveOnTheVehicle(TransactionCase):
         self.assertFalse(
             self.env["resource.asset.vehicle"].search([("id", "=", van_id)])
         )
-        Asset.browse(van_id)._retype(self.env.ref("resource_asset.kind_vehicle"))
+        Asset.browse(van_id)._retype(self.env.ref("resource.kind_vehicle"))
         vehicle = self.env["resource.asset.vehicle"].browse(van_id)
         self.assertTrue(vehicle.exists())
         self.assertEqual(vehicle.license_plate, "RTY-1")
@@ -486,7 +486,7 @@ class TestAVehicleThreadsOnItsResource(TransactionCase):
         van = Asset.create(
             {
                 "name": "Threaded",
-                "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
+                "kind_id": self.env.ref("resource.kind_vehicle").id,
             }
         )
         van.message_post(body="through the root")
@@ -514,7 +514,7 @@ class TestAVehicleThreadsOnItsResource(TransactionCase):
         van = Asset.create(
             {
                 "name": "Tracked",
-                "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
+                "kind_id": self.env.ref("resource.kind_vehicle").id,
             }
         )
         self.flush_tracking()

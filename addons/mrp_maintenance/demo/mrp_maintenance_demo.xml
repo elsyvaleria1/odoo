@@ -11,19 +11,19 @@
     <!-- The machines the work centres run on -->
     <record id="asset_workcenter_1" model="resource.resource">
         <field name="name">Drill 1</field>
-        <field name="kind_id" ref="resource_asset.kind_machinery" />
+        <field name="kind_id" ref="resource.kind_machinery" />
         <field name="state">in_service</field>
     </record>
 
     <record id="asset_workcenter_2" model="resource.resource">
         <field name="name">Assembly 2</field>
-        <field name="kind_id" ref="resource_asset.kind_machinery" />
+        <field name="kind_id" ref="resource.kind_machinery" />
         <field name="state">in_service</field>
     </record>
 
     <record id="asset_workcenter_3" model="resource.resource">
         <field name="name">Assembly 1</field>
-        <field name="kind_id" ref="resource_asset.kind_machinery" />
+        <field name="kind_id" ref="resource.kind_machinery" />
         <field name="state">in_service</field>
     </record>
 

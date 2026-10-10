@@ -917,7 +917,6 @@ class TestStudioIrModelHardcoded(TransactionCase):
             "quality",
             "repair",
             "resource",
-            "resource_asset",
             "sale",
             "sale_planning",
             "sale_project",

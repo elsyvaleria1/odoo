@@ -6,7 +6,7 @@ from odoo import fields
 def create_test_template(env, asset_kind=None, **vals):
     has_publish_date = ensure_publish_date_field(env)
     if asset_kind:
-        vals["asset_kind_id"] = env.ref(f"resource_asset.kind_{asset_kind}").id
+        vals["asset_kind_id"] = env.ref(f"resource.kind_{asset_kind}").id
     vals.setdefault("name", "Test Product")
     if vals.get("tracking", "none") != "none":
         vals.setdefault("is_storable", True)

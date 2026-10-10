@@ -1,5 +1,5 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
-asset_compliance_report_rule_asset_kind,Asset Compliance Report: only the kinds the user is enabled for,model_asset_compliance_report,asset_ledger.group_asset_user,permission,r,predicate,,resource_asset.access_predicate_enabled_kind,"{""field"": ""asset_kind_id""}",
-asset_compliance_report_rule_asset_kind_group_asset_manager,Asset Compliance Report: only the kinds the user is enabled for,model_asset_compliance_report,asset_ledger.group_asset_manager,permission,crud,predicate,,resource_asset.access_predicate_enabled_kind,"{""field"": ""asset_kind_id""}",
+asset_compliance_report_rule_asset_kind,Asset Compliance Report: only the kinds the user is enabled for,model_asset_compliance_report,asset_ledger.group_asset_user,permission,r,predicate,,resource.access_predicate_enabled_kind,"{""field"": ""asset_kind_id""}",
+asset_compliance_report_rule_asset_kind_group_asset_manager,Asset Compliance Report: only the kinds the user is enabled for,model_asset_compliance_report,asset_ledger.group_asset_manager,permission,crud,predicate,,resource.access_predicate_enabled_kind,"{""field"": ""asset_kind_id""}",
 asset_compliance_report_rule_documents_manager,Asset Compliance Report: every asset for Documents managers,model_asset_compliance_report,document.group_documents_manager,permission,r,,,,,
 asset_compliance_report_rule_company,Asset Compliance Report: multi-company,model_asset_compliance_report,base.group_everyone,guard,crud,company,,,,

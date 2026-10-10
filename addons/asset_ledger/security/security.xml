@@ -24,7 +24,7 @@
             configure.</field>
         <field
             name="implied_ids"
-            eval="[Command.link(ref('base.group_user')), Command.link(ref('resource_asset.group_asset_user'))]" />
+            eval="[Command.link(ref('base.group_user')), Command.link(ref('resource.group_asset_user'))]" />
     </record>
 
     <!--
@@ -80,7 +80,7 @@
             name="comment">Full access to all asset types including delete and configuration.</field>
         <field
             name="implied_ids"
-            eval="[                 Command.link(ref('group_asset_user')),                 Command.link(ref('resource_asset.group_asset_manager')),                 Command.link(ref('group_enable_fleet_assets')),                 Command.link(ref('group_enable_equipment_assets')),                 Command.link(ref('group_enable_property_assets')),                 Command.link(ref('group_enable_machinery_assets')),                 Command.link(ref('group_enable_tools')),                 Command.link(ref('group_enable_it_assets')),             ]" />
+            eval="[                 Command.link(ref('group_asset_user')),                 Command.link(ref('resource.group_asset_manager')),                 Command.link(ref('group_enable_fleet_assets')),                 Command.link(ref('group_enable_equipment_assets')),                 Command.link(ref('group_enable_property_assets')),                 Command.link(ref('group_enable_machinery_assets')),                 Command.link(ref('group_enable_tools')),                 Command.link(ref('group_enable_it_assets')),             ]" />
         <field
             name="user_ids"
             eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />

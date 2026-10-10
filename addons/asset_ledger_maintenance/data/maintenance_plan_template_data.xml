@@ -9,7 +9,7 @@
         <field name="repeat_interval">6</field>
         <field name="repeat_unit">month</field>
         <field name="duration">8.0</field>
-        <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+        <field name="asset_kind_id" ref="resource.kind_vehicle" />
         <field name="instructions" type="html">
             <div style="font-family: Arial, sans-serif;">
                 <h3 style="color: #2c3e50; margin-bottom: 15px;">Biannual Maintenance Plan</h3>
@@ -66,7 +66,7 @@
         <field name="repeat_interval">12</field>
         <field name="repeat_unit">month</field>
         <field name="duration">8.0</field>
-        <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+        <field name="asset_kind_id" ref="resource.kind_vehicle" />
         <field name="instructions" type="html">
             <div style="font-family: Arial, sans-serif;">
                 <h3 style="color: #2c3e50; margin-bottom: 15px;">Annual Maintenance Plan</h3>

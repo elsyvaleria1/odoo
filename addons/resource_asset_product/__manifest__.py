@@ -8,7 +8,7 @@
     "author": "AgroMarin",
     "license": "LGPL-3",
     "depends": [
-        "resource_asset",
+        "resource_mail",
         "product",
     ],
     "data": [

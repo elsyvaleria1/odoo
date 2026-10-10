@@ -5,15 +5,15 @@ from . import models
 
 KIND_BY_FOLDER_XMLID = {
     "asset_ledger_document.document_folder_equipment": (
-        "resource_asset.kind_equipment",
-        "resource_asset.kind_tool",
-        "resource_asset.kind_it",
+        "resource.kind_equipment",
+        "resource.kind_tool",
+        "resource.kind_it",
     ),
-    "asset_ledger_document.document_folder_fleet": ("resource_asset.kind_vehicle",),
+    "asset_ledger_document.document_folder_fleet": ("resource.kind_vehicle",),
     "asset_ledger_document.document_folder_machinery": (
-        "resource_asset.kind_machinery",
+        "resource.kind_machinery",
     ),
-    "asset_ledger_document.document_folder_property": ("resource_asset.kind_property",),
+    "asset_ledger_document.document_folder_property": ("resource.kind_property",),
 }
 TAG_XMLID_BY_FOLDER_XMLID = {
     "asset_ledger_document.document_folder_equipment": "asset_ledger_document.documents_tag_equipment_doc",

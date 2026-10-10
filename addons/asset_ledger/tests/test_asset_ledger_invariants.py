@@ -12,7 +12,7 @@ class TestAssetLedgerInvariants(TransactionCase):
                 "name": "Ledger probe truck",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             }
         )
         cls.asset = cls.env["product.trace"].create(
@@ -80,7 +80,7 @@ class TestAssetLedgerInvariants(TransactionCase):
 class TestIdentityIsTheKindsToDemand(TransactionCase):
     def _template(self, **vals):
         vals.setdefault("name", "Requirement probe")
-        vals.setdefault("asset_kind_id", self.env.ref("resource_asset.kind_vehicle").id)
+        vals.setdefault("asset_kind_id", self.env.ref("resource.kind_vehicle").id)
         vals.setdefault("is_storable", True)
         vals.setdefault("tracking", "serial")
         return self.env["product.template"].create(vals)

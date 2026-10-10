@@ -65,7 +65,7 @@ class TestAssetDimension(common.TransactionCase):
                 "name": "Trail Bridge Truck",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
                 "manufacturer_id": cls.manufacturer.id,
                 # The lot takes the product's company; the operator carries
                 # one, and stock.lot.operator_id is check_company.
@@ -182,7 +182,7 @@ class TestAssetDimension(common.TransactionCase):
                 "name": "Trail Bridge Pump",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": self.env.ref("resource_asset.kind_equipment").id,
+                "asset_kind_id": self.env.ref("resource.kind_equipment").id,
                 "company_id": self.env.company.id,
             }
         )

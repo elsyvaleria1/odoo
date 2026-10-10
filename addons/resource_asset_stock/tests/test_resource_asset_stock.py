@@ -9,7 +9,7 @@ class TestResourceAssetStock(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.vehicle = cls.env.ref("resource_asset.kind_vehicle")
+        cls.vehicle = cls.env.ref("resource.kind_vehicle")
         cls.template = cls.env["product.template"].create(
             {
                 "name": "Pickup",
@@ -61,12 +61,13 @@ class TestResourceAssetStock(TransactionCase):
         self.assertEqual(received.asset_id.trace_id, received)
         self.assertEqual(received.asset_id.kind_id, self.vehicle)
         asset = received.asset_id
-        mower.product_tmpl_id.asset_kind_id = self.env.ref(
-            "resource_asset.kind_machinery"
-        )
+        mower.product_tmpl_id.asset_kind_id = self.env.ref("resource.kind_machinery")
         self.assertEqual(received.asset_id, asset)
         self.assertEqual(
-            self.env["resource.resource"].search_count([("trace_id", "=", received.id)]), 1
+            self.env["resource.resource"].search_count(
+                [("trace_id", "=", received.id)]
+            ),
+            1,
         )
 
     def test_a_plain_serial_is_not_an_asset(self):
@@ -183,7 +184,7 @@ class TestResourceAssetStock(TransactionCase):
         drill = self.env["resource.resource"].create(
             {
                 "name": "Drill",
-                "kind_id": self.env.ref("resource_asset.kind_tool").id,
+                "kind_id": self.env.ref("resource.kind_tool").id,
                 "location_id": shelf.id,
             }
         )
@@ -202,7 +203,7 @@ class TestReceivingAnEnforcedAsset(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.vehicle = cls.env.ref("resource_asset.kind_vehicle")
+        cls.vehicle = cls.env.ref("resource.kind_vehicle")
         cls.vehicle.enforce_identifiers = True
         cls.template = cls.env["product.template"].create(
             {

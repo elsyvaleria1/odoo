@@ -19,7 +19,7 @@ class TestOdometerTrigger(TransactionCase):
                 "is_storable": True,
                 "tracking": "serial",
                 "maintenance_ok": True,
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             }
         )
         cls.asset = cls.env["product.trace"].create(

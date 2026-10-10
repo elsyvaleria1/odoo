@@ -32,7 +32,7 @@ class TestAssetLedgerCompany(TransactionCase):
                 "name": "Ledger company probe truck",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             }
         )
         cls.product = cls.template.product_variant_ids[0]

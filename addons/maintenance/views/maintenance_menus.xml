@@ -51,7 +51,7 @@
         id="menu_equipment_form"
         name="Assets"
         parent="menu_maintenance_title"
-        action="resource_asset.action_resource_asset"
+        action="resource.action_resource_asset"
         sequence="2"
         groups="base.group_user" />
 
@@ -85,7 +85,7 @@
         id="menu_maintenance_cat"
         name="Asset Kinds"
         parent="menu_maintenance_configuration"
-        action="resource_asset.action_resource_asset_kind"
+        action="resource.action_resource_asset_kind"
         sequence="2" />
 
     <menuitem

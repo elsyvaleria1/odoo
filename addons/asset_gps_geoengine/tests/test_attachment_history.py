@@ -21,7 +21,7 @@ class TestAttachmentGeography(TransactionCase):
             self.first = self.env["resource.resource"].create(
                 {
                     "name": "Earlier equipment",
-                    "kind_id": self.env.ref("resource_asset.kind_machinery").id,
+                    "kind_id": self.env.ref("resource.kind_machinery").id,
                     "gps_device_id": self.device.id,
                     "tz": "UTC",
                 }

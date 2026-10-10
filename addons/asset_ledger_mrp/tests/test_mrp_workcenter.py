@@ -12,7 +12,7 @@ class TestWorkcenterMachinery(TransactionCase):
                 "name": "Probe harvester",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_machinery").id,
+                "asset_kind_id": cls.env.ref("resource.kind_machinery").id,
             }
         )
         cls.asset = cls.env["product.trace"].create(

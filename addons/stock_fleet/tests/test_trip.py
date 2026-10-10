@@ -54,13 +54,13 @@ class TestTrip(TransactionCase):
             {
                 "name": "Test Truck",
                 "type": "consu",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             }
         )
         cls.vehicle = cls.env["resource.resource"].create(
             {
                 "name": "Truck",
-                "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "kind_id": cls.env.ref("resource.kind_vehicle").id,
                 "product_id": cls.model.id,
                 "operator_id": cls.driver.resource_id.id,
             }
@@ -763,7 +763,7 @@ class TestTrip(TransactionCase):
         rescue_vehicle = self.env["resource.resource"].create(
             {
                 "name": "Rescue Truck",
-                "kind_id": self.env.ref("resource_asset.kind_vehicle").id,
+                "kind_id": self.env.ref("resource.kind_vehicle").id,
                 "product_id": self.model.id,
             }
         )

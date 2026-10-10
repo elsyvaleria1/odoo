@@ -12,7 +12,7 @@ class TestResourceKindForms(TransactionCase):
         # a kind's primary form extends the asset form, so every module that
         # adds a button there puts it on each kind's form too; the kind only
         # runs it if it forwards the method to its resource (_resource_action)
-        asset_form = self.env.ref("resource_asset.resource_asset_view_form")
+        asset_form = self.env.ref("resource.resource_asset_view_form")
         kinds = [
             name
             for name in self.registry["mixin.resource.kind"]._inherit_children

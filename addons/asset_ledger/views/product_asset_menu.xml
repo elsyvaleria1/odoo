@@ -122,21 +122,21 @@
         groups="group_asset_manager" />
 
     <!--
-        resource_asset ships its own "Assets" root; this module's is the one
+        resource ships its own "Assets" root; this module's is the one
         users work in, so the base module's entries move under it and the
         base root disappears from the home screen.
     -->
-    <record id="resource_asset.menu_asset_assignments" model="ir.ui.menu">
+    <record id="resource.menu_asset_assignments" model="ir.ui.menu">
         <field name="parent_id" ref="menu_general_assets_root" />
         <field name="sequence">60</field>
     </record>
 
-    <record id="resource_asset.menu_asset_meters" model="ir.ui.menu">
+    <record id="resource.menu_asset_meters" model="ir.ui.menu">
         <field name="parent_id" ref="menu_general_assets_root" />
         <field name="sequence">70</field>
     </record>
 
-    <record id="resource_asset.menu_asset_config" model="ir.ui.menu">
+    <record id="resource.menu_asset_config" model="ir.ui.menu">
         <field name="parent_id" ref="menu_general_assets_root" />
         <field name="sequence">1000</field>
     </record>
@@ -154,17 +154,17 @@
             eval="[Command.set([ref('group_enable_fleet_assets')])]" />
     </record>
 
-    <record id="resource_asset.menu_asset_assets" model="ir.ui.menu">
+    <record id="resource.menu_asset_assets" model="ir.ui.menu">
         <field name="active" eval="False" />
     </record>
 
     <menuitem
         id="menu_asset_tags"
-        parent="resource_asset.menu_asset_config"
+        parent="resource.menu_asset_config"
         action="action_resource_asset_tag"
         sequence="3" />
 
-    <record id="resource_asset.menu_asset_root" model="ir.ui.menu">
+    <record id="resource.menu_asset_root" model="ir.ui.menu">
         <field name="active" eval="False" />
     </record>
 

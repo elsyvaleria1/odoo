@@ -23,7 +23,7 @@ class TestProductAssetLog(TransactionCase):
 
         vals = {
             "name": "Test Vehicle",
-            "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+            "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             "type": "consu",
             "is_storable": True,
             "tracking": "serial",

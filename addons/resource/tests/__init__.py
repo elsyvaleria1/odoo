@@ -19,3 +19,4 @@ from . import test_schedule_exception
 from . import test_slot_search
 from . import test_utils
 from . import test_views
+from . import test_resource_asset

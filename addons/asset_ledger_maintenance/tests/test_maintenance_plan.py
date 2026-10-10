@@ -22,7 +22,7 @@ class TestMaintenancePlan(TransactionCase):
                 "is_storable": True,
                 "tracking": "serial",
                 "maintenance_ok": True,
-                "asset_kind_id": cls.env.ref("resource_asset.kind_equipment").id,
+                "asset_kind_id": cls.env.ref("resource.kind_equipment").id,
             }
         )
         cls.equipment = cls.ProductTrace.create(
@@ -82,7 +82,7 @@ class TestMaintenancePlan(TransactionCase):
                 "is_storable": True,
                 "tracking": "serial",
                 "maintenance_ok": False,
-                "asset_kind_id": self.env.ref("resource_asset.kind_equipment").id,
+                "asset_kind_id": self.env.ref("resource.kind_equipment").id,
             }
         )
         lot = self.ProductTrace.create({"name": "REGULAR001", "product_id": product.id})

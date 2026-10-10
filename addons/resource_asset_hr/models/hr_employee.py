@@ -45,7 +45,7 @@ class HrEmployee(models.Model):
     def action_view_assets(self):
         self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
-            "resource_asset.action_resource_asset"
+            "resource.action_resource_asset"
         )
         action["domain"] = [("id", "in", self.asset_ids.ids)]
         return action

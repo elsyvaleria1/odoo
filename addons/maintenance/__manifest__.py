@@ -11,7 +11,6 @@
     "depends": [
         "approval",
         "mail",
-        "resource_asset",
         "resource_asset_product",
         "team",
     ],

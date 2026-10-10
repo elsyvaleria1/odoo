@@ -51,7 +51,7 @@ class TripFixtureMixin:
         )
         cls.other_driver = cls.env["hr.employee"].create({"name": "Other Driver"})
         cls.rescue_driver = cls.env["hr.employee"].create({"name": "Rescue Driver"})
-        kind = cls.env.ref("resource_asset.kind_vehicle")
+        kind = cls.env.ref("resource.kind_vehicle")
         model = cls.env["product.product"].create(
             {"name": "Test Truck", "type": "consu", "asset_kind_id": kind.id}
         )

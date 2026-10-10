@@ -35,7 +35,7 @@ class VisitDeliveriesSetup:
         cls.supervisor = mail_new_test_user(
             cls.env, login="visit_supervisor", groups="stock.group_stock_user"
         )
-        kind = cls.env.ref("resource_asset.kind_vehicle")
+        kind = cls.env.ref("resource.kind_vehicle")
         pickup_model = cls.env["product.product"].create(
             {"name": "Pickup model", "type": "consu", "asset_kind_id": kind.id}
         )

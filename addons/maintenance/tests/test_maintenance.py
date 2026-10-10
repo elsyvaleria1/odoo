@@ -129,7 +129,7 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
         with self.with_user("hm"):
             form = Form(
                 self.env["resource.resource"],
-                view="resource_asset.resource_asset_view_form",
+                view="resource.resource_asset_view_form",
             )
             form.name = "Super Equipment"
             form.kind_id = self.monitor_kind
@@ -138,7 +138,7 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
         with self.with_user("emp"):
             form = Form(
                 self.env["resource.resource"].browse(asset.id),
-                view="resource_asset.resource_asset_view_form",
+                view="resource.resource_asset_view_form",
             )
             self.assertEqual(form.name, "Super Equipment")
 
@@ -152,7 +152,7 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
 
         form = Form(
             self.env["resource.resource"].with_user(self.manager),
-            view="resource_asset.resource_asset_view_form",
+            view="resource.resource_asset_view_form",
         )
         form.name = "brain"
         form.kind_id = self.monitor_kind
@@ -169,13 +169,13 @@ class TestMaintenancePostInstall(TestMaintenanceCommon):
         maintenance.action_done()
         self.assertTrue(maintenance.date_confirmed)
         self.assertTrue(maintenance.date_done)
-        form = Form(equipment, view="resource_asset.resource_asset_view_form")
+        form = Form(equipment, view="resource.resource_asset_view_form")
 
         # this shouldn't happen unless it's forced
         maintenance.date_done = False
-        form = Form(equipment, view="resource_asset.resource_asset_view_form")
+        form = Form(equipment, view="resource.resource_asset_view_form")
         maintenance.date_done = fields.Date.today()
         maintenance.date_confirmed = False
-        form = Form(equipment, view="resource_asset.resource_asset_view_form")
+        form = Form(equipment, view="resource.resource_asset_view_form")
         maintenance.date_done = False
-        form = Form(equipment, view="resource_asset.resource_asset_view_form")
+        form = Form(equipment, view="resource.resource_asset_view_form")

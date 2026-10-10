@@ -18,7 +18,7 @@ class TestMaintenanceResources(TransactionCase):
                 )
             ]
         ).action_archive()
-        cls.machinery = cls.env.ref("resource_asset.kind_machinery")
+        cls.machinery = cls.env.ref("resource.kind_machinery")
         cls.press = cls.env["resource.resource"].create(
             {"name": "Press 1", "kind_id": cls.machinery.id}
         )

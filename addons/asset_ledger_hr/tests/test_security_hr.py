@@ -208,8 +208,8 @@ class TestOperatorSubtypeVisibility(TransactionCase):
 
     def test_both_operator_subtypes_are_internal(self):
         for xml_id in (
-            "resource_asset.mt_asset_operator_updated",
-            "resource_asset.mt_asset_future_operator_scheduled",
+            "resource_mail.mt_asset_operator_updated",
+            "resource_mail.mt_asset_future_operator_scheduled",
         ):
             self.assertTrue(self.env.ref(xml_id).internal, xml_id)
 
@@ -220,11 +220,11 @@ class TestOperatorSubtypeVisibility(TransactionCase):
         and existing followers carry them in `subtype_ids`.
         """
         self.assertEqual(
-            self.env.ref("resource_asset.mt_asset_operator_updated").name,
+            self.env.ref("resource_mail.mt_asset_operator_updated").name,
             "Operator Updated",
         )
         self.assertEqual(
-            self.env.ref("resource_asset.mt_asset_future_operator_scheduled").name,
+            self.env.ref("resource_mail.mt_asset_future_operator_scheduled").name,
             "Future Operator Scheduled",
         )
 
@@ -239,7 +239,7 @@ class TestOperatorSubtypeVisibility(TransactionCase):
         )
 
         self.assertNotIn(
-            self.env.ref("resource_asset.mt_asset_operator_updated"),
+            self.env.ref("resource_mail.mt_asset_operator_updated"),
             follower.subtype_ids,
         )
 
@@ -251,7 +251,7 @@ class TestOperatorSubtypeVisibility(TransactionCase):
 
         self.assertEqual(
             message.subtype_id,
-            self.env.ref("resource_asset.mt_asset_operator_updated"),
+            self.env.ref("resource_mail.mt_asset_operator_updated"),
         )
         self.assertIn(self.successor.name, message.body)
         self.assertNotIn(self.outsider, message.notified_partner_ids)

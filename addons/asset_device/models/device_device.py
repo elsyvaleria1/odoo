@@ -179,7 +179,7 @@ class DeviceDevice(models.Model):
     def action_view_own_asset(self):
         self.check_singleton()
         action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
-            "resource_asset.action_resource_asset"
+            "resource.action_resource_asset"
         )
         action["res_id"] = self.own_asset_id.id
         action["view_mode"] = "form"

@@ -36,7 +36,7 @@ class TestAssetComplianceReportHrRegistry(TransactionCase):
         self.assertNotIn("asset_ledger_document_compliance_hr", owners)
 
     def test_the_report_names_the_live_manager(self):
-        kind = self.env.ref("resource_asset.kind_vehicle")
+        kind = self.env.ref("resource.kind_vehicle")
         product = self.env["product.product"].create(
             {"name": "Managed Asset Model", "type": "consu", "asset_kind_id": kind.id}
         )

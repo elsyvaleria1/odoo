@@ -3,8 +3,7 @@ from collections import Counter
 from odoo import fields, models
 from odoo.exceptions import UserError
 
-from odoo.addons.resource.models.utils import OPERATOR_ROLE
-from odoo.addons.resource_asset.models.resource_resource import CUSTODY_SILENT
+from odoo.addons.resource.models.utils import CUSTODY_SILENT, OPERATOR_ROLE
 
 
 class ResourceResource(models.Model):

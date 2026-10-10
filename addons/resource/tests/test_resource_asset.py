@@ -17,8 +17,8 @@ class TestResourceAsset(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.Asset = cls.env["resource.resource"]
-        cls.vehicle = cls.env.ref("resource_asset.kind_vehicle")
-        cls.machinery = cls.env.ref("resource_asset.kind_machinery")
+        cls.vehicle = cls.env.ref("resource.kind_vehicle")
+        cls.machinery = cls.env.ref("resource.kind_machinery")
         cls.plate = cls.env.ref("resource.identifier_type_plate")
         cls.vin = cls.env.ref("resource.identifier_type_vin")
         cls.serial = cls.env.ref("resource.identifier_type_serial")
@@ -82,7 +82,7 @@ class TestResourceAsset(TransactionCase):
 
     def test_an_asset_editor_changes_membership_and_its_writer_the_resource(self):
         user = new_test_user(
-            self.env, login="component_editor", groups="resource_asset.group_asset_user"
+            self.env, login="component_editor", groups="resource.group_asset_user"
         )
         # a kind no group gates: a vehicle is the fleet officers' to write
         crate = self.env["resource.kind"].create({"name": "Crate", "code": "crate"})
@@ -100,7 +100,7 @@ class TestResourceAsset(TransactionCase):
         manager = new_test_user(
             self.env,
             login="component_manager",
-            groups="resource_asset.group_asset_manager",
+            groups="resource.group_asset_manager",
         )
         child.with_user(manager).capacity = 3
         self.assertEqual(child.capacity, 3)
@@ -159,7 +159,7 @@ class TestResourceAsset(TransactionCase):
         user = new_test_user(
             self.env,
             login="restricted_component_editor",
-            groups="resource_asset.group_asset_user",
+            groups="resource.group_asset_user",
         )
         whole = self._truck("Restricted whole")
         child = self._truck("Member")
@@ -185,7 +185,7 @@ class TestResourceAsset(TransactionCase):
         user = new_test_user(
             self.env,
             login="company_component_editor",
-            groups="resource_asset.group_asset_user",
+            groups="resource.group_asset_user",
         )
         whole = self._truck("Foreign whole", company_id=self.company_b.id)
         child = self._truck("Shared member", company_id=False)
@@ -219,12 +219,12 @@ class TestResourceAsset(TransactionCase):
     def test_the_asset_list_shows_whole_assets_and_hides_components(self):
         truck = self._truck()
         crane = self._truck("Crane on truck", parent_id=truck.id)
-        action = self.env.ref("resource_asset.action_resource_asset")
+        action = self.env.ref("resource.action_resource_asset")
         self.assertEqual(
             action.context,
             "{'search_default_top_level': 1, 'default_type': 'material'}",
         )
-        search = self.env.ref("resource_asset.resource_asset_view_search")
+        search = self.env.ref("resource.resource_asset_view_search")
         arch = etree.fromstring(search.arch)
         domain = arch.xpath("//filter[@name='top_level']")[0].get("domain")
         listed = self.Asset.search(literal_eval(domain))
@@ -232,7 +232,7 @@ class TestResourceAsset(TransactionCase):
         self.assertNotIn(crane, listed)
 
     def test_an_asset_created_through_a_form_is_active(self):
-        form = Form(self.Asset, view="resource_asset.resource_asset_view_form")
+        form = Form(self.Asset, view="resource.resource_asset_view_form")
         form.name = "Form truck"
         form.kind_id = self.vehicle
         truck = form.save()
@@ -276,7 +276,7 @@ class TestResourceAsset(TransactionCase):
         desk = self.Asset.create(
             {
                 "name": "Reception desk",
-                "kind_id": self.env.ref("resource_asset.kind_furniture").id,
+                "kind_id": self.env.ref("resource.kind_furniture").id,
             }
         )
         inventory = self.env.ref("resource.identifier_type_inventory")
@@ -320,7 +320,7 @@ class TestResourceAsset(TransactionCase):
         tool = self.Asset.create(
             {
                 "name": "Reclassified",
-                "kind_id": self.env.ref("resource_asset.kind_tool").id,
+                "kind_id": self.env.ref("resource.kind_tool").id,
             }
         )
         self.vehicle.enforce_identifiers = True
@@ -343,7 +343,7 @@ class TestResourceAsset(TransactionCase):
         radio = self.Asset.create(
             {
                 "name": "Base radio",
-                "kind_id": self.env.ref("resource_asset.kind_telecom").id,
+                "kind_id": self.env.ref("resource.kind_telecom").id,
             }
         )
         self.assertEqual(
@@ -579,7 +579,7 @@ class TestResourceAsset(TransactionCase):
 
     def test_an_asset_user_manages_asset_custody_and_no_one_elses(self):
         asset_user = new_test_user(
-            self.env, login="asset_user", groups="resource_asset.group_asset_user"
+            self.env, login="asset_user", groups="resource.group_asset_user"
         )
         truck = self._truck()
         office = self.env["resource.resource"].create(
@@ -604,7 +604,7 @@ class TestResourceAsset(TransactionCase):
             Assignment.create({"resource_id": office.id, "assignee_id": self.driver.id})
 
         admin = self.env.ref("base.user_admin")
-        self.assertTrue(admin.has_group("resource_asset.group_asset_user"))
+        self.assertTrue(admin.has_group("resource.group_asset_user"))
         human.with_user(admin).note = "edited by an administrator"
         human.with_user(admin).unlink()
 

@@ -8,7 +8,7 @@
     "license": "LGPL-3",
     "depends": [
         "document",
-        "resource_asset",
+        "resource_mail",
     ],
     "data": [
         "security/ir.access.csv",

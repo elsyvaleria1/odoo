@@ -10,7 +10,7 @@
     "license": "OEEL-1",
     "depends": [
         "account",
-        "resource_asset",
+        "resource_mail",
     ],
     "data": [
         "security/ir.access.csv",

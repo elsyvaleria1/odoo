@@ -3,13 +3,13 @@
 
     <menuitem
         id="menu_asset_ledger"
-        parent="resource_asset.menu_asset_root"
+        parent="resource.menu_asset_root"
         action="action_resource_asset_log"
         sequence="4" />
 
     <menuitem
         id="menu_asset_parts"
-        parent="resource_asset.menu_asset_root"
+        parent="resource.menu_asset_root"
         action="action_resource_asset_part"
         sequence="5" />
 

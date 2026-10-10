@@ -28,11 +28,29 @@
   nothing private is copied here. `nationality_ids` (a thing's rows),
   `nationality_country_ids` (the countries held now). `_get_domain_by_holder` searches
   either.
+- Thing, a resource of a kind (`mixin.image`, `_check_company_auto`): `kind_id`
+  (`restrict`), `kind_code`, `properties` (defined by the kind), `description`, `model`,
+  `model_year`, `brand_new`, `vendor_id` (one of its company's), `vendor_ref`,
+  `warranty_date`, `address_id`, `missing_identifier_type_ids` (searchable),
+  `operator_history_count`. A kind makes it `material` and starts it in `draft`. The
+  odometer is the newest reading of its odometer meter: `odometer` (writing it records a
+  reading, never a lower one), `odometer_meter_id`, `odometer_uom_id` (refused once
+  readings exist), `odometer_uom_name`. Seven `fields.ResourceIdentifier` columns read and
+  write identifier rows: plate, VIN, engine, serial, IMEI, inventory tag, cadastral id.
+  Composition: `parent_id` (the live containment parent that is a thing, searched in SQL)
+  and `child_ids`.
 
 **Key methods:**
 - Hosts: `_get_host_model_names`, `_get_owner_model_names`, `_get_owners`.
 - Lifecycle: `_get_in_use_resource_ids`, `_archive_if_unused`, `_lock_for_integrity`.
-- Custody: `_sync_custody`, `_end_custody`, `_on_custody_changed` (hook).
+- Custody: `_sync_custody`, `_end_custody`, `_on_custody_changed` (hook),
+  `_announce_custody_change` (hook, a hand-over of a thing; resource_mail posts it),
+  `action_accept_operator_change`.
+- Kinds: `_get_kind_model_names` (the model extending each kind code, from the registry),
+  `_get_kind_models`, `_retype` (moves a thing to its new kind's model under the same id).
+  `create` and `write` dispatch to the kind's model a row that names it, or a field only
+  it declares; `_notify_kind_models` hands every write on. `_check_required_identifiers`
+  refuses only where the kind enforces them (`SKIP_IDENTITY_CHECK` defers it).
 - Occupancy and slots: `_get_reservation_status`, `_get_slot_intervals_batch`,
   `_get_slot_intervals`, `_find_free_window`.
 - Calendar resolution: `_get_work_schedule`, `_get_valid_work_intervals`,
@@ -159,8 +177,29 @@ subtracts).
 
 `models/resource_identifier_type.py`. A kind of identifier, resolved by `code`. **Fields:**
 `name`, `code` (unique), `sequence`, `active`, `pattern` (on the normalized value),
-`unique_scope` (`global` / `company` / `none`). Data: serial, plate, VIN, engine, IMEI,
-cadastral, inventory tag.
+`unique_scope` (`global` / `company` / `none`), `kind_ids` (the kinds requiring it). Data:
+serial, plate, VIN, engine, IMEI, cadastral, inventory tag.
+
+## resource.kind
+
+`models/resource_kind.py`. What a thing is: vehicle, machinery, equipment, tool,
+furniture, property, IT, telecom, device. **Fields:** `name`, `code` (unique; a model
+extending the kind names it), `sequence`, `scheduled` (takes its company's hours;
+otherwise around the clock), `identifier_type_ids`, `enforce_identifiers`, `group_id`
+(who sees its things; `res.users._get_enabled_asset_kinds`, `_get_hidden_asset_kinds`
+and the `resource.enabled_kind` access predicate read it), `properties_definition`,
+`resource_ids`, `resource_count`.
+
+## mixin.resource.kind
+
+`models/mixin_resource_kind.py`. What one kind adds, in a table of its own under its
+resource's id (`_inherits` with `_inherits_shared_id`). resource_mail makes it a mail
+thread.
+
+**Hook contract:** `_resource_kind_code` (class attribute), `_on_resource_written`
+(hears every write of its resource). `_resource_action` forwards an asset-form button to
+the resource; `without_resource_defaults` drops a person's defaults a thing decides
+itself.
 
 ## resource.identifier
 
@@ -259,4 +298,6 @@ create).
   held on a person's private facet; `_get_resources`, `_get_or_create_resources`,
   `_get_private_facet`, `_ensure_private_facet`.
 - `res.users`: `resource_ids`, `resource_calendar_id` (the schedule of the resource in the
-  current company).
+  current company); `_get_enabled_asset_kinds`, `_get_hidden_asset_kinds` (an asset
+  manager sees every kind).
+- `base`: `_access_predicate_enabled_asset_kind`, the `resource.enabled_kind` predicate.

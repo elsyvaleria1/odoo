@@ -19,7 +19,7 @@
         id="menu_equipment_dashboard"
         name="Machines &amp; Tools"
         parent="maintenance.menu_equipment_form"
-        action="resource_asset.action_resource_asset"
+        action="resource.action_resource_asset"
         sequence="2" />
 
 </odoo>

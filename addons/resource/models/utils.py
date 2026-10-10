@@ -14,6 +14,12 @@ if TYPE_CHECKING:
     from .resource_resource import ResourceResource
 
 CUSTODY_SYNC = "custody_sync"
+CUSTODY_SILENT = "custody_silent"
+SKIP_IDENTITY_CHECK = "skip_asset_identity_check"
+# a thing is acquired before it is available, unlike a resource of its own
+ASSET_INITIAL_STATE = "draft"
+# the kind model already creating these resources as its parents
+KIND_MODEL_CREATING = "resource_kind_model_creating"
 OPERATOR_ROLE = "operator"
 MANAGER_ROLE = "manager"
 CUSTODIAN_ROLE = "custodian"

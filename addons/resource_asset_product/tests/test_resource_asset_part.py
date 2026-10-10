@@ -50,12 +50,12 @@ class TestResourceAssetPart(TransactionCase):
         cls.manager = new_test_user(
             cls.env,
             login="parts_manager",
-            groups="base.group_user,resource_asset.group_asset_manager",
+            groups="base.group_user,resource.group_asset_manager",
         )
         cls.user = new_test_user(
             cls.env,
             login="parts_user",
-            groups="base.group_user,resource_asset.group_asset_user",
+            groups="base.group_user,resource.group_asset_user",
         )
 
     def _install(self, when, position=None, **vals):
@@ -221,7 +221,7 @@ class TestResourceAssetPart(TransactionCase):
             self._install(datetime(2026, 1, 1), product_id=other.id)
 
         van = self.env["resource.resource"].create(
-            {"name": "Van", "kind_id": self.env.ref("resource_asset.kind_tool").id}
+            {"name": "Van", "kind_id": self.env.ref("resource.kind_tool").id}
         )
         with self.assertRaises(ValidationError):
             self._install(datetime(2026, 1, 1), asset_id=van.id)

@@ -15,7 +15,7 @@ from odoo.tools import float_compare, float_is_zero, formatLang
 from odoo.tools.date_utils import end_of
 from odoo.tools.misc import clean_context
 
-from odoo.addons.resource_asset.models.mixin_resource_kind import (
+from odoo.addons.resource.models.mixin_resource_kind import (
     without_resource_defaults,
 )
 

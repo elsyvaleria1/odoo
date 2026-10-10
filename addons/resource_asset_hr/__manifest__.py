@@ -8,7 +8,7 @@
     "license": "LGPL-3",
     "depends": [
         "hr",
-        "resource_asset",
+        "resource_mail",
     ],
     "data": [
         "views/resource_asset_views.xml",

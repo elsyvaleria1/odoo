@@ -1,7 +1,7 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
-from .resource_resource import ASSET_INITIAL_STATE, KIND_MODEL_CREATING
+from .utils import ASSET_INITIAL_STATE, KIND_MODEL_CREATING
 
 # what a thing decides at its creation, which a person's defaults must not
 THING_DECIDES = ("type", "state", "calendar_id")
@@ -37,7 +37,6 @@ class MixinResourceKind(models.AbstractModel):
 
     _name = "mixin.resource.kind"
     _description = "Resource Kind Extension"
-    _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
     _inherits = {"resource.resource": "resource_id"}
     _inherits_shared_id = "resource_id"
     _order = "name, id"
@@ -52,7 +51,9 @@ class MixinResourceKind(models.AbstractModel):
     # the asset form's buttons call the resource; a form of this model shows
     # them, and an object button must name a method of the record it is on
     action_accept_operator_change = _resource_action("action_accept_operator_change")
-    action_create_maintenance_order = _resource_action("action_create_maintenance_order")
+    action_create_maintenance_order = _resource_action(
+        "action_create_maintenance_order"
+    )
     action_dispose = _resource_action("action_dispose")
     action_end_maintenance = _resource_action("action_end_maintenance")
     action_open_depreciation = _resource_action("action_open_depreciation")

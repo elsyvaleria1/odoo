@@ -537,7 +537,7 @@ class ResourceAssetPart(models.Model):
             self._sync_review_holds()
 
     def _clear_flags(self, note) -> None:
-        if not self.env.user.has_group("resource_asset.group_asset_manager"):
+        if not self.env.user.has_group("resource.group_asset_manager"):
             _debug.logic("part_clear_refused", parts=self, uid=self.env.uid)
             raise UserError(self.env._("Only an asset manager clears a flagged part."))
         flags = self.flag_ids.filtered(lambda flag: flag.state == "open")

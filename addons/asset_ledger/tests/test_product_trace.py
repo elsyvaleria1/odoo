@@ -24,7 +24,7 @@ class TestProductTrace(TransactionCase):
 
         vals = {
             "name": "Pickup Truck",
-            "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+            "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             "fuel_tank_capacity": 80,
             "type": "consu",
             "is_storable": True,
@@ -302,7 +302,7 @@ class TestProductTrace(TransactionCase):
         non_vehicle_template = self.ProductTemplate.create(
             {
                 "name": "Generic Tool",
-                "asset_kind_id": self.env.ref("resource_asset.kind_tool").id,
+                "asset_kind_id": self.env.ref("resource.kind_tool").id,
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
@@ -672,7 +672,7 @@ class TestLotIdentityIsTheAssets(TransactionCase):
         cls.template = cls.env["product.template"].create(
             {
                 "name": "IMEI probe",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_equipment").id,
+                "asset_kind_id": cls.env.ref("resource.kind_equipment").id,
                 "is_storable": True,
                 "tracking": "serial",
             }

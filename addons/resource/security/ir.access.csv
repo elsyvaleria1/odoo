@@ -45,3 +45,13 @@ privilege_owner_deletes_resource_resource,resource.resource: deleting its owner 
 access_resource_nationality_things,resource.nationality: everyone reads a thing's,model_resource_nationality,base.group_user,permission,r,,,"[('resource_id', '!=', False)]"
 access_resource_nationality_system,resource.nationality.system,model_resource_nationality,base.group_system,permission,crud,,,
 resource_nationality_rule_multi_company,resource.nationality: multi-company rule,model_resource_nationality,base.group_everyone,guard,crud,company,,
+access_resource_asset_kind_user,resource.asset.kind.user,model_resource_kind,base.group_user,permission,r,,,
+access_resource_asset_kind_manager,resource.asset.kind.manager,model_resource_kind,group_asset_manager,permission,cud,,,
+resource_asset_kind_visibility_rule,Assets: only the kinds the user is enabled for,model_resource_resource,group_asset_user,permission,cu,,,"[('kind_id', '!=', False), ('kind_id', 'not in', user._get_hidden_asset_kinds())]"
+resource_asset_kind_visibility_rule_group_asset_manager,Assets: only the kinds the user is enabled for,model_resource_resource,group_asset_manager,permission,cud,,,"[('kind_id', '!=', False), ('kind_id', 'not in', user._get_hidden_asset_kinds())]"
+resource_assignment_rule_asset_user,resource.assignment: asset users manage the custody of material resources,model_resource_assignment,group_asset_user,permission,cud,all,,"[('resource_id.type', '=', 'material')]"
+access_resource_identifier_type_asset_manager,resource.identifier.type.asset.manager,model_resource_identifier_type,group_asset_manager,permission,cud,,,
+access_resource_identifier_asset_user,resource.identifier.asset.user,model_resource_identifier,group_asset_user,permission,cud,,,
+access_resource_meter_asset_user,resource.meter.asset.user,model_resource_meter,group_asset_user,permission,cud,,,
+access_resource_meter_reading_asset_user,resource.meter.reading.asset.user,model_resource_meter_reading,group_asset_user,permission,ud,,,
+access_resource_meter_reading_employee,resource.meter.reading.employee,model_resource_meter_reading,base.group_user,permission,c,,,

@@ -14,7 +14,7 @@
             name="comment">The user manages maintenance: orders, plans, teams and the assets they maintain.</field>
         <field
             name="implied_ids"
-            eval="[Command.link(ref('base.group_user')), Command.link(ref('resource_asset.group_asset_manager'))]" />
+            eval="[Command.link(ref('base.group_user')), Command.link(ref('resource.group_asset_manager'))]" />
         <field
             name="user_ids"
             eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />

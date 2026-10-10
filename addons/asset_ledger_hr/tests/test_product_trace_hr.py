@@ -710,7 +710,7 @@ class TestStockLotHR(TransactionCase):
 
         asset.write({"operator_id": self.employee2.id})
 
-        subtype = self.env.ref("resource_asset.mt_asset_operator_updated")
+        subtype = self.env.ref("resource_mail.mt_asset_operator_updated")
         messages = asset.asset_id.message_ids.filtered(
             lambda m: m.subtype_id == subtype
         )
@@ -732,7 +732,7 @@ class TestStockLotHR(TransactionCase):
         message = asset.asset_id.message_ids.sorted("id")[-1]
         self.assertEqual(
             message.subtype_id,
-            self.env.ref("resource_asset.mt_asset_future_operator_scheduled"),
+            self.env.ref("resource_mail.mt_asset_future_operator_scheduled"),
             "Scheduling a successor is not the same event as changing the driver.",
         )
         self.assertEqual(asset.operator_id, self.employee1)
@@ -748,7 +748,7 @@ class TestStockLotHR(TransactionCase):
         real_ref = type(self.env).ref
 
         def missing_ref(env, xml_id, raise_if_not_found=True):
-            if xml_id.startswith("resource_asset.mt_asset_"):
+            if xml_id.startswith("resource_mail.mt_asset_"):
                 if raise_if_not_found:
                     raise ValueError(xml_id)
                 return None
@@ -761,7 +761,7 @@ class TestStockLotHR(TransactionCase):
         self.assertIn(self.employee1.name, message.body)
         self.assertNotEqual(
             message.subtype_id,
-            real_ref(self.env, "resource_asset.mt_asset_operator_updated"),
+            real_ref(self.env, "resource_mail.mt_asset_operator_updated"),
             "A database without the subtype must fall back, not raise.",
         )
 

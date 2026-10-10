@@ -3,12 +3,15 @@ from . import resource_config
 from . import res_company
 from . import res_partner
 from . import res_users
+from . import base
 from . import resource_time_type
 from . import resource_calendar
 from . import resource_calendar_attendance
 from . import resource_schedule_exception
 from . import mixin_resource
+from . import resource_kind
 from . import resource_resource
+from . import mixin_resource_kind
 from . import resource_identifier_type
 from . import resource_identifier
 from . import resource_nationality

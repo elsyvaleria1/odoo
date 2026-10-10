@@ -10,7 +10,7 @@
         <field name="name">FM</field>
         <field name="type">consu</field>
         <field name="sale_ok" eval="False" />
-        <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+        <field name="asset_kind_id" ref="resource.kind_vehicle" />
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_volvo" />
         <field name="doors">2</field>
         <field name="fuel_type">diesel</field>
@@ -23,7 +23,7 @@
         <field name="name">Transit</field>
         <field name="type">consu</field>
         <field name="sale_ok" eval="False" />
-        <field name="asset_kind_id" ref="resource_asset.kind_vehicle" />
+        <field name="asset_kind_id" ref="resource.kind_vehicle" />
         <field name="manufacturer_id" ref="resource_asset_vehicle.brand_ford" />
         <field name="weight_capacity">7000</field>
         <field name="volume_capacity">15</field>
@@ -37,7 +37,7 @@
 
     <record id="vehicle_truck_volvo" model="resource.asset.vehicle">
         <field name="name">Volvo FM ODO-1347</field>
-        <field name="kind_id" ref="resource_asset.kind_vehicle" />
+        <field name="kind_id" ref="resource.kind_vehicle" />
         <field name="product_id" ref="model_volvo_fm" />
         <field name="license_plate">ODO-1347</field>
         <field name="vin_sn">1V6AD0ERXBC414305</field>

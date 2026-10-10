@@ -317,7 +317,9 @@ class TestCustodyReadsFromTheLedger(TestCustodyAssignment):
         self.assertIn(self.asset, assets)
         self.assertNotIn(
             self.asset,
-            self.env["resource.resource"].search([("operator_employee_id", "=", False)]),
+            self.env["resource.resource"].search(
+                [("operator_employee_id", "=", False)]
+            ),
         )
 
     def test_writing_the_asset_moves_the_lot(self):

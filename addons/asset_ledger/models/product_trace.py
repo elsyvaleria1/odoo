@@ -3,7 +3,7 @@ import logging
 from odoo import api, fields, models
 
 from odoo.addons.resource.fields import ResourceIdentifier
-from odoo.addons.resource_asset.models.resource_resource import SKIP_IDENTITY_CHECK
+from odoo.addons.resource.models.utils import SKIP_IDENTITY_CHECK
 
 _logger = logging.getLogger(__name__)
 

@@ -48,7 +48,7 @@ class TestTripGps(TransactionCase):
             }
         )
         cls.driver = cls.env["hr.employee"].create({"name": "Driver"})
-        kind = cls.env.ref("resource_asset.kind_vehicle")
+        kind = cls.env.ref("resource.kind_vehicle")
         model = cls.env["product.product"].create(
             {"name": "Truck", "type": "consu", "asset_kind_id": kind.id}
         )

@@ -108,7 +108,7 @@ class TestDispatchMode(TransactionCase):
                 "group_ids": [Command.set([self.env.ref("stock.group_stock_user").id])],
             }
         )
-        kind = self.env.ref("resource_asset.kind_vehicle")
+        kind = self.env.ref("resource.kind_vehicle")
         car = self.env["resource.resource"].create(
             {
                 "name": "Salesperson's car",
@@ -207,7 +207,7 @@ class TestDispatchMode(TransactionCase):
         self.assertTrue(picking._requires_trip())
 
     def test_a_third_party_parcel_may_stay_pending_when_the_trip_closes(self):
-        kind = self.env.ref("resource_asset.kind_vehicle")
+        kind = self.env.ref("resource.kind_vehicle")
         model = self.env["product.product"].create(
             {"name": "Van model", "type": "consu", "asset_kind_id": kind.id}
         )

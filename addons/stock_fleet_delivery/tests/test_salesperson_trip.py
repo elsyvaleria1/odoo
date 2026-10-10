@@ -40,13 +40,13 @@ class TestSalespersonTrip(TransactionCase):
             {
                 "name": "Pickup",
                 "type": "consu",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             }
         )
         cls.car = cls.env["resource.resource"].create(
             {
                 "name": "Seller's pickup",
-                "kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "kind_id": cls.env.ref("resource.kind_vehicle").id,
                 "product_id": model.id,
                 "operator_id": cls.seller.resource_id.id,
             }

@@ -92,7 +92,11 @@ class MrpWorkcenter(models.Model):
         )
         result = super().write(vals)
         if left:
-            (left - self.resource_id)._archive_if_unused()
+            # a machine left behind stays the machine it is; only the slot the
+            # work center provisioned for itself is released
+            (left - self.resource_id).filtered(
+                lambda resource: not resource.kind_id
+            )._archive_if_unused()
         return result
 
     def _inverse_asset_id(self):

@@ -466,7 +466,7 @@
     <record id="resource_asset_view_form_ledger" model="ir.ui.view">
         <field name="name">resource.asset.form.ledger</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
+        <field name="inherit_id" ref="resource.resource_asset_view_form" />
         <field name="arch" type="xml">
             <xpath expr="//sheet/widget[@name='web_ribbon']" position="before">
                 <div class="oe_button_box" name="button_box">
@@ -590,7 +590,7 @@
     <record id="resource_asset_view_search_ledger" model="ir.ui.view">
         <field name="name">resource.asset.search.ledger</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource_asset.resource_asset_view_search" />
+        <field name="inherit_id" ref="resource.resource_asset_view_search" />
         <field name="arch" type="xml">
             <field name="holder_id" position="after">
                 <field name="product_id" string="Model" />
@@ -614,7 +614,7 @@
         <field name="context">{}</field>
         <field
             name="view_ids"
-            eval="[                 Command.clear(),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource.resource_asset_view_form')}),             ]" />
     </record>
 
     <record id="action_resource_asset_property" model="ir.actions.act_window">
@@ -625,10 +625,10 @@
         <field name="domain">[('kind_code', '=', 'property')]</field>
         <field
             name="context"
-            eval="{'kind_code_scope': ['property'], 'default_kind_id': ref('resource_asset.kind_property')}" />
+            eval="{'kind_code_scope': ['property'], 'default_kind_id': ref('resource.kind_property')}" />
         <field
             name="view_ids"
-            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_property')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_property')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_property')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_property')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource.resource_asset_view_form')}),             ]" />
     </record>
 
     <record id="action_resource_asset_general" model="ir.actions.act_window">
@@ -639,10 +639,10 @@
         <field name="domain">[('kind_code', '=', 'equipment')]</field>
         <field
             name="context"
-            eval="{'kind_code_scope': ['equipment'], 'default_kind_id': ref('resource_asset.kind_equipment')}" />
+            eval="{'kind_code_scope': ['equipment'], 'default_kind_id': ref('resource.kind_equipment')}" />
         <field
             name="view_ids"
-            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource.resource_asset_view_form')}),             ]" />
     </record>
 
     <record id="action_resource_asset_machinery" model="ir.actions.act_window">
@@ -653,10 +653,10 @@
         <field name="domain">[('kind_code', '=', 'machinery')]</field>
         <field
             name="context"
-            eval="{'kind_code_scope': ['machinery'], 'default_kind_id': ref('resource_asset.kind_machinery')}" />
+            eval="{'kind_code_scope': ['machinery'], 'default_kind_id': ref('resource.kind_machinery')}" />
         <field
             name="view_ids"
-            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource.resource_asset_view_form')}),             ]" />
     </record>
 
     <record id="action_resource_asset_tools" model="ir.actions.act_window">
@@ -667,10 +667,10 @@
         <field name="domain">[('kind_code', '=', 'tool')]</field>
         <field
             name="context"
-            eval="{'kind_code_scope': ['tool'], 'default_kind_id': ref('resource_asset.kind_tool')}" />
+            eval="{'kind_code_scope': ['tool'], 'default_kind_id': ref('resource.kind_tool')}" />
         <field
             name="view_ids"
-            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource.resource_asset_view_form')}),             ]" />
     </record>
 
     <record id="action_resource_asset_it_asset" model="ir.actions.act_window">
@@ -681,10 +681,10 @@
         <field name="domain">[('kind_code', '=', 'it')]</field>
         <field
             name="context"
-            eval="{'kind_code_scope': ['it'], 'default_kind_id': ref('resource_asset.kind_it')}" />
+            eval="{'kind_code_scope': ['it'], 'default_kind_id': ref('resource.kind_it')}" />
         <field
             name="view_ids"
-            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource_asset.resource_asset_view_form')}),             ]" />
+            eval="[                 Command.clear(),                 Command.create({'view_mode': 'kanban', 'view_id': ref('resource_asset_view_kanban_general')}),                 Command.create({'view_mode': 'list', 'view_id': ref('resource_asset_view_list_general')}),                 Command.create({'view_mode': 'form', 'view_id': ref('resource.resource_asset_view_form')}),             ]" />
     </record>
 
     <record id="resource_asset_vehicle_view_form_ledger" model="ir.ui.view">

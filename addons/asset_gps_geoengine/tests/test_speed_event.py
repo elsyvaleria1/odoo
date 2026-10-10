@@ -163,7 +163,7 @@ class TestSpeedEvent(common.TransactionCase):
                 "name": "Speed Truck",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": self.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": self.env.ref("resource.kind_vehicle").id,
                 "company_id": self.env.company.id,
             }
         )

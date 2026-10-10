@@ -31,6 +31,13 @@ class ResourceIdentifierType(models.Model):
         default="global",
         required=True,
     )
+    kind_ids = fields.Many2many(
+        comodel_name="resource.kind",
+        relation="resource_asset_kind_identifier_type_rel",
+        column1="type_id",
+        column2="kind_id",
+        string="Required For",
+    )
 
     _code_uniq = models.Constraint(
         "UNIQUE(code)", "Each identifier type code must be unique."

@@ -4,7 +4,7 @@
     <record id="view_form_resource_asset_hr" model="ir.ui.view">
         <field name="name">resource.asset.form.hr</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource_asset.resource_asset_view_form" />
+        <field name="inherit_id" ref="resource.resource_asset_view_form" />
         <field name="arch" type="xml">
             <field name="manager_id" position="after">
                 <field name="operator_employee_id" />
@@ -16,7 +16,7 @@
     <record id="view_list_resource_asset_hr" model="ir.ui.view">
         <field name="name">resource.asset.list.hr</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource_asset.resource_asset_view_list" />
+        <field name="inherit_id" ref="resource.resource_asset_view_list" />
         <field name="arch" type="xml">
             <field name="holder_id" position="after">
                 <field name="operator_employee_id" optional="show" />
@@ -28,7 +28,7 @@
     <record id="view_search_resource_asset_hr" model="ir.ui.view">
         <field name="name">resource.asset.search.hr</field>
         <field name="model">resource.resource</field>
-        <field name="inherit_id" ref="resource_asset.resource_asset_view_search" />
+        <field name="inherit_id" ref="resource.resource_asset_view_search" />
         <field name="arch" type="xml">
             <field name="holder_id" position="after">
                 <field name="operator_employee_id" />

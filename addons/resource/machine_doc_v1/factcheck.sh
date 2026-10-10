@@ -62,7 +62,9 @@ for model in "${documented[@]}"; do
     if printf '%s\n' "${declared[@]}" | grep -qxF "$model"; then ok
     else bad "MODEL_MAP.md documents $model, which the module does not declare"; fi
 done
-abstract="$(grep -rlP 'models\.AbstractModel' "$MOD"/models/*.py | wc -l)"
+# an AbstractModel extending another module's (base) declares no model of its own
+abstract="$(grep -lP 'models\.AbstractModel' "$MOD"/models/*.py \
+    | xargs grep -lP '^\s+_name = "' | wc -l)"
 concrete=$(( ${#declared[@]} - abstract ))
 assert_cited_in index.md "| Models | ${#declared[@]} ($concrete concrete, $abstract abstract) |" \
     "the model count"

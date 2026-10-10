@@ -3,9 +3,9 @@
 | Key | Value |
 |---|---|
 | Module | `resource` |
-| Version | 1.39 |
+| Version | 1.40 |
 | Depends | `web`, `uom` |
-| Models | 20 (15 concrete, 5 abstract) |
+| Models | 22 (16 concrete, 6 abstract) |
 | `mixin.resource` hosts in this checkout | 3 |
 | `mixin.resource.scheduling` hosts in this checkout | 4 |
 | `mixin.resource.allocation` hosts in this checkout | 2 |
@@ -32,6 +32,11 @@ reasons live in `doc/architecture/resource.rst`.
   records through `mixin.resource.scheduling`, reconciled by `mixin.resource.ledger`.
 - **Custody and composition.** `resource.assignment` (effective-dated roles: custodian,
   operator, manager, technician) and `resource.relation` (containment and dependencies).
+- **Assets.** A material resource with a `resource.kind` is an asset: the kind sets its
+  required identifiers, its properties and who sees it (`group_asset_user`,
+  `group_asset_manager`), and a model inheriting `mixin.resource.kind` adds what one kind
+  carries. The Assets menu is this module's. Its chatter, tracking and hand-over messages
+  are resource_mail's, so `resource` stays free of `mail`.
 
 ## Contracts other modules rely on
 
@@ -92,6 +97,7 @@ Files are named after their subject:
 - `test_resource_lifecycle.py`: the states a resource goes through, maintenance and disposal.
 - `test_resource_roles.py`: roles.
 - `test_resource_acl_coverage.py`: access.
+- `test_resource_asset.py`: assets: kinds, identifiers, the odometer, composition, custody.
 - `test_views.py`: view structure.
 - `test_utils.py`: the pure helpers in `models/utils.py`.
 

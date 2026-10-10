@@ -22,7 +22,7 @@ class TestAssetLogResync(AccountTestInvoicingCommon):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_machinery").id,
+                "asset_kind_id": cls.env.ref("resource.kind_machinery").id,
             }
         )
         cls.untyped_category = (

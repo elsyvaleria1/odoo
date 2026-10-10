@@ -189,7 +189,7 @@
         <field name="domain">[('kind_code', '=', 'equipment')]</field>
         <field
             name="context"
-            eval="{'default_kind_id': ref('resource_asset.kind_equipment')}" />
+            eval="{'default_kind_id': ref('resource.kind_equipment')}" />
     </record>
 
     <record id="action_maintenance_plan_machinery" model="ir.actions.act_window">
@@ -199,7 +199,7 @@
         <field name="domain">[('kind_code', '=', 'machinery')]</field>
         <field
             name="context"
-            eval="{'default_kind_id': ref('resource_asset.kind_machinery')}" />
+            eval="{'default_kind_id': ref('resource.kind_machinery')}" />
     </record>
 
     <record id="action_maintenance_plan_vehicle" model="ir.actions.act_window">
@@ -209,7 +209,7 @@
         <field name="domain">[('kind_code', '=', 'vehicle')]</field>
         <field
             name="context"
-            eval="{'default_kind_id': ref('resource_asset.kind_vehicle')}" />
+            eval="{'default_kind_id': ref('resource.kind_vehicle')}" />
     </record>
 
     <record id="action_maintenance_plan_assets" model="ir.actions.act_window">

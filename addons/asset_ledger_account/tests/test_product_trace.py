@@ -41,7 +41,7 @@ class TestProductTrace(AccountTestInvoicingCommon):
                 "type": "consu",
                 "is_storable": True,
                 "tracking": "serial",
-                "asset_kind_id": cls.env.ref("resource_asset.kind_vehicle").id,
+                "asset_kind_id": cls.env.ref("resource.kind_vehicle").id,
             }
         )
         cls.fuel_product = cls.ProductProduct.create(

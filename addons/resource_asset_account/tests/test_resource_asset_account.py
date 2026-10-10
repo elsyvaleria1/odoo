@@ -9,13 +9,13 @@ class TestResourceAssetAccount(AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.env.user.group_ids |= cls.env.ref("resource_asset.group_asset_manager")
+        cls.env.user.group_ids |= cls.env.ref("resource.group_asset_manager")
         cls.company = cls.company_data["company"]
         cls.expense = cls.company_data["default_account_expense"]
         cls.asset = cls.env["resource.resource"].create(
             {
                 "name": "Billed Truck",
-                "kind_id": cls.env.ref("resource_asset.kind_tool").id,
+                "kind_id": cls.env.ref("resource.kind_tool").id,
                 "company_id": cls.company.id,
             }
         )
@@ -113,7 +113,7 @@ class TestAssetPartBillHold(AccountTestInvoicingCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.env.user.group_ids |= cls.env.ref("resource_asset.group_asset_manager")
+        cls.env.user.group_ids |= cls.env.ref("resource.group_asset_manager")
         cls.company = cls.company_data["company"]
         cls.expense = cls.company_data["default_account_expense"]
         cls.kind = cls.env["resource.kind"].create(

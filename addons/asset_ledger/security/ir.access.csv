@@ -1,9 +1,9 @@
 id,name,model_id/id,group_id/id,kind,operation,reach,anchor,predicate_id/id,predicate_args,domain
 stock_lot_stock_user_rule,Lots: warehouse users see every lot,product_trace.model_product_trace,stock.group_stock_user,permission,cud,,,,,
-stock_lot_asset_kind_rule,Assets: only the kinds the user is enabled for,product_trace.model_product_trace,group_asset_user,permission,cru,predicate,,resource_asset.access_predicate_enabled_kind,"{""field"": ""asset_id.kind_id""}",
-stock_lot_asset_kind_rule_group_asset_manager,Assets: only the kinds the user is enabled for,product_trace.model_product_trace,group_asset_manager,permission,crud,predicate,,resource_asset.access_predicate_enabled_kind,"{""field"": ""asset_id.kind_id""}",
+stock_lot_asset_kind_rule,Assets: only the kinds the user is enabled for,product_trace.model_product_trace,group_asset_user,permission,cru,predicate,,resource.access_predicate_enabled_kind,"{""field"": ""asset_id.kind_id""}",
+stock_lot_asset_kind_rule_group_asset_manager,Assets: only the kinds the user is enabled for,product_trace.model_product_trace,group_asset_manager,permission,crud,predicate,,resource.access_predicate_enabled_kind,"{""field"": ""asset_id.kind_id""}",
 access_product_template_manager,Product Template (Asset) Manager,product.model_product_template,group_asset_manager,permission,cud,,,,,
 product_asset_log_stock_user_rule,Asset logs: warehouse users see every log,resource_asset_product.model_resource_log,stock.group_stock_user,permission,cru,,,,,
-product_asset_log_asset_kind_rule,Asset logs: only for the kinds the user is enabled for,resource_asset_product.model_resource_log,resource_asset.group_asset_user,permission,cru,predicate,,resource_asset.access_predicate_enabled_kind,"{""field"": ""asset_id.kind_id"", ""kindless"": true}",
+product_asset_log_asset_kind_rule,Asset logs: only for the kinds the user is enabled for,resource_asset_product.model_resource_log,resource.group_asset_user,permission,cru,predicate,,resource.access_predicate_enabled_kind,"{""field"": ""asset_id.kind_id"", ""kindless"": true}",
 access_resource_asset_tag_user,resource.asset.tag.user,model_resource_tag,base.group_user,permission,r,,,,,
-access_resource_asset_tag_manager,resource.asset.tag.manager,model_resource_tag,resource_asset.group_asset_manager,permission,cud,,,,,
+access_resource_asset_tag_manager,resource.asset.tag.manager,model_resource_tag,resource.group_asset_manager,permission,cud,,,,,

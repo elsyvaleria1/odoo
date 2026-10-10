@@ -17,7 +17,7 @@ class TestRemoteDeviceAssetFields(DeviceDeviceAssetTestBase):
         user = new_test_user(
             self.env,
             login="tracker_asset_editor",
-            groups="resource_asset.group_asset_manager,device_gps.group_device_gps_manager",
+            groups="resource.group_asset_manager,device_gps.group_device_gps_manager",
         )
         resource = self.env["resource.resource"].create(
             {"name": "Assigned elsewhere", "type": "material"}
@@ -25,7 +25,7 @@ class TestRemoteDeviceAssetFields(DeviceDeviceAssetTestBase):
         target = self.env["resource.resource"].create(
             {
                 "name": "Audit target",
-                "kind_id": self.env.ref("resource_asset.kind_machinery").id,
+                "kind_id": self.env.ref("resource.kind_machinery").id,
             }
         )
         device = self.env["device.device"].create(
