@@ -79,6 +79,11 @@
                 name="name">Privilege: move a tax return to paid or back when a reconciliation settles or reopens it</field>
             <field name="is_privilege" eval="True" />
         </record>
+        <record id="privilege_queue_invoice_sending" model="res.groups">
+            <field
+                name="name">Privilege: queue an invoice for batch sending as the user who asked, or take it off the queue</field>
+            <field name="is_privilege" eval="True" />
+        </record>
         <record id="res_group_privilege_accounting_bank" model="res.groups.privilege">
             <field name="name">Bank</field>
             <field name="sequence">50</field>

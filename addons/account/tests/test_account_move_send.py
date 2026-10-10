@@ -3,7 +3,7 @@ from datetime import date
 from unittest.mock import patch
 
 from odoo import Command
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 from odoo.libs.json import loads as json_loads
 from odoo.tests import Form, tagged, users, warmup
 from odoo.tools import formataddr, mute_logger
@@ -1418,9 +1418,11 @@ class TestAccountMoveSend(TestAccountMoveSendCommon):
         sp_partner_2 = self.env["res.partner"].create(
             {"name": "Partner 2", "email": "test@test.odoo.com"}
         )
-        self.env.user.partner_id = sp_partner_2
+        sender_2 = self.env.user.copy(
+            {"login": "cron_notifications_sender_2", "partner_id": sp_partner_2.id}
+        )
         wizard_partner_2 = self.create_send_and_print(invoices_error)
-        wizard_partner_2.action_send_and_print()
+        wizard_partner_2.with_user(sender_2).action_send_and_print()
 
         def _hook_invoice_document_before_pdf_report_render(
             self, invoice, invoice_data
@@ -1431,17 +1433,13 @@ class TestAccountMoveSend(TestAccountMoveSendCommon):
         self.assertTrue(
             all(invoice.sending_data for invoice in invoices_success + invoices_error)
         )
-        self.assertTrue(
-            all(
-                invoice.sending_data.get("author_partner_id") == sp_partner_1.id
-                for invoice in invoices_success
-            )
+        self.assertEqual(
+            invoices_success.mapped("sending_data"),
+            [{"author_user_id": self.env.user.id}] * len(invoices_success),
         )
-        self.assertTrue(
-            all(
-                invoice.sending_data.get("author_partner_id") == sp_partner_2.id
-                for invoice in invoices_error
-            )
+        self.assertEqual(
+            invoices_error.mapped("sending_data"),
+            [{"author_user_id": sender_2.id}] * len(invoices_error),
         )
 
         self.env.cr.precommit.run()
@@ -1486,6 +1484,43 @@ class TestAccountMoveSend(TestAccountMoveSendCommon):
         self.assertEqual(
             sorted(payload_2["action_button"]["res_ids"]), invoices_error.ids
         )
+
+    def test_queued_sending_author_cannot_be_forged(self):
+        invoice = self.init_invoice("out_invoice", amounts=[1000], post=True)
+        billing_user = self.env["res.users"].create(
+            {
+                "name": "Billing only",
+                "login": "queued_sending_billing_only",
+                "company_id": self.company_data["company"].id,
+                "company_ids": [Command.set(self.company_data["company"].ids)],
+                "group_ids": [
+                    Command.set(self.env.ref("account.group_account_invoice").ids)
+                ],
+            }
+        )
+        victim = self.env["res.users"].create(
+            {"name": "Victim", "login": "queued_sending_victim"}
+        )
+
+        with self.assertRaises(AccessError):
+            invoice.with_user(billing_user).write(
+                {
+                    "sending_data": {
+                        "author_user_id": victim.id,
+                        "author_partner_id": victim.partner_id.id,
+                    }
+                }
+            )
+
+        invoice.sudo().sending_data = {
+            "author_user_id": billing_user.id,
+            "author_partner_id": victim.partner_id.id,
+        }
+        settings = self.env["mixin.account.move.send"]._get_default_sending_settings(
+            invoice, from_cron=True
+        )
+        self.assertEqual(settings["author_user_id"], billing_user.id)
+        self.assertEqual(settings["author_partner_id"], billing_user.partner_id.id)
 
     def test_is_move_sent_state(self):
         invoice = self.init_invoice("out_invoice", amounts=[1000], post=True)

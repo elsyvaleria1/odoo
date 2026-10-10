@@ -1110,7 +1110,10 @@ class AccountMove(models.Model):
         string="Cash Rounding Method",
         help="Defines the smallest coinage of the currency that can be used to pay by cash.",
     )
-    sending_data = fields.Json(copy=False)
+    sending_data = fields.Json(
+        copy=False,
+        write_classification="account.invoice_sending_queue",
+    )
     invoice_pdf_report_id = fields.Many2one(
         comodel_name="ir.attachment",
         string="PDF Attachment",
@@ -7303,7 +7306,7 @@ class AccountMove(models.Model):
             )
         self.line_ids.analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
         self.state = "draft"
-        self.sending_data = False
+        self._as_sending_queue().sending_data = False
 
         self._detach_attachments()
 
@@ -7619,6 +7622,12 @@ class AccountMove(models.Model):
         failed = self.filtered("auto_post_failed")
         _debug.logic("auto_post_retry_requested", moves=failed)
         super(AccountMove, failed).write({"auto_post_failed": False})
+
+    def _as_sending_queue(self):
+        return self.with_privilege(
+            "account.privilege_queue_invoice_sending",
+            reason="an invoice was queued for batch sending or taken off the queue",
+        )
 
     @api.model
     @_debug.perf.timed

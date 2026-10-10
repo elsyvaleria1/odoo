@@ -316,6 +316,24 @@ class TestMarinAccountMoveAuditFixes(AccountTestInvoicingCommon):
 
         self.assertEqual(invoice.signing_user, signer_1)
 
+    def test_the_company_representative_signs_an_invoice_posted_by_a_portal_user(
+        self,
+    ):
+        representative = self.env.user
+        self.company_data["company"].account_config_id.signing_user = representative
+        portal_user = self.env["res.users"].create(
+            {
+                "name": "Portal poster",
+                "login": "wp3_portal_poster",
+                "group_ids": [Command.set(self.env.ref("base.group_portal").ids)],
+            }
+        )
+        invoice = self.init_invoice("out_invoice", amounts=[100.0])
+
+        invoice.with_user(portal_user).sudo().action_post()
+
+        self.assertEqual(invoice.signing_user, representative)
+
     def test_quick_edit_suggests_expense_accounts_for_vendor_credit_notes(self):
         expense = self.company_data["default_account_expense"]
         self._bill("service", expense, "2026-01-10").action_post()

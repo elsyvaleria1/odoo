@@ -133,9 +133,8 @@ class WizardAccountMoveSendBatch(models.TransientModel):
                 )
             )
 
-        self.move_ids.sending_data = {
-            "author_user_id": self.env.user.id,
-            "author_partner_id": self.env.user.partner_id.id,
+        self.move_ids._as_sending_queue().sending_data = {
+            "author_user_id": self.env.user.id
         }
         _debug.pipeline(
             "batch_send_queued",

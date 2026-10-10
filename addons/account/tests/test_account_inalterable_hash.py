@@ -1339,3 +1339,106 @@ class TestAccountMoveInalterableHash(AccountTestInvoicingCommon):
         self.assertEqual(wizard.max_hash_date, fields.Date.from_string("2024-01-02"))
         self.assertFalse(wizard.not_hashable_unlocked_move_ids)
         self.assertEqual(wizard.move_to_hash_ids, moves_v4)
+
+    def test_hash_version_floor_survives_a_batch_boundary(self):
+        self.company_data["default_journal_sale"].restrict_mode_hash_table = True
+        moves_v3 = self._init_and_post(
+            [
+                {"partner": self.partner_a, "date": "2023-01-01", "amounts": [100]},
+                {"partner": self.partner_a, "date": "2023-01-02", "amounts": [200]},
+            ],
+            hash_version=3,
+        )
+        move_v2 = self._init_and_post(
+            [{"partner": self.partner_a, "date": "2023-01-03", "amounts": [300]}],
+            hash_version=2,
+        )
+
+        for batch_size in (2, 1000):
+            with (
+                self.subTest(batch_size=batch_size),
+                patch(
+                    "odoo.addons.account.models.res_company.INTEGRITY_HASH_BATCH_SIZE",
+                    batch_size,
+                ),
+            ):
+                self._verify_integrity(
+                    moves_v3 | move_v2,
+                    f"Corrupted data on journal entry with id {move_v2.id}.*",
+                )
+
+    def test_posting_in_a_hashed_bank_journal_waits_for_reconciliation(self):
+        bank_journal = self.company_data["default_journal_bank"]
+        bank_journal.restrict_mode_hash_table = True
+
+        statement_line = self.env["account.bank.statement.line"].create(
+            {
+                "journal_id": bank_journal.id,
+                "date": "2017-01-01",
+                "payment_ref": "unreconciled",
+                "amount": 10.0,
+            }
+        )
+
+        self.assertEqual(statement_line.move_id.state, "posted")
+        self.assertFalse(statement_line.move_id.inalterable_hash)
+
+    def test_securing_wizard_created_without_a_date_defaults_one(self):
+        wizard = self.env["wizard.account.move.hash"].create({})
+        self.assertEqual(
+            wizard.hash_date,
+            wizard.max_hash_date or fields.Date.context_today(wizard),
+        )
+
+    def test_securing_entries_hashes_and_secures_the_whole_chain(self):
+        moves = self._init_and_post(
+            [
+                {"partner": self.partner_a, "date": "2024-01-01", "amounts": [100]},
+                {"partner": self.partner_a, "date": "2024-01-02", "amounts": [100]},
+                {"partner": self.partner_a, "date": "2024-01-03", "amounts": [100]},
+            ]
+        )
+        self.assertFalse(any(moves.mapped("secured")))
+        wizard = self.env["wizard.account.move.hash"].create(
+            {"hash_date": "2024-01-03"}
+        )
+        self.assertEqual(wizard.move_to_hash_ids, moves)
+
+        wizard.action_secure_entries()
+
+        self.assertTrue(all(moves.mapped("secured")))
+        self.assertFalse(any(moves.mapped("show_reset_to_draft_button")))
+        self._verify_integrity(
+            moves, "Entries are correctly hashed", moves[0], moves[-1]
+        )
+
+    def test_securing_wizard_reads_chain_warnings_only_for_its_date(self):
+        bank_journal = self.company_data["default_journal_bank"]
+        statement_lines = self.env["account.bank.statement.line"].create(
+            [
+                {
+                    "journal_id": bank_journal.id,
+                    "date": day,
+                    "payment_ref": day,
+                    "amount": 10.0,
+                }
+                for day in ("2022-03-15", "2023-03-15", "2024-03-15")
+            ]
+        )
+        self.env.flush_all()
+        self.env.invalidate_all()
+
+        with self.assertQueryCount(49):
+            wizard = self.env["wizard.account.move.hash"].create(
+                {"hash_date": "2024-03-31"}
+            )
+            warnings = wizard.warnings
+            max_hash_date = wizard.max_hash_date
+
+        self.assertEqual(wizard.unreconciled_bank_statement_line_ids, statement_lines)
+        self.assertIn("account_unreconciled_bank_statement_line_ids", warnings)
+        self.assertEqual(
+            statement_lines.move_id.mapped("sequence_prefix"),
+            ["BNK1/2022/", "BNK1/2023/", "BNK1/2024/"],
+        )
+        self.assertEqual(max_hash_date, fields.Date.from_string("2022-03-14"))

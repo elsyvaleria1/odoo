@@ -23,4 +23,19 @@
         <field name="class_id" ref="access_class_receivable" />
     </record>
 
+    <record id="access_class_invoice_sending_queue" model="ir.access.class">
+        <field name="name">account.invoice_sending_queue</field>
+        <field
+            name="description">Who queued an invoice for batch sending: the sending cron sends it as that user. Only the queuing and the sending set or clear it, never a client.</field>
+    </record>
+
+    <record id="access_invoice_sending_queue_privilege" model="ir.access">
+        <field
+            name="name">account.invoice_sending_queue: queuing an invoice, sending it or resetting it</field>
+        <field name="group_id" ref="account.privilege_queue_invoice_sending" />
+        <field name="kind">permission</field>
+        <field name="operation">u</field>
+        <field name="class_id" ref="access_class_invoice_sending_queue" />
+    </record>
+
 </odoo>

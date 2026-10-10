@@ -5,10 +5,9 @@ from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import float_repr
+from odoo.tools import SQL, TransactionMemo, float_repr
 
 from .account_move import MAX_HASH_VERSION
-from .account_move import AccountMove as AccountMoveMain
 
 _debug = DebugLog(__name__)
 
@@ -39,32 +38,72 @@ class AccountMove(models.Model):
             move.filtered_domain(self._get_domain_move_hash(force_hash=force_hash))
         )
 
-    def _hash_moves(self, **kwargs) -> None:
-        chains_to_hash = self._get_chains_to_hash(**kwargs)
-        grant_secure_group_access = False
-        _debug.pipeline(
-            "_hash_moves", records=self, chains_to_hash_count=len(chains_to_hash)
+    def _serialize_hash_chains(self, chains) -> None:
+        # Under REPEATABLE READ a concurrent poster's committed entries are
+        # invisible, so its chain looks gapped or unhashed. Every poster
+        # rewrites the row its new hashes build on (the chain's last hashed
+        # entry, or the journal while the chain has none), so the later of two
+        # posters to one chain fails to serialize and is retried on a snapshot
+        # that sees the other's entries, while other chains stay unblocked.
+        predecessors = self.env["account.move"].concat(
+            *(chain["last_move_hashed"] for chain in chains)
         )
-        for chain in chains_to_hash:
+        journals = self.env["account.journal"].concat(
+            *(chain["journal"] for chain in chains if not chain["last_move_hashed"])
+        )
+        _debug.logic(
+            "hash_chains_serialized", predecessors=predecessors, journals=journals
+        )
+        for records in (predecessors, journals):
+            if records:
+                self.env.cr.execute(
+                    SQL(
+                        "UPDATE %s SET write_date = write_date WHERE id = ANY(%s)",
+                        SQL.identifier(records._table),
+                        records.ids,
+                    )
+                )
+
+    def _write_inalterable_hashes(self, move_hashes) -> None:
+        self.flush_recordset(["inalterable_hash"])
+        self._write_multi([{"inalterable_hash": move_hashes[move]} for move in self])
+        self.modified(["inalterable_hash"])
+        self.invalidate_recordset(["inalterable_hash"])
+        TransactionMemo.discard_for_model(self.env, self._name, ["inalterable_hash"])
+
+    @api.model
+    def _hash_chains(self, chains) -> None:
+        if not chains:
+            return
+        moves = self.env["account.move"].concat(*(chain["moves"] for chain in chains))
+        moves_sudo = moves.sudo()
+        move_hashes = {}
+        for chain in chains:
             _debug.pipeline(
                 "hashing_chain",
                 moves=chain["moves"],
-                restrict_mode=chain["journal_restrict_mode"],
                 warnings=chain.get("warnings"),
             )
-            move_hashes = chain["moves"].sudo()._get_hashes(chain["previous_hash"])
-            for move, move_hash in move_hashes.items():
-                super(AccountMoveMain, move).write({"inalterable_hash": move_hash})
-            if not chain["journal_restrict_mode"]:
-                grant_secure_group_access = True
-            chain["moves"]._message_log_batch(
-                bodies={
-                    m.id: self.env._("This journal entry has been secured.")
-                    for m in chain["moves"]
-                }
+            move_hashes.update(
+                chain["moves"]
+                .with_env(moves_sudo.env)
+                ._get_hashes(chain["previous_hash"])
             )
-        if grant_secure_group_access:
+        moves_sudo._write_inalterable_hashes(move_hashes)
+        moves._message_log_batch(
+            bodies=dict.fromkeys(
+                moves.ids, self.env._("This journal entry has been secured.")
+            )
+        )
+        if not all(moves.journal_id.mapped("restrict_mode_hash_table")):
             self.env["res.groups"]._activate_group_account_secured()
+
+    def _hash_moves(self, **kwargs) -> None:
+        chains_to_hash = self._get_chains_to_hash(serialize=True, **kwargs)
+        _debug.pipeline(
+            "_hash_moves", records=self, chains_to_hash_count=len(chains_to_hash)
+        )
+        self._hash_chains(chains_to_hash)
 
     def _get_domain_chain_hash(
         self, last_move_in_chain, last_move_hashed, common_domain, include_pre_last_hash
@@ -82,7 +121,7 @@ class AccountMove(models.Model):
         return domain
 
     def _get_chain_warnings(
-        self, moves_to_hash, last_move_hashed, include_pre_last_hash
+        self, moves_to_hash, last_move_hashed, include_pre_last_hash, journal
     ):
         warnings = set()
         if not moves_to_hash:
@@ -98,7 +137,11 @@ class AccountMove(models.Model):
         if seq_numbers != list(range(start, seq_numbers[-1] + 1)):
             warnings.add("gap")
 
-        has_unreconciled = bool(
+        has_unreconciled = journal.type in (
+            "bank",
+            "cash",
+            "credit",
+        ) and bool(
             self.env["account.bank.statement.line"].search_count(
                 [
                     ("move_id", "in", moves_to_hash.ids),
@@ -118,9 +161,23 @@ class AccountMove(models.Model):
         )
         return warnings
 
+    def _set_chain_warnings(self, chain, include_pre_last_hash=False) -> set:
+        if "warnings" not in chain:
+            chain["warnings"] = self._get_chain_warnings(
+                chain["moves"].with_env(self.env),
+                chain["last_move_hashed"],
+                include_pre_last_hash,
+                chain["journal"],
+            )
+        return chain["warnings"]
+
     @_debug.perf.timed
     def _get_chain_info(
-        self, force_hash=False, include_pre_last_hash=False, early_stop=False
+        self,
+        force_hash=False,
+        include_pre_last_hash=False,
+        early_stop=False,
+        with_warnings=True,
     ):
         if not self:
             return False
@@ -182,16 +239,16 @@ class AccountMove(models.Model):
             .sudo()
             .search_fetch(domain, ["sequence_number"], order="sequence_number")
         )
+        moves = moves_to_hash.sudo(False)
         info = {
+            "journal": journal,
             "previous_hash": last_move_hashed.inalterable_hash,
             "last_move_hashed": last_move_hashed,
+            "moves": moves,
+            "remaining_moves": self - moves,
         }
-        if self.env.context.get("chain_info_warnings", True):
-            info["warnings"] = self._get_chain_warnings(
-                moves_to_hash, last_move_hashed, include_pre_last_hash
-            )
-
-        moves = moves_to_hash.sudo(False)
+        if with_warnings:
+            self._set_chain_warnings(info, include_pre_last_hash)
         _debug.logic(
             "chain_last_hashed_hash",
             journal=journal,
@@ -199,12 +256,6 @@ class AccountMove(models.Model):
             sequence_number=last_move_hashed.sequence_number,
             moves_to_hash_count=len(moves_to_hash),
             warnings=info.get("warnings"),
-        )
-        info.update(
-            {
-                "moves": moves,
-                "remaining_moves": self - moves,
-            }
         )
         return info
 
@@ -217,8 +268,9 @@ class AccountMove(models.Model):
         raise_if_unreconciled=True,
         include_pre_last_hash=False,
         early_stop=False,
+        serialize=False,
     ):
-        res = []
+        chains = []
         for journal, journal_moves in self.grouped("journal_id").items():
             for chain_moves in journal_moves.grouped("sequence_prefix").values():
                 chain_info = chain_moves._get_chain_info(
@@ -234,34 +286,45 @@ class AccountMove(models.Model):
                     continue
                 if early_stop:
                     return True
-                chain_info["journal_restrict_mode"] = journal.restrict_mode_hash_table
 
-                warnings = chain_info.get("warnings") or set()
-                if raise_if_unreconciled and "unreconciled" in warnings:
-                    raise UserError(
-                        self.env._(
-                            "An error occurred when computing the inalterability. All entries have to be reconciled."
-                        )
+                if "unreconciled" in chain_info["warnings"] and not force_hash:
+                    # hashing a statement line before it is reconciled would
+                    # forbid reconciling it; the chain is secured once it is
+                    _debug.logic(
+                        "chain_deferred_unreconciled",
+                        journal=journal,
+                        moves=chain_info["moves"],
                     )
-
-                if raise_if_no_document and "no_document" in warnings:
-                    raise UserError(
-                        self.env._(
-                            "This move could not be locked either because "
-                            "some move with the same sequence prefix has a higher number. You may need to resequence it."
-                        )
-                    )
-                if raise_if_gap and "gap" in warnings:
-                    raise UserError(
-                        self.env._(
-                            "An error occurred when computing the inalterability. A gap has been detected in the sequence."
-                        )
-                    )
-
-                res.append(chain_info)
+                    continue
+                chains.append(chain_info)
         if early_stop:
             return False
-        return res
+        if serialize:
+            self._serialize_hash_chains(chains)
+
+        for chain_info in chains:
+            warnings = chain_info["warnings"]
+            if raise_if_unreconciled and "unreconciled" in warnings:
+                raise UserError(
+                    self.env._(
+                        "An error occurred when computing the inalterability. All entries have to be reconciled."
+                    )
+                )
+
+            if raise_if_no_document and "no_document" in warnings:
+                raise UserError(
+                    self.env._(
+                        "This move could not be locked either because "
+                        "some move with the same sequence prefix has a higher number. You may need to resequence it."
+                    )
+                )
+            if raise_if_gap and "gap" in warnings:
+                raise UserError(
+                    self.env._(
+                        "An error occurred when computing the inalterability. A gap has been detected in the sequence."
+                    )
+                )
+        return chains
 
     def _recompute_integrity_hash(self, previous_hash, start_version) -> tuple:
         self.check_singleton()

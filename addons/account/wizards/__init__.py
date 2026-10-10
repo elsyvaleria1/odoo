@@ -25,7 +25,6 @@ from . import wizard_account_move_line_reconcile_amounts
 from . import wizard_account_move_line_reconcile_suggestion
 from . import wizard_account_move_line_reconcile_transfer
 from . import wizard_account_move_line_reconcile_write_off
-from . import wizard_account_config_update_lock_date_reports
 from . import wizard_report_formula_send
 from . import wizard_report_formula_export_error
 from . import wizard_account_move_create_revaluation

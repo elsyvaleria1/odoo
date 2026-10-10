@@ -191,106 +191,8 @@ class WizardAccountReturnCreate(models.TransientModel):
                 + return_types_without_country
             )
 
-    @api.depends("date_from", "date_to", "return_type_id")
-    @_debug.perf.timed
-    def _compute_warnings(self) -> None:
-        returns_companies_map = {
-            (date_from, date_to, tuple(type_id.ids)): returns.mapped("company_ids")
-            for date_from, date_to, type_id, returns in self.env[
-                "account.return"
-            ]._read_group(
-                domain=[],
-                groupby=["date_from:day", "date_to:day", "type_id"],
-                aggregates=["id:recordset"],
-            )
-        }
-
-        for wizard in self:
-            wizard.show_warning_wrong_dates = False
-            wizard.show_warning_existing_return = False
-            wizard.show_warning_overlap = False
-
-            if _debug.logic.enabled and (
-                not wizard.date_from
-                or not wizard.date_to
-                or not wizard.return_type_id
-                or wizard.category == "audit"
-            ):
-                _debug.logic(
-                    "return_warnings_skipped",
-                    returntype=wizard.return_type_id,
-                    category=wizard.category,
-                    has_dates=bool(wizard.date_from and wizard.date_to),
-                )
-            if (
-                not wizard.date_from
-                or not wizard.date_to
-                or not wizard.return_type_id
-                or wizard.category == "audit"
-            ):
-                continue
-
-            # checks date_from and date_to against the return type period boundaries
-            date_pointer = wizard.date_from
-            first_period = True
-
-            while date_pointer <= wizard.date_to:
-                period_start, period_end = wizard.return_type_id._get_period_boundaries(
-                    wizard.company_id, date_pointer
-                )
-
-                if first_period and wizard.date_from != period_start:
-                    wizard.show_warning_wrong_dates = True
-
-                # Find the returns of this type overlapping the selected date range
-                for return_start, return_end, _type_ids in filter(
-                    lambda key: wizard.return_type_id.ids[0] in key[2],
-                    returns_companies_map.keys(),
-                ):  # wizard.return_type_id.ids[0] because id can be NewId
-                    if (
-                        wizard.date_from == return_start
-                        and wizard.date_to == return_end
-                    ):
-                        wizard.show_warning_existing_return = True
-                    elif (return_start <= wizard.date_from <= return_end) or (
-                        return_start <= wizard.date_to <= return_end
-                    ):
-                        wizard.show_warning_overlap = True
-
-                date_pointer = period_end + relativedelta(days=1)
-                first_period = False
-
-            # Validate the last period ends exactly at date_to
-            if date_pointer - relativedelta(days=1) != wizard.date_to:
-                wizard.show_warning_wrong_dates = True
-
-            if wizard.show_warning_existing_return:
-                wizard.show_warning_overlap = False
-            _debug.logic(
-                "return_warnings_computed",
-                returntype=wizard.return_type_id,
-                wrong_dates=wizard.show_warning_wrong_dates,
-                existing_return=wizard.show_warning_existing_return,
-                overlap=wizard.show_warning_overlap,
-            )
-
-    @_debug.perf.timed
-    def action_create_manual_account_returns(self) -> dict | None:
-        _debug.lifecycle("action_create_manual_account_returns", records=self)
+    def _get_return_company_and_tax_unit(self) -> tuple:
         self.check_singleton()
-
-        if self.show_warning_wrong_dates and not self.env.context.get(
-            "force_periodicity_violation"
-        ):
-            raise UserError(
-                self.env._("The selected range doesn't match any fiscal period.")
-            )
-
-        if self.show_warning_existing_return:
-            raise UserError(
-                self.env._("A return already exists for the selected period.")
-            )
-
         all_branch_companies_with_same_vat = (
             self.company_id._get_branches_with_same_vat()
         )
@@ -316,6 +218,105 @@ class WizardAccountReturnCreate(models.TransientModel):
             apply_tax_unit=bool(apply_tax_unit),
             company=company,
         )
+        return company, tax_unit
+
+    def _get_domain_existing_returns(self, company) -> list:
+        self.check_singleton()
+        return [
+            ("company_id", "=", company.id),
+            ("type_id", "=", self.return_type_id._origin.id),
+            ("date_from", "<=", self.date_to),
+            ("date_to", ">=", self.date_from),
+        ]
+
+    @api.depends("date_from", "date_to", "return_type_id")
+    @_debug.perf.timed
+    def _compute_warnings(self) -> None:
+        for wizard in self:
+            wizard.show_warning_wrong_dates = False
+            wizard.show_warning_existing_return = False
+            wizard.show_warning_overlap = False
+
+            if (
+                not wizard.date_from
+                or not wizard.date_to
+                or not wizard.return_type_id
+                or wizard.category == "audit"
+            ):
+                _debug.logic(
+                    "return_warnings_skipped",
+                    returntype=wizard.return_type_id,
+                    category=wizard.category,
+                    has_dates=bool(wizard.date_from and wizard.date_to),
+                )
+                continue
+
+            # checks date_from and date_to against the return type period boundaries
+            date_pointer = wizard.date_from
+            first_period = True
+            while date_pointer <= wizard.date_to:
+                period_start, period_end = wizard.return_type_id._get_period_boundaries(
+                    wizard.company_id, date_pointer
+                )
+                if first_period and wizard.date_from != period_start:
+                    wizard.show_warning_wrong_dates = True
+                date_pointer = period_end + relativedelta(days=1)
+                first_period = False
+
+            # Validate the last period ends exactly at date_to
+            if date_pointer - relativedelta(days=1) != wizard.date_to:
+                wizard.show_warning_wrong_dates = True
+
+            company, _tax_unit = wizard._get_return_company_and_tax_unit()
+            intersecting = (
+                self.env["account.return"]
+                .sudo()
+                .search_fetch(  # noqa: E8507 - a transient wizard opened on one company
+                    wizard._get_domain_existing_returns(company),
+                    ["date_from", "date_to"],
+                )
+            )
+            wizard.show_warning_existing_return = any(
+                (account_return.date_from, account_return.date_to)
+                == (wizard.date_from, wizard.date_to)
+                for account_return in intersecting
+            )
+            wizard.show_warning_overlap = (
+                bool(intersecting) and not wizard.show_warning_existing_return
+            )
+            _debug.logic(
+                "return_warnings_computed",
+                returntype=wizard.return_type_id,
+                company=company,
+                intersecting=intersecting,
+                wrong_dates=wizard.show_warning_wrong_dates,
+                existing_return=wizard.show_warning_existing_return,
+                overlap=wizard.show_warning_overlap,
+            )
+
+    @_debug.perf.timed
+    def action_create_manual_account_returns(self) -> dict | None:
+        _debug.lifecycle("action_create_manual_account_returns", records=self)
+        self.check_singleton()
+
+        if self.show_warning_wrong_dates and not self.env.context.get(
+            "force_periodicity_violation"
+        ):
+            raise UserError(
+                self.env._("The selected range doesn't match any fiscal period.")
+            )
+
+        if self.show_warning_existing_return:
+            raise UserError(
+                self.env._("A return already exists for the selected period.")
+            )
+
+        if self.show_warning_overlap:
+            raise UserError(
+                self.env._("The selected period overlaps a return that already exists.")
+            )
+
+        company, tax_unit = self._get_return_company_and_tax_unit()
         if not company.has_access("read"):
             raise UserError(
                 self.env._(
@@ -333,7 +334,7 @@ class WizardAccountReturnCreate(models.TransientModel):
         )._try_create_returns_for_fiscal_year(
             company,
             tax_unit,
-            allow_duplicates=not self.show_warning_existing_return,
+            allow_duplicates=True,
             bypass_period_check=True,
         )
         returns_created.skipped_check_cycles = ",".join(

@@ -131,11 +131,14 @@ class MixinAccountMoveSend(models.AbstractModel):
             or {},
             "pdf_report": get_setting("pdf_report")
             or self._get_default_pdf_report_id(move),
-            "author_user_id": get_setting("author_user_id", from_cron=from_cron)
-            or self.env.user.id,
-            "author_partner_id": get_setting("author_partner_id", from_cron=from_cron)
-            or self.env.user.partner_id.id,
         }
+        author_user = self.env["res.users"].browse(
+            get_setting("author_user_id", from_cron=from_cron) or self.env.user.id
+        )
+        vals["author_user_id"] = author_user.id
+        vals["author_partner_id"] = (
+            custom_settings.get("author_partner_id") or author_user.partner_id.id
+        )
         vals["invoice_edi_format"] = get_setting(
             "invoice_edi_format",
             default_value=self._get_default_invoice_edi_format(

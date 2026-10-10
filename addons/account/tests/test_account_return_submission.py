@@ -118,6 +118,69 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         submission.receipt_attachment_ids = [Command.link(receipt.id)]
         self.assertEqual(submission.receipt_attachment_ids, receipt)
 
+    def test_an_accepted_submission_keeps_its_lines(self):
+        tax_return = self._reviewed_return()
+        action = tax_return.action_submit()
+        submission = self.env[action["res_model"]].browse(action["res_id"])
+        submission.write(
+            {
+                "external_ref": "ACK-2024-02",
+                "line_ids": [Command.create({"name": "VAT due", "amount": 100.0})],
+            }
+        )
+        submission.action_send()
+        self.assertEqual(submission.state, "accepted")
+
+        with self.assertRaises(UserError):
+            submission.line_ids.unlink()
+        with self.assertRaises(UserError):
+            submission.write({"line_ids": [Command.clear()]})
+        self.assertEqual(submission.line_ids.mapped("amount"), [100.0])
+
+    def test_an_unreviewed_return_cannot_be_filed(self):
+        tax_return = self.return_type.with_context(
+            forced_date_from=fields.Date.from_string("2024-02-01"),
+            forced_date_to=fields.Date.from_string("2024-02-29"),
+        )._try_create_returns_for_fiscal_year(self.env.company, False)
+        self.assertEqual(tax_return.state, "new")
+
+        with self.assertRaises(UserError):
+            tax_return.action_submit()
+        self.assertFalse(tax_return.submission_ids)
+
+        submission = self.env["account.return.submission"].create(
+            {"return_id": tax_return.id, "channel": "manual", "external_ref": "ACK"}
+        )
+        with self.assertRaises(UserError):
+            submission.action_send()
+        self.assertRecordValues(
+            tax_return, [{"state": "new", "is_completed": False, "date_lock": False}]
+        )
+
+    def test_a_tax_return_reviewed_without_its_lock_cannot_be_filed(self):
+        tax_return = self.return_type.with_context(
+            forced_date_from=fields.Date.from_string("2024-02-01"),
+            forced_date_to=fields.Date.from_string("2024-02-29"),
+        )._try_create_returns_for_fiscal_year(self.env.company, False)
+        self.assertTrue(tax_return.is_tax_return)
+        tax_return._review_checks(bypass_failing_tests=True)
+        tax_return.state = "reviewed"
+        self.assertEqual(tax_return.next_state, "submitted")
+
+        with self.assertRaises(UserError):
+            tax_return.action_submit()
+        self.assertFalse(tax_return.submission_ids)
+
+        submission = self.env["account.return.submission"].create(
+            {"return_id": tax_return.id, "channel": "manual", "external_ref": "ACK"}
+        )
+        with self.assertRaises(UserError):
+            submission.action_send()
+        self.assertRecordValues(
+            tax_return,
+            [{"state": "reviewed", "is_completed": False, "date_lock": False}],
+        )
+
     def test_a_filed_return_cannot_be_reset(self):
         tax_return, submission = self._accepted_submission()
 
@@ -141,6 +204,28 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
         self.assertEqual(tax_return.state, "new")
         self.assertEqual(submission.exists(), submission)
         self.assertEqual(submission.error_message, "[E12] Bad period")
+
+    def test_a_rejected_filing_can_be_validated_and_filed_again(self):
+        tax_return = self._reviewed_return()
+        tax_return.action_submit()
+        tax_return.submission_ids._update_from_channel(
+            "rejected",
+            error_payload={"errors": [{"code": "E12", "message": "Bad period"}]},
+        )
+        tax_return.action_reset_2_states()
+
+        with patch.object(
+            self.registry["account.return"],
+            "_generate_locking_attachments",
+            lambda self, options: None,
+        ):
+            tax_return.action_validate()
+
+        self.assertEqual(tax_return.state, "reviewed")
+        self.assertEqual(
+            len(tax_return.closing_move_ids.filtered(lambda m: m.state == "posted")),
+            1,
+        )
 
     # ------------------------------------------------------------------
     # The channel contract, against fakes shaped like the real channels

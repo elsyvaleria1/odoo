@@ -924,6 +924,49 @@ class AccountReturn(models.Model):
     ####  State Actions
     ####################################################################################################
 
+    def _check_transition(self, target_state) -> None:
+        self.check_singleton()
+        allowed = self.next_state == target_state
+        _debug.logic(
+            "transition_checked",
+            tax_return=self,
+            state=self.state,
+            target_state=target_state,
+            allowed=allowed,
+        )
+        if not allowed:
+            raise UserError(
+                self.env._(
+                    "%(name)s cannot move to %(target)s from its current step (%(state)s).",
+                    name=self.display_name,
+                    target=target_state,
+                    state=self.state,
+                )
+            )
+
+    def _check_lockable(self, allow_posted_closing=False) -> None:
+        # an override may post its own closing before the base locking runs
+        self.check_singleton()
+        posted_closing = (
+            self.env["account.move"]
+            if allow_posted_closing
+            else self.closing_move_ids.filtered(lambda move: move.state == "posted")
+        )
+        _debug.logic(
+            "lock_checked",
+            tax_return=self,
+            state=self.state,
+            date_lock=self.date_lock,
+            posted_closing=posted_closing,
+        )
+        if self.state != "new" or posted_closing:
+            raise UserError(
+                self.env._(
+                    "%(name)s is already locked; reset it before validating it again.",
+                    name=self.display_name,
+                )
+            )
+
     @_debug.perf.timed
     def action_validate(self, bypass_failing_tests=False):
         """Review the checks, then complete an audit return or lock any other return.
@@ -932,6 +975,7 @@ class AccountReturn(models.Model):
         """
         _debug.lifecycle("action_validate", records=self)
         self.check_singleton()
+        self._check_lockable()
 
         self._review_checks(bypass_failing_tests)
         _debug.pipeline(
@@ -967,6 +1011,7 @@ class AccountReturn(models.Model):
         :param options_to_inject: report options overriding the computed closing report options
         """
         self.check_singleton()
+        self._check_lockable(allow_posted_closing=True)
 
         domain = [
             ("company_id", "=", self.company_id.id),
@@ -1018,12 +1063,20 @@ class AccountReturn(models.Model):
                     report.country_id
                     and report.country_id
                     == main_company.tax_config_id.account_fiscal_country_id
-                    and (
-                        not main_company.account_config_id.tax_lock_date
-                        or self.date_to > main_company.account_config_id.tax_lock_date
-                    )
                 ):
-                    for company in self.company_ids:
+                    companies_to_lock = self.company_ids.filtered(
+                        lambda company: (
+                            not company.account_config_id.tax_lock_date
+                            or self.date_to > company.account_config_id.tax_lock_date
+                        )
+                    )
+                    _debug.logic(
+                        "tax_lock_date_advanced",
+                        tax_return=self,
+                        companies=companies_to_lock,
+                        kept=self.company_ids - companies_to_lock,
+                    )
+                    for company in companies_to_lock:
                         self.env["report.formula"].with_company(
                             company
                         )._create_default_external_values(
@@ -1256,6 +1309,7 @@ class AccountReturn(models.Model):
     def action_submit(self):
         _debug.lifecycle("action_submit", records=self)
         self.check_singleton()
+        self._check_submittable()
         self._check_all_branches_allowed()
         if self.type_id.filing_channel:
             return self._submit_through_channel()
@@ -1299,7 +1353,20 @@ class AccountReturn(models.Model):
                 )
             )
 
+    def _check_submittable(self) -> None:
+        self._check_transition("submitted")
+        if self.is_tax_return and not self.date_lock:
+            _debug.logic("submission_refused_unlocked", tax_return=self)
+            raise UserError(
+                self.env._(
+                    "%(name)s must be validated, which posts its closing entry and locks "
+                    "the period, before it is submitted.",
+                    name=self.display_name,
+                )
+            )
+
     def _proceed_with_submission(self):
+        self._check_submittable()
         self._check_failing_checks_in_current_stage()
         self.state = "submitted"
         self.date_submission = fields.Date.context_today(self)
@@ -1320,6 +1387,7 @@ class AccountReturn(models.Model):
     def action_pay(self):
         _debug.lifecycle("action_pay", records=self)
         self.check_singleton()
+        self._check_transition("paid")
         self._check_failing_checks_in_current_stage()
         if self._get_settlement_lines() and self._is_settled_by_ledger():
             return self._action_finalize_payment()
@@ -1335,6 +1403,7 @@ class AccountReturn(models.Model):
     def _action_finalize_payment(self):
         _debug.lifecycle("_action_finalize_payment", records=self)
         self.check_singleton()
+        self._check_transition("paid")
         self.state = "paid"
         if self.type_id.states_workflow in (
             "generic_state_only_pay",
@@ -1508,17 +1577,19 @@ class AccountReturn(models.Model):
             if (
                 report.country_id
                 == main_company.tax_config_id.account_fiscal_country_id
-                and main_company.account_config_id.tax_lock_date
-                and self.date_to <= main_company.account_config_id.tax_lock_date
             ):
+                companies_to_unlock = self.company_ids.filtered(
+                    lambda company: (
+                        company.account_config_id.tax_lock_date == self.date_to
+                    )
+                )
                 _debug.logic(
                     "tax_lock_date_rolled_back",
                     tax_return=self,
-                    company=main_company,
-                    old_lock_date=main_company.account_config_id.tax_lock_date,
-                    companies=self.company_ids,
+                    companies=companies_to_unlock,
+                    kept=self.company_ids - companies_to_unlock,
                 )
-                for company in self.company_ids:
+                for company in companies_to_unlock:
                     company.sudo().account_config_id.tax_lock_date = (
                         self.date_from + relativedelta(days=-1)
                     )

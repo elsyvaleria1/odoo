@@ -1,8 +1,8 @@
 from contextlib import closing
 from datetime import timedelta
 
-from odoo import fields
-from odoo.exceptions import UserError
+from odoo import Command, fields
+from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
 from odoo.tools import frozendict
 
@@ -258,3 +258,71 @@ class TestChangeLockDateWizard(AccountTestInvoicingCommon):
                 )
 
                 self.assertEqual(self.env["account.lock_exception"].search_count([]), 0)
+
+    def test_a_manager_cannot_lock_another_company(self):
+        company = self.company_data["company"]
+        other_company = self.setup_other_company()["company"]
+        manager = self.env["res.users"].create(
+            {
+                "name": "Manager of one company",
+                "login": "lock_date_manager_one_company",
+                "company_id": company.id,
+                "company_ids": [Command.set(company.ids)],
+                "group_ids": [
+                    Command.set(
+                        (
+                            self.env.ref("account.group_account_manager")
+                            + self.env.ref("base.group_user")
+                        ).ids
+                    )
+                ],
+            }
+        )
+        wizard = (
+            self.env["wizard.account.config.update.lock.date"]
+            .with_user(manager)
+            .with_company(company)
+            .create({"company_id": other_company.id})
+        )
+        wizard.fiscalyear_lock_date = "2019-12-31"
+
+        # assertRaises(AccessError) would clear the cache, and a cold cache makes
+        # the manager's read of the other config fail before any write is tried
+        with self.assertRaisesRegex(AccessError, "'write' access"):
+            wizard.change_lock_date()
+        self.assertFalse(other_company.account_config_id.fiscalyear_lock_date)
+
+        own_wizard = (
+            self.env["wizard.account.config.update.lock.date"]
+            .with_user(manager)
+            .with_company(company)
+            .create({"fiscalyear_lock_date": "2019-12-31"})
+        )
+        own_wizard.change_lock_date()
+        self.assertEqual(
+            company.account_config_id.fiscalyear_lock_date,
+            fields.Date.from_string("2019-12-31"),
+        )
+
+    def test_locking_seeds_the_fiscal_year_not_the_calendar_year(self):
+        config = self.env.company.account_config_id
+        config.write({"fiscalyear_last_month": "3", "fiscalyear_last_day": 31})
+        wizard = self.env["wizard.account.config.update.lock.date"].create(
+            {"fiscalyear_lock_date": "2025-03-31"}
+        )
+
+        self.assertEqual(
+            wizard._get_current_period_dates("fiscalyear_lock_date"),
+            (
+                fields.Date.from_string("2024-04-01"),
+                fields.Date.from_string("2025-03-31"),
+            ),
+        )
+
+        config.write(
+            {"fiscalyear_lock_date": "2024-06-30", "hard_lock_date": "2024-09-30"}
+        )
+        self.assertEqual(
+            wizard._get_current_period_dates("fiscalyear_lock_date")[0],
+            fields.Date.from_string("2024-10-01"),
+        )

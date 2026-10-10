@@ -538,7 +538,13 @@ class MixinSequence(models.AbstractModel):
                 record[record._sequence_field]
             )
             seq = format_values.pop("seq")
-            batch = batched[(seq_format, frozendict(format_values))]
+            batch = batched[
+                (
+                    record._sequence_index and record[record._sequence_index],
+                    seq_format,
+                    frozendict(format_values),
+                )
+            ]
             batch["seq_list"].append(seq)
             if batch["last_rec"].sequence_number <= record.sequence_number:
                 batch["last_rec"] = record

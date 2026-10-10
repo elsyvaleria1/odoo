@@ -43,7 +43,7 @@ class AccountMove(models.Model):
                 )
             )
         self.peppol_move_state = False
-        self.sending_data = False
+        self._as_sending_queue().sending_data = False
 
     def _compute_show_send_button(self) -> None:
         # EXTENDS 'account'

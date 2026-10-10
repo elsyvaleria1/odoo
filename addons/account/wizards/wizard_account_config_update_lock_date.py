@@ -4,7 +4,6 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import date_utils
 
 from odoo.addons.account.models.account_config import (
     LOCK_DATE_FIELDS,
@@ -448,15 +447,36 @@ class WizardAccountConfigUpdateLockDate(models.TransientModel):
 
     def _get_current_period_dates(self, lock_date_field) -> tuple:
         self.check_singleton()
-        company_lock_date = self.company_id.account_config_id[lock_date_field]
-        if company_lock_date:
-            date_from = company_lock_date + timedelta(days=1)
+        config = self.company_id.account_config_id
+        if lock_date_field == "tax_lock_date":
+            previous_lock_dates = [config.tax_lock_date]
         else:
-            date_from = date_utils.get_fiscal_year(self[lock_date_field])[0]
+            previous_lock_dates = [config.fiscalyear_lock_date, config.hard_lock_date]
+        previous_lock_date = max(filter(None, previous_lock_dates), default=None)
+        if previous_lock_date:
+            date_from = previous_lock_date + timedelta(days=1)
+        else:
+            date_from = self.company_id.compute_fiscalyear_dates(self[lock_date_field])[
+                "date_from"
+            ]
+        _debug.logic(
+            "lock_period_dates_resolved",
+            wizard=self,
+            lock_date_field=lock_date_field,
+            previous_lock_date=previous_lock_date,
+            date_from=date_from,
+        )
         return date_from, self[lock_date_field]
 
-    def _create_default_report_external_values(self, lock_date_field):
-        pass
+    @_debug.perf.timed
+    def _create_default_report_external_values(self, lock_date_field) -> None:
+        date_from, date_to = self._get_current_period_dates(lock_date_field)
+        self.env["report.formula"]._create_default_external_values(
+            date_from,
+            date_to,
+            lock_date_field == "tax_lock_date",
+            company=self.company_id,
+        )
 
     def _change_lock_date(self, lock_date_values=None) -> None:
         self.check_singleton()
@@ -493,11 +513,12 @@ class WizardAccountConfigUpdateLockDate(models.TransientModel):
             company_id=self.company_id,
             lock_date_values=lock_date_values,
         )
-        self.company_id.sudo().write(lock_date_values)
+        self.company_id.account_config_id.write(lock_date_values)
 
     def change_lock_date(self) -> dict:
         self.check_singleton()
         if self.env.user.has_group("account.group_account_manager"):
+            self.company_id.account_config_id.check_access("write")
             exception_vals_list = self._prepare_exception_values()
             changed_lock_date_values = self._prepare_lock_date_values(
                 exception_vals_list=exception_vals_list

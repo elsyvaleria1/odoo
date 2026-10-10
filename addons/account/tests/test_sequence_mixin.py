@@ -1131,6 +1131,22 @@ class TestSequenceMixinDeletion(TestSequenceMixinCommon):
         )
         self.assertIsInstance(move.check_move_sequence_chain(), bool)
 
+    def test_sequence_chain_is_checked_per_journal(self):
+        journal = self.env["account.journal"].create(
+            {
+                "name": "Test sequences - same format elsewhere",
+                "code": "SQD2",
+                "type": "general",
+            }
+        )
+        self.create_move("2021-01-01", journal, name="TOTO/2021/01/0001", post=True)
+        second = self.create_move("2021-01-02", journal, post=True)
+        third = self.create_move("2021-01-03", journal, post=True)
+        self.assertEqual(second.name, self.move_1_2.name)
+
+        self.assertFalse((self.move_1_3 + second)._is_end_of_seq_chain())
+        self.assertTrue((self.move_1_3 + third)._is_end_of_seq_chain())
+
 
 @tagged("post_install", "-at_install")
 class TestSequenceMixinConcurrency(TransactionCase):
@@ -1188,9 +1204,16 @@ class TestSequenceMixinConcurrency(TransactionCase):
         self.addCleanup(self.cleanUp)
 
     def cleanUp(self):
+        for env in self.data["envs"]:
+            env.cr.rollback()
         with self.env.registry.cursor() as cr:
             env = api.Environment(cr, SUPERUSER_ID, {})
-            moves = env["account.move"].browse(self.data["move_ids"])
+            moves = env["account.move"].browse(self.data["move_ids"]).exists()
+            env.cr.execute(
+                "UPDATE account_move SET inalterable_hash = NULL WHERE id = ANY(%s)",
+                [moves.ids],
+            )
+            moves.invalidate_recordset(["inalterable_hash"])
             moves.filtered(lambda x: x.state in ("posted", "cancel")).action_draft()
             moves.posted_before = False
             moves.unlink()
@@ -1228,6 +1251,102 @@ class TestSequenceMixinConcurrency(TransactionCase):
         self.assertEqual(moves.mapped("made_sequence_gap"), [False, False, False])
         for line in moves.line_ids:
             self.assertEqual(line.move_name, line.move_id.name)
+
+    def test_sequence_concurrency_in_a_hashed_journal_is_retried(self):
+        env0, env1, env2 = self.data["envs"]
+        env0["account.journal"].browse(
+            self.data["journal_id"]
+        ).restrict_mode_hash_table = True
+        env0.cr.commit()
+
+        env1.cr.execute("SELECT 1")
+
+        env2["account.move"].browse(self.data["move_ids"][1]).action_post()
+        env2.cr.commit()
+
+        with (
+            mute_logger("odoo.sql_db", "odoo.db"),
+            self.assertRaises(psycopg.errors.SerializationFailure),
+        ):
+            env1["account.move"].browse(self.data["move_ids"][2]).action_post()
+        env1.cr.rollback()
+
+        env1["account.move"].browse(self.data["move_ids"][2]).action_post()
+        env1.cr.commit()
+
+        moves = env0["account.move"].browse(self.data["move_ids"])
+        moves.invalidate_recordset()
+        self.assertEqual(
+            moves.mapped("name"),
+            ["CT/2016/01/0001", "CT/2016/01/0002", "CT/2016/01/0003"],
+        )
+        self.assertTrue(all(moves.mapped("inalterable_hash")))
+
+    def _post_new_move(self, env, date):
+        move = env["account.move"].create(
+            {
+                "journal_id": self.data["journal_id"],
+                "date": fields.Date.from_string(date),
+                "line_ids": [
+                    Command.create(
+                        {"name": "name", "account_id": self.data["account_id"]}
+                    )
+                ],
+            }
+        )
+        self.data["move_ids"].append(move.id)
+        move.action_post()
+        return move
+
+    def _hash_both_chains(self, env):
+        env["account.journal"].browse(
+            self.data["journal_id"]
+        ).restrict_mode_hash_table = True
+        env["account.move"].browse(self.data["move_ids"][1]).action_post()
+        self._post_new_move(env, "2016-02-01")
+        env.cr.commit()
+
+    def test_sequence_concurrency_after_a_hashed_entry_is_retried(self):
+        env0, env1, env2 = self.data["envs"]
+        self._hash_both_chains(env0)
+
+        env1.cr.execute("SELECT 1")
+
+        env2["account.move"].browse(self.data["move_ids"][2]).action_post()
+        env2.cr.commit()
+
+        with (
+            mute_logger("odoo.sql_db", "odoo.db"),
+            self.assertRaises(psycopg.errors.SerializationFailure),
+        ):
+            self._post_new_move(env1, "2016-01-02")
+        env1.cr.rollback()
+
+        retried = self._post_new_move(env1, "2016-01-02")
+        env1.cr.commit()
+
+        self.assertEqual(retried.name, "CT/2016/01/0004")
+        moves = env0["account.move"].browse(self.data["move_ids"]).exists()
+        moves.invalidate_recordset()
+        self.assertTrue(all(moves.mapped("inalterable_hash")))
+
+    def test_hashing_a_chain_leaves_the_journal_other_chains_unblocked(self):
+        env0, env1, env2 = self.data["envs"]
+        self._hash_both_chains(env0)
+
+        env1["account.move"].browse(self.data["move_ids"][2]).action_post()
+
+        env2.cr.execute("SET LOCAL lock_timeout = '2s'")
+        february = self._post_new_move(env2, "2016-02-02")
+        env2["account.journal"].browse(self.data["journal_id"]).name = "renamed"
+        env2.flush_all()
+        env2.cr.commit()
+        env1.cr.commit()
+
+        self.assertEqual(february.name, "CT/2016/02/0002")
+        moves = env0["account.move"].browse(self.data["move_ids"])
+        moves.invalidate_recordset()
+        self.assertTrue(all(moves.mapped("inalterable_hash")))
 
     def test_sequence_concurency_no_useless_lock(self):
         env0, env1, env2 = self.data["envs"]

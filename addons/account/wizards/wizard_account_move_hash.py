@@ -4,8 +4,14 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
+from odoo.tools import TransactionMemo
 
 _debug = DebugLog(__name__)
+
+_CHAINS_TO_HASH_MEMO = TransactionMemo(
+    "wizard.account.move.hash.chains",
+    invalidated_by=("account.move", "account.bank.statement.line", "account.config"),
+)
 
 
 class WizardAccountMoveHash(models.TransientModel):
@@ -24,6 +30,7 @@ class WizardAccountMoveHash(models.TransientModel):
     hash_date = fields.Date(
         string="Hash All Entries",
         compute="_compute_hash_date",
+        precompute=True,
         store=True,
         readonly=False,
         required=True,
@@ -64,9 +71,9 @@ class WizardAccountMoveHash(models.TransientModel):
     def _compute_max_hash_date(self) -> None:
         today = fields.Date.context_today(self)
         for wizard in self:
-            chains_to_hash = wizard.with_context(
-                chain_info_warnings=False
-            )._get_chains_to_hash(wizard.company_id, today)
+            chains_to_hash = wizard._get_chains_to_hash(
+                wizard.company_id, today, with_warnings=False
+            )
             moves = self.env["account.move"].concat(
                 *[chain["moves"] for chain in chains_to_hash],
                 *[chain["not_hashable_unlocked_moves"] for chain in chains_to_hash],
@@ -81,9 +88,28 @@ class WizardAccountMoveHash(models.TransientModel):
             else:
                 wizard.max_hash_date = False
 
+    def _get_chains_to_hash(self, company_id, hash_date, with_warnings=True):
+        chains_by_key = _CHAINS_TO_HASH_MEMO(self.env)
+        key = (company_id.id, hash_date)
+        if key not in chains_by_key:
+            chains_by_key[key] = self._collect_chains_to_hash(company_id, hash_date)
+        chains = chains_by_key[key]
+        _debug.logic(
+            "chains_to_hash_memo",
+            secure=self,
+            company=company_id,
+            hash_date=hash_date,
+            chains=len(chains),
+            with_warnings=with_warnings,
+        )
+        if with_warnings:
+            moves_sudo = self.env["account.move"].sudo()
+            for chain in chains:
+                moves_sudo._set_chain_warnings(chain)
+        return chains
+
     @_debug.perf.timed
-    def _get_chains_to_hash(self, company_id, hash_date):
-        self.check_singleton()
+    def _collect_chains_to_hash(self, company_id, hash_date):
         res = []
         for *__, chain_moves in (
             self.env["account.move"]
@@ -96,26 +122,21 @@ class WizardAccountMoveHash(models.TransientModel):
                 aggregates=["id:recordset"],
             )
         ):
-            chain_info = chain_moves._get_chain_info(force_hash=True)
+            chain_info = chain_moves._get_chain_info(
+                force_hash=True, with_warnings=False
+            )
             if not chain_info:
                 continue
 
-            last_move_hashed = chain_info["last_move_hashed"]
-            if last_move_hashed:
-                remaining_moves = chain_info["remaining_moves"]
-                hard_lock_date = company_id.account_config_id.user_hard_lock_date
-                not_hashable_unlocked_moves = remaining_moves.browse(
-                    [
-                        move.id
-                        for move in remaining_moves
-                        if not move.inalterable_hash
-                        and move.sequence_number < last_move_hashed.sequence_number
-                        and move.date > hard_lock_date
-                    ]
+            remaining_moves = chain_info["remaining_moves"]
+            chain_info["not_hashable_unlocked_moves"] = (
+                remaining_moves
+                and remaining_moves.filtered(
+                    lambda move: (
+                        move.date > company_id.account_config_id.user_hard_lock_date
+                    )
                 )
-            else:
-                not_hashable_unlocked_moves = self.env["account.move"]
-            chain_info["not_hashable_unlocked_moves"] = not_hashable_unlocked_moves
+            )
             res.append(chain_info)
         _debug.pipeline(
             "chains_to_hash_collected",
@@ -385,14 +406,16 @@ class WizardAccountMoveHash(models.TransientModel):
                 )
             )
 
-        if not self.move_to_hash_ids:
-            _debug.logic("nothing_hash_up", secure=self, hash_date=self.hash_date)
-            return
-
+        chains = [
+            chain
+            for chain in self._get_chains_to_hash(self.company_id, self.hash_date)
+            if "unreconciled" not in chain["warnings"] and chain["moves"]
+        ]
         _debug.pipeline(
             "hashing_up",
             secure=self,
-            move_to_hash_ids=self.move_to_hash_ids,
+            chains=len(chains),
             hash_date=self.hash_date,
         )
-        self.move_to_hash_ids._hash_moves(force_hash=True, raise_if_gap=False)
+        self.env["account.move"]._serialize_hash_chains(chains)
+        self.env["account.move"]._hash_chains(chains)

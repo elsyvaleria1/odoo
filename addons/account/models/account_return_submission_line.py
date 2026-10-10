@@ -42,3 +42,7 @@ class AccountReturnSubmissionLine(models.Model):
         )
         submissions._check_writable_fields({"line_ids": vals_list})
         return super().create(vals_list)
+
+    @api.ondelete(at_uninstall=False)
+    def _unlink_except_accepted_submission(self) -> None:
+        self.submission_id._check_writable_fields({"line_ids": self.ids})

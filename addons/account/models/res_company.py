@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from odoo import Command, api, fields, models
 from odoo.exceptions import LockError, UserError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, date_utils, format_list
+from odoo.tools import SQL, format_list
 from odoo.tools.misc import format_date
 
 _debug = DebugLog(__name__)
@@ -798,9 +798,11 @@ class ResCompany(models.Model):
                 "first_move": self.env["account.move"],
                 "last_move": self.env["account.move"],
                 "corrupted_move": self.env["account.move"],
+                "hash_version": 1,
             }
         )
         last_move = self.env["account.move"]
+        secure_sequence_hash_version = 1
         any_hashed_move = False
         hashed_rows = 0  # debuglog
         hashed_batches = 0  # debuglog
@@ -819,19 +821,23 @@ class ResCompany(models.Model):
                 )
                 any_hashed_move = True
 
-                hash_version = 1
                 for move in moves:
                     prefix_result = prefix2result[move.sequence_prefix]
                     if prefix_result["corrupted_move"]:
                         continue
-                    previous_move = (
-                        prefix_result["last_move"]
-                        if not move.secure_sequence_number
-                        else last_move
-                    )
+                    if move.secure_sequence_number:
+                        previous_move = last_move
+                        hash_version = secure_sequence_hash_version
+                    else:
+                        previous_move = prefix_result["last_move"]
+                        hash_version = prefix_result["hash_version"]
                     computed_hash, hash_version = move._recompute_integrity_hash(
                         previous_move.inalterable_hash or "", hash_version
                     )
+                    if move.secure_sequence_number:
+                        secure_sequence_hash_version = hash_version
+                    else:
+                        prefix_result["hash_version"] = hash_version
                     if move.inalterable_hash != computed_hash:
                         _debug.logic(
                             "hash_integrity_corrupted_prefix_version",
@@ -925,15 +931,6 @@ class ResCompany(models.Model):
                 self.env._("Some documents are being sent by another process already.")
             ) from err
         return True
-
-    def compute_fiscalyear_dates(self, current_date) -> dict:
-        self.check_singleton()
-        date_from, date_to = date_utils.get_fiscal_year(
-            current_date,
-            day=self.account_config_id.fiscalyear_last_day,
-            month=int(self.account_config_id.fiscalyear_last_month),
-        )
-        return {"date_from": date_from, "date_to": date_to}
 
     def _set_category_defaults(self, changed_fields=None) -> None:
         IrDefault = self.env["ir.default"].sudo()

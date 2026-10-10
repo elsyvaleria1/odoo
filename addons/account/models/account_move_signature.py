@@ -39,8 +39,8 @@ class AccountMove(models.Model):
                     invoice.invoice_user_id if user_can_sign else False
                 )
             else:
-                invoice.signing_user = (
-                    representative or self.env.user if is_backend_user else False
+                invoice.signing_user = representative or (
+                    self.env.user if is_backend_user else False
                 )
 
     @api.depends(

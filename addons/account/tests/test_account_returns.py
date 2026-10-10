@@ -1552,7 +1552,7 @@ class TestAccountReturn(TestAccountReportsCommon):
             [
                 {
                     "date_from": "2023-10-15",
-                    "date_to": "2023-12-31",
+                    "date_to": "2023-11-30",
                     "return_type_id": self.basic_return_type.id,
                 }
             ]
@@ -1567,7 +1567,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                 ("type_id", "=", self.basic_return_type.id),
                 ("company_id", "=", self.env.company.id),
                 ("date_from", "=", "2023-10-15"),
-                ("date_to", "=", "2023-12-31"),
+                ("date_to", "=", "2023-11-30"),
             ]
         )
         self.assertEqual(len(generated_account_return), 1)
@@ -1575,7 +1575,7 @@ class TestAccountReturn(TestAccountReportsCommon):
         options = generated_account_return._get_closing_report_options()
         self.assertEqual(options["date"]["filter"], "custom")
         self.assertEqual(options["date"]["date_from"], "2023-10-15")
-        self.assertEqual(options["date"]["date_to"], "2023-12-31")
+        self.assertEqual(options["date"]["date_to"], "2023-11-30")
 
     def test_audit_manual_creation_allow_duplicates(self):
         wizard = self.env["wizard.account.return.create"].create(
@@ -2926,6 +2926,7 @@ class TestAccountReturn(TestAccountReportsCommon):
                 if return_type.states_workflow in (
                     "generic_state_review",
                     "generic_state_review_submit",
+                    "generic_state_tax_report",
                 ):
                     with self._patch_generate_locking_attachments():
                         account_return.action_validate()
@@ -3321,6 +3322,182 @@ class TestAccountReturn(TestAccountReportsCommon):
                     lambda c: c.code == "check_partner_vies"
                 )
                 self.assertEqual(vies_check.result, data["expected_check"][with_fp])
+
+    def _basic_returns(self, company=None, limit=None):
+        return self.env["account.return"].search(
+            [
+                ("type_id", "=", self.basic_return_type.id),
+                ("company_id", "=", (company or self.company_data["company"]).id),
+            ],
+            order="date_to ASC",
+            limit=limit,
+        )
+
+    def test_validating_twice_posts_one_closing_entry(self):
+        first_return = self._basic_returns(limit=1)
+        first_return.action_validate()
+
+        with self.assertRaises(UserError):
+            first_return.action_validate()
+        with self.assertRaises(UserError):
+            first_return._proceed_with_locking()
+
+        self.assertEqual(
+            len(first_return.closing_move_ids.filtered(lambda m: m.state == "posted")),
+            1,
+        )
+
+    def test_a_new_tax_return_cannot_skip_to_submitted_or_paid(self):
+        first_return = self._basic_returns(limit=1)
+        pay_wizard = self.env["wizard.account.return.pay"].create(
+            {"return_id": first_return.id, "company_id": first_return.company_id.id}
+        )
+
+        for transition in (
+            first_return.action_submit,
+            first_return._proceed_with_submission,
+            first_return.action_pay,
+            first_return._action_finalize_payment,
+            pay_wizard.action_mark_as_paid,
+        ):
+            with self.subTest(transition=transition.__name__):
+                with self.assertRaises(UserError):
+                    transition()
+
+        self.assertRecordValues(
+            first_return,
+            [{"state": "new", "is_completed": False, "date_lock": False}],
+        )
+        self.assertFalse(first_return.closing_move_ids)
+
+    def test_locking_a_parent_return_keeps_a_later_branch_tax_lock(self):
+        with self._patch_returns_generation():
+            branch = self.setup_other_company(
+                name="Branch", parent_id=self.company_data["company"].id
+            )["company"]
+        self.basic_tax_report.country_id = self.company_data[
+            "company"
+        ].tax_config_id.account_fiscal_country_id
+        first_return = self._basic_returns(limit=1)
+        self.assertIn(branch, first_return.company_ids)
+        branch_lock = fields.Date.from_string("2024-06-30")
+        branch.account_config_id.tax_lock_date = branch_lock
+
+        first_return.action_validate()
+
+        self.assertEqual(branch.account_config_id.tax_lock_date, branch_lock)
+        self.assertEqual(
+            self.company_data["company"].account_config_id.tax_lock_date,
+            first_return.date_to,
+        )
+
+    def test_resetting_a_parent_return_keeps_a_later_branch_tax_lock(self):
+        main_company = self.company_data["company"]
+        with self._patch_returns_generation():
+            branch = self.setup_other_company(name="Branch", parent_id=main_company.id)[
+                "company"
+            ]
+        self.basic_tax_report.country_id = (
+            main_company.tax_config_id.account_fiscal_country_id
+        )
+        first_return = self._basic_returns(limit=1)
+        self.assertIn(branch, first_return.company_ids)
+        first_return.action_validate()
+        self.assertEqual(branch.account_config_id.tax_lock_date, first_return.date_to)
+
+        branch_lock = fields.Date.from_string("2024-06-30")
+        branch.account_config_id.tax_lock_date = branch_lock
+        before_return = first_return.date_from - relativedelta(days=1)
+        self.env["account.lock_exception"].create(
+            [
+                {
+                    "company_id": company.id,
+                    "user_id": self.env.user.id,
+                    "tax_lock_date": before_return,
+                    "reason": "reset the first return",
+                }
+                for company in (main_company, branch)
+            ]
+        )
+
+        first_return.action_reset_tax_return_common()
+
+        self.assertEqual(branch.account_config_id.tax_lock_date, branch_lock)
+        self.assertEqual(main_company.account_config_id.tax_lock_date, before_return)
+        self.assertRecordValues(first_return, [{"state": "new", "date_lock": False}])
+
+    def test_return_manual_creation_wizard_refuses_a_period_spanning_returns(self):
+        self._basic_returns().filtered(
+            lambda r: (
+                r.date_from
+                in (
+                    fields.Date.from_string("2024-04-01"),
+                    fields.Date.from_string("2024-08-01"),
+                )
+            )
+        ).sudo().unlink()
+        wizard = self.env["wizard.account.return.create"].create(
+            [
+                {
+                    "date_from": "2024-04-01",
+                    "date_to": "2024-08-31",
+                    "return_type_id": self.basic_return_type.id,
+                }
+            ]
+        )
+
+        self.assertTrue(wizard.show_warning_overlap)
+        self.assertFalse(wizard.show_warning_existing_return)
+        with self.assertRaises(UserError):
+            wizard.with_context(
+                force_periodicity_violation=True
+            ).action_create_manual_account_returns()
+        self.assertEqual(
+            self._basic_returns()
+            .filtered(
+                lambda r: (
+                    r.date_from >= fields.Date.from_string("2024-04-01")
+                    and r.date_to <= fields.Date.from_string("2024-08-31")
+                )
+            )
+            .mapped("date_from"),
+            [
+                fields.Date.from_string(day)
+                for day in ("2024-05-01", "2024-06-01", "2024-07-01")
+            ],
+        )
+
+    def test_return_manual_creation_wizard_ignores_another_company_returns(self):
+        other_company = self.company_data_2["company"]
+        with self._patch_returns_generation():
+            other_company.account_config_id.account_opening_date = "2024-01-01"
+        self.assertTrue(
+            self._basic_returns(company=other_company).filtered(
+                lambda r: r.date_from == fields.Date.from_string("2024-03-01")
+            )
+        )
+        self._basic_returns().filtered(
+            lambda r: r.date_from == fields.Date.from_string("2024-03-01")
+        ).sudo().unlink()
+
+        wizard = self.env["wizard.account.return.create"].create(
+            [
+                {
+                    "date_from": "2024-03-01",
+                    "date_to": "2024-03-31",
+                    "return_type_id": self.basic_return_type.id,
+                }
+            ]
+        )
+
+        self.assertFalse(wizard.show_warning_existing_return)
+        self.assertFalse(wizard.show_warning_overlap)
+        wizard.action_create_manual_account_returns()
+        self.assertTrue(
+            self._basic_returns().filtered(
+                lambda r: r.date_from == fields.Date.from_string("2024-03-01")
+            )
+        )
 
 
 @tagged("post_install", "-at_install")
