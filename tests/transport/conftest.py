@@ -11,7 +11,7 @@ _FD_DIR = pathlib.Path("/proc/self/fd")
 
 
 def open_fds() -> set[int]:
-    return {int(entry.name) for entry in _FD_DIR.iterdir() if entry.name.isdigit()}
+    return {int(entry.name) for entry in _FD_DIR.iterdir() if entry.name.isdecimal()}
 
 
 def describe_fds(fds) -> str:

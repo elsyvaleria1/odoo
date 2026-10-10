@@ -170,7 +170,7 @@ def _session_members(session: int) -> list[int]:
     members = []
     with contextlib.suppress(OSError):
         for entry in Path("/proc").iterdir():
-            if not entry.name.isdigit():
+            if not entry.name.isdecimal():
                 continue
             try:
                 stat = (entry / "stat").read_text()

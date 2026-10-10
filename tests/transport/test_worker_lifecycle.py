@@ -21,7 +21,7 @@ def _open_fds() -> set[int]:
     return {
         int(entry.name)
         for entry in pathlib.Path("/proc/self/fd").iterdir()
-        if entry.name.isdigit()
+        if entry.name.isdecimal()
     }
 
 
