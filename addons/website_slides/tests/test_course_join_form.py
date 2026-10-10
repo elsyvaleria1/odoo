@@ -236,3 +236,20 @@ class TestCourseJoinForm(HttpCase):
         ):
             with self.subTest(url=url):
                 self.assertEqual(self.url_open(url).status_code, 200)
+
+    def test_a_documentation_lesson_offers_starting_the_course_as_a_form(self):
+        self.channel.channel_type = "documentation"
+        lesson = self.channel.slide_ids
+        lesson.is_preview = True
+        self.authenticate("course_learner", "course_learner")
+
+        page = self._page(f"/slides/slide/{lesson.id}")
+
+        (form,) = page.xpath(
+            f"//form[@action='/slides/channel/{self.channel.id}/join']"
+            "[.//button[contains(., 'Start this Course')]]"
+        )
+        self.assertEqual(
+            form.xpath("input[@name='redirect']/@value"), [self.shown_path]
+        )
+        self.assertFalse(page.xpath("//form//form"))
