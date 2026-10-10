@@ -92,7 +92,8 @@ class SaleOrder(models.Model):
         )
         invoices.write({"invoice_date": date})
         invoices._prepare_collected_invoice(collection_method)
-        invoices.action_post()
+        with invoices._exempting_posting_from_approval("payment_received"):
+            invoices.action_post()
         invoices._issue_collected_invoice()
         payment = invoices._create_collection_payment(
             amount, date, collection_method, collector, check_date=check_date

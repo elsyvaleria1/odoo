@@ -11,6 +11,11 @@ class IrAccessObligation(models.AbstractModel):
         own, configured = Binding._split_verb_bindings(records._name, verb)
         if not own and not configured:
             return super()._at_door(records, verb, call)
+        if set(records._ids) <= Binding._get_admitted_ids(records, verb):
+            trace.BINDING.event(
+                "verb_door_admitted", model=records._name, verb=verb, records=records
+            )
+            return super()._at_door(records, verb, call)
         trace.BINDING.event(
             "verb_door",
             model=records._name,
@@ -42,6 +47,23 @@ class IrAccessObligation(models.AbstractModel):
         if own:
             own._hold_document_at_checkpoint(records, verb)
         return super()._at_checkpoint(records, verb)
+
+    def _get_held(self, records, verb):
+        Binding = self.env["approval.binding"]
+        own, configured = Binding._split_verb_bindings(records._name, verb)
+        held = records.browse()
+        if own and own._enforces():
+            held |= records._get_approval_held(verb)
+        admitted = Binding._get_admitted_ids(records, verb)
+        pending = records.filtered(lambda record: record.id not in admitted)
+        elevation = Binding._elevation()
+        for binding in configured:
+            if binding.mode == "advise" or binding._passes_on_elevation(elevation):
+                continue
+            selected = binding._get_selected(pending)
+            held |= selected - selected.browse(binding._get_covered_ids(selected))
+        trace.BINDING.event("held", model=records._name, verb=verb, held=held)
+        return held
 
     def _after_move(self, records, verb):
         if self.env["approval.binding"]._move_decides(records._name, verb):

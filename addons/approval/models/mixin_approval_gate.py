@@ -445,6 +445,35 @@ class MixinApprovalGate(models.AbstractModel):
     def _get_admitted_ids(self, operation):
         return self.env["approval.binding"]._get_admitted_ids(self, operation)
 
+    def _is_approval_granted_for(self, operation) -> bool:
+        self.check_singleton()
+        return bool(
+            self.approval_request_id
+            and self.approval_state == "approved"
+            and self._approval_request_gates(operation)
+        )
+
+    def _get_approval_held(self, operation):
+        """The records `operation`'s obligation would stop on a path that cannot
+        ask: neither admitted nor granted, and requiring approval or waiting for
+        one. A grant that no longer covers its document is the caller's to judge."""
+        admitted = self._get_admitted_ids(operation)
+        # approval_required is computed without dependencies
+        self.invalidate_recordset(["approval_required"])
+        return self.filtered(
+            lambda record: (
+                record.id not in admitted
+                and not record._is_approval_granted_for(operation)
+                and (
+                    record.approval_required
+                    or (
+                        record.approval_request_id
+                        and record.approval_state in ("new", "pending")
+                    )
+                )
+            )
+        )
+
     def _check_approval_admits(self, operation, enforced=True, binding=None) -> None:
         """Hold `operation`'s obligation on a path that did not come through it.
 
@@ -454,15 +483,11 @@ class MixinApprovalGate(models.AbstractModel):
         the approval speaking, not the path.
         """
         admitted = self._get_admitted_ids(operation)
-        blocked = self.browse()
-        self.invalidate_recordset(["approval_required"])
-        for record in self.filtered(lambda r: r.id not in admitted):
-            state = record.approval_state if record.approval_request_id else False
-            if state == "approved" and record._approval_request_gates(operation):
-                record._check_approval_covers(operation)
-                continue
-            if record.approval_required or state in ("new", "pending"):
-                blocked |= record
+        for record in self.filtered(
+            lambda r: r.id not in admitted and r._is_approval_granted_for(operation)
+        ):
+            record._check_approval_covers(operation)
+        blocked = self._get_approval_held(operation)
         if not blocked:
             return
         self.env["approval.observation"].sudo().create(

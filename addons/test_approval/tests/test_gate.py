@@ -58,6 +58,31 @@ class TestApprovalGate(ApprovalCommon):
         with self.assertRaises(UserError):
             document.action_ship()
 
+    def test_a_call_the_transaction_admitted_passes_the_door_without_asking(self):
+        document = self._document()
+        with self.env.transaction.admitting(document._name, "ship", document.ids):
+            document.action_ship()
+        self.assertEqual(document.ship_count, 1)
+        self.assertFalse(document.approval_request_id)
+
+        document.action_ship()
+        self.assertEqual(document.ship_count, 1, "the admission ended with its block")
+        self.assertEqual(document.approval_state, "pending")
+
+    def test_held_names_what_the_checkpoint_would_refuse(self):
+        Obligation = self.env["ir.access.obligation"]
+        waiting, granted = self._document(), self._document(name="Granted")
+        granted.action_ship()
+        self._approve(granted)
+
+        self.assertEqual(Obligation._get_held(waiting | granted, "ship"), waiting)
+        with self.env.transaction.admitting(waiting._name, "ship", waiting.ids):
+            self.assertFalse(Obligation._get_held(waiting, "ship"))
+        self._watch("ship")
+        self.assertFalse(
+            Obligation._get_held(waiting, "ship"), "a watching obligation holds none"
+        )
+
     def test_the_grant_runs_the_operation_once(self):
         document = self._document()
         document.action_ship()

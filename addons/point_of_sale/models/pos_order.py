@@ -2360,10 +2360,12 @@ class PosOrder(models.Model):
         )
         invoice_vals = invoice_order._prepare_invoice_vals()
         invoice = invoice_order._create_invoice(invoice_vals)
-        with _debug.perf("invoice_post", cr=self.env.cr, orders=self):
-            invoice.sudo().with_company(company).with_context(
-                **self._prepare_invoice_post_context()
-            )._post()
+        posting_invoice = invoice.sudo().with_company(company)
+        with (
+            _debug.perf("invoice_post", cr=self.env.cr, orders=self),
+            posting_invoice._exempting_posting_from_approval("pos_paid_order"),
+        ):
+            posting_invoice.with_context(**self._prepare_invoice_post_context())._post()
 
         payment_moves_from_closed_sessions = {}
         all_payment_moves = self.env["account.move"].sudo()

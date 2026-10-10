@@ -5,6 +5,10 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.tests import tagged
 from odoo.tools.rendering_tools import QWebError
 
+from odoo.addons.account.tests.common_posting_obligation import (
+    exemption_notes,
+    holding_invoice_posting,
+)
 from odoo.addons.account_payment_provider.tests.common import AccountPaymentCommon
 
 
@@ -20,6 +24,25 @@ class TestAccountPayment(AccountPaymentCommon):
                         flow, invoice_ids=[Command.set(invoice.ids)]
                     )
         self.assertFalse(invoice.transaction_ids)
+
+    def test_a_paid_invoice_is_posted_without_waiting_for_approval(self):
+        invoice = self.init_invoice(
+            "out_invoice", partner=self.partner, amounts=[100.0], taxes=[]
+        )
+        tx = self._create_transaction(
+            "redirect",
+            state="done",
+            amount=invoice.amount_total,
+            currency_id=invoice.currency_id.id,
+            invoice_ids=[Command.set(invoice.ids)],
+        )
+
+        with holding_invoice_posting(self.env):
+            tx._post_process()
+
+        self.assertEqual(invoice.state, "posted")
+        self.assertTrue(tx.payment_id)
+        self.assertEqual(len(exemption_notes(invoice, "payment_received")), 1)
 
     def test_no_amount_available_for_refund_when_no_tx(self):
         payment = self.env["account.payment"].create({"amount": 10})

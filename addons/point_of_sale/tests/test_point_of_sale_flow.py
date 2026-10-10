@@ -9,6 +9,10 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.tests import Form
 
+from odoo.addons.account.tests.common_posting_obligation import (
+    exemption_notes,
+    holding_invoice_posting,
+)
 from odoo.addons.point_of_sale.tests.common import CommonPosTest
 
 
@@ -386,6 +390,26 @@ class TestPointOfSaleFlow(CommonPosTest):
         self.assertEqual(invoice_test.ref, invoice_test.pos_order_ids.display_name)
 
         self.pos_config_usd.current_session_id.action_pos_session_closing_control()
+
+    def test_invoicing_a_paid_order_does_not_wait_for_approval(self):
+        order, _ = self.create_backend_pos_order(
+            {
+                "order_data": {"partner_id": self.partner_manv.id},
+                "line_data": [
+                    {"product_id": self.ten_dollars_with_10_incl.product_variant_id.id}
+                ],
+                "payment_data": [
+                    {"payment_method_id": self.cash_payment_method.id, "amount": 10}
+                ],
+            }
+        )
+        self.assertEqual(order.state, "paid")
+
+        with holding_invoice_posting(self.env):
+            order.action_pos_order_invoice()
+
+        self.assertEqual(order.account_move.state, "posted")
+        self.assertEqual(len(exemption_notes(order.account_move, "pos_paid_order")), 1)
 
     def test_order_to_payment_currency(self):
         self.env.cr.execute(

@@ -13,3 +13,4 @@ from . import test_consent_financial
 from . import test_approval_absence
 from . import test_move_approver_reach
 from . import test_bank_line_claim
+from . import test_posting_obligation

@@ -8,6 +8,10 @@ from odoo import Command, fields
 from odoo.tests import tagged
 from odoo.tools import mute_logger
 
+from odoo.addons.account.tests.common_posting_obligation import (
+    exemption_notes,
+    holding_invoice_posting,
+)
 from odoo.addons.mail.tests.common import MockEmail
 from odoo.addons.payment.tests.common import PaymentCommon
 from odoo.addons.sale_subscription.tests.common_sale_subscription import (
@@ -125,6 +129,33 @@ class TestSubscriptionPayments(PaymentCommon, TestSubscriptionCommon, MockEmail)
             self.assertFalse(
                 vals, "The subscriptions are not flagged anymore, the payment succeeded"
             )
+
+    def test_a_charged_renewal_invoice_does_not_wait_for_approval(self):
+        self.original_prepare_invoice = self.subscription._prepare_invoice_vals
+        self.subscription.write(
+            {
+                "partner_id": self.partner.id,
+                "company_id": self.company.id,
+                "payment_token_id": self.payment_token.id,
+                "template_id": self.subscription_tmpl.id,
+            }
+        )
+        self.subscription._onchange_template_id()
+        self.subscription.action_confirm()
+
+        with (
+            patch(
+                "odoo.addons.sale_subscription.models.sale_order.SaleOrder._do_payment",
+                wraps=self._mock_subscription_do_payment,
+            ),
+            holding_invoice_posting(self.env),
+        ):
+            self.env["sale.order"]._cron_recurring_create_invoice()
+            self.subscription.transaction_ids._post_process()
+
+        invoice = self.subscription.invoice_ids
+        self.assertEqual(invoice.state, "posted")
+        self.assertEqual(len(exemption_notes(invoice, "payment_received")), 1)
 
     def test_auto_payment_across_time(self):
         self.original_prepare_invoice = self.subscription._prepare_invoice_vals

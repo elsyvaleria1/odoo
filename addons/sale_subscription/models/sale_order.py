@@ -2004,7 +2004,8 @@ class SaleOrder(models.Model):
                 )
             self.message_post(body=msg_body)
             if invoice.state != "posted":
-                invoice.with_context(ocr_trigger_delta=15)._post()
+                with invoice._exempting_posting_from_approval("payment_received"):
+                    invoice.with_context(ocr_trigger_delta=15)._post()
         MixinAccountMoveSend = self.env["mixin.account.move.send"]
         if moves_to_send := invoices.filtered(
             lambda move: (
@@ -2678,7 +2679,8 @@ class SaleOrder(models.Model):
             elif transaction.renewal_state == "authorized":
                 self.payment_exception = False
                 self._subscription_commit_cursor(auto_commit)
-                invoice._post()
+                with invoice._exempting_posting_from_approval("payment_received"):
+                    invoice._post()
                 self._subscription_commit_cursor(auto_commit)
 
         except Exception as e:

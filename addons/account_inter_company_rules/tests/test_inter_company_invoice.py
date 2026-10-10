@@ -4,6 +4,9 @@ from odoo import Command, models, tests
 from odoo.exceptions import UserError
 
 from .common import TestInterCompanyRulesCommon
+from odoo.addons.account.tests.common_posting_obligation import (
+    holding_invoice_posting,
+)
 
 
 @tests.tagged("post_install", "-at_install")
@@ -976,6 +979,20 @@ class TestInterCompanyInvoice(TestInterCompanyRulesCommon):
         )
         self.assertEqual(len(bill), 1)
         self.assertEqual(bill.state, "posted")
+
+    def test_a_mirror_needing_approval_waits_in_draft(self):
+        self.company_b.intercompany_document_state = "posted"
+        with holding_invoice_posting(
+            self.env, holds=lambda move: move.company_id == self.company_b
+        ):
+            customer_invoice = self._create_post_invoice(self.product_a.id)
+
+        self.assertEqual(customer_invoice.state, "posted")
+        bill = self._get_generated_bill(customer_invoice).sudo()
+        self.assertEqual(bill.state, "draft")
+        self.assertTrue(
+            bill.message_ids.filtered(lambda message: "Left in draft" in message.body)
+        )
 
     def test_credit_note_generates_a_refund(self):
         """out_refund -> in_refund is half of inverse_types and was untested."""

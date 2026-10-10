@@ -51,6 +51,13 @@ class AccountMove(models.Model):
         compute="_compute_pos_order_count",
     )
 
+    def _get_posting_approval_exemptions(self) -> dict[str, str]:
+        return super()._get_posting_approval_exemptions() | {
+            "pos_paid_order": self.env._(
+                "it invoices a point of sale order the customer has already paid"
+            ),
+        }
+
     @api.depends("pos_order_ids")
     def _compute_pos_order_count(self) -> None:
         for move in self:

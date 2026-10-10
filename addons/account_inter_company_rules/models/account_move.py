@@ -116,7 +116,16 @@ class AccountMove(models.Model):
                     company=origin_invoice.company_id.name,
                 )
             )
-            if auto_post:
+            if not auto_post:
+                continue
+            if move._get_held_for_posting_approval():
+                move.message_post(
+                    body=self.env._(
+                        "Left in draft: posting it needs an approval, which an "
+                        "automatic posting cannot ask for. Post it to ask for one."
+                    )
+                )
+            else:
                 move._post(soft=True)
         return moves
 

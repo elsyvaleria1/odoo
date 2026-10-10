@@ -308,6 +308,9 @@ class AccountMove(models.Model):
                 )
         return notes
 
+    def _get_held_for_posting_approval(self):
+        return self.env["ir.access.obligation"]._get_held(self, "post")
+
     def _check_can_request_approval(self, candidates=None):
         if (
             self.approval_request_id

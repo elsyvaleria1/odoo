@@ -5980,7 +5980,8 @@ class AccountMove(models.Model):
             "reversed", move=self, reverse_moves=reverse_moves, cancel=cancel
         )
         if cancel:
-            reverse_moves.with_context(move_reverse_cancel=cancel)._post(soft=False)
+            with reverse_moves._exempting_posting_from_approval("reversal_cancel"):
+                reverse_moves.with_context(move_reverse_cancel=cancel)._post(soft=False)
 
         return reverse_moves
 
@@ -6131,6 +6132,45 @@ class AccountMove(models.Model):
 
     def _check_posting_advisories(self) -> None:
         _debug.logic("posting_advisories_held", moves=self)
+
+    def _get_posting_approval_exemptions(self) -> dict[str, str]:
+        return {
+            "reversal_cancel": self.env._(
+                "it cancels a posted entry, which it mirrors and is reconciled with"
+            ),
+            "payment_received": self.env._(
+                "it records a sale the customer has already paid"
+            ),
+        }
+
+    @contextmanager
+    def _exempting_posting_from_approval(self, reason):
+        # the admission lives on the transaction, not in the context: no client
+        # can send one, and only server code naming a declared reason opens it
+        if reason not in self._get_posting_approval_exemptions():
+            raise ValueError(f"{reason!r} is not a declared posting approval exemption")
+        held = self._get_held_for_posting_approval()
+        _debug.logic("posting_approval_exempted", moves=self, held=held, reason=reason)
+        with self.env.transaction.admitting(self._name, "post", self._ids):
+            yield
+        if posted := held.filtered(lambda move: move.state == "posted"):
+            posted._record_posting_approval_exemption(reason)
+
+    def _get_held_for_posting_approval(self) -> Self:
+        return self.browse()
+
+    def _record_posting_approval_exemption(self, reason) -> None:
+        because = self._get_posting_approval_exemptions()[reason]
+        self._message_log_batch(
+            bodies={
+                move.id: self.env._(
+                    "Posted without waiting for its approval (%(reason)s): %(because)s.",
+                    reason=reason,
+                    because=because,
+                )
+                for move in self
+            }
+        )
 
     @_debug.perf.timed
     def _check_post_partner_bank(self, invoice, validation_msgs) -> None:

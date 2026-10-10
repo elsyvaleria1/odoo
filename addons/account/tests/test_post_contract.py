@@ -6,6 +6,10 @@ from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.account.tests.common_posting_obligation import (
+    exemption_notes,
+    holding_invoice_posting,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -290,3 +294,112 @@ class TestPostContract(AccountTestInvoicingCommon):
 
         self.assertEqual(invoice.state, "draft")
         self.assertEqual(invoice.auto_post, "no", "an invalid move was scheduled")
+
+    def _entry(self, date):
+        return self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": date,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                            "balance": balance,
+                        }
+                    )
+                    for balance in (100.0, -100.0)
+                ],
+            }
+        )
+
+    def test_every_posting_path_crosses_the_posting_obligation(self):
+        today = fields.Date.context_today(self.env.user)
+        direct = self._invoice(today)
+        scheduled = self._invoice(today + timedelta(days=30))
+        entry = self._entry(today)
+
+        with holding_invoice_posting(self.env):
+            with self.assertRaisesRegex(UserError, "held for approval"):
+                direct._post(soft=False)
+            with self.assertRaisesRegex(UserError, "held for approval"):
+                scheduled._post(soft=True)
+            with self.assertRaisesRegex(UserError, "held for approval"):
+                self.env["wizard.account.move.post"].create(
+                    {"move_ids": [Command.set(direct.ids)]}
+                ).action_post_moves()
+            entry._post(soft=False)
+
+        self.assertEqual(direct.state, "draft")
+        self.assertEqual(scheduled.auto_post, "no", "a held move was scheduled")
+        self.assertEqual(entry.state, "posted")
+
+    def test_a_declared_exemption_posts_and_records_what_it_let_through(self):
+        today = fields.Date.context_today(self.env.user)
+        invoice = self._invoice(today)
+        entry = self._entry(today)
+
+        with holding_invoice_posting(self.env):
+            moves = invoice | entry
+            with moves._exempting_posting_from_approval("payment_received"):
+                moves._post(soft=False)
+
+        self.assertEqual(invoice.state, "posted")
+        self.assertEqual(entry.state, "posted")
+        self.assertEqual(len(exemption_notes(invoice, "payment_received")), 1)
+        self.assertFalse(
+            exemption_notes(entry, "payment_received"),
+            "nothing held the entry, so its posting waived nothing",
+        )
+
+    def test_an_exemption_admits_only_its_own_moves_and_only_while_open(self):
+        today = fields.Date.context_today(self.env.user)
+        exempt, other, later = (self._invoice(today) for _i in range(3))
+
+        with holding_invoice_posting(self.env):
+            with exempt._exempting_posting_from_approval("payment_received"):
+                with self.assertRaisesRegex(UserError, "held for approval"):
+                    other._post(soft=False)
+                exempt._post(soft=False)
+            with self.assertRaisesRegex(UserError, "held for approval"):
+                later._post(soft=False)
+
+        self.assertEqual(
+            (exempt | other | later).mapped("state"), ["posted", "draft", "draft"]
+        )
+
+    def test_an_undeclared_exemption_is_refused(self):
+        invoice = self._invoice(fields.Date.context_today(self.env.user))
+        with (
+            self.assertRaisesRegex(ValueError, "not a declared"),
+            invoice._exempting_posting_from_approval("because_i_say_so"),
+        ):
+            invoice._post(soft=False)
+        self.assertEqual(invoice.state, "draft")
+
+    def test_a_cancelling_reversal_does_not_wait_for_approval(self):
+        today = fields.Date.context_today(self.env.user)
+        invoice = self._invoice(today)
+        invoice.action_post()
+
+        with holding_invoice_posting(self.env):
+            reversal = invoice._reverse_moves(
+                [{"invoice_date": today, "date": today}], cancel=True
+            )
+
+        self.assertEqual(reversal.state, "posted")
+        self.assertEqual(invoice.payment_state, "reversed")
+        self.assertEqual(len(exemption_notes(reversal, "reversal_cancel")), 1)
+
+    def test_a_reversal_left_in_draft_waits_for_approval(self):
+        today = fields.Date.context_today(self.env.user)
+        invoice = self._invoice(today)
+        invoice.action_post()
+
+        with holding_invoice_posting(self.env):
+            reversal = invoice._reverse_moves([{"invoice_date": today, "date": today}])
+            with self.assertRaisesRegex(UserError, "held for approval"):
+                reversal._post(soft=False)
+
+        self.assertEqual(reversal.state, "draft")

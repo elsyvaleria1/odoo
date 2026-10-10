@@ -2,6 +2,10 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import Form, new_test_user, tagged
 
+from odoo.addons.account.tests.common_posting_obligation import (
+    exemption_notes,
+    holding_invoice_posting,
+)
 from odoo.addons.account_collection.tests.common import CollectionCommon
 
 
@@ -75,6 +79,17 @@ class TestCashSale(CollectionCommon):
         self.assertEqual(payment.collector_id, self.seller)
         self.assertTrue(payment.is_in_custody)
         self.assertEqual(order.invoice_state, "done")
+
+    def test_a_cash_sale_invoice_does_not_wait_for_approval(self):
+        order = self._order(self.cash_term)
+
+        with holding_invoice_posting(self.env):
+            self._collect(order)
+
+        self.assertEqual(order.invoice_ids.state, "posted")
+        self.assertEqual(
+            len(exemption_notes(order.invoice_ids.sudo(), "payment_received")), 1
+        )
 
     def test_a_credit_sale_is_collected_on_its_invoices(self):
         order = self._order(self.credit_term)

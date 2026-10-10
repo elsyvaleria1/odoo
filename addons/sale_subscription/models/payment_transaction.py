@@ -94,7 +94,9 @@ class PaymentTransaction(models.Model):
             return
         self._cancel_draft_invoices()
         self._invoice_sale_orders()
-        self.invoice_ids.with_company(self.company_id)._post()
+        invoices = self.invoice_ids.with_company(self.company_id)
+        with invoices._exempting_posting_from_approval("payment_received"):
+            invoices._post()
         self.invoice_ids.write({"matched_payment_ids": self.payment_id.ids})
         if not self.subscription_action and not self.env.context.get(
             "skip_sale_auto_invoice_send"
