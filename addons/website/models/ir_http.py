@@ -274,7 +274,6 @@ class IrHttp(models.AbstractModel):
 
         if (
             template
-            and not request.env.cr.readonly
             and request.env["ir.ui.view"]._get_cached_template_info(template)["track"]
         ):
             _debug.lifecycle(

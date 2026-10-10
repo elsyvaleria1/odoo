@@ -10,6 +10,7 @@ from odoo.fields import Domain
 from odoo.http import request
 from odoo.libs.datetime import all_timezones
 from odoo.libs.debug_log import DebugLog
+from odoo.service.transaction import retrying
 from odoo.tools import SQL
 from odoo.tools.misc import _format_time_ago
 
@@ -461,9 +462,39 @@ class WebsiteVisitor(models.Model):
             website_track_values["page_id"] = website_page.id
         _debug.pipeline("webpage_dispatch_tracked", page=website_page or None, url=url)
 
-        self._get_visitor_from_request(
-            force_create=True, force_track_values=website_track_values
-        )
+        if not self.env.cr.readonly:
+            self._get_visitor_from_request(
+                force_create=True, force_track_values=website_track_values
+            )
+            return
+        if not request.env.uid:
+            _debug.logic("visitor_skipped", reason="no_request_env")
+            return
+        # A read-only cursor (a replica's) cannot record the view, and a
+        # replay on the primary would render the page twice: it is recorded on
+        # a cursor of its own once the request's is released. request.env is
+        # gone by then, so every value the upsert reads from the request is
+        # taken now; False, not None, keeps _prepare_upsert_vals off it.
+        access_token = self._get_access_token()
+        values = {
+            "lang_id": request.lang.id or False,
+            "country_code": request.geoip.get("country_code") or False,
+            "website_id": request.website.id or False,
+            "timezone": self._get_visitor_timezone() or False,
+        }
+        registry, uid = self.env.registry, self.env.uid
+
+        def record_view() -> None:
+            with registry.cursor() as cr:
+                env = api.Environment(cr, uid, {})
+                retrying(
+                    lambda: env["website.visitor"]._upsert_visitor(
+                        access_token, website_track_values, **values
+                    ),
+                    env,
+                )
+
+        request.call_after_release(record_view)
 
     def _add_tracking(self, domain, website_track_values) -> None:
         self.check_singleton()

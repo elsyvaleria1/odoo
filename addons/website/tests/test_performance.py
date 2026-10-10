@@ -278,12 +278,9 @@ class TestWebsitePerformance(TestWebsitePerformanceCommon):
                     }
                 )
                 expected_query_count = 2 if cache else 8
-                insert_tables_perf = {}
-                if not readonly_enabled:
-                    insert_tables_perf = {
-                        "website_visitor": 1,
-                    }
-                    expected_query_count += 1
+                # recorded on either cursor: a read-only one after its release
+                insert_tables_perf = {"website_visitor": 1}
+                expected_query_count += 1
                 self.page.track = True
 
                 self.menu.unlink()
@@ -310,12 +307,9 @@ class TestWebsitePerformance(TestWebsitePerformanceCommon):
                     "orm_signaling_registry": 1,
                 }
                 expected_query_count = 1
-                insert_tables_perf = {}
-                if not readonly_enabled:
-                    insert_tables_perf = {
-                        "website_visitor": 1,
-                    }
-                    expected_query_count += 1
+                # recorded on either cursor: a read-only one after its release
+                insert_tables_perf = {"website_visitor": 1}
+                expected_query_count += 1
                 self._check_url_hot_query(
                     "/", expected_query_count, select_tables_perf, insert_tables_perf
                 )
@@ -330,12 +324,9 @@ class TestWebsitePerformance(TestWebsitePerformanceCommon):
                     "social_media_config": 1,
                 }
                 expected_query_count = 7
-                insert_tables_perf = {}
-                if not readonly_enabled:
-                    insert_tables_perf = {
-                        "website_visitor": 1,
-                    }
-                    expected_query_count += 1
+                # recorded on either cursor: a read-only one after its release
+                insert_tables_perf = {"website_visitor": 1}
+                expected_query_count += 1
                 self._check_url_hot_query(
                     "/",
                     expected_query_count,

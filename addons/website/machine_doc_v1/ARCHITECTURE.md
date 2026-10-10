@@ -99,7 +99,8 @@ Route match (website.rewrite 308/404 are routing-map rules)
                      HTML response
    │
    v
-_post_dispatch → _register_website_track  (visitor analytics, 200 GET, non-bot)
+_post_dispatch → _register_website_track  (visitor analytics, 200 GET, non-bot;
+                 on a read-only cursor recorded after release)
    │
    v
 Browser: public.interactions service scans DOM, starts matching Interactions

@@ -513,11 +513,6 @@ class WebsiteVisitorTestsCommon(MockVisitor, HttpCaseWithUserDemo):
 
 
 class WebsiteVisitorTests(WebsiteVisitorTestsCommon):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.set_registry_readonly_mode(False)
-
     def test_visitor_creation_on_tracked_page(self):
         existing_visitors = self.env["website.visitor"].search([])
         existing_tracks = self.env["website.track"].search([])

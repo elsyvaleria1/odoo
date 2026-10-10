@@ -95,8 +95,6 @@ class WebsiteVisitorTestsLivechat(WebsiteVisitorTestsCommon):
             visitor.with_user(operator).page_ids
 
     def test_visitor_id_continuity_across_sessions(self):
-        self.set_registry_readonly_mode(False)
-
         operator = self.user_admin
         livechat_channel = self.env["im_livechat.channel"].create(
             {
@@ -138,7 +136,6 @@ class WebsiteVisitorTestsLivechat(WebsiteVisitorTestsCommon):
         self.assertNotEqual(visitor_3, visitor_2)
 
     def test_new_visitor_inherits_the_cookie_guest_chats_rendered_or_cached(self):
-        self.set_registry_readonly_mode(False)
         self.website.channel_id = False
         guest = self.env["mail.guest"].create({"name": "Returning guest"})
         channel = self.env["discuss.channel"].create(
