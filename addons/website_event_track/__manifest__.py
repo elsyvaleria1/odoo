@@ -57,6 +57,13 @@
         "web.assets_tests": [
             "website_event_track/static/tests/tours/*.js",
         ],
+        "web.assets_unit_tests": [
+            "website_event_track/static/tests/interactions/**/*",
+        ],
+        "web.assets_unit_tests_setup": [
+            "website_event_track/static/src/interactions/event_track_reminder.js",
+            "website_event_track/static/src/xml/website_event_track_email_reminder.xml",
+        ],
         "website.website_builder_assets": [
             "website_event_track/static/src/website_builder/**/*",
         ],
