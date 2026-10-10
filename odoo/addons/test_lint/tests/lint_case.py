@@ -27,8 +27,7 @@ URL_FETCHED = frozenset(
         # the Telegram mini app pages, rendered by their controllers outside the web client
         "mail_telegram/static/src/mini_app/inbox.css",
         "mail_telegram/static/src/mini_app/inbox.js",
-        "project_telegram/static/src/mini_app/task_form.css",
-        "project_telegram/static/src/mini_app/task_form.js",
+        "project_telegram/static/src/mini_app/task_app.css",
         # injected as a <link> into the PDF.js viewer iframe (sign_request/utils.js)
         "sign/static/src/css/pdfjs_overrides.css",
         "speech/static/src/worklets/pcm_capture.js",
