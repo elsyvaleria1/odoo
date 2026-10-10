@@ -18,11 +18,14 @@ MAX_MODELS = 40
 RESULT_BUDGET = 60000
 
 # Models that hold the instance's secrets rather than business data: system
-# parameters, API keys and the credential vault.
+# parameters, API keys and the credential vault; and the bot's own memory,
+# where one person's conversations and pending changes are not another's.
 BLOCKED_MODEL_PREFIXES = (
     "ir.config_parameter",
     "res.users.apikeys",
     "credential.",
+    "telegram.chat",
+    "telegram.insight.log",
 )
 # Field types a question never needs and whose values are large or opaque.
 SKIPPED_FIELD_TYPES = frozenset({"binary", "image"})
@@ -201,25 +204,11 @@ class OdooTools:
                     "report": {"type": "string", "enum": list(self._queries)},
                     "date_from": {"type": "string", "description": "ISO date"},
                     "date_to": {"type": "string", "description": "ISO date"},
-                    "group_by": {
-                        "type": "string",
-                        "enum": [
-                            "company",
-                            "warehouse",
-                            "salesperson",
-                            "partner",
-                            "product",
-                            "month",
-                        ],
-                    },
-                    "company": {"type": "string"},
-                    "warehouse": {"type": "string"},
-                    "partner": {"type": "string"},
-                    "product": {"type": "string"},
-                    "salesperson": {"type": "string"},
-                    "employee": {"type": "string"},
+                    "group_by": {"type": "string", "enum": list(catalog.GROUPS)},
+                    **{name: {"type": "string"} for name in catalog.FILTERS},
                     "overdue_only": {"type": "boolean"},
                     "summary_only": {"type": "boolean"},
+                    "detail": {"type": "boolean"},
                     "top": {"type": "integer"},
                 },
                 "required": ["report"],
@@ -409,7 +398,7 @@ class OdooTools:
                 "records": partners.mapped("display_name"),
             }
         report = env["ir.actions.report"].browse(int(report_id or 0)).exists()
-        if not report or report.report_type != "qweb-pdf":
+        if not report or report.report_type != "qweb-pdf" or _is_blocked(report.model):
             raise ReaderError("No such PDF report; call pdf_reports for the model.")
         records = env[report.model].browse([int(i) for i in ids or []]).exists()
         if not records:

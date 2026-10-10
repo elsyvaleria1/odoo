@@ -16,6 +16,9 @@ _logger = logging.getLogger(__name__)
 
 IMAGE_TYPES = ("image/jpeg", "image/png", "image/gif", "image/webp")
 MAX_BYTES = 20 * 1024 * 1024
+# what an Office file may unpack to: a forwarded zip bomb is refused before
+# it fills the worker's memory
+MAX_UNPACKED = 100 * 1024 * 1024
 MAX_TEXT = 60000
 TEXT_EXTENSIONS = (
     ".txt",
@@ -103,9 +106,18 @@ def _as_png(content) -> bytes:
     return output.getvalue()
 
 
+def _check_unpacked(content) -> None:
+    """Refuse an Office file whose members unpack beyond MAX_UNPACKED."""
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        size = sum(info.file_size for info in archive.infolist())
+    if size > MAX_UNPACKED:
+        raise ValueError(f"unpacks to {size} bytes")
+
+
 def _spreadsheet_text(content) -> str:
     from openpyxl import load_workbook
 
+    _check_unpacked(content)
     workbook = load_workbook(io.BytesIO(content), read_only=True, data_only=True)
     lines = []
     for sheet in workbook.worksheets:
@@ -122,6 +134,7 @@ def _spreadsheet_text(content) -> str:
 
 
 def _docx_text(content) -> str:
+    _check_unpacked(content)
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
         root = etree.fromstring(archive.read("word/document.xml"))
     namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
