@@ -1,0 +1,367 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_shipment_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-10 00:07+0000\n"
+"PO-Revision-Date: 2026-10-10 00:07+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Language: es_MX\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "%(carrier)s: %(state)s"
+msgstr "%(carrier)s: %(state)s"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid ""
+"%(command)s - Send the photo or PDF of the shipping order the carrier gave "
+"you; its tracking number goes on the delivery order or receipt you choose."
+msgstr ""
+"%(command)s - Manda la foto o el PDF de la hoja de embarque que te "
+"dio el transportista; su número de guía queda en la entrega o "
+"recepción que elijas."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid ""
+"%(file)s weighs more than 20 MB, the most Telegram lets a bot download. Send"
+" a photo of the sheet instead."
+msgstr ""
+"%(file)s pesa más de 20 MB, lo máximo que Telegram deja descargar a "
+"un bot. Manda mejor una foto de la hoja."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid ""
+"%(picking)s already carries tracking number %(other)s; I do not write over "
+"it."
+msgstr "%(picking)s ya tiene la guía %(other)s; no la sobrescribo."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "%(ref)s is now on %(picking)s · %(customer)s"
+msgstr "La guía %(ref)s quedó en %(picking)s · %(customer)s"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields.selection,name:stock_shipment_telegram.selection__telegram_shipment_sheet__state__done
+msgid "Assigned"
+msgstr "Asignada"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__bot_id
+msgid "Bot"
+msgstr "Bot"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__carrier_id
+msgid "Carrier"
+msgstr "Transportista"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__chat_id
+msgid "Chat"
+msgstr "Chat"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__checksum
+msgid "Checksum"
+msgstr "Suma de verificación"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__company_id
+msgid "Company"
+msgstr "Empresa"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_handler_stock_shipment__display_name
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__display_name
+msgid "Display Name"
+msgstr "Nombre en pantalla"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Done."
+msgstr "Listo."
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__error_message
+msgid "Error Message"
+msgstr "Mensaje de error"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__extracted
+msgid "Extracted"
+msgstr "Datos leídos"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__file_id
+msgid "File"
+msgstr "Archivo"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__file_name
+msgid "File Name"
+msgstr "Nombre del archivo"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__file_unique_id
+msgid "File Unique"
+msgstr "Identificador único del archivo"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Finish"
+msgstr "Terminar"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid ""
+"I could not read the tracking number. Send the sheet again, whole and in "
+"focus, with the barcode in view."
+msgstr ""
+"No pude leer el número de guía. Manda la hoja otra vez, completa y "
+"enfocada, con el código de barras a la vista."
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_handler_stock_shipment__id
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__id
+msgid "ID"
+msgstr "ID"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "It is a receipt (purchase)"
+msgstr "Es una recepción (compra)"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "No carrier uses tracking numbers like %(ref)s."
+msgstr "Ningún transportista usa guías como %(ref)s."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "None of these"
+msgstr "Ninguna de estas"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Nothing recorded for that sheet."
+msgstr "No se registró nada de esa hoja."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Ocurre"
+msgstr "Ocurre"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__candidate_ids
+msgid "Offered Transfers"
+msgstr "Transferencias ofrecidas"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Only whoever handles transfers sends shipping orders here."
+msgstr "Solo quien maneja transferencias manda hojas de embarque aquí."
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields.selection,name:stock_shipment_telegram.selection__telegram_shipment_sheet__state__error
+msgid "Refused"
+msgstr "Rechazada"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,help:stock_shipment_telegram.field_telegram_shipment_sheet__checksum
+msgid "SHA-1 of the file's bytes: the same sheet sent again is recognised."
+msgstr ""
+"SHA-1 del contenido del archivo: la misma hoja enviada otra vez se "
+"reconoce."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid ""
+"Send the carrier's shipping order: its tracking number goes on the transfer"
+msgstr ""
+"Manda la hoja de embarque del transportista: su guía queda en la "
+"transferencia"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Send the shipping order as a PDF or a photo."
+msgstr "Manda la hoja de embarque en PDF o en foto."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid ""
+"Send the shipping order the carrier gave you, one per message: the PDF if you have it, or a photo sent as a file, whole and with the barcode in view. I read the tracking number and you choose the transfer it goes on.\n"
+"\n"
+"/cancelar stops at any time."
+msgstr ""
+"Manda la hoja de embarque que te dio el transportista, una por "
+"mensaje: el PDF si lo tienes, o una foto enviada como archivo, "
+"completa y con el código de barras a la vista. Yo leo el número de "
+"guía y tú eliges la transferencia donde va.\n"
+"\n"
+"/cancelar detiene en "
+"cualquier momento."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Shipments"
+msgstr "Embarques"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid "Shipping order %(ref)s of %(carrier)s, sent over Telegram."
+msgstr "Hoja de embarque %(ref)s de %(carrier)s, enviada por Telegram."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Something went wrong with that sheet; send it again."
+msgstr "Algo falló con esa hoja; mándala otra vez."
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__state
+msgid "State"
+msgstr "Estado"
+
+#. module: stock_shipment_telegram
+#: model:ir.model,name:stock_shipment_telegram.model_telegram_shipment_sheet
+msgid "Telegram Shipping Order"
+msgstr "Hoja de embarque por Telegram"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,help:stock_shipment_telegram.field_telegram_shipment_sheet__file_id
+msgid "Telegram's id to download the file."
+msgstr "Identificador de Telegram para descargar el archivo."
+
+#. module: stock_shipment_telegram
+#: model:ir.model,name:stock_shipment_telegram.model_telegram_handler_stock_shipment
+msgid "Telegram: Shipping Orders"
+msgstr "Telegram: hojas de embarque"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "That button is no longer valid."
+msgstr "Ese botón ya no es válido."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "That same sheet already went on %(picking)s."
+msgstr "Esa misma hoja ya quedó en %(picking)s."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "The file did not arrive; send it again."
+msgstr "El archivo no llegó; mándalo otra vez."
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields.selection,name:stock_shipment_telegram.selection__telegram_shipment_sheet__state__pending
+msgid "To Assign"
+msgstr "Por asignar"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__tracking_ref
+msgid "Tracking Number"
+msgstr "Número de guía"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "Tracking number %(ref)s of %(carrier)s. Which %(kind)s is it?"
+msgstr "Guía %(ref)s de %(carrier)s. ¿Qué %(kind)s es?"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid ""
+"Tracking number %(ref)s of %(carrier)s: no open %(kind)s of yours is waiting"
+" for one."
+msgstr ""
+"Guía %(ref)s de %(carrier)s: no hay ninguna %(kind)s abierta tuya "
+"esperando guía."
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,field_description:stock_shipment_telegram.field_telegram_shipment_sheet__picking_id
+msgid "Transfer"
+msgstr "Transferencia"
+
+#. module: stock_shipment_telegram
+#: model:ir.model.fields,help:stock_shipment_telegram.field_telegram_shipment_sheet__extracted
+msgid "What was read off the sheet: route, service, date and amounts."
+msgstr "Lo que se leyó de la hoja: ruta, servicio, fecha y montos."
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "delivery order"
+msgstr "entrega"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "receipt"
+msgstr "recepción"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "shipping orders"
+msgstr "hojas de embarque"
+
+#. module: stock_shipment_telegram
+#. odoo-python
+#: code:addons/stock_shipment_telegram/models/telegram_handler.py:0
+msgid "total %(amount)s"
+msgstr "total %(amount)s"

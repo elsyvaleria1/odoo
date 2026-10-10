@@ -1,0 +1,5 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_telegram_shipment_sheet_user,telegram.shipment.sheet.user,model_telegram_shipment_sheet,base.group_user,permission,r,own,partner,
+access_telegram_shipment_sheet_manager,telegram.shipment.sheet.manager,model_telegram_shipment_sheet,base.group_system,permission,crud,,,
+telegram_shipment_sheet_privilege_operate,telegram.shipment.sheet: the bot keeps the sheets of the chats it serves,model_telegram_shipment_sheet,telegram.privilege_operate_bot,permission,cru,,,
+telegram_shipment_sheet_comp_rule,Telegram Shipping Order: multi-company,model_telegram_shipment_sheet,base.group_everyone,guard,crud,company,,
