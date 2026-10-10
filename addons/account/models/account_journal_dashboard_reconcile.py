@@ -111,7 +111,7 @@ class AccountJournal(models.Model):
         ):
             balance = formatLang(
                 self.env,
-                self.current_statement_balance,
+                self.amount_statement_balance_today,
                 currency_obj=self.currency_id or self.company_id.sudo().currency_id,
             )
         return {

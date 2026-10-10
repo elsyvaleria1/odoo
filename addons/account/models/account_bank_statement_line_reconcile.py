@@ -98,9 +98,11 @@ class AccountBankStatementLine(models.Model):
             journal=default_journal,
             extra_domain=bool(extra_domain),
         )
+        action_name = name or self.env._("Bank Matching")
         action.update(
             {
-                "name": name or self.env._("Bank Matching"),
+                "name": action_name,
+                "display_name": action_name,
                 "context": {
                     **default_context,
                     "bank_statements_source": default_journal.exists().bank_statements_source,

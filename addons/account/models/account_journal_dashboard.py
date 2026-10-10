@@ -11,7 +11,6 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.release import version_info
-from odoo.tools import DEFAULT_SERVER_DATE_FORMAT as DF
 from odoo.tools import SQL
 from odoo.tools.misc import get_lang
 
@@ -24,7 +23,11 @@ SALE_PURCHASE_TYPES = ("sale", "purchase")
 class BankPosition(NamedTuple):
     last_statement_id: int | None
     has_statement_lines: bool
-    running_balance: float
+    has_direct_bank_payments: bool
+    statement_balance_today: float
+    balance_today: float
+    upcoming_amount: float
+    upcoming_count: int
 
 
 def group_by_journal(vals_list):
@@ -48,8 +51,24 @@ class AccountJournal(models.Model):
         string="Color Index",
         default=0,
     )
-    current_statement_balance = fields.Monetary(compute="_compute_bank_position")
+    amount_balance_today = fields.Monetary(
+        string="Balance as of Today",
+        compute="_compute_bank_position",
+    )
+    amount_statement_balance_today = fields.Monetary(
+        string="Statement Balance as of Today",
+        compute="_compute_bank_position",
+    )
+    amount_upcoming = fields.Monetary(
+        string="Upcoming Amount",
+        compute="_compute_bank_position",
+    )
+    count_upcoming = fields.Integer(
+        string="Upcoming Transactions",
+        compute="_compute_bank_position",
+    )
     has_statement_lines = fields.Boolean(compute="_compute_bank_position")
+    has_direct_bank_payments = fields.Boolean(compute="_compute_bank_position")
     has_posted_entries = fields.Boolean(compute="_compute_entry_presence")
     has_entries = fields.Boolean(compute="_compute_entry_presence")
     has_sequence_holes = fields.Boolean(compute="_compute_has_sequence_holes")
@@ -64,21 +83,32 @@ class AccountJournal(models.Model):
             self.company_id.sudo().currency_id.id
         )
 
-    @api.depends_context("allowed_company_ids")
+    def _dashboard_today(self):
+        return fields.Date.context_today(self)
+
+    @api.depends_context("allowed_company_ids", "tz")
     def _compute_bank_position(self) -> None:
         bank_cash_journals = self.filtered(
             lambda journal: journal.type in BANK_CASH_TYPES
         )
         other_journals = self - bank_cash_journals
         other_journals.has_statement_lines = False
-        other_journals.current_statement_balance = 0.0
+        other_journals.has_direct_bank_payments = False
+        other_journals.amount_balance_today = 0.0
+        other_journals.amount_statement_balance_today = 0.0
+        other_journals.amount_upcoming = 0.0
+        other_journals.count_upcoming = 0
         other_journals.last_statement_id = False
         positions = bank_cash_journals._get_bank_positions()
         Statement = self.env["account.bank.statement"]
         for journal in bank_cash_journals:
             position = positions[journal.id]
             journal.has_statement_lines = position.has_statement_lines
-            journal.current_statement_balance = position.running_balance
+            journal.has_direct_bank_payments = position.has_direct_bank_payments
+            journal.amount_balance_today = position.balance_today
+            journal.amount_statement_balance_today = position.statement_balance_today
+            journal.amount_upcoming = position.upcoming_amount
+            journal.count_upcoming = position.upcoming_count
             journal.last_statement_id = Statement.browse(position.last_statement_id)
 
     @api.depends_context("allowed_company_ids", "company")
@@ -87,7 +117,7 @@ class AccountJournal(models.Model):
         for journal in self:
             journal.kanban_dashboard = json_dumps(dashboard_data[journal.id])
 
-    @api.depends("current_statement_balance")
+    @api.depends("amount_balance_today")
     @_debug.perf.timed
     def _compute_kanban_dashboard_graph(self) -> None:
         bank_cash_journals = self.filtered(
@@ -255,28 +285,51 @@ class AccountJournal(models.Model):
             short_name = format_date(date, "d MMM", locale=locale)
             return {"x": short_name, "y": currency.round(amount), "name": name}
 
-        today = fields.Date.context_today(self)
+        today = self._dashboard_today()
         last_month = today + timedelta(days=-30)
         locale = get_lang(self.env).code
 
-        query = """
-            SELECT move.journal_id,
-                   move.date,
-                   SUM(st_line.amount) AS amount
-              FROM account_bank_statement_line st_line
-              JOIN account_move move ON move.id = st_line.move_id
-             WHERE move.journal_id = ANY(%s)
-               AND move.date > %s
-               AND move.state != 'cancel'
-               AND move.company_id = ANY(%s)
-          GROUP BY move.date, move.journal_id
-          ORDER BY move.date DESC
-        """
         self.env["account.bank.statement.line"].flush_model(["amount", "move_id"])
         self.env["account.move"].flush_model(
-            ["date", "state", "journal_id", "company_id"]
+            ["date", "state", "journal_id", "company_id", "currency_id"]
         )
-        self.env.cr.execute(query, (self.ids, last_month, self.env.companies.ids))
+        self.env["account.payment"].flush_model()
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT 'statement' AS source,
+                       move.journal_id AS journal_id,
+                       move.date AS date,
+                       NULL::integer AS company_id,
+                       NULL::integer AS currency,
+                       COUNT(*) AS count,
+                       SUM(st_line.amount) AS amount_total,
+                       NULL::numeric AS amount_total_company
+                  FROM account_bank_statement_line st_line
+                  JOIN account_move move ON move.id = st_line.move_id
+                 WHERE move.journal_id = ANY(%(journal_ids)s)
+                   AND move.date > %(since)s
+                   AND move.date <= %(today)s
+                   AND move.state != 'cancel'
+                   AND move.company_id = ANY(%(company_ids)s)
+              GROUP BY move.date, move.journal_id
+             UNION ALL
+                SELECT 'payment', direct.*
+                  FROM (%(direct_payments)s) direct
+              ORDER BY date DESC
+                """,
+                journal_ids=self.ids,
+                since=last_month,
+                today=today,
+                company_ids=self.env.companies.ids,
+                direct_payments=self._direct_bank_payments_query(
+                    period=SQL("move.date"),
+                    condition=SQL(
+                        "move.date > %s AND move.date <= %s", last_month, today
+                    ),
+                ),
+            )
+        )
         query_result = group_by_journal(self.env.cr.dictfetchall())
         _debug.pipeline(
             "bank_cash_graph_rows",
@@ -290,14 +343,19 @@ class AccountJournal(models.Model):
         for journal in self:
             graph_title, graph_key = journal._graph_title_and_key()
             currency = journal._dashboard_currency()
-            journal_result = [
-                row for row in query_result[journal.id] if row["date"] <= today
-            ]
-            future_amount = sum(
-                row["amount"] for row in query_result[journal.id] if row["date"] > today
-            )
+            rows = query_result[journal.id]
+            movement_by_date = defaultdict(float)
+            for row in rows:
+                if row["source"] == "statement":
+                    movement_by_date[row["date"]] += row["amount_total"]
+                else:
+                    movement_by_date[row["date"]] += (
+                        self._count_results_and_sum_amounts([row], currency)[1]
+                    )
 
-            is_sample_data = not journal_result and not journal.has_statement_lines
+            is_sample_data = not (
+                rows or journal.has_statement_lines or journal.has_direct_bank_payments
+            )
 
             data = []
             if is_sample_data:
@@ -311,23 +369,15 @@ class AccountJournal(models.Model):
                         )
                     )
             else:
-                last_balance = journal.current_statement_balance - future_amount
-                if _debug.logic.enabled and future_amount:
-                    _debug.logic(
-                        "bank_cash_graph_future_lines_excluded",
-                        journal=journal,
-                        future_amount=future_amount,
-                    )
-                if not journal_result or journal_result[0]["date"] < today:
-                    data.append(prepare_graph_point(today, last_balance, currency))
-                date = today
-                amount = last_balance
-                for val in journal_result:
-                    date = val["date"]
-                    data[:0] = [prepare_graph_point(date, amount, currency)]
-                    amount -= val["amount"]
-
-                if date.strftime(DF) != last_month.strftime(DF):
+                amount = journal.amount_balance_today
+                movement_dates = sorted(movement_by_date, reverse=True)
+                if not movement_dates or movement_dates[0] < today:
+                    data.append(prepare_graph_point(today, amount, currency))
+                point_date = today
+                for point_date in movement_dates:
+                    data[:0] = [prepare_graph_point(point_date, amount, currency)]
+                    amount -= movement_by_date[point_date]
+                if point_date != last_month:
                     data[:0] = [prepare_graph_point(last_month, amount, currency)]
 
             _debug.logic(
@@ -615,7 +665,6 @@ class AccountJournal(models.Model):
         outstanding_pay_account_balances = (
             bank_cash_journals._get_journal_dashboard_outstanding_payments()
         )
-        direct_payment_balances = bank_cash_journals._get_direct_bank_payments()
         journal_misc_date_limit = bank_cash_journals._get_misc_operations_date_limits()
         misc_totals = bank_cash_journals._get_misc_operations_totals(
             journal_misc_date_limit
@@ -626,7 +675,6 @@ class AccountJournal(models.Model):
             journals=bank_cash_journals,
             to_reconcile=len(number_to_reconcile),
             outstanding=len(outstanding_pay_account_balances),
-            direct_payments=len(direct_payment_balances),
             misc_totals=len(misc_totals),
             to_check=len(to_check),
         )
@@ -646,9 +694,6 @@ class AccountJournal(models.Model):
                 journal.company_id.id
                 in journal.company_id._get_accessible_branches().ids
             )
-            nb_direct_payments, direct_payments_balance = direct_payment_balances[
-                journal.id
-            ]
             drag_drop_settings = {
                 "image": "/account/static/src/img/bank.svg"
                 if journal.type in ("bank", "credit")
@@ -675,12 +720,12 @@ class AccountJournal(models.Model):
                     "number_to_check": number_to_check,
                     "to_check_balance": currency.format(to_check_balance),
                     "number_to_reconcile": number_to_reconcile.get(journal.id, 0),
-                    "account_balance": currency.format(
-                        journal.current_statement_balance + direct_payments_balance
-                    ),
+                    "account_balance": currency.format(journal.amount_balance_today),
+                    "nb_upcoming": journal.count_upcoming,
+                    "upcoming_balance": currency.format(journal.amount_upcoming),
                     "has_at_least_one_statement": bool(journal.last_statement_id),
                     "nb_lines_bank_account_balance": (
-                        bool(journal.has_statement_lines) or bool(nb_direct_payments)
+                        journal.has_statement_lines or journal.has_direct_bank_payments
                     )
                     and accessible,
                     "outstanding_pay_account_balance": currency.format(
@@ -1072,16 +1117,22 @@ class AccountJournal(models.Model):
         if not self:
             return {}
         _debug.pipeline("bank_positions_query", journals=self)
+        today = self._dashboard_today()
         self.env["account.bank.statement.line"].flush_model()
         self.env["account.bank.statement"].flush_model()
-        self.env["account.move"].flush_model(["state"])
+        self.env["account.payment"].flush_model()
+        self.env["account.move"].flush_model(
+            ["state", "date", "journal_id", "company_id", "currency_id"]
+        )
         self.env.cr.execute(
             """
             SELECT journal.id AS journal_id,
                    statement.id AS statement_id,
                    COALESCE(statement.balance_end_real, 0) AS balance_end_real,
                    without_statement.amount AS unlinked_amount,
-                   without_statement.count AS unlinked_count
+                   without_statement.count AS unlinked_count,
+                   upcoming.amount AS upcoming_amount,
+                   upcoming.count AS upcoming_count
               FROM account_journal journal
          LEFT JOIN LATERAL (  -- the statement whose lines run highest: the sum below
                              -- is of the unlinked lines above THIS statement, so any
@@ -1108,23 +1159,78 @@ class AccountJournal(models.Model):
                               AND stl.internal_index >= COALESCE(statement.first_line_index, '')
                             LIMIT 1
                    ) without_statement ON TRUE
+         LEFT JOIN LATERAL (  -- dated after today, statement or not: both terms above count them
+                           SELECT COALESCE(SUM(stl.amount), 0.0) AS amount,
+                                  COUNT(*)
+                             FROM account_bank_statement_line stl
+                             JOIN account_move move ON move.id = stl.move_id
+                            WHERE move.state != 'cancel'
+                              AND move.date > %s
+                              AND stl.journal_id = journal.id
+                              AND stl.company_id = ANY(%s)
+                   ) upcoming ON TRUE
              WHERE journal.id = ANY(%s)
         """,
-            [self.env.companies.ids, self.env.companies.ids, self.ids],
+            [
+                self.env.companies.ids,
+                self.env.companies.ids,
+                today,
+                self.env.companies.ids,
+                self.ids,
+            ],
         )
-        return {
-            row["journal_id"]: BankPosition(
+        statement_rows = self.env.cr.dictfetchall()
+        payment_rows = group_by_journal(
+            self.env.execute_query_dict(
+                self._direct_bank_payments_query(
+                    period=SQL("move.date > %s", today),
+                    condition=SQL("TRUE"),
+                )
+            )
+        )
+        positions = {}
+        for row in statement_rows:
+            journal = self.browse(row["journal_id"])
+            currency = journal._dashboard_currency()
+            payments = payment_rows[journal.id]
+            payments_today = self._count_results_and_sum_amounts(
+                [payment for payment in payments if not payment["period"]], currency
+            )[1]
+            count_upcoming_payments, payments_upcoming = (
+                self._count_results_and_sum_amounts(
+                    [payment for payment in payments if payment["period"]], currency
+                )
+            )
+            statement_balance_today = (
+                row["balance_end_real"]
+                + row["unlinked_amount"]
+                - row["upcoming_amount"]
+            )
+            positions[journal.id] = BankPosition(
                 last_statement_id=row["statement_id"],
                 has_statement_lines=bool(row["statement_id"] or row["unlinked_count"]),
-                running_balance=row["balance_end_real"] + row["unlinked_amount"],
+                has_direct_bank_payments=bool(payments),
+                statement_balance_today=statement_balance_today,
+                balance_today=statement_balance_today + payments_today,
+                upcoming_amount=row["upcoming_amount"] + payments_upcoming,
+                upcoming_count=row["upcoming_count"] + count_upcoming_payments,
             )
-            for row in self.env.cr.dictfetchall()
-        }
+            if _debug.logic.enabled and positions[journal.id].upcoming_count:
+                _debug.logic(
+                    "bank_position_upcoming_excluded",
+                    journal=journal,
+                    statement_amount=row["upcoming_amount"],
+                    statement_count=row["upcoming_count"],
+                    direct_payment_amount=payments_upcoming,
+                    direct_payment_count=count_upcoming_payments,
+                )
+        return positions
 
-    def _get_direct_bank_payments(self):
-        self.env.cr.execute(
+    def _direct_bank_payments_query(self, period: SQL, condition: SQL) -> SQL:
+        return SQL(
             """
             SELECT move.journal_id AS journal_id,
+                   %(period)s AS period,
                    move.company_id AS company_id,
                    move.currency_id AS currency,
                    COUNT(*) AS count,
@@ -1138,15 +1244,16 @@ class AccountJournal(models.Model):
               JOIN account_journal journal ON move.journal_id = journal.id
              WHERE payment.is_bank_matched IS TRUE
                AND move.state = 'posted'
-               AND payment.journal_id = ANY(%s)
-               AND payment.company_id = ANY(%s)
+               AND payment.journal_id = ANY(%(journal_ids)s)
+               AND payment.company_id = ANY(%(company_ids)s)
                AND payment.outstanding_account_id = journal.default_account_id
-          GROUP BY move.company_id, move.journal_id, move.currency_id
-        """,
-            [self.ids, self.env.companies.ids],
-        )
-        return self._summarize_payment_balances(
-            group_by_journal(self.env.cr.dictfetchall())
+               AND %(condition)s
+          GROUP BY move.company_id, move.journal_id, move.currency_id, 2
+            """,
+            period=period,
+            condition=condition,
+            journal_ids=self.ids,
+            company_ids=self.env.companies.ids,
         )
 
     def _summarize_payment_balances(self, query_result) -> dict:
@@ -1176,7 +1283,7 @@ class AccountJournal(models.Model):
                AND payment.journal_id = ANY(%s)
                AND payment.company_id = ANY(%s)
           GROUP BY payment.company_id, payment.journal_id, payment.currency_id
-        """,
+            """,
             [self.ids, self.env.companies.ids],
         )
         return self._summarize_payment_balances(
@@ -1407,6 +1514,44 @@ class AccountJournal(models.Model):
                 "search_default_date_between": True,
             }
         return action
+
+    def _get_upcoming_transactions_domain(self) -> Domain:
+        self.check_singleton()
+        return (
+            Domain("journal_id", "=", self.id)
+            & Domain("account_id", "=", self.default_account_id.id)
+            & Domain("date", ">", fields.Date.to_string(self._dashboard_today()))
+            & Domain("company_id", "in", self.env.companies.ids)
+            & (
+                (
+                    Domain("statement_line_id", "!=", False)
+                    & Domain("parent_state", "!=", "cancel")
+                )
+                | (
+                    Domain("payment_id.is_bank_matched", "=", True)
+                    & Domain("parent_state", "=", "posted")
+                )
+            )
+        )
+
+    @_debug.perf.timed
+    def open_upcoming_transactions_action(self) -> dict:
+        _debug.lifecycle("open_upcoming_transactions_action", records=self)
+        self.check_singleton()
+        action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
+            "account.action_account_moves_all_a"
+        )
+        title = self.env._("Upcoming Transactions")
+        return action | {
+            "name": title,
+            "display_name": title,
+            "domain": list(self._get_upcoming_transactions_domain()),
+            "context": {
+                "search_default_group_by_move": False,
+                "search_default_posted": False,
+                "create": False,
+            },
+        }
 
     @_debug.perf.timed
     def open_invalid_statements_action(self):

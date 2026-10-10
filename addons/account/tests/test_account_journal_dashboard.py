@@ -971,7 +971,9 @@ class TestAccountJournalBankGraph(TestAccountJournalDashboardCommon):
         )
         journal.invalidate_recordset()
 
-        self.assertEqual(journal.current_statement_balance, 150.0)
+        self.assertEqual(journal.amount_statement_balance_today, 100.0)
+        self.assertEqual(journal.amount_upcoming, 50.0)
+        self.assertEqual(journal.count_upcoming, 1)
         graph = journal._prepare_bank_cash_graph_data()[journal.id][0]
         self.assertEqual(
             [(point["name"], point["y"]) for point in graph["values"]],
@@ -982,7 +984,7 @@ class TestAccountJournalBankGraph(TestAccountJournalDashboardCommon):
             ],
         )
 
-    def test_the_bank_position_is_read_once_for_its_three_fields(self):
+    def test_the_bank_position_is_read_once_for_all_its_fields(self):
         journals = self.env["account.journal"].search(
             [("company_id", "=", self.env.company.id)]
         )
@@ -998,8 +1000,12 @@ class TestAccountJournalBankGraph(TestAccountJournalDashboardCommon):
         with patch.object(Journal, "_get_bank_positions", counted):
             journals.read(
                 [
-                    "current_statement_balance",
+                    "amount_balance_today",
+                    "amount_statement_balance_today",
+                    "amount_upcoming",
+                    "count_upcoming",
                     "has_statement_lines",
+                    "has_direct_bank_payments",
                     "last_statement_id",
                 ]
             )
@@ -1029,7 +1035,7 @@ class TestAccountJournalBankGraph(TestAccountJournalDashboardCommon):
         cancelled.move_id.state = "cancel"
         journal.invalidate_recordset()
 
-        self.assertEqual(journal.current_statement_balance, 100.0)
+        self.assertEqual(journal.amount_statement_balance_today, 100.0)
         graph = journal._prepare_bank_cash_graph_data()[journal.id][0]
         self.assertEqual(graph["values"][0]["y"], 0.0)
 
@@ -1066,3 +1072,236 @@ class TestAccountJournalBankGraph(TestAccountJournalDashboardCommon):
                 ("22 January 2019", 100.0),
             ],
         )
+
+
+@tagged("post_install", "-at_install")
+class TestAccountJournalBankCard(TestAccountJournalDashboardCommon):
+    def _create_st_lines(self, journal, *date_amounts):
+        return self.env["account.bank.statement.line"].create(
+            [
+                {
+                    "journal_id": journal.id,
+                    "date": line_date,
+                    "payment_ref": f"line {line_date}",
+                    "amount": amount,
+                }
+                for line_date, amount in date_amounts
+            ]
+        )
+
+    def _direct_payment_journal(self, currency=None):
+        journal = self.company_data["default_journal_bank"].copy(
+            {"currency_id": currency.id} if currency else {}
+        )
+        (
+            journal.inbound_payment_channel_ids[:1]
+            | journal.outbound_payment_channel_ids[:1]
+        ).payment_account_id = journal.default_account_id
+        return journal
+
+    def _create_direct_payments(self, journal, *date_amounts, post=True):
+        payments = self.env["account.payment"].create(
+            [
+                {
+                    "amount": abs(amount),
+                    "date": payment_date,
+                    "payment_type": "inbound" if amount > 0 else "outbound",
+                    "partner_type": "customer" if amount > 0 else "supplier",
+                    "partner_id": self.partner_a.id,
+                    "journal_id": journal.id,
+                }
+                for payment_date, amount in date_amounts
+            ]
+        )
+        if post:
+            payments.action_post()
+        return payments
+
+    def _card_and_graph(self, journal):
+        journal.invalidate_recordset()
+        card = journal._get_journal_dashboard_data_batched()[journal.id]
+        graph = journal._prepare_bank_cash_graph_data()[journal.id][0]["values"]
+        return card, graph
+
+    @freeze_time("2019-01-22")
+    def test_the_card_balance_is_the_graph_last_point_with_future_lines(self):
+        journal = self.company_data["default_journal_bank"]
+        currency = journal._dashboard_currency()
+        self._create_st_lines(
+            journal,
+            ("2019-01-17", 100.0),
+            ("2019-01-22", 5.0),
+            ("2019-01-25", 50.0),
+            ("2019-02-10", 20.0),
+        )
+
+        card, graph = self._card_and_graph(journal)
+
+        self.assertEqual(graph[-1]["name"], "22 January 2019")
+        self.assertEqual(graph[-1]["y"], 105.0)
+        self.assertEqual(card["account_balance"], currency.format(105.0))
+        self.assertEqual(card["nb_upcoming"], 2)
+        self.assertEqual(card["upcoming_balance"], currency.format(70.0))
+        self.assertEqual(
+            journal.get_total_journal_amount()["balance_amount"],
+            format_amount(self.env, 105.0, currency),
+        )
+
+    @freeze_time("2019-01-22")
+    def test_the_upcoming_action_lists_future_lines_and_direct_payments(self):
+        journal = self._direct_payment_journal()
+        lines = self._create_st_lines(
+            journal,
+            ("2019-01-17", 100.0),
+            ("2019-01-25", 50.0),
+            ("2019-02-10", 20.0),
+        )
+        cancelled = self._create_st_lines(journal, ("2019-01-26", 1000.0))
+        cancelled.move_id.action_draft()
+        cancelled.move_id.action_cancel()
+        payments = self._create_direct_payments(
+            journal,
+            ("2019-01-15", 300.0),
+            ("2019-01-28", 40.0),
+            ("2019-02-05", -15.0),
+        )
+        self._create_direct_payments(journal, ("2019-01-29", 7.0), post=False)
+        journal.invalidate_recordset()
+
+        action = journal.open_upcoming_transactions_action()
+        items = self.env["account.move.line"].search(action["domain"])
+
+        self.assertEqual(action["res_model"], "account.move.line")
+        self.assertEqual(action["display_name"], "Upcoming Transactions")
+        self.assertEqual(items.move_id, lines[1:].move_id | payments[1:].move_id)
+        self.assertEqual(len(items), journal.count_upcoming)
+        self.assertEqual(sum(items.mapped("balance")), journal.amount_upcoming)
+        self.assertEqual(journal.count_upcoming, 4)
+        self.assertEqual(journal.amount_upcoming, 95.0)
+
+    @freeze_time("2019-01-22 23:30:00")
+    def test_today_is_the_user_timezone_date_for_balance_and_graph(self):
+        journal = self.company_data["default_journal_bank"]
+        currency = journal._dashboard_currency()
+        self._create_st_lines(journal, ("2019-01-17", 100.0), ("2019-01-23", 7.0))
+
+        for tz, balance, upcoming_count, last_point in (
+            ("UTC", 100.0, 1, "22 January 2019"),
+            ("Pacific/Auckland", 107.0, 0, "23 January 2019"),
+        ):
+            with self.subTest(tz=tz):
+                card, graph = self._card_and_graph(journal.with_context(tz=tz))
+                self.assertEqual(card["account_balance"], currency.format(balance))
+                self.assertEqual(card["nb_upcoming"], upcoming_count)
+                self.assertEqual(graph[-1]["name"], last_point)
+                self.assertEqual(graph[-1]["y"], balance)
+
+    @freeze_time("2019-01-22")
+    def test_a_foreign_currency_journal_reads_in_its_own_currency(self):
+        journal = self.company_data["default_journal_bank"].copy(
+            {"currency_id": self.other_currency.id}
+        )
+        self._create_st_lines(journal, ("2019-01-17", 100.0), ("2019-01-30", 30.0))
+
+        card, graph = self._card_and_graph(journal)
+
+        self.assertEqual(graph[-1]["y"], 100.0)
+        self.assertEqual(card["account_balance"], self.other_currency.format(100.0))
+        self.assertEqual(card["upcoming_balance"], self.other_currency.format(30.0))
+        self.assertEqual(card["nb_upcoming"], 1)
+
+    @freeze_time("2019-01-22")
+    def test_direct_bank_payments_are_dated_in_card_and_graph(self):
+        journal = self._direct_payment_journal()
+        currency = journal._dashboard_currency()
+        self._create_direct_payments(
+            journal,
+            ("2018-12-01", 1000.0),
+            ("2019-01-15", 100.0),
+            ("2019-01-30", 40.0),
+        )
+        self._create_st_lines(journal, ("2019-01-17", 10.0))
+
+        card, graph = self._card_and_graph(journal)
+
+        self.assertEqual(card["account_balance"], currency.format(1110.0))
+        self.assertEqual(card["nb_upcoming"], 1)
+        self.assertEqual(card["upcoming_balance"], currency.format(40.0))
+        self.assertEqual(
+            [(point["name"], point["y"]) for point in graph],
+            [
+                ("23 December 2018", 1000.0),
+                ("15 January 2019", 1100.0),
+                ("17 January 2019", 1110.0),
+                ("22 January 2019", 1110.0),
+            ],
+        )
+
+    @freeze_time("2019-01-22")
+    def test_balance_today_plus_upcoming_is_the_full_position(self):
+        statement_lines = (
+            ("2019-01-10", 100.0),
+            ("2019-01-22", 5.0),
+            ("2019-01-25", 50.0),
+            ("2019-02-10", -20.0),
+        )
+        direct_payments = (
+            ("2019-01-15", 300.0),
+            ("2019-01-28", 40.0),
+            ("2019-02-05", -15.0),
+        )
+        full_position = sum(
+            amount for _date, amount in statement_lines + direct_payments
+        )
+        for currency in (self.env.company.currency_id, self.other_currency):
+            with self.subTest(currency=currency.name):
+                journal = self._direct_payment_journal(
+                    currency if currency != self.env.company.currency_id else None
+                )
+                self._create_st_lines(journal, *statement_lines)
+                self._create_direct_payments(journal, *direct_payments)
+
+                card, graph = self._card_and_graph(journal)
+
+                self.assertEqual(journal._dashboard_currency(), currency)
+                self.assertEqual(
+                    journal.amount_balance_today + journal.amount_upcoming,
+                    full_position,
+                )
+                self.assertEqual(journal.amount_balance_today, 405.0)
+                self.assertEqual(journal.amount_statement_balance_today, 105.0)
+                self.assertEqual(journal.amount_upcoming, 55.0)
+                self.assertEqual(journal.count_upcoming, 4)
+                self.assertEqual(card["account_balance"], currency.format(405.0))
+                self.assertEqual(card["upcoming_balance"], currency.format(55.0))
+                self.assertEqual(card["nb_upcoming"], 4)
+                self.assertEqual(graph[-1]["name"], "22 January 2019")
+                self.assertEqual(graph[-1]["y"], 405.0)
+
+    @freeze_time("2019-01-22")
+    def test_only_old_direct_payments_still_draw_the_real_graph(self):
+        journal = self._direct_payment_journal()
+        self._create_direct_payments(journal, ("2018-11-01", 250.0))
+
+        card, graph = self._card_and_graph(journal)
+
+        self.assertTrue(card["nb_lines_bank_account_balance"])
+        self.assertEqual(
+            [(point["name"], point["y"]) for point in graph],
+            [("23 December 2018", 250.0), ("22 January 2019", 250.0)],
+        )
+
+    @freeze_time("2019-01-22")
+    def test_the_card_and_graph_of_six_journals_cost_no_more_queries(self):
+        journals = self.env["account.journal"].concat(
+            *(self._direct_payment_journal() for _i in range(6))
+        )
+        for journal in journals:
+            self._create_st_lines(journal, ("2019-01-17", 100.0), ("2019-01-25", 50.0))
+            self._create_direct_payments(
+                journal, ("2019-01-15", 30.0), ("2019-01-28", 40.0)
+            )
+        self.env.flush_all()
+        journals.invalidate_recordset()
+        with self.assertQueryCount(default=20):
+            journals.read(["kanban_dashboard", "kanban_dashboard_graph"])

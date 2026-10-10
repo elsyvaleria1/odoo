@@ -392,6 +392,24 @@
                                     </span>
                                 </div>
                             </div>
+                            <div
+                                class="row"
+                                name="upcoming_transactions"
+                                t-if="dashboard.nb_upcoming &gt; 0">
+                                <div class="col overflow-hidden text-start">
+                                    <a
+                                        type="object"
+                                        name="open_upcoming_transactions_action"
+                                        title="Transactions dated after today, not in the balance">
+                                        <t t-out="dashboard.nb_upcoming" /> Upcoming
+                                    </a>
+                                </div>
+                                <div class="col-auto text-end">
+                                    <span dir="ltr">
+                                        <t t-out="dashboard.upcoming_balance" />
+                                    </span>
+                                </div>
+                            </div>
                             <t
                                 t-if="dashboard.has_at_least_one_statement and dashboard.account_balance != dashboard.last_balance and dashboard.last_statement_visible">
                                 <div class="row" name="latest_statement">
