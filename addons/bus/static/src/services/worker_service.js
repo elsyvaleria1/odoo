@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { pageServerURL } from "@bus/bus_parameters_service";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { Deferred } from "@web/core/utils/concurrency";
@@ -43,16 +44,17 @@ export class WorkerService {
     async startWorker() {
         this._state = WORKER_STATE.INITIALIZING;
         // A worker shared by the tabs needs a script of the page's own origin:
-        // a blob is new per tab, so is a worker started from one. On the same
-        // host -- prefork without a proxy has the bus on another port -- the
-        // page's origin serves the bundle, and only the websocket goes to the
-        // bus's port. A page of another site (a live chat embedded there) has
-        // no choice: it reads the public bundle anonymously.
-        const sameHost = new URL(this.params.serverURL).hostname === location.hostname;
+        // a blob is new per tab, so is a worker started from one. A page whose
+        // bus is its own server's serves the bundle -- under prefork without a
+        // proxy the bus is on another port of its host, and the websocket
+        // alone goes there. Any other page (a live chat embedded on a
+        // customer's site, even one on the same host) has no choice: it reads
+        // the public bundle anonymously.
+        const ownServer = this.params.serverURL === pageServerURL();
         const version = session.websocket_worker_version;
         let workerURL = `${window.origin}/bus/websocket_worker_bundle?v=${version}`;
         let blobURL = null;
-        if (!sameHost) {
+        if (!ownServer) {
             try {
                 const response = await fetch(
                     `${this.params.serverURL}/bus/websocket_worker_bundle/anonymous?v=${version}`,

@@ -8,6 +8,7 @@ import {
 } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
+import { session } from "@web/session";
 
 // `navigator.locks` is mocked per test by `mock_websocket.js`'s
 // `setupWebSocketWorker` (run via the `MockServer.prototype.start` patch that
@@ -105,12 +106,21 @@ test("a fast-path lock grant landing after unregister() must not seize the lock"
                         };
                     });
                 }
+                if (options.mode === "shared") {
+                    // A backend tab's presence: granted, held.
+                    return Promise.resolve().then(() =>
+                        callback({ name, mode: "shared" }),
+                    );
+                }
                 // Blocking request: never granted in this test.
                 return new Promise(() => {});
             },
         },
     });
     const service = multiTabService.start();
+    for (let i = 0; i < 10 && !fireGrant; i++) {
+        await Promise.resolve();
+    }
     service.unregister();
     fireGrant();
     await runAllTimers();
@@ -163,4 +173,80 @@ test("a refused lock settles the tab as main instead of hanging", async () => {
     patchWithCleanup(console, { warn: () => {} });
     const env = await makeMockEnv();
     expect(await env.services.multi_tab.isOnMainTab()).toBe(true);
+});
+
+/**
+ * @param {boolean} isFrontend
+ * @param {{ first?: boolean }} [options]
+ */
+async function openTab(isFrontend, { first = false } = {}) {
+    patchWithCleanup(session, { is_frontend: isFrontend });
+    if (first) {
+        return makeMockEnv();
+    }
+    restoreRegistry(registry);
+    return makeMockEnv(null, { makeNew: true });
+}
+
+function trackMainTab(name, env) {
+    env.services.multi_tab.bus.addEventListener("become_main_tab", () =>
+        expect.step(`${name} main`),
+    );
+    env.services.multi_tab.bus.addEventListener("no_longer_main_tab", () =>
+        expect.step(`${name} not main`),
+    );
+}
+
+test("a website tab alone is the main tab", async () => {
+    const website = await openTab(true, { first: true });
+    expect(await website.services.multi_tab.isOnMainTab()).toBe(true);
+});
+
+test("a backend tab takes the main tab over from a website tab", async () => {
+    // a backend tab does every duty a website tab does, and more
+    const website = await openTab(true, { first: true });
+    expect(await website.services.multi_tab.isOnMainTab()).toBe(true);
+    trackMainTab("website", website);
+    const backend = await openTab(false);
+    await expect.waitForSteps(["website not main"]);
+    expect(await website.services.multi_tab.isOnMainTab()).toBe(false);
+    expect(await backend.services.multi_tab.isOnMainTab()).toBe(true);
+});
+
+test("a second backend tab does not take the main tab from the first", async () => {
+    const website = await openTab(true, { first: true });
+    const first = await openTab(false);
+    expect(await first.services.multi_tab.isOnMainTab()).toBe(true);
+    trackMainTab("first", first);
+    const second = await openTab(false);
+    expect(await second.services.multi_tab.isOnMainTab()).toBe(false);
+    await runAllTimers();
+    expect.verifySteps([]);
+    expect(await website.services.multi_tab.isOnMainTab()).toBe(false);
+});
+
+test("a website tab handed the main tab gives it to a backend tab waiting for it", async () => {
+    const leaving = await openTab(false, { first: true });
+    expect(await leaving.services.multi_tab.isOnMainTab()).toBe(true);
+    // queued first, so the lock goes to it when the first tab leaves
+    const website = await openTab(true);
+    const backend = await openTab(false);
+    expect(await website.services.multi_tab.isOnMainTab()).toBe(false);
+    expect(await backend.services.multi_tab.isOnMainTab()).toBe(false);
+    trackMainTab("website", website);
+    trackMainTab("backend", backend);
+    leaving.services.multi_tab.unregister();
+    await expect.waitForSteps(["backend main"]);
+    expect(await website.services.multi_tab.isOnMainTab()).toBe(false);
+    expect(await backend.services.multi_tab.isOnMainTab()).toBe(true);
+});
+
+test("a website tab is main again once the last backend tab left", async () => {
+    const website = await openTab(true, { first: true });
+    const backend = await openTab(false);
+    expect(await backend.services.multi_tab.isOnMainTab()).toBe(true);
+    trackMainTab("website", website);
+    backend.services.multi_tab.unregister();
+    await expect.waitForSteps(["website main"]);
+    expect(await website.services.multi_tab.isOnMainTab()).toBe(true);
 });

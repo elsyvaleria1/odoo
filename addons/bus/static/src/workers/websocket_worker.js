@@ -106,7 +106,7 @@ export class WebsocketWorker {
     // The server's hold-back (`NOTIFICATION_HOLD_BACK_SECONDS`): an id it
     // dispatched less than this long ago may still have a lower one, drawn
     // earlier and committed later, behind it. A fresh connection resumes
-    // below the lowest of those, not at the highest id seen.
+    // where the server's own `last_id` would stand (see `_resumeFrom`).
     NOTIFICATION_HOLD_BACK_MS = 10_000;
     // Defensive cap: a pathological notification flood must not grow the
     // seen-id map without bound between prunes.
@@ -149,8 +149,12 @@ export class WebsocketWorker {
         // events can be told apart from the current one's.
         this._epoch = 0;
         // Highest notification id seen so far. NOT used for deduplication
-        // (see `seenNotificationIds`): only sent as `last` on subscribe.
+        // (see `seenNotificationIds`) nor sent as `last` (`_resumeFrom`):
+        // only what tells a newly-attaching tab's watermark news from lag.
         this.lastNotificationId = 0;
+        // Below this id nothing can still arrive: the seeded watermark, then
+        // advanced past each seen id the hold-back has expired for.
+        this.settledNotificationId = 0;
         // Recently dispatched notification ids (id -> seen timestamp), kept
         // for `SEEN_NOTIFICATION_RETENTION_MS`. This is the dedup source of
         // truth: the server may legitimately deliver LOWER ids in LATER
@@ -545,13 +549,18 @@ export class WebsocketWorker {
         // Never let a newly-attaching tab rewind the shared high-watermark:
         // its localStorage snapshot may lag behind notifications this worker
         // has already dispatched, which would make the server re-deliver them.
-        this.lastNotificationId = Math.max(
-            this.lastNotificationId ?? 0,
-            lastNotificationId ?? 0,
-        );
+        if ((lastNotificationId ?? 0) > this.lastNotificationId) {
+            this.lastNotificationId = lastNotificationId;
+            this.settledNotificationId = lastNotificationId;
+        }
         const isCurrentUserKnown = uid !== undefined;
         if (this.isWaitingForNewUID && isCurrentUserKnown) {
             this.isWaitingForNewUID = false;
+            if (this.currentUID !== null && this.currentUID !== uid) {
+                // another user after an expired session: what opens next is
+                // their first connection
+                this.hasConnected = false;
+            }
             this.currentUID = uid;
         }
         this.currentDB ||= db;
@@ -592,18 +601,19 @@ export class WebsocketWorker {
             // resubscribe. Clear the seen-id history (old-DB ids) and drop
             // now-stale queued messages referencing the old DB's channels.
             this.lastNotificationId = lastNotificationId ?? 0;
+            this.settledNotificationId = this.lastNotificationId;
             this.seenNotificationIds.clear();
             this.pendingMessages.clear();
         }
         const loggerName = `${LOGGER_NAME}.${this.currentDB}.${this.currentUID}`;
         if (this.logger._name !== loggerName) {
-            if (this.logger._name === LOGGER_NAME) {
-                // the ownerless store, and the one every user shared before
-                try {
-                    indexedDB.deleteDatabase(LOGGER_NAME);
-                } catch {
-                    // no IndexedDB here: nothing was stored either
-                }
+            // the ownerless store (the one every user shared before), or the
+            // previous user's: nobody reads it from here on, nor collects it
+            this.logger.close();
+            try {
+                indexedDB.deleteDatabase(this.logger._name);
+            } catch {
+                // no IndexedDB here: nothing was stored either
             }
             this.logger = new Logger(loggerName);
         }
@@ -813,8 +823,7 @@ export class WebsocketWorker {
             return;
         }
         // Track the greatest id seen (batches are not guaranteed ascending):
-        // the watermark a fresh worker is seeded with, and what a connection
-        // resumes from when nothing is still held back (see `_resumeFrom`).
+        // what tells a newly-attaching tab's watermark news from lag.
         //
         // A loop, NOT `Math.max(this.lastNotificationId, ...ids)`: the spread
         // passes one argument per notification and throws `RangeError: Maximum
@@ -845,18 +854,23 @@ export class WebsocketWorker {
      * The `last` a subscribe sends. A fresh connection's server side starts
      * with no history, so resuming at the highest id seen would skip an id
      * the old connection was still holding back for: drawn below it,
-     * committed after the drop. Below the lowest id seen within the hold-back
-     * window instead; what comes back twice, the seen-id filter drops.
+     * committed after the drop -- whether or not a lower id was seen too.
+     * The server's own rule instead (`NotificationDispatchState`): the
+     * highest seen id that, with every seen id below it, is past the
+     * hold-back. What comes back twice, the seen-id filter drops.
      *
+     * @param {number} [now]
      * @returns {number}
      */
-    _resumeFrom() {
-        const heldSince = Date.now() - this.NOTIFICATION_HOLD_BACK_MS;
-        let resumeFrom = this.lastNotificationId;
-        for (const [id, seenAt] of this.seenNotificationIds) {
-            if (seenAt >= heldSince && id <= resumeFrom) {
-                resumeFrom = id - 1;
+    _resumeFrom(now = Date.now()) {
+        const heldSince = now - this.NOTIFICATION_HOLD_BACK_MS;
+        const seen = [...this.seenNotificationIds].sort(([a], [b]) => a - b);
+        let resumeFrom = this.settledNotificationId;
+        for (const [id, seenAt] of seen) {
+            if (seenAt >= heldSince) {
+                break;
             }
+            resumeFrom = Math.max(resumeFrom, id);
         }
         return resumeFrom;
     }
@@ -871,6 +885,7 @@ export class WebsocketWorker {
     _resetWatermark(last) {
         this._logDebug("_resetWatermark", this.lastNotificationId, last);
         this.lastNotificationId = last;
+        this.settledNotificationId = last;
         this.seenNotificationIds.clear();
         this.broadcast("BUS:WATERMARK_RESET", last);
     }
@@ -883,15 +898,25 @@ export class WebsocketWorker {
      * @param {number} now
      */
     _pruneSeenNotificationIds(now) {
+        const isKept = (seenAt) =>
+            now - seenAt <= this.SEEN_NOTIFICATION_RETENTION_MS &&
+            this.seenNotificationIds.size <= this.SEEN_NOTIFICATION_MAX_COUNT;
+        const [oldest] = this.seenNotificationIds.values();
+        if (oldest === undefined || isKept(oldest)) {
+            return;
+        }
+        this.settledNotificationId = this._resumeFrom(now);
         // Insertion order == arrival order, so expired entries form a prefix.
         for (const [id, seenAt] of this.seenNotificationIds) {
-            if (
-                now - seenAt <= this.SEEN_NOTIFICATION_RETENTION_MS &&
-                this.seenNotificationIds.size <= this.SEEN_NOTIFICATION_MAX_COUNT
-            ) {
+            if (isKept(seenAt)) {
                 break;
             }
             this.seenNotificationIds.delete(id);
+            if (now - seenAt <= this.NOTIFICATION_HOLD_BACK_MS) {
+                // Capped while still held back: forgotten like the server
+                // forgets past `MAX_HISTORY_LENGTH`.
+                this.settledNotificationId = Math.max(this.settledNotificationId, id);
+            }
         }
     }
 
@@ -920,9 +945,9 @@ export class WebsocketWorker {
         // not restored by nulling worker fields.
         const connection = this._connection;
         this._updateState(CONNECTION_STATE.CONNECTED);
-        this.broadcast(
-            this.hasConnected || this.isReconnecting ? "BUS:RECONNECT" : "BUS:CONNECT",
-        );
+        // A reconnect is a connection this user and database had before; a
+        // first one that took retries, or one after a switch, is a connect.
+        this.broadcast(this.hasConnected ? "BUS:RECONNECT" : "BUS:CONNECT");
         this.hasConnected = true;
         this._debouncedUpdateChannels();
         // A server that accepts and then closes at once (stopping, rate

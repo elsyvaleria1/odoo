@@ -127,7 +127,6 @@ export class PosData extends SignalStore {
 
         browser.addEventListener("online", () => this.checkConnectivity());
         browser.addEventListener("offline", () => this.checkConnectivity());
-        this.bus.addEventListener("BUS:CONNECT", this.reconnectWebSocket.bind(this));
         endSetup({
             offline: this.network.offline,
             device: this.device?.identifier,
@@ -185,26 +184,6 @@ export class PosData extends SignalStore {
 
     initializeWebsocket() {
         this.onNotified = getOnNotified(this.bus, odoo.bus_channel);
-    }
-
-    reconnectWebSocket() {
-        log.lifecycle("[bus] reconnectWebSocket", () => ({
-            channels: this.channels.map((c) => c.channel),
-        }));
-        this.initializeWebsocket();
-        const channels = [...this.channels];
-        this.channels = [];
-        while (channels.length) {
-            const channel = channels.pop();
-            this.connectWebSocket(channel.channel, channel.method);
-
-            logPosMessage(
-                "DataService",
-                "reconnectWebSocket",
-                `Reconnecting to channe ${channel.channel}`,
-                CONSOLE_COLOR,
-            );
-        }
     }
 
     connectWebSocket(channel, method) {

@@ -546,6 +546,28 @@ class TestDbExecutor(BaseCase):
         executor.close()
         self.assertFalse(executor.submit(lambda: None))
 
+    def test_a_drain_waiter_does_not_take_a_job_thread_s_wake_up(self):
+        # Condition.notify() wakes the oldest waiter: a wait_idle() waiting
+        # before the idle job thread used to take its wake-up, and a job
+        # submitted during shutdown sat until the deadline dropped it.
+        executor = DbExecutor(2)
+        self.addCleanup(executor.close)
+        long_job_gate = threading.Event()
+        self.addCleanup(long_job_gate.set)
+        executor.submit(lambda: long_job_gate.wait(10))
+        self.assertTrue(_wait_until(lambda: executor.busy == 1))
+        waiter = threading.Thread(
+            target=executor.wait_idle, args=(time.monotonic() + 10,), daemon=True
+        )
+        waiter.start()
+        time.sleep(0.05)
+        executor.submit(lambda: None)
+        self.assertTrue(_wait_until(lambda: executor.busy == 1 and not executor.queued))
+        time.sleep(0.05)
+        ran = threading.Event()
+        executor.submit(ran.set)
+        self.assertTrue(ran.wait(2), "the job waited for the long one to end")
+
 
 @tagged("-at_install", "post_install")
 class TestWebsocketHubOverHttp(WebsocketCase):

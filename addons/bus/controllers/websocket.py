@@ -1,8 +1,19 @@
+import hashlib
+import re
+
+from werkzeug.exceptions import NotFound
+
 from odoo.http import Controller, request, route
 from odoo.libs.json import dumps as json_dumps
+from odoo.tools import file_open
 
 from ..models.bus import dispatch
 from ..websocket import WebsocketConnectionHandler
+
+WORKER_SOURCE_ROUTE = "/bus/websocket_worker_source/"
+_WORKER_IMPORT = re.compile(
+    r"""(\b(?:from|import)\s*)(["'])(?:\./|@bus/workers/)(\w+)(?:\.js)?\2"""
+)
 
 
 class WebsocketController(Controller):
@@ -37,8 +48,11 @@ class WebsocketController(Controller):
     def _websocket_worker_bundle_response(self):
         bundle = request.env["ir.qweb"]._get_websocket_worker_bundle()
         if not bundle:
-            return request.redirect("/bus/static/src/workers/bus_worker_script.js")
+            return request.redirect(f"{WORKER_SOURCE_ROUTE}bus_worker_script.js")
         url, code = bundle
+        return self._javascript_response(code, url.rsplit("/", 2)[-2])
+
+    def _javascript_response(self, code, etag):
         response = request.prepare_response(
             code,
             [
@@ -46,6 +60,32 @@ class WebsocketController(Controller):
                 ("Cache-Control", "no-cache"),
             ],
         )
-        response.set_etag(url.rsplit("/", 2)[-2])
+        response.set_etag(etag)
         response.make_conditional(request.httprequest)
         return response
+
+    # Without a standalone build the worker runs its source files, where no
+    # import map resolves @bus/workers/...; nor does a blob, which is how
+    # another site starts it. Every import names this route, absolute.
+    @route(
+        f"{WORKER_SOURCE_ROUTE}<string:name>.js",
+        type="http",
+        auth="public",
+        cors="*",
+        save_session=False,
+    )
+    def get_websocket_worker_source(self, name):
+        if not re.fullmatch(r"\w+", name):
+            raise NotFound
+        try:
+            with file_open(f"bus/static/src/workers/{name}.js", "rb") as source:
+                code = source.read().decode()
+        except FileNotFoundError:
+            raise NotFound from None
+        base = request.httprequest.host_url.rstrip("/") + WORKER_SOURCE_ROUTE
+        code = _WORKER_IMPORT.sub(
+            lambda match: f"{match[1]}{match[2]}{base}{match[3]}.js{match[2]}", code
+        )
+        return self._javascript_response(
+            code, hashlib.sha256(code.encode()).hexdigest()[:32]
+        )

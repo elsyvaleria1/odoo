@@ -71,12 +71,13 @@ function setupWebSocketWorker() {
  * by one test would leak into the next (hanging later tests). This mock is
  * entirely microtask-driven (deterministic under `await`/`runAllTimers`) and
  * installed fresh per test. Supported surface: `request(name, options, callback)`
- * with `options.ifAvailable` and `options.signal`, exclusive semantics, and a
- * FIFO waiter queue with abort support.
+ * with `mode` (exclusive or shared), `ifAvailable`, `signal` and `steal`, a FIFO
+ * waiter queue with abort support, and `query()`.
  */
 class MockLockManager {
     constructor() {
-        this._heldNames = new Set();
+        /** @type {Map<string, Set<object>>} */
+        this._holders = new Map();
         /** @type {Map<string, Array<object>>} */
         this._queues = new Map();
     }
@@ -86,16 +87,24 @@ class MockLockManager {
             callback = options;
             options = {};
         }
-        const { ifAvailable = false, signal } = options || {};
-        if (signal && ifAvailable) {
-            // Mirror the real LockManager, which rejects this invalid option
-            // combination with a NotSupportedError. Enforcing it here is what
-            // lets the bus test suite catch the misuse instead of leaving it to
-            // blow up only in a real browser (as it once did in
-            // multi_tab_service's fast-path election request).
+        const {
+            mode = "exclusive",
+            ifAvailable = false,
+            signal,
+            steal = false,
+        } = options || {};
+        // Mirror the real LockManager, which rejects these invalid option
+        // combinations with a NotSupportedError. Enforcing it here is what
+        // lets the bus test suite catch the misuse instead of leaving it to
+        // blow up only in a real browser (as it once did in
+        // multi_tab_service's fast-path election request).
+        if (
+            (signal && (ifAvailable || steal)) ||
+            (steal && (ifAvailable || mode !== "exclusive"))
+        ) {
             return Promise.reject(
                 new DOMException(
-                    "Failed to execute 'request' on 'LockManager': The 'signal' and 'ifAvailable' options cannot be used together.",
+                    "Failed to execute 'request' on 'LockManager': invalid option combination.",
                     "NotSupportedError",
                 ),
             );
@@ -103,16 +112,36 @@ class MockLockManager {
         if (signal?.aborted) {
             return Promise.reject(this._abortError());
         }
-        if (!this._heldNames.has(name)) {
-            return this._runWithLock(name, callback);
-        }
-        if (ifAvailable) {
-            // Unavailable and the caller does not want to wait: run with `null`.
-            return Promise.resolve().then(() => callback(null));
-        }
-        // Held: queue until released (or the request is aborted).
         return new Promise((resolve, reject) => {
-            const entry = { callback, resolve, reject, signal, onAbort: null };
+            const entry = {
+                name,
+                mode,
+                callback,
+                resolve,
+                reject,
+                signal,
+                onAbort: null,
+            };
+            if (steal) {
+                for (const holder of this._holders.get(name) || []) {
+                    holder.stolen = true;
+                    holder.reject(this._abortError());
+                }
+                this._holders.delete(name);
+                this._grant(entry);
+                return;
+            }
+            if (this._isGrantable(entry)) {
+                this._grant(entry);
+                return;
+            }
+            if (ifAvailable) {
+                // Unavailable and the caller does not want to wait: run with `null`.
+                Promise.resolve()
+                    .then(() => callback(null))
+                    .then(resolve, reject);
+                return;
+            }
             entry.onAbort = () => {
                 const queue = this._queues.get(name);
                 const index = queue ? queue.indexOf(entry) : -1;
@@ -129,24 +158,61 @@ class MockLockManager {
         });
     }
 
-    async _runWithLock(name, callback) {
-        this._heldNames.add(name);
-        try {
-            return await callback({ name, mode: "exclusive" });
-        } finally {
-            this._heldNames.delete(name);
-            this._grantNext(name);
-        }
+    async query() {
+        const describe = ({ name, mode }) => ({ name, mode });
+        return {
+            held: [...this._holders.values()].flatMap((holders) =>
+                [...holders].map(describe),
+            ),
+            pending: [...this._queues.values()].flatMap((queue) => queue.map(describe)),
+        };
     }
 
-    _grantNext(name) {
-        const queue = this._queues.get(name);
-        if (!queue || queue.length === 0) {
-            return;
+    _isGrantable(entry, { queued = false } = {}) {
+        const holders = this._holders.get(entry.name);
+        const queue = this._queues.get(entry.name) || [];
+        if (!queued && queue.length) {
+            return false;
         }
-        const entry = queue.shift();
-        entry.signal?.removeEventListener("abort", entry.onAbort);
-        this._runWithLock(name, entry.callback).then(entry.resolve, entry.reject);
+        if (!holders?.size) {
+            return true;
+        }
+        return (
+            entry.mode === "shared" && [...holders].every((h) => h.mode === "shared")
+        );
+    }
+
+    _grant(entry) {
+        if (!this._holders.has(entry.name)) {
+            this._holders.set(entry.name, new Set());
+        }
+        this._holders.get(entry.name).add(entry);
+        Promise.resolve()
+            .then(() => entry.callback({ name: entry.name, mode: entry.mode }))
+            .then(
+                (result) => {
+                    if (!entry.stolen) {
+                        this._release(entry);
+                        entry.resolve(result);
+                    }
+                },
+                (error) => {
+                    if (!entry.stolen) {
+                        this._release(entry);
+                        entry.reject(error);
+                    }
+                },
+            );
+    }
+
+    _release(entry) {
+        this._holders.get(entry.name)?.delete(entry);
+        const queue = this._queues.get(entry.name);
+        while (queue?.length && this._isGrantable(queue[0], { queued: true })) {
+            const next = queue.shift();
+            next.signal?.removeEventListener("abort", next.onAbort);
+            this._grant(next);
+        }
     }
 
     _abortError() {

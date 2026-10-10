@@ -27,10 +27,11 @@ export class LiveFragments extends Interaction {
         /** @param {{ keys?: string[], events?: Record<string, any>, origin?: string | null }} notice */
         this.onInvalidated = (notice) => this.refresh(notice);
         // Two notices close together start two reads that may answer out of
-        // order: a key renders only from the latest read asked for it.
+        // order: a key never renders from a read older than one it rendered
+        // from. A newer read that fails leaves the older one's answer.
         this.refreshes = 0;
         /** @type {Map<string, number>} */
-        this.latestRefreshOf = new Map();
+        this.appliedRefreshOf = new Map();
     }
 
     start() {
@@ -63,9 +64,6 @@ export class LiveFragments extends Interaction {
             return;
         }
         const refresh = ++this.refreshes;
-        for (const key of keys) {
-            this.latestRefreshOf.set(key, refresh);
-        }
         const response = await this.waitFor(
             browser.fetch(browser.location.href, {
                 credentials: "same-origin",
@@ -79,9 +77,11 @@ export class LiveFragments extends Interaction {
         const page = new DOMParser().parseFromString(html, "text/html");
         const interactions = this.services["public.interactions"];
         for (const region of regions) {
-            if (this.latestRefreshOf.get(region.dataset.fragment ?? "") !== refresh) {
+            const key = region.dataset.fragment ?? "";
+            if ((this.appliedRefreshOf.get(key) ?? 0) > refresh) {
                 continue;
             }
+            this.appliedRefreshOf.set(key, refresh);
             const next = page.querySelector(
                 `[data-fragment="${CSS.escape(region.dataset.fragment)}"]`,
             );

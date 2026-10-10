@@ -119,6 +119,17 @@ export class Logger {
         this._dbPromise = null;
     }
 
+    /**
+     * Done with: its handle closes, so the store can be deleted, and the GC
+     * no longer passes over it.
+     */
+    close() {
+        this._closed = true;
+        Logger.instances = Logger.instances.filter((logger) => logger !== this);
+        this._db?.close();
+        this._forgetDatabase();
+    }
+
     async _ensureDatabaseAvailable() {
         if (this._db) {
             return;
@@ -130,6 +141,11 @@ export class Logger {
         this._dbPromise ??= new Promise((res, rej) => {
             const request = indexedDB.open(this._name, 1);
             request.onsuccess = (event) => {
+                if (this._closed) {
+                    event.target.result.close();
+                    rej(new Error(`Logger "${this._name}" is closed`));
+                    return;
+                }
                 this._db = event.target.result;
                 // Abnormal closure (storage pressure, "clear site data", ...):
                 // the handle is dead, forget it so the next call reopens.

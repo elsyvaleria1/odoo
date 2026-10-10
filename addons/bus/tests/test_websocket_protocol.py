@@ -916,7 +916,8 @@ class TestTrustedOrigin(BaseCase):
     def test_a_page_of_the_own_http_port_is_trusted_on_the_evented_port(self):
         # prefork without a proxy: pages on http_port, websockets on gevent_port
         with patch(
-            "odoo.addons.bus.websocket.config", {"http_port": 8069, "gevent_port": 8072}
+            "odoo.addons.bus.websocket.config",
+            {"http_port": 8069, "gevent_port": 8072, "workers": 2, "proxy_mode": False},
         ):
             trusted = WebsocketConnectionHandler._is_trusted_origin
             evented = self._request("http", "app.example:8072")
@@ -932,6 +933,40 @@ class TestTrustedOrigin(BaseCase):
             self.assertFalse(
                 trusted(
                     "http://app.example:8069", self._request("http", "app.example:9000")
+                )
+            )
+
+    def test_the_own_http_port_is_trusted_only_where_pages_use_the_gevent_port(self):
+        # threaded, or behind a proxy: whatever answers on http_port is not
+        # this server's pages
+        evented = self._request("http", "app.example:8072")
+        for workers, proxy_mode in ((0, False), (2, True)):
+            with (
+                self.subTest(workers=workers, proxy_mode=proxy_mode),
+                patch(
+                    "odoo.addons.bus.websocket.config",
+                    {
+                        "http_port": 8069,
+                        "gevent_port": 8072,
+                        "workers": workers,
+                        "proxy_mode": proxy_mode,
+                    },
+                ),
+            ):
+                self.assertFalse(
+                    WebsocketConnectionHandler._is_trusted_origin(
+                        "http://app.example:8069", evented
+                    )
+                )
+
+    def test_an_http_port_of_80_is_the_origin_without_a_port(self):
+        with patch(
+            "odoo.addons.bus.websocket.config",
+            {"http_port": 80, "gevent_port": 8072, "workers": 2, "proxy_mode": False},
+        ):
+            self.assertTrue(
+                WebsocketConnectionHandler._is_trusted_origin(
+                    "http://app.example", self._request("http", "app.example:8072")
                 )
             )
 

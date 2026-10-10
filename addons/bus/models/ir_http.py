@@ -1,12 +1,12 @@
 from odoo import api, models
 from odoo.tools import config
 
-from ..websocket import WebsocketConnectionHandler
+from ..websocket import WebsocketConnectionHandler, websocket_on_gevent_port
 
 
 def _websocket_session_info() -> dict:
     info = {"websocket_worker_version": WebsocketConnectionHandler._VERSION}
-    if config["workers"] and not config["proxy_mode"]:
+    if websocket_on_gevent_port():
         info["websocket_gevent_port"] = config["gevent_port"]
     return info
 

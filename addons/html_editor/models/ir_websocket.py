@@ -29,18 +29,23 @@ class IrWebsocket(models.AbstractModel):
             ):
                 continue
             model_name, field_name, res_id = match[1], match[2], int(match[3])
-            if self.env.user._is_public() or model_name not in self.env:
+            if (
+                self.env.user._is_public()
+                or model_name not in self.env
+                or self.env[model_name]._abstract
+                or field_name not in self.env[model_name]._fields
+            ):
                 _debug.logic("collaboration_channel_refused", channel=channel[:80])
                 continue
             document = self.env[model_name].browse(res_id)
             if not document.exists():
                 continue
+            field = document._fields[field_name]
             try:
                 document.check_access("read")
                 document.check_access("write")
-                if field := document._fields.get(field_name):
-                    document._check_field_access(field, "read")
-                    document._check_field_access(field, "write")
+                document._check_field_access(field, "read")
+                document._check_field_access(field, "write")
             except AccessError:
                 continue
             yield collaboration_channel(

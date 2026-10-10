@@ -1,3 +1,4 @@
+import contextlib
 from unittest.mock import MagicMock, patch
 
 from odoo.tests.common import BaseCase
@@ -14,8 +15,14 @@ def _mock_config(workers, proxy_mode, gevent_port=8072):
 
 
 class TestWebsocketSessionInfo(BaseCase):
+    @contextlib.contextmanager
     def _patch(self, **kw):
-        return patch("odoo.addons.bus.models.ir_http.config", _mock_config(**kw))
+        config = _mock_config(**kw)
+        with (
+            patch("odoo.addons.bus.models.ir_http.config", config),
+            patch("odoo.addons.bus.websocket.config", config),
+        ):
+            yield
 
     def test_always_includes_worker_version(self):
         for workers, proxy_mode in [(0, False), (4, False), (4, True)]:

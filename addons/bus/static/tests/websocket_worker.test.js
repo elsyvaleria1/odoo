@@ -85,6 +85,34 @@ test("a connection back after a stop is a reconnect too", async () => {
     await waitForSteps(["BUS:RECONNECT"]);
 });
 
+test("a user switch after an expired session connects, not reconnects", async () => {
+    const worker = await startWebSocketWorker((type) => {
+        if (["BUS:CONNECT", "BUS:RECONNECT"].includes(type)) {
+            asyncStep(type);
+        }
+    });
+    const client = { postMessage() {}, addEventListener() {} };
+    worker.registerClient(client);
+    worker._initializeConnection(client, {
+        db: "db1",
+        uid: 1,
+        websocketURL: worker.websocketURL,
+        startTs: 1,
+    });
+    await waitForSteps(["BUS:CONNECT"]);
+    // the retry is still pending when the next user's tab initializes
+    worker.websocket.close(WEBSOCKET_CLOSE_CODES.SESSION_EXPIRED);
+    await waitUntil(() => worker.isReconnecting);
+    worker._initializeConnection(client, {
+        db: "db1",
+        uid: 2,
+        websocketURL: worker.websocketURL,
+        startTs: 2,
+    });
+    await runAllTimers();
+    await waitForSteps(["BUS:CONNECT"]);
+});
+
 test("notification event is broadcasted", async () => {
     const notifications = [
         {
@@ -424,7 +452,7 @@ test("reconnect sends exactly one fresh subscribe and flushes queued app message
     await runAllTimers();
     const subscribes = sentFrames.filter((f) => f.event_name === "subscribe");
     expect(subscribes).toHaveLength(1);
-    expect(subscribes[0].data.last).toBe(worker.lastNotificationId);
+    expect(subscribes[0].data.last).toBe(worker._resumeFrom());
     // The queued application message went through, after the subscribe.
     expect(sentFrames.some((f) => f.event_name === "some_event")).toBe(true);
     expect(worker.pendingMessages.size).toBe(0);
@@ -888,22 +916,61 @@ test("what is sent while offline goes out once per event name, in the order last
     expect(worker.pendingMessages.size).toBe(0);
 });
 
-test("a fresh connection resumes below the ids still held back", async () => {
+test("a fresh connection resumes where the server's last_id would stand", async () => {
     // The server holds an id back for NOTIFICATION_HOLD_BACK_MS: a lower id
     // committed after the drop would be skipped by `last = highest seen`.
     const worker = await startWebSocketWorker();
-    worker._onWebsocketMessage(
-        new MessageEvent("message", {
-            data: JSON.stringify([
-                { id: 40, message: { type: "x", payload: 1 } },
-                { id: 42, message: { type: "x", payload: 2 } },
-            ]),
-        }),
-    );
+    const client = { postMessage() {}, addEventListener() {} };
+    worker.registerClient(client);
+    worker._initializeConnection(client, {
+        db: "db1",
+        uid: 1,
+        lastNotificationId: 30,
+        websocketURL: worker.websocketURL,
+        startTs: 1,
+    });
+    const receive = (...ids) =>
+        worker._onWebsocketMessage(
+            new MessageEvent("message", {
+                data: JSON.stringify(ids.map((id) => ({ id, message: { type: "x" } }))),
+            }),
+        );
+    // 41 drawn, 42 committed first: nothing below 42 is settled yet.
+    receive(40, 42);
     expect(worker.lastNotificationId).toBe(42);
-    expect(worker._resumeFrom()).toBe(39);
+    expect(worker._resumeFrom()).toBe(30);
     await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS + 1);
     expect(worker._resumeFrom()).toBe(42);
+    // A lone late id: 95 still in flight when 96 arrives alone.
+    receive(96);
+    expect(worker._resumeFrom()).toBe(42);
+    // An id seen recently blocks every older one above it, as on the server.
+    await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS / 2);
+    receive(94);
+    await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS / 2 + 1);
+    expect(worker._resumeFrom()).toBe(42);
+    await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS / 2);
+    expect(worker._resumeFrom()).toBe(96);
+});
+
+test("pruning seen ids keeps the resume floor below what is still held back", async () => {
+    const worker = await startWebSocketWorker();
+    const receive = (...ids) =>
+        worker._onWebsocketMessage(
+            new MessageEvent("message", {
+                data: JSON.stringify(ids.map((id) => ({ id, message: { type: "x" } }))),
+            }),
+        );
+    receive(96);
+    await advanceTime(worker.SEEN_NOTIFICATION_RETENTION_MS - 2000);
+    receive(94);
+    await advanceTime(3000);
+    // 96 is pruned, 94 is still held back: nothing above 0 is settled.
+    receive(200);
+    expect(worker.seenNotificationIds.has(96)).toBe(false);
+    expect(worker._resumeFrom()).toBe(0);
+    await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS + 1);
+    expect(worker._resumeFrom()).toBe(200);
 });
 
 test("the server's watermark reset lowers the worker's and the tabs' watermark", async () => {

@@ -1,4 +1,5 @@
 import contextlib
+import re
 from unittest.mock import MagicMock, patch
 
 import psycopg
@@ -102,6 +103,73 @@ class TestWebsocketWorkerBundle(HttpCaseWithUserDemo):
         response = self._get_bundle()
         self.assertNotIn("Access-Control-Allow-Origin", response.headers)
         self.assertNotIn("Access-Control-Allow-Credentials", response.headers)
+
+    @contextlib.contextmanager
+    def _without_standalone_build(self):
+        with patch.object(
+            type(self.env["ir.qweb"]), "_get_websocket_worker_bundle", return_value=None
+        ):
+            yield
+
+    def _sources(self, entry_url, origin=None):
+        headers = {"Origin": origin} if origin else {}
+        pending, sources = [entry_url], {}
+        while pending:
+            url = pending.pop()
+            response = self.url_open(url, headers=headers, allow_redirects=False)
+            self.assertEqual(response.status_code, 200, url)
+            sources[url] = response
+            pending.extend(
+                imported
+                for imported in re.findall(r'from\s*"([^"]+)"', response.text)
+                if imported not in sources
+            )
+        return sources
+
+    def test_without_a_build_the_worker_loads_its_sources_with_no_bare_import(self):
+        with self._without_standalone_build():
+            response = self._get_bundle()
+            self.assertIn(response.status_code, (302, 303))
+            sources = self._sources(response.headers["Location"])
+        names = {url.rsplit("/", 1)[-1] for url in sources}
+        self.assertTrue(
+            {
+                "bus_worker_script.js",
+                "base_worker.js",
+                "websocket_worker.js",
+                "bus_worker_utils.js",
+                "websocket_worker_constants.js",
+            }
+            <= names
+        )
+        for url, source in sources.items():
+            self.assertIn("text/javascript", source.headers["Content-Type"])
+            self.assertNotIn('"@bus/', source.text, url)
+            self.assertNotIn('"./', source.text, url)
+
+    def test_without_a_build_another_site_reads_the_sources_too(self):
+        origin = "https://customer.example"
+        with self._without_standalone_build():
+            response = self.url_open(
+                "/bus/websocket_worker_bundle/anonymous",
+                headers={"Origin": origin},
+                allow_redirects=False,
+            )
+            self.assertIn(response.status_code, (302, 303))
+            self.assertEqual(response.headers.get("Access-Control-Allow-Origin"), "*")
+            entry = response.headers["Location"]
+            sources = self._sources(entry, origin=origin)
+        self.assertGreater(len(sources), 1)
+        for url, source in sources.items():
+            if url != entry:
+                self.assertTrue(url.startswith(self.base_url()), url)
+            self.assertEqual(source.headers.get("Access-Control-Allow-Origin"), "*")
+            self.assertNotIn("Set-Cookie", source.headers)
+
+    def test_worker_source_serves_only_the_worker_directory(self):
+        for name in ("nope", "bus_service", "..%2Fservices%2Fbus_service"):
+            response = self.url_open(f"/bus/websocket_worker_source/{name}.js")
+            self.assertEqual(response.status_code, 404, name)
 
 
 @common.tagged("-at_install", "post_install")

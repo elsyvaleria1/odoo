@@ -10,6 +10,7 @@ import {
     patchWithCleanup,
 } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
+import { session } from "@web/session";
 
 defineBusModels();
 describe.current.tags("desktop");
@@ -143,6 +144,7 @@ async function startWorkerFor(serverURL) {
 test("a bus on another port of the page's host shares a worker of the page's origin", async () => {
     // prefork without a proxy: a blob would make one "shared" worker per tab
     const port = location.port === "8072" ? "8073" : "8072";
+    patchWithCleanup(session, { websocket_gevent_port: port });
     const { started, fetched } = await startWorkerFor(
         `${location.protocol}//${location.hostname}:${port}`,
     );
@@ -158,5 +160,32 @@ test("a bus of another site is read anonymously and started from a blob", async 
     expect(
         fetched.map(([url, credentials]) => [url.split("?")[0], credentials]),
     ).toEqual([["https://odoo.example/bus/websocket_worker_bundle/anonymous", "omit"]]);
+    expect(started[0].startsWith("blob:")).toBe(true);
+});
+
+test("a customer site on the bus's host but not its server reads the bundle anonymously", async () => {
+    // a live chat embedded on https://shop.example while Odoo is on
+    // https://shop.example:8069: the page's origin serves no bundle
+    const port = location.port === "8069" ? "8070" : "8069";
+    const { started, fetched } = await startWorkerFor(
+        `${location.protocol}//${location.hostname}:${port}`,
+    );
+    expect(fetched.map(([url]) => url.split("?")[0])).toEqual([
+        `${location.protocol}//${location.hostname}:${port}/bus/websocket_worker_bundle/anonymous`,
+    ]);
+    expect(started[0].startsWith("blob:")).toBe(true);
+});
+
+test("another server's bus on the page's host is read anonymously under prefork too", async () => {
+    // an Odoo page in prefork embedding the live chat of another Odoo of the
+    // same host: the page's gevent port is not that server's bus
+    patchWithCleanup(session, { websocket_gevent_port: "8072" });
+    const port = location.port === "8069" ? "8070" : "8069";
+    const { started, fetched } = await startWorkerFor(
+        `${location.protocol}//${location.hostname}:${port}`,
+    );
+    expect(fetched.map(([url]) => url.split("?")[0])).toEqual([
+        `${location.protocol}//${location.hostname}:${port}/bus/websocket_worker_bundle/anonymous`,
+    ]);
     expect(started[0].startsWith("blob:")).toBe(true);
 });

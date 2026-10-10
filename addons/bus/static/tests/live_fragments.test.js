@@ -116,3 +116,33 @@ test("a read answered after a newer one does not overwrite it", async () => {
 
     expect(".line").toHaveText("3");
 });
+
+test("a newer read that fails leaves the older one's answer", async () => {
+    const notify = await startWithBus(lines(1));
+    expect.verifySteps(["subscribe fragment.invalidated"]);
+    /** @type {((html: string | null) => void)[]} */
+    const answers = [];
+    patchWithCleanup(browser, {
+        fetch: () =>
+            new Promise((resolve) =>
+                answers.push((html) =>
+                    resolve(
+                        /** @type {Response} */ ({
+                            ok: html !== null,
+                            text: async () => html,
+                        }),
+                    ),
+                ),
+            ),
+    });
+    const notice = { keys: ["cart.lines"], events: {}, origin: "another-tab" };
+    const older = notify(notice);
+    const newer = notify(notice);
+    answers[1](null);
+    await newer;
+    answers[0](`<html><body>${lines(2)}</body></html>`);
+    await older;
+    await animationFrame();
+
+    expect(".line").toHaveText("2");
+});

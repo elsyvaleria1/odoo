@@ -14,3 +14,10 @@ class TestSpreadsheetIrWebsocket(TransactionCase):
         channel = "spreadsheet_collaborative_session:res.partner"
         channels = self.env["ir.websocket"]._get_bus_channels([channel])
         self.assertIn(channel, channels)
+
+    def test_the_abstract_spreadsheet_mixin_is_refused_alone(self):
+        # browse().exists() on a model with no table aborts the transaction
+        channel = "spreadsheet_collaborative_session:mixin.spreadsheet:1"
+        self.assertIsNone(self.env["ir.websocket"]._check_spreadsheet_channel(channel))
+        channels = self.env["ir.websocket"]._get_bus_channels([channel, "other"])
+        self.assertIn("other", channels)

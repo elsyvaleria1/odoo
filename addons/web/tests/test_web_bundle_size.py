@@ -5,6 +5,9 @@ import unittest
 from datetime import date
 from pathlib import Path
 
+import psycopg
+
+from odoo.exceptions import UserError
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests.common import TransactionCase, tagged
@@ -88,8 +91,9 @@ class TestWebBundleSize(TransactionCase):
         for root in cls.CALIBRATION_ROOTS:
             add(root)
         grow()
-        # ai_auto_install's post-init hook installs ai wherever the server
-        # offers pgvector: a module the loader adds that no manifest names.
+        # ai_auto_install's post-init hook installs ai wherever this role has
+        # pgvector, installed or creatable: a module the loader adds that no
+        # manifest names.
         if "ai_auto_install" in closure and "ai" in modules and cls._pgvector_offered():
             add("ai")
             grow()
@@ -97,10 +101,13 @@ class TestWebBundleSize(TransactionCase):
 
     @classmethod
     def _pgvector_offered(cls):
-        cls.env.cr.execute(
-            "SELECT 1 FROM pg_available_extensions WHERE name = 'vector'"
-        )
-        return bool(cls.env.cr.fetchone())
+        from odoo.addons.ai import pgvector_is_available
+
+        try:
+            pgvector_is_available(cls.env)
+        except UserError, psycopg.Error:
+            return False
+        return True
 
     @classmethod
     def setUpClass(cls):

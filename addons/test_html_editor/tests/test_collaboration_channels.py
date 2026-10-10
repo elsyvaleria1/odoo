@@ -78,3 +78,17 @@ class TestCollaborationChannels(TransactionCase):
     def test_non_string_channels_are_preserved(self):
         keys = self._subscribe(self.admin, [("custom", "channel")])
         self.assertIn(("custom", "channel"), keys)
+
+    def test_an_abstract_model_is_refused_alone(self):
+        # browse().exists() on a model with no table aborts the transaction
+        keys = self._subscribe(
+            self.admin,
+            [self._channel(model="ir.qweb"), self._channel()],
+        )
+        self.assertEqual(len(self._editor_channels(keys)), 1)
+
+    def test_an_unknown_field_is_refused_alone(self):
+        keys = self._subscribe(
+            self.admin, [self._channel(field="no_such_field"), self._channel()]
+        )
+        self.assertEqual(len(self._editor_channels(keys)), 1)

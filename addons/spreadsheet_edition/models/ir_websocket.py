@@ -56,7 +56,8 @@ class IrWebsocket(models.AbstractModel):
                 "spreadsheet_channel_refused", reason="unknown_model", model=model_name
             )
             return None
-        if not isinstance(self.env[model_name], self.pool["mixin.spreadsheet"]):
+        model = self.env[model_name]
+        if model._abstract or not isinstance(model, self.pool["mixin.spreadsheet"]):
             # Raising here would fail the whole subscription of the worker.
             _debug.logic(
                 "spreadsheet_channel_refused",
@@ -68,7 +69,7 @@ class IrWebsocket(models.AbstractModel):
             access_token = params[3]
         else:
             access_token = None
-        record = self.env[model_name].browse(res_id).exists()
+        record = model.browse(res_id).exists()
         access = record._check_collaborative_spreadsheet_access(
             "read", access_token, raise_exception=False
         )

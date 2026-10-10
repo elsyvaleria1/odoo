@@ -1310,17 +1310,28 @@ class WebsocketRequest:
         return ImmutableMultiDict(cookies)
 
 
-def is_own_http_port_origin(origin, host_url) -> bool:
+def websocket_on_gevent_port() -> bool:
     # Prefork without a reverse proxy serves pages on http_port and websockets
-    # on gevent_port: a page of this server's own HTTP port is another origin
+    # on gevent_port.
+    return bool(config["workers"]) and not config["proxy_mode"]
+
+
+def _effective_port(url) -> int | None:
+    return url.port or {"http": 80, "https": 443}.get(url.scheme)
+
+
+def is_own_http_port_origin(origin, host_url) -> bool:
+    # On gevent_port, a page of this server's own HTTP port is another origin
     # only by its port.
+    if not websocket_on_gevent_port():
+        return False
     try:
         theirs, ours = urlsplit(origin), urlsplit(host_url)
         return (
             bool(theirs.hostname)
             and (theirs.scheme, theirs.hostname) == (ours.scheme, ours.hostname)
-            and theirs.port == config["http_port"]
-            and ours.port == config["gevent_port"]
+            and _effective_port(theirs) == config["http_port"]
+            and _effective_port(ours) == config["gevent_port"]
         )
     except ValueError:
         return False

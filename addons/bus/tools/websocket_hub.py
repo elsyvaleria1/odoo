@@ -68,7 +68,11 @@ class DbExecutor:
         self.busy = 0
         self._clock = clock
         self._jobs = deque()
-        self._cond = threading.Condition()
+        lock = threading.Lock()
+        self._cond = threading.Condition(lock)
+        # Its own condition: a wait_idle() woken by submit()'s notify() would
+        # take the wake-up a sleeping job thread needs, and the job would sit.
+        self._drained = threading.Condition(lock)
         self._threads = 0
         self._idle = 0
         self._closed = False
@@ -104,6 +108,7 @@ class DbExecutor:
             dropped = len(self._jobs)
             self._jobs.clear()
             self._cond.notify_all()
+            self._drained.notify_all()
         return dropped
 
     def wait_idle(self, deadline: float) -> bool:
@@ -112,7 +117,7 @@ class DbExecutor:
                 remaining = deadline - self._clock()
                 if remaining <= 0:
                     return False
-                self._cond.wait(remaining)
+                self._drained.wait(remaining)
             return True
 
     def _next(self):
@@ -154,7 +159,7 @@ class DbExecutor:
                 with self._cond:
                     self.busy -= 1
                     if not self.busy and not self._jobs:
-                        self._cond.notify_all()
+                        self._drained.notify_all()
 
 
 class WebsocketHub:
