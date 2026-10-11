@@ -49,11 +49,11 @@ class _Recorder:
 
 class SchemaDiff(DatabaseCommand):
     name = "schema_diff"
-    description = (
-        "Run an install or upgrade in a transaction that is rolled back, and "
-        "print the DDL and migrations it would have committed. -u, -i and "
-        "--reinit are the server's options and mean what they mean to it"
-    )
+    description = """
+        Print the DDL and migrations an install or upgrade would commit, from a rolled-back run
+
+        -u, -i and --reinit are the server's options and mean what they mean to it.
+    """
 
     def __init__(self) -> None:
         super().__init__()
