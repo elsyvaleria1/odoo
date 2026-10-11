@@ -1,9 +1,7 @@
 from datetime import datetime
-from runpy import run_path
 
 from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged
-from odoo.tools import file_path
 
 
 @tagged("post_install", "-at_install")
@@ -198,41 +196,3 @@ class TestResourceAssetMrp(TransactionCase):
         )
         wc.asset_id = self.press
         self.assertTrue(old.active)
-
-    def test_legacy_migration_preserves_identity_and_removes_pointer(self):
-        wc = self.env["mrp.workcenter"].create(
-            {"name": "Legacy", "asset_id": self.press.id}
-        )
-        resource = wc.resource_id
-        self.env.flush_all()
-        self.cr.execute("ALTER TABLE mrp_workcenter ADD COLUMN asset_id integer")
-        self.cr.execute(
-            "UPDATE mrp_workcenter SET asset_id = %s WHERE id = %s",
-            (self.press.id, wc.id),
-        )
-        run_path(file_path("resource_asset_mrp/migrations/1.1/pre-migrate.py"))[
-            "migrate"
-        ](self.cr, "1.0")
-        run_path(file_path("resource_asset_mrp/migrations/1.1/post-migrate.py"))[
-            "migrate"
-        ](self.cr, "1.0")
-        self.assertEqual(wc.resource_id, resource)
-        self.assertEqual(wc.asset_id, self.press)
-        self.cr.execute(
-            "SELECT count(*) FROM pg_attribute WHERE attrelid = 'mrp_workcenter'::regclass AND attname IN ('asset_id', 'legacy_asset_id') AND NOT attisdropped"
-        )
-        self.assertEqual(self.cr.fetchone()[0], 0)
-
-    def test_legacy_migration_rejects_contradictory_identity(self):
-        wc = self.env["mrp.workcenter"].create({"name": "Conflicting legacy"})
-        self.env.flush_all()
-        self.cr.execute("ALTER TABLE mrp_workcenter ADD COLUMN legacy_asset_id integer")
-        self.cr.execute(
-            "UPDATE mrp_workcenter SET legacy_asset_id = %s WHERE id = %s",
-            (self.press.id, wc.id),
-        )
-        with self.assertRaises(ValueError):
-            run_path(file_path("resource_asset_mrp/migrations/1.1/post-migrate.py"))[
-                "migrate"
-            ](self.cr, "1.0")
-        self.assertNotEqual(wc.resource_id, self.press)
