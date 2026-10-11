@@ -5,11 +5,15 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta
 
 import pytz
-from babel.dates import format_date
 
 from odoo import fields
 from odoo.fields import Domain
-from odoo.tools import SQL, remove_accents
+from odoo.tools import format_date, remove_accents
+from odoo.tools.formatting import (
+    NEGATIVE_SIGN_JOINER,
+    NON_BREAKING_SPACE,
+    format_amount_parts,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -93,14 +97,10 @@ class Ask:
         return f"{self.format_day(start)} – {self.format_day(end)}"
 
     def format_day(self, value) -> str:
-        return format_date(value, "d MMM yyyy", locale=self.locale)
+        return format_date(self.env, value, date_format="d MMM yyyy")
 
     def format_month(self, value) -> str:
-        return format_date(value, "MMMM yyyy", locale=self.locale)
-
-    @property
-    def locale(self) -> str:
-        return self.env.lang or "es_MX"
+        return format_date(self.env, value, date_format="MMMM yyyy")
 
     def matches(self, model, value, fields_=("name",), extra=None):
         """The records of `model` whose name matches `value`, noted in the
@@ -142,8 +142,7 @@ def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
 
     The whole phrase first; else every word of it, in any order and with
     anything between them ("Victor Juárez" is "Victor Hugo Juarez
-    Hernandez"); else the same ignoring accents. Contacts that trade the most
-    come first.
+    Hernandez"), accents ignored. Contacts that trade the most come first.
     """
     Model = env[model]
     base = list(extra or [])
@@ -167,33 +166,9 @@ def find(env, model, value, fields_=("name",), extra=None, limit=MAX_MATCHES):
         )
         for word in words
     )
-    found = Model.search(Domain(base) & by_word, limit=limit, order=order)
-    if found or model != "res.partner":
-        return found
-    # contacts keep their accents in plain text: unaccent both sides, where
-    # the database has the extension
-    env.cr.execute("SELECT 1 FROM pg_extension WHERE extname = 'unaccent'")
-    if not env.cr.fetchone():
-        return found
-    clauses = SQL(" AND ").join(
-        SQL("unaccent(name) ILIKE unaccent(%s)", f"%{word}%") for word in words
-    )
-    try:
-        with env.cr.savepoint():
-            env.cr.execute(
-                SQL(
-                    "SELECT id FROM res_partner WHERE active AND %s LIMIT %s",
-                    clauses,
-                    limit,
-                )
-            )
-            ids = [row[0] for row in env.cr.fetchall()]
-    except Exception:
-        # a database without the unaccent extension: nothing more to try
-        return found
-    return Model.search(
-        Domain(base) & Domain("id", "in", ids), limit=limit, order=order
-    )
+    # the ORM's ilike already ignores accents on both sides wherever the
+    # database has unaccent, so dictated "Juarez" finds "Juárez"
+    return Model.search(Domain(base) & by_word, limit=limit, order=order)
 
 
 class NotFound(Exception):
@@ -206,8 +181,11 @@ class NotFound(Exception):
 
 def money(amount, currency) -> str:
     """`amount` with thousands separators and its currency, symbol where the
-    currency puts it: ``$1,234.50 MXN``, ``1,234.50 € EUR``."""
-    text = f"{amount:,.2f}"
+    currency puts it: ``$1,234.50 MXN``, ``1,234.50 € EUR``. The figure is
+    Odoo's own (the currency's decimal places and rounding, the language's
+    separators); the layout stays plain text for a chat."""
+    _pre, text, _post = format_amount_parts(currency.env, amount, currency)
+    text = text.replace(NEGATIVE_SIGN_JOINER, "-").replace(NON_BREAKING_SPACE, " ")
     symbol = currency.symbol or ""
     if currency.position == "after":
         return f"{text} {symbol} {currency.name}".replace("  ", " ").strip()
@@ -648,20 +626,14 @@ def run_cash(ask):
     if not journals:
         lines.append(ask.env._("No bank or cash journal found."))
         return lines
-    rows = ask.env["account.move.line"]._read_group(
-        [
-            ("account_id", "in", journals.default_account_id.ids),
-            ("parent_state", "=", "posted"),
-        ],
-        ["account_id"],
-        ["balance:sum", "amount_currency:sum"],
-    )
-    balances = {account: (balance, foreign) for account, balance, foreign in rows}
     totals = defaultdict(float)
     for journal in journals.sorted(lambda j: (j.company_id.id, j.name)):
-        balance, foreign = balances.get(journal.default_account_id, (0.0, 0.0))
+        # the journal's own balance, as its dashboard computes it, posted
+        # entries only
+        amount, _count = journal._get_journal_bank_account_balance(
+            domain=[("parent_state", "=", "posted")]
+        )
         currency = journal.currency_id or journal.company_id.currency_id
-        amount = foreign if journal.currency_id else balance
         totals[currency] += amount
         if not ask.params.get("summary_only"):
             lines.append(f"• {journal.name}: {money(amount, currency)}")

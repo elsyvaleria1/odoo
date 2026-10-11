@@ -1399,6 +1399,27 @@ class TestFiles(TransactionCase):
         blocks = files.blocks([("c.docx", buffer.getvalue(), "")])
         self.assertIn("Hola contrato", blocks[0]["text"])
 
+    def test_a_word_document_with_entities_is_not_expanded(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            archive.writestr(
+                "word/document.xml",
+                '<?xml version="1.0"?><!DOCTYPE d [<!ENTITY x "boom">]>'
+                '<w:document xmlns:w="http://schemas.openxmlformats.org/'
+                'wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>&x;'
+                "</w:t></w:r></w:p></w:body></w:document>",
+            )
+        text = files.blocks([("e.docx", buffer.getvalue(), "")])[0]["text"]
+        self.assertNotIn("boom", text, "entities are never expanded")
+        self.assertIn("could not be read", text)
+
+    def test_money_follows_the_currency(self):
+        mxn = self.env.ref("base.MXN")
+        self.assertEqual(catalog.money(1234.5, mxn), "$1,234.50 MXN")
+        self.assertEqual(catalog.money(-5, mxn), "$-5.00 MXN")
+        jpy = self.env.ref("base.JPY").with_context(active_test=False)
+        self.assertNotIn(".", catalog.money(1234.4, jpy), "no decimals for yen")
+
     def test_authorizing_words(self):
         self.assertEqual(_decision("Autorizo"), "authorize")
         self.assertEqual(_decision("sí, autorízalo por favor"), "authorize")

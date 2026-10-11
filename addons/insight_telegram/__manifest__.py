@@ -9,6 +9,7 @@
     "license": "LGPL-3",
     "depends": [
         "account",
+        "attachment_indexation",
         "integration_machine_learning",
         "speech_telegram",
         "telegram",

@@ -10,7 +10,11 @@ import io
 import logging
 import zipfile
 
-from lxml import etree
+from odoo.addons.attachment_indexation.tools.readers import (
+    read_docx,
+    read_opendoc,
+    read_pptx,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -68,7 +72,11 @@ def _blocks_of(name, content, mimetype) -> list:
     if lower.endswith((".xlsx", ".xlsm")) or "spreadsheetml" in mimetype:
         return [_text(name, _spreadsheet_text(content))]
     if lower.endswith(".docx") or "wordprocessingml" in mimetype:
-        return [_text(name, _docx_text(content))]
+        return [_text(name, _office_text(read_docx, content))]
+    if lower.endswith(".pptx") or "presentationml" in mimetype:
+        return [_text(name, _office_text(read_pptx, content))]
+    if lower.endswith((".odt", ".ods", ".odp")) or "opendocument" in mimetype:
+        return [_text(name, _office_text(read_opendoc, content))]
     if mimetype.startswith("text/") or lower.endswith(TEXT_EXTENSIONS):
         return [_text(name, content.decode("utf-8", errors="replace"))]
     return [
@@ -135,13 +143,12 @@ def _spreadsheet_text(content) -> str:
     return "\n".join(lines)
 
 
-def _docx_text(content) -> str:
+def _office_text(reader, content) -> str:
+    """An Office or OpenDocument file's text, through attachment_indexation's
+    reader: its XML is parsed hardened against entity expansion, which a
+    forwarded file from anyone needs. One line per non-empty paragraph."""
     _check_unpacked(content)
-    with zipfile.ZipFile(io.BytesIO(content)) as archive:
-        root = etree.fromstring(archive.read("word/document.xml"))
-    namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
-    paragraphs = [
-        "".join(node.text or "" for node in paragraph.iter(f"{namespace}t"))
-        for paragraph in root.iter(f"{namespace}p")
-    ]
-    return "\n".join(text for text in paragraphs if text)
+    text = "\n".join(line for line in reader(content).splitlines() if line.strip())
+    if not text:
+        raise ValueError("no readable text")
+    return text
