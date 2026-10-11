@@ -30,3 +30,4 @@ from . import test_lesson_quiz
 from . import test_rpc_rights
 from . import test_slide_search
 from . import test_quiz_submit
+from . import test_embed_page

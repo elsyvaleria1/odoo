@@ -621,11 +621,6 @@ msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "<i class=\"fa-solid fa-envelope\"/> Send Email"
-msgstr ""
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
 msgid "<i class=\"fa-solid fa-eraser me-1\"/>Clear filters"
 msgstr ""
@@ -1135,14 +1130,6 @@ msgstr "<strong>Hali ishtirokchilar yo‘q!</strong>"
 #, fuzzy
 msgid "<strong>No Attendees Yet!</strong>"
 msgstr "<strong>Hali ishtirokchilar yo‘q!</strong>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-#, fuzzy
-msgid "<strong>Sharing is caring!</strong> Your email(s) will arrive shortly."
-msgstr ""
-"<strong>Ulashish - g‘amxo‘rlik!</strong> Xatingiz(laringiz) tez orada yetib "
-"keladi."
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_2_1
@@ -5243,7 +5230,6 @@ msgstr "Tayanch nuqta"
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid "Please"
 msgstr "Iltimos"
@@ -5264,8 +5250,7 @@ msgstr "Iltimos, to‘g‘ri Google Drive havolasini kiriting"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.js:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
+#: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 #, fuzzy
 msgid "Please enter valid email(s)"
 msgstr "Iltimos, to‘g‘ri elektron pochta manzil(lar)ini kiriting"
@@ -7883,7 +7868,6 @@ msgstr "havola olish uchun tugma"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid "by email."
 msgstr "elektron pochta orqali."
@@ -8067,7 +8051,6 @@ msgstr "qo‘shilish"
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid "login"
 msgstr "tizimga kirish"
@@ -8160,7 +8143,6 @@ msgstr "kirish huquqini so‘rash"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 #, fuzzy
 msgid "to share this"
 msgstr "buni ulashish"
@@ -8180,12 +8162,6 @@ msgid "xp"
 msgstr "xp"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-#, fuzzy
-msgid "your-friend@domain.com, your-friend2@domain.com"
-msgstr "your-friend@domain.com, your-friend2@domain.com"
-
-#. module: website_slides
 #: model:mail.template,subject:website_slides.mail_template_channel_shared
 #, fuzzy
 msgid "{{ user.name }} shared a Course"
@@ -8202,6 +8178,16 @@ msgstr "{{ user.name }} siz bilan {{ object.slide_category }} ulashdi!"
 #, fuzzy
 msgid "└<span class=\"ms-1\">Uncategorized</span>"
 msgstr "└<span class=\"ms-1\">Toifasiz</span>"
+
+#, fuzzy
+#~ msgid "<strong>Sharing is caring!</strong> Your email(s) will arrive shortly."
+#~ msgstr ""
+#~ "<strong>Ulashish - g‘amxo‘rlik!</strong> Xatingiz(laringiz) tez orada yetib "
+#~ "keladi."
+
+#, fuzzy
+#~ msgid "your-friend@domain.com, your-friend2@domain.com"
+#~ msgstr "your-friend@domain.com, your-friend2@domain.com"
 
 #, fuzzy
 #~ msgid "# of Embeds"

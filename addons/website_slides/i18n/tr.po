@@ -713,11 +713,6 @@ msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "<i class=\"fa-solid fa-envelope\"/> Send Email"
-msgstr ""
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
 msgid "<i class=\"fa-solid fa-eraser me-1\"/>Clear filters"
 msgstr ""
@@ -1195,13 +1190,6 @@ msgstr "<strong>Henüz Katılımcı Yok!</strong>"
 #: model_terms:ir.actions.act_window,help:website_slides.slide_channel_partner_action_report
 msgid "<strong>No Attendees Yet!</strong>"
 msgstr "<strong>Henüz Katılımcı Yok!</strong>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "<strong>Sharing is caring!</strong> Your email(s) will arrive shortly."
-msgstr ""
-"<strong>Paylaşmak önemlidir!</strong> E-postalarınız kısa süre içinde "
-"ulaşacaktır."
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_2_1
@@ -4725,7 +4713,6 @@ msgstr "Pivot"
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "Please"
 msgstr "Lütfen"
 
@@ -4743,8 +4730,7 @@ msgstr "Lütfen geçerli Google Drive Bağlantısını girin"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.js:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
+#: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 msgid "Please enter valid email(s)"
 msgstr "Lütfen geçerli e-posta (lar) girin"
 
@@ -7008,7 +6994,6 @@ msgstr "bağlantı almak için düğme"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "by email."
 msgstr "eposta ile."
 
@@ -7167,7 +7152,6 @@ msgstr "katılın"
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "login"
 msgstr "giriş"
 
@@ -7246,7 +7230,6 @@ msgstr "erişim talep etmek için"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "to share this"
 msgstr "bunu paylaşmak için"
 
@@ -7263,11 +7246,6 @@ msgid "xp"
 msgstr "xp"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "your-friend@domain.com, your-friend2@domain.com"
-msgstr "your-friend@domain.com, your-friend2@domain.com"
-
-#. module: website_slides
 #: model:mail.template,subject:website_slides.mail_template_channel_shared
 msgid "{{ user.name }} shared a Course"
 msgstr "{{ user.name }} bir Kursu paylaştı"
@@ -7281,6 +7259,14 @@ msgstr "{{ user.name }} sizinle bir {{ object.slide_category }} paylaştı!"
 #: model_terms:ir.ui.view,arch_db:website_slides.course_nav
 msgid "└<span class=\"ms-1\">Uncategorized</span>"
 msgstr "└<span class=\"ms-1\">Kategorize edilmemiş</span>"
+
+#~ msgid "<strong>Sharing is caring!</strong> Your email(s) will arrive shortly."
+#~ msgstr ""
+#~ "<strong>Paylaşmak önemlidir!</strong> E-postalarınız kısa süre içinde "
+#~ "ulaşacaktır."
+
+#~ msgid "your-friend@domain.com, your-friend2@domain.com"
+#~ msgstr "your-friend@domain.com, your-friend2@domain.com"
 
 #~ msgid "# of Embeds"
 #~ msgstr "# Gömme Sayısı"

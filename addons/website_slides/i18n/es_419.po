@@ -680,11 +680,6 @@ msgid "<i class=\"fa-solid fa-earth-americas me-1\" title=\"Website\"/>"
 msgstr ""
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "<i class=\"fa-solid fa-envelope\"/> Send Email"
-msgstr ""
-
-#. module: website_slides
 #: model_terms:ir.ui.view,arch_db:website_slides.course_slides_cards
 msgid "<i class=\"fa-solid fa-eraser me-1\"/>Clear filters"
 msgstr ""
@@ -1165,13 +1160,6 @@ msgstr "<strong>¡Todavía no hay asistentes!</strong>"
 #: model_terms:ir.actions.act_window,help:website_slides.slide_channel_partner_action_report
 msgid "<strong>No Attendees Yet!</strong>"
 msgstr "<strong>¡Todavía no hay asistentes!</strong>"
-
-#. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "<strong>Sharing is caring!</strong> Your email(s) will arrive shortly."
-msgstr ""
-"<strong>Compartir es importante.</strong> Sus correos electrónicos llegarán "
-"pronto."
 
 #. module: website_slides
 #: model:slide.slide,name:website_slides.slide_slide_demo_2_1
@@ -4710,7 +4698,6 @@ msgstr "Tabla dinámica"
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
 #: code:addons/website_slides/static/src/xml/slide_quiz.xml:0
 #: model_terms:ir.ui.view,arch_db:website_slides.course_join
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "Please"
 msgstr " "
 
@@ -4728,8 +4715,7 @@ msgstr "Introduzca un enlace de Google Drive válido"
 
 #. module: website_slides
 #. odoo-javascript
-#: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.js:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
+#: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 msgid "Please enter valid email(s)"
 msgstr "Introduzca correos electrónicos válidos"
 
@@ -6999,7 +6985,6 @@ msgstr "botón para obtener un enlace"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "by email."
 msgstr "por correo electrónico."
 
@@ -7158,7 +7143,6 @@ msgstr "unirse"
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
 #: code:addons/website_slides/static/src/xml/slide_course_join.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "login"
 msgstr "iniciar sesión"
 
@@ -7237,7 +7221,6 @@ msgstr "solicitar acceso"
 #. module: website_slides
 #. odoo-javascript
 #: code:addons/website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.xml:0
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
 msgid "to share this"
 msgstr "para compartir esto"
 
@@ -7254,11 +7237,6 @@ msgid "xp"
 msgstr "xp"
 
 #. module: website_slides
-#: model_terms:ir.ui.view,arch_db:website_slides.slide_social_email
-msgid "your-friend@domain.com, your-friend2@domain.com"
-msgstr "su-amigo@dominio.com, su-amigo2@dominio.com"
-
-#. module: website_slides
 #: model:mail.template,subject:website_slides.mail_template_channel_shared
 msgid "{{ user.name }} shared a Course"
 msgstr "{{ user.name }} compartió un curso"
@@ -7272,6 +7250,14 @@ msgstr "¡ {{ user.name }} compartió {{ object.slide_category }} con usted!"
 #: model_terms:ir.ui.view,arch_db:website_slides.course_nav
 msgid "└<span class=\"ms-1\">Uncategorized</span>"
 msgstr "└<span class=\"ms-1\">Sin categorizar</span>"
+
+#~ msgid "<strong>Sharing is caring!</strong> Your email(s) will arrive shortly."
+#~ msgstr ""
+#~ "<strong>Compartir es importante.</strong> Sus correos electrónicos llegarán "
+#~ "pronto."
+
+#~ msgid "your-friend@domain.com, your-friend2@domain.com"
+#~ msgstr "su-amigo@dominio.com, su-amigo2@dominio.com"
 
 #~ msgid "# of Embeds"
 #~ msgstr "# de inserciones"

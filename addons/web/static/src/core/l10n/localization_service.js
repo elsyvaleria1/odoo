@@ -185,63 +185,65 @@ async function fetchTranslations(source, hash) {
     }
 }
 
-const localizationService = {
-    /** @returns {Promise<typeof import("@web/core/l10n/localization").localization>} */
-    start: async () => {
-        const locale = getPageLocale();
-        const lang = jsToPyLocale(locale);
-        /** @type {TranslationSource} */
-        const source = {
-            db: new IndexedDB("localization", session.registry_hash),
-            url: session.translationURL || "/web/webclient/translations",
-            lang,
-            cacheMarker: `${session.registry_hash}/${lang}`,
-        };
+/** @returns {Promise<typeof import("@web/core/l10n/localization").localization>} */
+export async function loadLocalization() {
+    const locale = getPageLocale();
+    const lang = jsToPyLocale(locale);
+    /** @type {TranslationSource} */
+    const source = {
+        db: new IndexedDB("localization", session.registry_hash),
+        url: session.translationURL || "/web/webclient/translations",
+        lang,
+        cacheMarker: `${session.registry_hash}/${lang}`,
+    };
 
-        const storedTranslations = await source.db.read(
-            source.url,
-            JSON.stringify({ lang }),
-        );
-        l10nLog(
-            "cache",
-            "storedTranslations",
-            `hit=${Boolean(storedTranslations)}`,
-            `hash=${storedTranslations?.hash}`,
-            `lang=${lang}`,
-        );
+    const storedTranslations = await source.db.read(
+        source.url,
+        JSON.stringify({ lang }),
+    );
+    l10nLog(
+        "cache",
+        "storedTranslations",
+        `hit=${Boolean(storedTranslations)}`,
+        `hash=${storedTranslations?.hash}`,
+        `lang=${lang}`,
+    );
 
-        const translationProm = fetchTranslations(source, storedTranslations?.hash);
-        if (storedTranslations) {
-            translationProm.catch((e) =>
-                console.warn("Background translation fetch failed:", e),
+    const translationProm = fetchTranslations(source, storedTranslations?.hash);
+    if (storedTranslations) {
+        translationProm.catch((e) =>
+            console.warn("Background translation fetch failed:", e),
+        );
+        markTranslationsCached(source.cacheMarker);
+        updateTranslations(storedTranslations);
+    } else {
+        l10nLog("cache", "no cache, awaiting fetch");
+        try {
+            await translationProm;
+        } catch (e) {
+            console.error(
+                "Translation fetch failed on cold boot; falling back to default localization parameters:",
+                e,
             );
-            markTranslationsCached(source.cacheMarker);
-            updateTranslations(storedTranslations);
-        } else {
-            l10nLog("cache", "no cache, awaiting fetch");
-            try {
-                await translationProm;
-            } catch (e) {
-                console.error(
-                    "Translation fetch failed on cold boot; falling back to default localization parameters:",
-                    e,
-                );
-                updateTranslations({
-                    hash: "",
-                    modules: {},
-                    lang_parameters: FALLBACK_LANG_PARAMETERS,
-                    multi_lang: false,
-                });
-            }
+            updateTranslations({
+                hash: "",
+                modules: {},
+                lang_parameters: FALLBACK_LANG_PARAMETERS,
+                multi_lang: false,
+            });
         }
+    }
 
-        translatedTerms[translationLoaded] = true;
-        translationIsReady.resolve(true);
+    translatedTerms[translationLoaded] = true;
+    translationIsReady.resolve(true);
 
-        applyDateLocale(locale);
-        localization.code = lang;
-        return localization;
-    },
+    applyDateLocale(locale);
+    localization.code = lang;
+    return localization;
+}
+
+const localizationService = {
+    start: loadLocalization,
 };
 
 registry.category("services").add("localization", localizationService);

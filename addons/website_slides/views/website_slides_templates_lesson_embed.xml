@@ -3,9 +3,12 @@
 
     <data>
         <template id="embed_slide" name="Embedded Slide Page">
-            <html>
+            <html t-att-lang="(request.env.lang or 'en_US').replace('_', '-')">
                 <head>
                     <title><t t-out="slide.name" /></title>
+                    <script>
+                        (globalThis.odoo ??= {}).__session_info__ = <t t-out="json.dumps(request.env['ir.http'].get_frontend_session_info())" />;
+                    </script>
                     <t t-call-assets="website_slides.slide_embed_assets" />
                 </head>
                 <body>

@@ -130,6 +130,8 @@
             "website_slides/static/src/scss/website_slides.scss",
             "website_slides/static/lib/pdfslidesviewer/PDFSlidesViewer.js",
             "website_slides/static/src/js/slides_embed.js",
+            "website_slides/static/src/js/public/components/slide_share_dialog/email_sharing_input.*",
+            "website_slides/static/src/js/slides_embed_share.js",
         ],
         "web.assets_unit_tests": [
             "website_slides/static/tests/**/*",

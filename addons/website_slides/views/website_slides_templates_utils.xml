@@ -59,36 +59,10 @@
         </template>
         <template id="slide_social_email" name="Share by Email">
             <h5 class="mt-4">Share by Email</h5>
-            <div t-if="not is_public_user">
-            <div class="oe_slide_js_share_email">
-            <div class="input-group">
-            <input
-                type="text"
-                class="form-control"
-                placeholder="your-friend@domain.com, your-friend2@domain.com" />
-            <button
-                class="btn btn-primary"
-                type="button"
-                data-loading-text="Sending..."
-                t-attf-data-slide-id="#{record.id if record._name == 'slide.slide' else False}"
-                t-attf-data-channel-id="#{record.id if record._name == 'slide.channel' else False}"
-                style="border-top-end-radius: 4px;border-bottom-end-radius: 4px;">
-            <i class="fa-solid fa-envelope" /> Send Email
-            </button>
-            </div>
-            <div class="alert alert-info d-none" role="alert">
-            <strong>Sharing is caring!</strong> Your email(s) will arrive shortly.
-            </div>
-            <div class="alert alert-warning d-none" role="alert">Please enter valid email(s)</div>
-            </div>
-            </div>
-            <div t-if="is_public_user" class="alert alert-info d-inline-block">
-            <p class="mb-0">Please <a t-attf-href="/odoo?redirect=#{request.httprequest.url}" class="fw-bold o_translate_inline"> login </a> to share this
-            <span
-                t-field="record.slide_category"
-                t-if="record._name == 'slide.slide'" />
-            <span t-field="record.name" t-if="record._name == 'slide.channel'" /> by email.</p>
-            </div>
+            <div
+                class="o_wslides_embed_share_email"
+                t-att-data-slide-id="record.id"
+                t-att-data-category="record.slide_category" />
         </template>
         <template id="slide_social_embed" name="Share on Your Website">
             <div class="oe_slide_js_embed_code_widget mt-4">
