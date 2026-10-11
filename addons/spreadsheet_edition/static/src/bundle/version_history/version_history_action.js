@@ -208,8 +208,7 @@ export class VersionHistoryAction extends Component {
                 default: defaultValues,
             },
         );
-        // Redirect to the forked spreadsheet
-        this.actionService.doAction(action, { clearBreadcrumbs: true });
+        this._replaceEditor(action, action.tag);
     }
 
     async restoreRevision(revisionId) {
@@ -239,7 +238,7 @@ export class VersionHistoryAction extends Component {
                         spreadsheet_snapshot: data,
                     },
                 );
-                this.actionService.doAction(action, { clearBreadcrumbs: true });
+                this._replaceEditor(action, action.params.next.tag);
             },
             cancel: () => {},
         });
@@ -333,7 +332,7 @@ export class VersionHistoryAction extends Component {
                     from_snapshot: true,
                 },
             },
-            { clearBreadcrumbs: true },
+            { stackPosition: "replaceCurrentAction" },
         );
     }
 
@@ -341,9 +340,39 @@ export class VersionHistoryAction extends Component {
         const action = await this.orm.call(this.resModel, "action_view_spreadsheet", [
             this.resId,
         ]);
-        this.actionService.doAction(action, {
-            clearBreadcrumbs: true,
+        const editor = this._editorBeneath(action.tag);
+        if (editor) {
+            return this.actionService.restore(editor.jsId);
+        }
+        return this.actionService.doAction(action, {
+            stackPosition: "replaceCurrentAction",
         });
+    }
+
+    /**
+     * The editor of this spreadsheet the history was opened from, if it is
+     * still beneath it.
+     * @param {string} tag the client action that edits this spreadsheet
+     */
+    _editorBeneath(tag) {
+        const beneath = this.actionService.controllerStack.at(-2);
+        const isEditor =
+            beneath?.action.tag === tag &&
+            beneath.action.params?.spreadsheet_id === this.resId;
+        return isEditor ? beneath : null;
+    }
+
+    /**
+     * Opens what a restore or a fork leaves, in place of the history and of
+     * the editor beneath it, which no longer shows the spreadsheet as it is.
+     * @param {Object} action
+     * @param {string} editorTag the client action that edits this spreadsheet
+     */
+    _replaceEditor(action, editorTag) {
+        const stackPosition = this._editorBeneath(editorTag)
+            ? "replacePreviousAction"
+            : "replaceCurrentAction";
+        return this.actionService.doAction(action, { stackPosition });
     }
 
     get historyPanelProps() {

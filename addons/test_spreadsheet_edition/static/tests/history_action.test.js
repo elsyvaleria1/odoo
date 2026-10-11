@@ -5,7 +5,7 @@ import { waitForDataLoaded } from "@spreadsheet/helpers/model";
 import { getSpreadsheetActionModel } from "@spreadsheet_edition/../tests/helpers/webclient_helpers";
 import { defineTestSpreadsheetEditionModels } from "@test_spreadsheet_edition/../tests/helpers/data";
 import { createSpreadsheetTestAction } from "@test_spreadsheet_edition/../tests/helpers/helpers";
-import { contains, mockService } from "@web/../tests/web_test_helpers";
+import { contains, getService, mockService } from "@web/../tests/web_test_helpers";
 
 defineTestSpreadsheetEditionModels();
 
@@ -421,10 +421,20 @@ test("Side panel > restore revision and confirm", async function () {
                 case "restore_spreadsheet_version":
                     expect.step("restored");
                     expect(args.kwargs.revision_id).toBe(1);
-                    // placeholder return
                     return {
                         type: "ir.actions.client",
-                        tag: "reload",
+                        tag: "display_notification",
+                        params: {
+                            message: "Version restored",
+                            next: {
+                                type: "ir.actions.client",
+                                tag: "spreadsheet_test_action",
+                                params: {
+                                    spreadsheet_id: 1,
+                                    res_model: "spreadsheet.test",
+                                },
+                            },
+                        },
                     };
                 default:
                     break;
@@ -528,6 +538,112 @@ test("closing side panel rolls back to parent action", async function () {
     });
     await contains(".o-version-history-wrapper div.header>div:nth-child(2)").click();
     expect.verifySteps(["editAction-spreadsheet.test"]);
+});
+
+/**
+ * The editor of spreadsheet 1, then its history on top of it.
+ * @param {Function} [mockRPC]
+ */
+async function openHistoryOverEditor(mockRPC) {
+    const { action: editor } = await createSpreadsheetTestAction(
+        "spreadsheet_test_action",
+        {
+            mockRPC: async function (route, args) {
+                if (args.method === "get_spreadsheet_history") {
+                    const revisions = [];
+                    revisions.push(createRevision(revisions, "REMOTE_REVISION"));
+                    revisions.push(createRevision(revisions, "REMOTE_REVISION"));
+                    return { data: {}, name: "test", revisions };
+                }
+                if (args.method === "action_view_spreadsheet") {
+                    return {
+                        type: "ir.actions.client",
+                        tag: "spreadsheet_test_action",
+                        params: { spreadsheet_id: editor.resId },
+                    };
+                }
+                return mockRPC?.(route, args);
+            },
+        },
+    );
+    const actionService = getService("action");
+    const editorController = actionService.currentController;
+    await actionService.doAction({
+        type: "ir.actions.client",
+        tag: "action_open_spreadsheet_history",
+        params: { spreadsheet_id: editor.resId, res_model: "spreadsheet.test" },
+    });
+    await animationFrame();
+    expect(actionService.controllerStack).toEqual([
+        editorController,
+        actionService.currentController,
+    ]);
+    return { actionService, editorController, editor };
+}
+
+test("back to edit returns to the editor beneath, as it was", async function () {
+    const { actionService, editorController } = await openHistoryOverEditor();
+    await contains(".o-version-history-wrapper div.header>div:nth-child(2)").click();
+    await animationFrame();
+    expect(actionService.controllerStack).toEqual([editorController]);
+});
+
+test("a restored version replaces the editor beneath, which no longer shows it", async function () {
+    const { actionService, editorController } = await openHistoryOverEditor(
+        async (route, args) => {
+            if (args.method === "restore_spreadsheet_version") {
+                return {
+                    type: "ir.actions.client",
+                    tag: "display_notification",
+                    params: {
+                        message: "Version restored",
+                        next: {
+                            type: "ir.actions.client",
+                            tag: "spreadsheet_test_action",
+                            params: {
+                                spreadsheet_id: 1,
+                                res_model: "spreadsheet.test",
+                            },
+                        },
+                    },
+                };
+            }
+        },
+    );
+    await contains(`${revisionSelector}:eq(1)`).click();
+    await contains(`${revisionSelector}:eq(1) .o-version-history-menu`).click();
+    await contains(".o-dropdown--menu .o-dropdown-item:eq(1)").click();
+    await contains(".o_dialog .btn-primary").click();
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(1);
+    expect(actionService.currentController).not.toBe(editorController);
+    expect(actionService.currentController.action.tag).toBe("spreadsheet_test_action");
+});
+
+test("a history with no editor beneath opens the editor in its own place", async function () {
+    await createSpreadsheetTestAction("action_open_spreadsheet_history", {
+        mockRPC: async function (route, args) {
+            if (args.method === "get_spreadsheet_history") {
+                return {
+                    data: {},
+                    name: "test",
+                    revisions: [createRevision([], "REMOTE_REVISION")],
+                };
+            }
+            if (args.method === "action_view_spreadsheet") {
+                return {
+                    type: "ir.actions.client",
+                    tag: "spreadsheet_test_action",
+                    params: { spreadsheet_id: 1, res_model: "spreadsheet.test" },
+                };
+            }
+        },
+    });
+    const actionService = getService("action");
+    await contains(".o-version-history-wrapper div.header>div:nth-child(2)").click();
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(1);
+    expect(actionService.currentController.action.tag).toBe("spreadsheet_test_action");
 });
 
 test("Undo/redo revisions are rolled back", async function () {

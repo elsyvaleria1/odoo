@@ -46,7 +46,7 @@ export class DocumentSelectorDialog extends Component {
                 [this.props.dashboardGroupId],
             );
             // open the new dashboard
-            this.actionService.doAction(action, { clear_breadcrumbs: false });
+            this.actionService.doAction(action);
         }
         this.props.close();
     }

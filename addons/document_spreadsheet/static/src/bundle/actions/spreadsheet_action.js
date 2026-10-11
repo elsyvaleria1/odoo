@@ -50,10 +50,9 @@ export class SpreadsheetAction extends AbstractSpreadsheetAction {
     }
 
     /**
-     * @param {OdooEvent} ev
      * @returns {Promise}
      */
-    async _onSpreadSheetFavoriteToggled(ev) {
+    async _onSpreadSheetFavoriteToggled() {
         this.state.isFavorited = !this.state.isFavorited;
         return await this.orm.call("document.document", "action_toggle_user_favorite", [
             [this.resId],
@@ -68,7 +67,7 @@ export class SpreadsheetAction extends AbstractSpreadsheetAction {
             "document.document",
             "action_view_new_spreadsheet",
         );
-        this.actionService.doAction(action, { clear_breadcrumbs: true });
+        this.actionService.doAction(action, { stackPosition: "replaceCurrentAction" });
     }
 
     onSpreadsheetLeftUpdateVals() {

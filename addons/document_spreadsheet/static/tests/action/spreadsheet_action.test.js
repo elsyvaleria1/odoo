@@ -335,6 +335,41 @@ test("menu > copy", async function () {
     expect.verifySteps(["copy"]);
 });
 
+test("a copy takes the place of the spreadsheet it was made from", async function () {
+    const { env } = await createSpreadsheet({
+        spreadsheetId: DocumentsDocument._records[1].id,
+    });
+    const actionService = getService("action");
+    const original = actionService.currentController;
+    await doMenuAction(topbarMenuRegistry, ["file", "make_copy"], env);
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(1);
+    expect(actionService.currentController.action.params.spreadsheet_id).not.toBe(
+        original.action.params.spreadsheet_id,
+    );
+});
+
+test("a new spreadsheet takes the place of the one it was made from", async function () {
+    const [other, current] = DocumentsDocument._records;
+    const { env } = await createSpreadsheet({
+        spreadsheetId: current.id,
+        mockRPC: async function (route, args) {
+            if (args.method === "action_view_new_spreadsheet") {
+                return {
+                    type: "ir.actions.client",
+                    tag: "action_view_spreadsheet",
+                    params: { spreadsheet_id: other.id },
+                };
+            }
+        },
+    });
+    const actionService = getService("action");
+    await doMenuAction(topbarMenuRegistry, ["file", "new_sheet"], env);
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(1);
+    expect(actionService.currentController.action.params.spreadsheet_id).toBe(other.id);
+});
+
 test("Spreadsheet is created with locale in data", async function () {
     const serverData = getBasicServerData();
     serverData.models["document.document"] = {
@@ -355,7 +390,7 @@ test("Spreadsheet is created with locale in data", async function () {
 
 test("Odoo locales are displayed in setting side panel", async function () {
     const { env } = await createSpreadsheet({
-        mockRPC: function (route, { method, model }) {
+        mockRPC: function (route, { method }) {
             if (method === "get_locales_for_spreadsheet") {
                 return TEST_LOCALES;
             }

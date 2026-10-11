@@ -19,7 +19,7 @@ import { waitForDataLoaded } from "@spreadsheet/helpers/model";
 import { provideSpreadsheetEnv, useSpreadsheetPrint } from "@spreadsheet/hooks";
 import { initCallbackRegistry } from "@spreadsheet/o_spreadsheet/init_callbacks";
 import { SpreadsheetNavbar } from "@spreadsheet_edition/bundle/components/spreadsheet_navbar/spreadsheet_navbar";
-import { releaseSymbol, useSetupAction } from "@web/core/action_hook";
+import { useControllerLifetime, useSetupAction } from "@web/core/action_hook";
 import { useAppContext } from "@web/core/app_context";
 import { browser } from "@web/core/browser/browser";
 import { useDebugMode } from "@web/core/debug/debug_context";
@@ -115,18 +115,14 @@ export class AbstractSpreadsheetAction extends Component {
         useSetupAction({
             beforeLeave: this._leaveSpreadsheet.bind(this),
             beforeUnload: this._leaveSpreadsheet.bind(this),
-            getLocalState: () => {
-                const channel = this.collaborativeChannel;
-                return {
-                    resId: this.resId,
-                    accessToken: this.accessToken,
-                    data: this.data,
-                    model: this.model,
-                    collaborativeChannel: channel,
-                    [releaseSymbol]: () => channel?.release(),
-                };
-            },
+            getLocalState: () => ({
+                resId: this.resId,
+                accessToken: this.accessToken,
+                data: this.data,
+                model: this.model,
+            }),
         });
+        this.controllerLifetime = useControllerLifetime();
 
         const print = useSpreadsheetPrint(() => this.model);
         provideSpreadsheetEnv({
@@ -155,7 +151,6 @@ export class AbstractSpreadsheetAction extends Component {
                 this.dataFetched = true;
                 this._initializeWith(this.props.state.data);
                 this.model = this.props.state.model;
-                this.collaborativeChannel = this.props.state.collaborativeChannel;
                 this.model.joinSession();
                 this.stores.inject(ModelStore, this.model);
             } else {
@@ -259,12 +254,13 @@ export class AbstractSpreadsheetAction extends Component {
         if (!this.dataFetched) {
             return {};
         }
-        this.collaborativeChannel = this.spreadsheetService.makeCollaborativeChannel(
+        const transportService = this.spreadsheetService.makeCollaborativeChannel(
             this.resModel,
             this.resId,
             this.accessToken,
             this.data?.revisionSequence,
         );
+        this.controllerLifetime.onEnd(() => transportService.release());
         const odooDataProvider = new OdooDataProvider(this.appContext);
         odooDataProvider.addEventListener("data-source-updated", () => {
             this.model.dispatch("EVALUATE_CELLS");
@@ -278,7 +274,7 @@ export class AbstractSpreadsheetAction extends Component {
                 geoJsonService: this.geoJsonService,
             },
             defaultCurrency: createDefaultCurrency(this.data.default_currency),
-            transportService: this.collaborativeChannel,
+            transportService,
             client: {
                 id: uuidGenerator.smallUuid(),
                 name: user.name,
@@ -446,22 +442,19 @@ export class AbstractSpreadsheetAction extends Component {
                 tag: this.props.action.tag,
                 params: { spreadsheet_id: spreadsheetId },
             },
-            { clear_breadcrumbs: true },
+            { stackPosition: "replaceCurrentAction" },
         );
     }
 
     showHistory() {
-        this.actionService.doAction(
-            {
-                type: "ir.actions.client",
-                tag: "action_open_spreadsheet_history",
-                params: {
-                    spreadsheet_id: this.resId,
-                    res_model: this.resModel,
-                },
+        this.actionService.doAction({
+            type: "ir.actions.client",
+            tag: "action_open_spreadsheet_history",
+            params: {
+                spreadsheet_id: this.resId,
+                res_model: this.resModel,
             },
-            { clear_breadcrumbs: true },
-        );
+        });
     }
 
     /**
