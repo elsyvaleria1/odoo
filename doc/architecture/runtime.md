@@ -542,7 +542,10 @@ returns (project_hr's computed `project.task.user_ids` read by a portal
 collaborator: the internal assignees its rule hides were handed to it from the
 shared slot), and since its compute fills the superuser's slot first, a
 reader's read of a row held there empty is served empty without a statement
-(`_records_to_read`, event `read_empty_from_superuser`) and a many2many read
+when nothing but a rule narrows the read (`_records_to_read`, event
+`read_empty_from_superuser`; a callable field domain or a comodel `_search`
+override may answer a user what it does not answer the superuser, as for the
+eviction above) and a many2many read
 of rows held there with links skips the empty-relation probe
 (`_superuser_holds_links`) — while a compute that runs *as the reader* (every
 delegated or related x2many: `product.product.taxes_id`, `res.users.child_ids`)

@@ -511,7 +511,7 @@ class TestBaseAPIPerformance(BaseMailPerformance):
                 )
             )
 
-        with self.assertQueryCount(admin=29, employee=29):
+        with self.assertQueryCount(admin=30, employee=30):
             composer._action_send_mail()
 
     @users("admin", "employee")
@@ -642,7 +642,7 @@ class TestBaseAPIPerformance(BaseMailPerformance):
                 )
             )
 
-        with self.assertQueryCount(admin=29, employee=29):
+        with self.assertQueryCount(admin=30, employee=30):
             composer._action_send_mail()
 
     @users("admin", "employee")
@@ -795,7 +795,7 @@ class TestBaseAPIPerformance(BaseMailPerformance):
             )
             composer = composer_form.save()
 
-        with self.assertQueryCount(admin=61, employee=61):
+        with self.assertQueryCount(admin=58, employee=58):
             composer._action_send_mail()
 
         new_partner = (

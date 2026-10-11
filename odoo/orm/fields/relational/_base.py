@@ -564,7 +564,11 @@ class _RelationalMulti(_Relational):
 
     def _records_to_read(self, records: BaseModel) -> BaseModel:
         env = records.env
-        if env.su:
+        if (
+            env.su
+            or callable(self.domain)
+            or is_search_overridden(type(env[self.comodel_name]))
+        ):
             return records
         sudo_slot = env.core.get_context_data_or_none(
             self, self._superuser_scope_key(env)

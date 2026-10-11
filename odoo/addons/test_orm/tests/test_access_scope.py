@@ -82,6 +82,24 @@ class TestX2manyScopeFollowsWhatTheRulesRead(TransactionCase):
             self.user_box.stored_item_ids, self.item_shown | self.item_hidden
         )
 
+    def test_a_stored_computed_x2many_follows_its_compute_into_a_user_scope(self):
+        self.assertEqual(self.user_box.stored_item_ids, self.item_shown)
+        added = self.env["test_orm.scope_item"].create(
+            {"name": "i3", "box_id": self.box.id, "tag_id": self.shown.id}
+        )
+        self.assertEqual(self.user_box.stored_item_ids, self.item_shown | added)
+        added.box_id = False
+        self.assertEqual(self.user_box.stored_item_ids, self.item_shown)
+
+    def test_a_user_scope_of_a_stored_computed_x2many_reads_unflushed_values(self):
+        empty = self.env["test_orm.scope_box"].create({"name": "empty"})
+        self.assertFalse(empty.with_user(self.user).stored_item_ids)
+        self.item_shown.box_id = empty
+        self.assertEqual(empty.with_user(self.user).stored_item_ids, self.item_shown)
+        self.item_hidden.box_id = empty
+        self.assertEqual(empty.with_user(self.user).stored_item_ids, self.item_shown)
+        self.assertEqual(empty.stored_item_ids, self.item_shown | self.item_hidden)
+
     def test_a_row_the_superuser_computed_empty_reads_empty_without_a_query(self):
         empty = self.env["test_orm.scope_box"].create({"name": "empty"})
         self.assertFalse(empty.stored_item_ids)
