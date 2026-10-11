@@ -1,4 +1,3 @@
-
 {
     "name": "Accounting Consistency Checks",
     "version": "1.0",
