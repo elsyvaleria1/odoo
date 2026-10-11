@@ -897,7 +897,12 @@ class IntegrationExchange(models.Model):
         if default_retention > 0:
             self._remove_logs_past_retention(
                 default_retention,
-                SQL("NOT (channel_id = ANY(%s))", overridden_refs)
+                # a refusal no channel answers for has no channel_id, and
+                # NOT (NULL = ANY(...)) is NULL: it must be swept explicitly
+                SQL(
+                    "(channel_id IS NULL OR NOT (channel_id = ANY(%s)))",
+                    overridden_refs,
+                )
                 if overridden_refs
                 else SQL("TRUE"),
             )

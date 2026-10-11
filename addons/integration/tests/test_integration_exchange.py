@@ -310,6 +310,26 @@ class TestIntegrationExchangeRetention(TransactionCase):
         self.assertFalse(old_event.exists())
         self.assertTrue(recent_event.exists())
 
+    def test_gc_sweeps_refusals_without_channel_beside_overrides(self):
+        self.env["ir.config_parameter"].sudo().set_param(
+            "integration.log_retention_days",
+            "30",
+        )
+        self.service.log_retention_days = 365
+        Exchange = self.env["integration.exchange"]
+        old_refusal = Exchange.create(
+            {
+                "direction": "inbound",
+                "state": "refused",
+                "refusal_reason": "authentication_failed",
+                "date_completed": fields.Datetime.now() - timedelta(days=60),
+            },
+        )
+
+        Exchange._gc_old_logs()
+
+        self.assertFalse(old_refusal.exists())
+
     def test_gc_ages_terminal_rows_without_completion_by_creation(self):
         self.env["ir.config_parameter"].sudo().set_param(
             "integration.log_retention_days",
