@@ -355,10 +355,11 @@ export class VersionHistoryAction extends Component {
      * @param {string} tag the client action that edits this spreadsheet
      */
     _editorBeneath(tag) {
+        // currentState, not params: an editor loaded from the url, or rebuilt
+        // from it as a crumb, has no spreadsheet_id param, only its resId
         const beneath = this.actionService.controllerStack.at(-2);
         const isEditor =
-            beneath?.action.tag === tag &&
-            beneath.action.params?.spreadsheet_id === this.resId;
+            beneath?.action.tag === tag && beneath.currentState?.resId === this.resId;
         return isEditor ? beneath : null;
     }
 

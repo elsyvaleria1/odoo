@@ -152,6 +152,31 @@ test("an action superseded before it mounts ends", async () => {
     ready.resolve();
 });
 
+test("a crumb rebuilt from the url is an action replacePreviousAction replaces", async () => {
+    await mountWebClient();
+    const actionService = getService("action");
+    await actionService.loadState({
+        actionStack: [
+            { action: 1, displayName: "Partners Action 1" },
+            { action: 3, displayName: "Partners" },
+        ],
+        action: 3,
+    });
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(2);
+    expect(actionService.controllerStack[0].virtual).toBe(true);
+    await actionService.doAction(
+        {
+            type: "ir.actions.client",
+            tag: "__test__client__action__",
+            params: { description: "X" },
+        },
+        { stackPosition: "replacePreviousAction" },
+    );
+    expect(actionService.controllerStack).toHaveLength(1);
+    expect(".test_client_action").toHaveCount(1);
+});
+
 test("an action on screen when the history replaces the stack ends", async () => {
     await mountWebClient();
     await getService("action").doAction({

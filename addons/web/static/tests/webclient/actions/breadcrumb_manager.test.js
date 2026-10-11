@@ -19,6 +19,7 @@ import {
 function makeFakeAm(overrides = {}) {
     /** @type {{ restore: string[], stateToUrl: (Record<string, any> | undefined)[] }} */
     const calls = { restore: [], stateToUrl: [] };
+    let nextId = 0;
     const am = {
         router: {
             stateToUrl: (/** @type {Record<string, any> | undefined} */ state) => {
@@ -29,6 +30,7 @@ function makeFakeAm(overrides = {}) {
         restore: (/** @type {string} */ jsId) => calls.restore.push(jsId),
         breadcrumbCache: new BreadcrumbCache(),
         makeController: (/** @type {Record<string, any>} */ params) => ({ ...params }),
+        nextId: () => ++nextId,
         ...overrides,
     };
     am.__calls = calls;
@@ -235,6 +237,31 @@ test("restoring a stack that repeats a record asks the server for it once", asyn
 
     expect(fetchedKeys).toHaveLength(1);
     expect(controllers.map((c) => c.displayName)).toEqual(["Rec", "Rec"]);
+});
+
+test("a virtual controller's action has a jsId, shared by the crumbs of one action", async () => {
+    await makeMockServer();
+    onRpc("/web/action/load_breadcrumbs", async (request) => {
+        const { params } = await request.json();
+        return params.actions.map(() => ({ display_name: "Rec" }));
+    });
+    const controllers = await controllersFromState(
+        {
+            action: "menu",
+            actionStack: [
+                { action: 4 },
+                { action: 5, view_type: "list" },
+                { action: 5, resId: 2 },
+                { action: "menu" },
+            ],
+        },
+        makeFakeAm(),
+    );
+    const [first, list, form] = controllers.map((c) => c.action.jsId);
+    expect(first).toMatch(/^action_/);
+    expect(list).toMatch(/^action_/);
+    expect(list).not.toBe(first);
+    expect(form).toBe(list);
 });
 
 test("a virtual controller carries the url key as an id, a path or a tag, never as a string id", async () => {

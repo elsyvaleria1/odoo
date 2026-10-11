@@ -241,14 +241,26 @@ export async function controllersFromState(state, am) {
     if (!state?.actionStack?.length) {
         return [];
     }
+    // a crumb's action needs a jsId like a loaded one's, or replaceCurrentAction
+    // and replacePreviousAction cannot tell it from its neighbours; consecutive
+    // crumbs of one action (a list under its form) share it, as loaded ones do
+    let previousKey;
+    let previousJsId;
     const controllers = state.actionStack
         .slice(0, -1)
         .map((actionState, index) => {
+            const key = actionState.action ?? actionState.model;
+            const jsId =
+                key !== undefined && key === previousKey
+                    ? previousJsId
+                    : `action_${am.nextId()}`;
+            previousKey = key;
+            previousJsId = jsId;
             const controller = am.makeController({
                 displayName: actionState.displayName,
                 virtual: true,
                 stackIndex: index,
-                action: {},
+                action: { jsId },
                 props: {},
                 state: {
                     ...actionState,

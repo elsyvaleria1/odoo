@@ -620,6 +620,133 @@ test("a restored version replaces the editor beneath, which no longer shows it",
     expect(actionService.currentController.action.tag).toBe("spreadsheet_test_action");
 });
 
+/** @param {number} resId */
+function historyServer(resId) {
+    return async function (route, args) {
+        if (args.method === "get_spreadsheet_history") {
+            return {
+                data: {},
+                name: "test",
+                revisions: [createRevision([], "REMOTE_REVISION")],
+            };
+        }
+        if (args.method === "action_view_spreadsheet") {
+            return {
+                type: "ir.actions.client",
+                tag: "spreadsheet_test_action",
+                params: { spreadsheet_id: resId },
+            };
+        }
+    };
+}
+
+test("back to edit returns to an editor that was opened from the url", async function () {
+    const { action: editor } = await createSpreadsheetTestAction(
+        "spreadsheet_test_action",
+        { mockRPC: (route, args) => historyServer(editor.resId)(route, args) },
+    );
+    const actionService = getService("action");
+    await actionService.doAction(
+        {
+            type: "ir.actions.client",
+            tag: "spreadsheet_test_action",
+            params: { resId: editor.resId },
+        },
+        { clearBreadcrumbs: true },
+    );
+    await animationFrame();
+    const editorController = actionService.currentController;
+    await actionService.doAction({
+        type: "ir.actions.client",
+        tag: "action_open_spreadsheet_history",
+        params: { spreadsheet_id: editor.resId, res_model: "spreadsheet.test" },
+    });
+    await animationFrame();
+    await contains(".o-version-history-wrapper div.header>div:nth-child(2)").click();
+    await animationFrame();
+    expect(actionService.controllerStack).toEqual([editorController]);
+});
+
+test("back to edit after the history page was reloaded opens its editor crumb, not a second one", async function () {
+    const { action: editor } = await createSpreadsheetTestAction(
+        "spreadsheet_test_action",
+        { mockRPC: (route, args) => historyServer(editor.resId)(route, args) },
+    );
+    const actionService = getService("action");
+    await actionService.loadState({
+        actionStack: [
+            {
+                action: "spreadsheet_test_action",
+                resId: editor.resId,
+                displayName: "S1",
+            },
+            { action: "action_open_spreadsheet_history", displayName: "History" },
+        ],
+        action: "action_open_spreadsheet_history",
+        spreadsheet_id: editor.resId,
+        res_model: "spreadsheet.test",
+    });
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(2);
+    expect(actionService.controllerStack[0].virtual).toBe(true);
+    await contains(".o-version-history-wrapper div.header>div:nth-child(2)").click();
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(1);
+    expect(actionService.currentController.action.tag).toBe("spreadsheet_test_action");
+});
+
+test("a restore after the history page was reloaded replaces its editor crumb", async function () {
+    const { action: editor } = await createSpreadsheetTestAction(
+        "spreadsheet_test_action",
+        {
+            mockRPC: async (route, args) => {
+                if (args.method === "get_spreadsheet_history") {
+                    const revisions = [];
+                    revisions.push(createRevision(revisions, "REMOTE_REVISION"));
+                    revisions.push(createRevision(revisions, "REMOTE_REVISION"));
+                    return { data: {}, name: "test", revisions };
+                }
+                if (args.method === "restore_spreadsheet_version") {
+                    return {
+                        type: "ir.actions.client",
+                        tag: "display_notification",
+                        params: {
+                            message: "Version restored",
+                            next: {
+                                type: "ir.actions.client",
+                                tag: "spreadsheet_test_action",
+                                params: { spreadsheet_id: editor.resId },
+                            },
+                        },
+                    };
+                }
+            },
+        },
+    );
+    const actionService = getService("action");
+    await actionService.loadState({
+        actionStack: [
+            {
+                action: "spreadsheet_test_action",
+                resId: editor.resId,
+                displayName: "S1",
+            },
+            { action: "action_open_spreadsheet_history", displayName: "History" },
+        ],
+        action: "action_open_spreadsheet_history",
+        spreadsheet_id: editor.resId,
+        res_model: "spreadsheet.test",
+    });
+    await animationFrame();
+    await contains(`${revisionSelector}:eq(1)`).click();
+    await contains(`${revisionSelector}:eq(1) .o-version-history-menu`).click();
+    await contains(".o-dropdown--menu .o-dropdown-item:eq(1)").click();
+    await contains(".o_dialog .btn-primary").click();
+    await animationFrame();
+    expect(actionService.controllerStack).toHaveLength(1);
+    expect(actionService.currentController.action.tag).toBe("spreadsheet_test_action");
+});
+
 test("a history with no editor beneath opens the editor in its own place", async function () {
     await createSpreadsheetTestAction("action_open_spreadsheet_history", {
         mockRPC: async function (route, args) {
