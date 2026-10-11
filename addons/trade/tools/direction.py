@@ -21,6 +21,10 @@ class TradeDirection:
         return (f"{self.move_prefix}_invoice", f"{self.move_prefix}_refund")
 
     @property
+    def document_move_types(self) -> tuple[str, str, str]:
+        return (*self.move_types, f"{self.move_prefix}_receipt")
+
+    @property
     def partner_location_field(self) -> str:
         return (
             "location_dest_id" if self.partner_side == "destination" else "location_id"

@@ -80,3 +80,4 @@ sale_invoice_match_readonly,sale.invoice.match: read-only,model_sale_invoice_mat
 sale_invoice_line_match_readonly,sale.invoice.line.match: read-only,model_sale_invoice_line_match,group_sale_readonly,permission,r,,,
 privilege_note_invoice_paid_order_line,sale.order.line: a paid invoice reads the order lines it bills,model_sale_order_line,privilege_note_invoice_paid,permission,r,,,"[('invoice_line_ids', '!=', False)]"
 privilege_note_invoice_paid_order,sale.order: a paid invoice notes its payment on the orders it bills,model_sale_order,privilege_note_invoice_paid,permission,ru,,,"[('line_ids.invoice_line_ids', '!=', False)]"
+privilege_copy_order_links_order_line,sale.order.line: a reversed or duplicated journal item keeps the order lines it bills,model_sale_order_line,trade_account.privilege_copy_order_links,permission,r,,,"[('invoice_line_ids', '!=', False)]"

@@ -13,11 +13,10 @@ class AccountMove(models.Model):
     _inherit = "account.move"
 
     def _get_linked_order_lines(self) -> list:
+        lines = self.line_ids
         return [
-            self.line_ids.mapped(field_name)
-            for field_name in self.env[
-                "account.move.line"
-            ]._get_fields_order_line_link()
+            lines._get_linked_order_lines(field_name)
+            for field_name in lines._get_fields_order_line_link()
         ]
 
     def _get_linked_downpayment_lines(self) -> list:

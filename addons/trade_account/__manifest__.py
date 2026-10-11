@@ -11,4 +11,7 @@
         "trade",
         "account",
     ],
+    "data": [
+        "security/res_groups.xml",
+    ],
 }

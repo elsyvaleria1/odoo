@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_copy_order_links" model="res.groups">
+        <field
+            name="name">Privilege: a reversed or duplicated journal item keeps the order lines it bills</field>
+        <field
+            name="comment">Whoever reverses or duplicates an invoice, a buyer reversing their own bill included, has each copied item keep every order line the original bills, including order lines of other people's orders they cannot see. Only the invoiced order lines are read; nothing of the orders is theirs.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

@@ -56,7 +56,7 @@ class AccountMoveLine(models.Model):
         return super()._get_stock_moves() | self._get_sale_stock_move()
 
     def _get_sale_stock_move(self):
-        return self.sale_line_ids.move_ids
+        return self._get_linked_order_lines("sale_line_ids").move_ids
 
     def _get_lines_from_original_invoice(self):
         original_lines = super()._get_lines_from_original_invoice()

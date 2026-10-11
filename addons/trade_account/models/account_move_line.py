@@ -2,6 +2,8 @@ from odoo import fields, models
 from odoo.fields import Command
 from odoo.libs.debug_log import DebugLog
 
+from odoo.addons.trade.tools import direction_of
+
 _debug = DebugLog(__name__)
 
 
@@ -13,17 +15,34 @@ class AccountMoveLine(models.Model):
     def _get_fields_order_line_link(self) -> list:
         return []
 
+    def _get_linked_order_lines(self, field_name):
+        direction = direction_of(self.env[self._fields[field_name].comodel_name])
+        document_lines = self.filtered(
+            lambda line: line.move_id.move_type in direction.document_move_types
+        )
+        _debug.logic(
+            "order_lines_linked",
+            lines=self,
+            field=field_name,
+            document_lines=document_lines,
+        )
+        return document_lines.mapped(field_name)
+
     def _copy_data_extend_business_fields(self, values) -> None:
         super()._copy_data_extend_business_fields(values)
-        linked = self.sudo()
+        linked = self.with_privilege(
+            "trade_account.privilege_copy_order_links",
+            reason="a reversed or duplicated journal item keeps the order lines it bills",
+        )
         for field_name in self._get_fields_order_line_link():
-            values[field_name] = [Command.set(linked[field_name].ids)]
+            values[field_name] = [
+                Command.set(linked._get_linked_order_lines(field_name).ids)
+            ]
 
     def _related_analytic_distribution(self):
         vals = super()._related_analytic_distribution()
-        linked = self.sudo()
         for field_name in self._get_fields_order_line_link():
-            if order_lines := linked[field_name]:
+            if order_lines := self._get_linked_order_lines(field_name):
                 vals |= order_lines[0].analytic_distribution or {}
                 _debug.logic(
                     "analytic_from_order_line", line=self, order_line=order_lines[0]

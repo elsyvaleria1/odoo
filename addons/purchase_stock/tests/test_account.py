@@ -3,7 +3,7 @@ from freezegun import freeze_time
 
 from odoo import Command, fields
 from odoo.exceptions import UserError
-from odoo.tests import Form
+from odoo.tests import Form, new_test_user
 
 from .common import PurchaseTestCommon
 
@@ -518,3 +518,127 @@ class TestPurchaseOrderInvoice(PurchaseTestCommon):
                 },
             ],
         )
+
+    def _clerk_without_purchases(self, name, rows, verbs=None):
+        privilege = self.env["res.groups"].create(
+            {"name": f"Probe: {name}", "is_privilege": True}
+        )
+        self.env["ir.model.data"].create(
+            {
+                "module": "purchase_stock",
+                "name": name,
+                "model": "res.groups",
+                "res_id": privilege.id,
+            }
+        )
+        Line = self.env["account.move.line"]
+        order_links = {
+            (Line._fields[field_name].comodel_name, "r")
+            for field_name in Line._get_fields_order_line_link()
+            if field_name != "purchase_line_ids"
+        }
+        self.env["ir.access"].create(
+            [
+                {
+                    "name": f"Probe: {name} on {model}",
+                    "model_id": self.env["ir.model"]._get_id(model),
+                    "group_id": privilege.id,
+                    "kind": "permission",
+                    "operation": operation,
+                }
+                for model, operation in {*rows, *order_links}
+            ]
+        )
+        if verbs:
+            self.env["ir.access"].create(
+                {
+                    "name": f"Probe: {name} verbs",
+                    "model_id": self.env["ir.model"]._get_id("account.move"),
+                    "group_id": privilege.id,
+                    "kind": "permission",
+                    "verbs": verbs,
+                }
+            )
+        clerk = new_test_user(
+            self.env,
+            login=name,
+            groups="base.group_user",
+            company_id=self.company.id,
+            company_ids=[Command.set(self.company.ids)],
+        )
+        self.assertFalse(
+            self.env["purchase.order.line"].with_user(clerk).has_access("read")
+        )
+        return clerk, f"purchase_stock.{name}"
+
+    def test_a_customer_invoice_reads_no_purchase_line(self):
+        invoice = self._create_invoice(self.product_standard, price_unit=10, post=False)
+        clerk, privilege = self._clerk_without_purchases(
+            "probe_read_invoice_lines",
+            {("account.move", "r"), ("account.move.line", "r")},
+        )
+        invoice = invoice.with_user(clerk).with_privilege(privilege)
+
+        self.assertFalse(invoice.invoice_line_ids._get_stock_moves())
+        self.assertFalse(any(invoice._get_linked_order_lines()))
+
+    def test_an_entry_is_posted_by_a_clerk_who_reads_no_purchase(self):
+        journal = self.env["account.journal"].search(
+            [("type", "=", "general"), ("company_id", "=", self.company.id)], limit=1
+        )
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "journal_id": journal.id,
+                "line_ids": [
+                    Command.create(
+                        {"account_id": self.account_stock_valuation.id, "debit": 10.0}
+                    ),
+                    Command.create(
+                        {"account_id": self.account_stock_variation.id, "credit": 10.0}
+                    ),
+                ],
+            }
+        )
+        clerk, privilege = self._clerk_without_purchases(
+            "probe_post_entry",
+            {
+                ("account.move", "ru"),
+                ("account.move.line", "ru"),
+                ("account.journal", "r"),
+                ("account.partial.reconcile", "r"),
+            },
+            verbs="post",
+        )
+        # posted in a later request than the one that drafted it
+        self.env.invalidate_all()
+
+        entry.with_user(clerk).with_privilege(privilege).action_post()
+
+        self.assertEqual(entry.state, "posted")
+
+    def test_a_copied_bill_line_keeps_its_purchase_line_whoever_copies_it(self):
+        po = self._create_purchase(self.product_standard, price_unit=12)
+        self._receive(po)
+        bill = self._create_bill(purchase_order=po, post=False)
+        clerk, privilege = self._clerk_without_purchases(
+            "probe_copy_bill_lines",
+            {("account.move", "r"), ("account.move.line", "r")},
+        )
+
+        values = (
+            bill.invoice_line_ids.with_user(clerk)
+            .with_privilege(privilege)
+            .with_context(include_business_fields=True)
+            .copy_data()
+        )
+
+        self.assertEqual(values[0]["purchase_line_ids"], [Command.set(po.line_ids.ids)])
+
+    def test_a_bill_line_reaches_the_receipt_of_its_purchase_line(self):
+        po = self._create_purchase(self.product_standard, price_unit=12)
+        receipt_moves = self._receive(po)
+        bill = self._create_bill(purchase_order=po, post=False)
+
+        self.assertEqual(bill.invoice_line_ids._get_stock_moves(), receipt_moves)
+        self.assertIn(po.line_ids, bill._get_linked_order_lines())

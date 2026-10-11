@@ -33,7 +33,10 @@ class AccountMoveLine(models.Model):
         return price_unit_val_dif, relevant_qty
 
     def _get_stock_moves(self):
-        return super()._get_stock_moves() | self.purchase_line_ids.move_ids
+        return (
+            super()._get_stock_moves()
+            | self._get_linked_order_lines("purchase_line_ids").move_ids
+        )
 
     def _prepare_price_difference_vals(
         self, quantity, amount_currency, account

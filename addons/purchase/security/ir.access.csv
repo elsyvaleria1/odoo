@@ -70,3 +70,4 @@ purchase_bill_match_own_bills,purchase.bill.match: a buyer's own bills,model_pur
 purchase_bill_line_match_own_bills,purchase.bill.line.match: a buyer's own bill lines,model_purchase_bill_line_match,group_purchase_user,permission,r,own,,"[('account_move_id', '!=', False)]"
 purchase_bill_match_all,purchase.bill.match: all documents,model_purchase_bill_match,group_purchase_user_all,permission,r,,,
 purchase_bill_line_match_all,purchase.bill.line.match: all documents,model_purchase_bill_line_match,group_purchase_user_all,permission,r,,,
+privilege_copy_order_links_order_line,purchase.order.line: a reversed or duplicated journal item keeps the order lines it bills,model_purchase_order_line,trade_account.privilege_copy_order_links,permission,r,,,"[('invoice_line_ids', '!=', False)]"
