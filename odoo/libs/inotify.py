@@ -93,7 +93,7 @@ _libc: ctypes.CDLL | None = None
 
 
 def _get_libc() -> ctypes.CDLL:
-    global _libc
+    global _libc  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _libc is None:
         _libc = _load_libc()
     return _libc

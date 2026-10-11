@@ -91,7 +91,7 @@ class Form:
         with _debug.perf(
             "test.form.get_views", cr=record.env.cr, model=record._name
         ) as span:
-            views = record.get_views(
+            views = record.get_views(  # type: ignore[attr-defined]
                 [(view_id, "form")]
             )
             span.set(models=len(views["models"]))
@@ -241,7 +241,7 @@ class Form:
             "fields_spec": fields_spec,
             "modifiers": modifiers,
             "contexts": contexts,
-            "onchange": model._get_onchange_spec(
+            "onchange": model._get_onchange_spec(  # type: ignore[attr-defined]
                 {"arch": etree.tostring(tree)}
             ),
         }
@@ -312,7 +312,7 @@ class Form:
             record=self._record.id,
             fields=len(self._view["fields_spec"]),
         ):
-            [record_values] = self._record.web_read(
+            [record_values] = self._record.web_read(  # type: ignore[attr-defined]
                 self._view["fields_spec"]
             )
         self._env.flush_all()
@@ -480,7 +480,7 @@ class Form:
                 record=self._record.id or None,
                 fields=sorted(values),
             ) as span:
-                [record_values] = self._record.web_save(
+                [record_values] = self._record.web_save(  # type: ignore[attr-defined]
                     values, self._view["fields_spec"]
                 )
                 self._env.flush_all()
@@ -873,7 +873,7 @@ class UpdateDict(dict):
 class X2MValue(collections.abc.Sequence):
     _virtual_seq = itertools.count()
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
     def __init__(self, iterable_of_vals: Any = ()) -> None:
         self._data: dict[Any, UpdateDict] = {
@@ -1053,7 +1053,7 @@ class O2MProxy(X2MProxy):
 
 
 class M2MProxy(X2MProxy, collections.abc.Sequence):
-    def __getitem__(self, index: Any) -> BaseModel:
+    def __getitem__(self, index: Any) -> BaseModel:  # type: ignore[override]
         comodel_name = self._field_info["relation"]
         return self._form._env[comodel_name].browse(self._field_value[index])
 

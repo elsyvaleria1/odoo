@@ -32,7 +32,7 @@ def is_ready() -> bool:
 
 
 def set_server(value: CommonServer | None) -> None:
-    global server
+    global server  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
 
     _debug.lifecycle(
         "server.registered",
@@ -54,7 +54,7 @@ def preloading_database(db_name: str) -> Iterator[None]:
 
 
 def set_phoenix(value: bool) -> None:
-    global server_phoenix
+    global server_phoenix  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
 
     _debug.lifecycle("server.phoenix", value=value, was=server_phoenix)
     server_phoenix = value

@@ -29,7 +29,7 @@ class WizardMailActivitySchedule(models.TransientModel):
                 domain &= Domain("department_id", "=", False) | Domain(
                     "department_id", "=", scheduler.department_id.id
                 )
-            scheduler.plan_available_ids = self.env["mail.activity.plan"].search(domain)
+            scheduler.plan_available_ids = self.env["mail.activity.plan"].search(domain)  # noqa: E8507 -- a transient wizard: one record
             _debug.logic(
                 "plans_available",
                 schedule=scheduler.id,

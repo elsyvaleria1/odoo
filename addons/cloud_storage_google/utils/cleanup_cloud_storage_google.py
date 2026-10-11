@@ -12,8 +12,6 @@ from google.oauth2 import service_account
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "cloud_storage" / "utils"))
 from cloud_storage_cleanup import filter_unreferenced_blob_urls, remove_blob_urls
 
-
-
 odoo_url = "http://localhost:8069"
 odoo_db = "odoo_db"
 odoo_username = "admin"
@@ -38,7 +36,7 @@ def get_blob_urls(
     headers = {"Authorization": f"Bearer {token}"}
 
     while True:
-        response = requests.get(
+        response = requests.get(  # noqa: E8518 -- a standalone script run outside the server, with no ir.egress to reach
             url, params=params, headers=headers, timeout=5
         )
         data = response.json()

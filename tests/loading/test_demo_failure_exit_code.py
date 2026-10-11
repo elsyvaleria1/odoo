@@ -132,7 +132,6 @@ def _install(demo_db, tmp_path, module, *, tests, require_demo=None):
 
 @requires_pg
 class TestADemoFailureUnderTestsFailsTheRun:
-
     def test_a_run_with_tests_exits_non_zero_and_names_the_module(
         self, demo_db, tmp_path
     ):

@@ -180,7 +180,7 @@ class AppointmentType(models.Model):
             appointment_type,
             verify=lambda headers, body: (
                 bool(appointment_token)
-                and consteq(
+                and consteq(  # noqa: E8537 -- inbound: a signature an outside service sends us
                     appointment_type.google_reserve_access_token, appointment_token
                 )
             ),
@@ -214,7 +214,7 @@ class AppointmentType(models.Model):
         def is_request_authorized(headers, body) -> bool:
             by_id = {t.id: t for t in types}
             return all(
-                consteq(
+                consteq(  # noqa: E8537 -- inbound: a signature an outside service sends us
                     by_id[int(pair["appointment_type_id"])].google_reserve_access_token,
                     str(pair.get("appointment_token") or ""),
                 )

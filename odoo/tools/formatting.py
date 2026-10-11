@@ -235,7 +235,7 @@ def format_time(
             from odoo.fields import Datetime
 
             try:
-                value = Datetime.from_string(value)
+                value = Datetime.from_string(value)  # type: ignore[assignment]
             except ValueError:
                 return ""
         if not isinstance(value, datetime.datetime):

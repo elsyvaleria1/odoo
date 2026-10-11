@@ -48,7 +48,7 @@ EMPTY_TAX_SYNC_SNAPSHOT = frozendict(move={}, base_lines={}, tax_lines={})
 @contextmanager
 def sync_boundary(prepare, commit):
     state = prepare()
-    yield
+    yield  # noqa: RUF075 -- Commit synchronization only after the body succeeds.
     commit(state)
 
 
@@ -1406,6 +1406,6 @@ class AccountMove(models.Model):
 
                 line_container = {"records": container["records"].line_ids}
                 with container["records"].line_ids._sync_invoice(line_container):
-                    yield
+                    yield  # noqa: RUF075 -- Commit synchronization only after the body succeeds.
                     line_container["records"] = container["records"].line_ids
                 update_containers()

@@ -627,7 +627,7 @@ class IrActionsServer(models.Model):
         samples = {}
         for model_name in set(webhooks.model_id.mapped("model")):
             samples[model_name] = (
-                self.env[model_name].with_context(active_test=False).search([], limit=1)
+                self.env[model_name].with_context(active_test=False).search([], limit=1)  # noqa: E8507 -- loop variable is the model -- a different table each time
             )
         _debug.perf.count("webhook_samples", actions=len(webhooks), models=len(samples))
         for model_name, actions in webhooks.grouped("model_name").items():

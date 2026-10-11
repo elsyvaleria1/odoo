@@ -35,7 +35,7 @@ class MqttProtocol(StreamProtocol):
     def open(self, stream, on_frame, on_state):
         url = urlsplit(stream.url)
         options = stream.options
-        client = mqtt.Client(
+        client = mqtt.Client(  # noqa: E8518 -- the broker's address was checked by ir.egress on the snapshot; paho holds the socket open
             callback_api_version=mqtt.CallbackAPIVersion.VERSION2,
             client_id=options.get("client_id") or f"odoo-stream-{stream.id}",
             protocol=mqtt.MQTTv5,

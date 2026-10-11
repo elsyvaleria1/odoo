@@ -67,7 +67,7 @@ class ReversibleComparator:
             return NotImplemented
         return not self < other and not other < self
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
         return f"<ReversibleComparator {self.__item!r}{' reverse' if self.__reverse else ''}>"

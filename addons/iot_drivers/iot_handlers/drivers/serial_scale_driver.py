@@ -57,7 +57,7 @@ class ScaleDriver(SerialDriver):
         self._set_actions()
         self._is_reading = True
 
-        global ACTIVE_SCALE
+        global ACTIVE_SCALE  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
         ACTIVE_SCALE = self
         proxy_drivers["scale"] = ACTIVE_SCALE
 

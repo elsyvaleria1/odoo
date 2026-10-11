@@ -135,19 +135,19 @@ class _EnvironmentSet(WeakSet["Environment"]):
             else:
                 self.add(env)
 
-    def __ior__(self, other: Iterable[Environment]) -> typing.Self:
+    def __ior__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc, override]
         self.update(other)
         return self
 
-    def __isub__(self, other: Iterable[Environment]) -> typing.Self:
+    def __isub__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc]
         self.difference_update(other)
         return self
 
-    def __iand__(self, other: Iterable[Environment]) -> typing.Self:
+    def __iand__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc]
         self.intersection_update(other)
         return self
 
-    def __ixor__(self, other: Iterable[Environment]) -> typing.Self:
+    def __ixor__(self, other: Iterable[Environment]) -> typing.Self:  # type: ignore[misc, override]
         self.symmetric_difference_update(other)
         return self
 

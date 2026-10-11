@@ -105,7 +105,7 @@ class GoogleReserveController(Controller):
             (appointment_type_su.id, route_params["idempotency_token"]),
         )[:36]
         calendar_event = (
-            request.env["calendar.event"]
+            request.env["calendar.event"]  # noqa: E8537 -- idempotency: names what an earlier request of the same sender made
             .sudo()
             .search([("google_reserve_idempotency_token", "=", token)])
         )

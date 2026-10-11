@@ -16,7 +16,7 @@ class FrozenList[T](list[T]):
     def __init__(self, iterable: Iterable[T] = (), /) -> None:
         pass
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         return hash(tuple(self))
 
     def __reduce__(self) -> tuple[type[Self], tuple[list[T]]]:
@@ -35,7 +35,7 @@ class FrozenList[T](list[T]):
         self._refuse("item deletion")
 
     @override
-    def __iadd__(self, value: Iterable[T], /) -> NoReturn:
+    def __iadd__(self, value: Iterable[T], /) -> NoReturn:  # type: ignore[override]
         self._refuse("+=")
 
     @override
@@ -168,7 +168,7 @@ class frozendict[K, T](dict[K, T]):
         msg = "'clear' not supported on frozendict"
         raise NotImplementedError(msg)
 
-    def pop(self, key: K, default: T | None = None) -> NoReturn:
+    def pop(self, key: K, default: T | None = None) -> NoReturn:  # type: ignore[override]
         msg = "'pop' not supported on frozendict"
         raise NotImplementedError(msg)
 
@@ -184,7 +184,7 @@ class frozendict[K, T](dict[K, T]):
         msg = "'update' not supported on frozendict"
         raise NotImplementedError(msg)
 
-    def __ior__(self, other: Any) -> NoReturn:
+    def __ior__(self, other: Any) -> NoReturn:  # type: ignore[misc]
         msg = "'|=' not supported on frozendict"
         raise NotImplementedError(msg)
 
@@ -195,7 +195,7 @@ class frozendict[K, T](dict[K, T]):
     def __reduce__(self) -> tuple[Any, tuple[type, dict[K, T]]]:
         return (_rebuild_frozendict, (type(self), dict(self)))
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         try:
             return self._hash
         except AttributeError:

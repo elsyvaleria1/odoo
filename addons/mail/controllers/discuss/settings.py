@@ -22,7 +22,7 @@ class DiscussSettingsController(Controller):
         if not member:
             raise NotFound
         if minutes == -1:
-            member.mute_until_dt = datetime.max
+            member.mute_until_dt = datetime.max  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
         elif minutes:
             if isinstance(minutes, bool) or not isinstance(minutes, (int, str)):
                 raise NotFound

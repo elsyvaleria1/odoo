@@ -312,7 +312,7 @@ class ResCountryState(models.Model):
             _debug.logic("state_name_search", by="terms", terms=len(name), limit=limit)
             for item in name:
                 result.extend(
-                    self.name_search(
+                    self.name_search(  # noqa: E8507 -- one match per term by design
                         item, domain, operator="=", limit=limit - len(result)
                     )
                 )

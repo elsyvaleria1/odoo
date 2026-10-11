@@ -21,7 +21,7 @@ class SocialFacebookController(SocialController):
 
     @http.route(["/social_facebook/callback"], type="http", auth="user")
     @fragment_to_query_string
-    def social_facebook_account_callback(
+    def social_facebook_account_callback(  # noqa: E8539 -- inbound: a token an outside service hands over, not one of ours
         self, access_token=None, is_extended_token=False, **kw
     ):
         if not request.env.user.has_group("social.group_social_manager"):

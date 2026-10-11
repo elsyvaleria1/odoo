@@ -166,7 +166,7 @@ class MaintenanceOrder(models.Model):
         )
         for order in self:
             for lot in return_picking.move_line_ids.trace_id & order.trace_ids:
-                if Log.search_count(
+                if Log.search_count(  # noqa: E8507 -- one probe per returned serial, which arrives one transfer at a time
                     [
                         ("maintenance_order_id", "=", order.id),
                         ("asset_id", "=", lot.asset_id.id),

@@ -237,7 +237,7 @@ class ReplicaRouter:
     def _sample_lag(self, cr: BaseCursor) -> bool:
         try:
             with _debug.perf("replica.lag_query", cr=cr):
-                cr.execute(LAG_SQL, log_exceptions=False)
+                cr.execute(LAG_SQL, log_exceptions=False)  # noqa: E8501 -- LAG_SQL is a module constant
             row = cr.fetchone()
         except Exception as e:
             _debug.logic(

@@ -18,7 +18,7 @@ class Frontdesk(http.Controller):
         )
 
     def _is_token_valid(self, frontdesk, token) -> bool:
-        if consteq(frontdesk.access_token, token):
+        if consteq(frontdesk.access_token, token):  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             return True
         else:
             time_difference = fields.Datetime.now() - fields.Datetime.from_string(

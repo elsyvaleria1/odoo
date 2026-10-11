@@ -290,7 +290,7 @@ class ProductTemplate(models.Model):
                 print_image_data["printArea"] = "default"
 
             print_image_found = bool(
-                self.env["document.document"].search_count(
+                self.env["document.document"].search_count(  # noqa: E8507 -- one lookup per Gelato attribute; the record may have been created by an earlier pass
                     [
                         ("name", "ilike", print_image_data["printArea"]),
                         ("res_id", "=", self.id),

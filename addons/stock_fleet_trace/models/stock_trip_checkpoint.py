@@ -164,7 +164,7 @@ class StockTripCheckpoint(models.Model):
         for vals in vals_list:
             batch = self.env["stock.picking.batch"].browse(vals["batch_id"])
             batch.lock_for_update(wait=True)
-            last = self.search(
+            last = self.search(  # noqa: E8507 -- each checkpoint seals the one before it, under the trip lock
                 [("batch_id", "=", batch.id)], order="sequence desc", limit=1
             )
             checkpoint = super().create([{**vals, "sequence": last.sequence + 1}])

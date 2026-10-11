@@ -171,7 +171,7 @@ class WizardPrivacyLogLookup(models.TransientModel):
                     WHERE %s
                     """,
                     query,
-                    self.env["ir.model"].search([("model", "=", model_name)]).id,
+                    self.env["ir.model"].search([("model", "=", model_name)]).id,  # noqa: E8507 -- one lookup per model of the lookup
                     SQL.identifier("active") if _has_active_column(model) else True,
                     SQL.identifier(table_name),
                     SQL(" OR ").join(conditions),

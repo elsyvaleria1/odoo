@@ -322,7 +322,7 @@ class StockPicking(models.Model):
 
         if not picking_nums:
             if barcode_type:
-                message = self.env._(self._BARCODE_TYPE_NOT_READY[barcode_type])
+                message = self.env._(self._BARCODE_TYPE_NOT_READY[barcode_type])  # noqa: E8502 -- an _lt message rendered in the environment's language
                 return {
                     "warning": {
                         "message": message % {"picking_type": picking_type.name},
@@ -404,4 +404,4 @@ class StockPicking(models.Model):
         title, message = self._BARCODE_FILTER_WARNINGS[
             (bool(is_lot_enabled), bool(is_pack_enabled), bool(is_uom_enabled))
         ]
-        return self.env._(title(barcode)), self.env._(message)
+        return self.env._(title(barcode)), self.env._(message)  # noqa: E8502 -- _lt messages, rendered in the environment's language

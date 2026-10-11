@@ -131,7 +131,7 @@ class UnlinkMixin(_ModelStubs):
             model = self.env[model_name].sudo().with_context(active_test=False)
             if not model._is_path_in_database(path):
                 continue
-            rows = model.search([(path, "in", self.ids)])
+            rows = model.search([(path, "in", self.ids)])  # noqa: E8507 -- model varies
             if model_name == self._name:
                 rows -= self
             _debug.pipeline(

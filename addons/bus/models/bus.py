@@ -63,7 +63,7 @@ _notify_conns_inherited_from_parent = []
 
 
 def _reset_notify_state_in_child() -> None:
-    global _notify_conn, _notify_lock
+    global _notify_conn, _notify_lock  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _notify_conn is not None:
         _notify_conns_inherited_from_parent.append(_notify_conn)
         _notify_conn = None
@@ -74,7 +74,7 @@ os.register_at_fork(after_in_child=_reset_notify_state_in_child)
 
 
 def _get_notify_conn_locked():
-    global _notify_conn
+    global _notify_conn  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _notify_conn is None or _notify_conn.closed:
         _dbname, params = odoo.db.get_connection_info_for_database("postgres")
         _notify_conn = psycopg.connect(autocommit=True, **params)
@@ -82,7 +82,7 @@ def _get_notify_conn_locked():
 
 
 def _close_notify_conn_locked() -> None:
-    global _notify_conn
+    global _notify_conn  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _notify_conn is not None:
         with contextlib.suppress(psycopg.Error, OSError):
             _notify_conn.close()

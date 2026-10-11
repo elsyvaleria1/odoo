@@ -228,7 +228,7 @@ class TestCase(_TestCase):
     def _callCleanup(self, function: Any, *args: Any, **kwargs: Any) -> None:
         function(*args, **kwargs)
 
-    def run(self, result: Any) -> Any:
+    def run(self, result: Any) -> Any:  # type: ignore[override]
         result.startTest(self)
 
         testMethod = getattr(self, self._testMethodName)

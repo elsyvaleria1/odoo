@@ -867,7 +867,7 @@ class AccountAccount(models.Model):
                 self.with_company(company)
                 .sudo()
                 .with_context(active_test=False)
-                .search_fetch(
+                .search_fetch(  # noqa: E8507 -- one search per company, which a single query cannot scope
                     [
                         ("code", "in", list(accounts_by_code)),
                         ("id", "not in", accounts.ids),

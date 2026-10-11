@@ -12,7 +12,6 @@ from odoo.db.cursor import Cursor
 
 
 class StatementCounter:
-
     def __init__(self) -> None:
         self.count = 0
         self.chars = 0

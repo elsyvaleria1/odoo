@@ -246,7 +246,6 @@ class TestWorkerHttpAcceptErrors:
 
 
 class TestAcceptWaitsForTheListenerToBeReadable:
-
     def _worker(self, multi, ready_fds):
         worker = build_worker(_worker.WorkerHTTP, multi, wakeup_pipe=(40, 41))
         worker._selector = MagicMock()
@@ -287,7 +286,6 @@ class TestAcceptWaitsForTheListenerToBeReadable:
 
 
 class TestTheCursorIsReleasedAndTheConnectionIsLeftAlone:
-
     @staticmethod
     def _recording_cursor():
         order = []
@@ -372,7 +370,6 @@ class TestTheListeningSocketIsWatchedExclusively:
 
 
 class TestTheWorkerCancelsItsOwnOverrun:
-
     def _worker(self, multi, budget):
         worker = build_worker(_worker.WorkerHTTP, multi, pid=4242)
         worker.watchdog_timeout = budget

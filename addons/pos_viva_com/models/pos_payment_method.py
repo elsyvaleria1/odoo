@@ -36,7 +36,7 @@ class PosPaymentMethod(models.Model):
                 pm
                 for pm in methods
                 if pm.viva_com_webhook_verification_key
-                and consteq(pm.viva_com_webhook_verification_key, token)
+                and consteq(pm.viva_com_webhook_verification_key, token)  # noqa: E8537 -- inbound: a signature an outside service sends us
             ),
             None,
         )
@@ -62,7 +62,7 @@ class PosPaymentMethod(models.Model):
         if self.use_payment_terminal != "viva_com":
             return super()._is_inbound_request_authentic(headers, body)
         token = request.get_http_params().get("token") or ""
-        return bool(self.viva_com_webhook_verification_key) and consteq(
+        return bool(self.viva_com_webhook_verification_key) and consteq(  # noqa: E8537 -- inbound: a signature an outside service sends us
             self.viva_com_webhook_verification_key, token
         )
 

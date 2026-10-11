@@ -307,7 +307,7 @@ class BaseDate[T: date](Field[T | typing.Literal[False]]):
                 f"Error when processing the granularity {property_name} is not supported. Only {', '.join(READ_GROUP_NUMBER_GRANULARITY.keys())} are supported"
             )
         granularity = READ_GROUP_NUMBER_GRANULARITY[property_name]
-        return SQL(
+        return SQL(  # noqa: E8501 -- granularity is a value of a module constant
             "date_part('%s', %%s)" % granularity, sql_expr
         )
 

@@ -229,7 +229,7 @@ class _PostgresWriteMixin:
                     f"_execute_update: {field} is not a stored column field"
                 )
             column = SQL.identifier(fname)
-            cast = SQL(column_type[1])
+            cast = SQL(column_type[1])  # noqa: E8501 -- from the field declaration
             expr = value_sql(index, fname, column, cast)
             if field.translate is True:
                 _debug.logic(

@@ -68,7 +68,7 @@ class WebsocketProtocol(StreamProtocol):
             if not handle.closing:
                 on_state("backoff", f"closed: {status} {message or ''}".strip())
 
-        app = websocket.WebSocketApp(
+        app = websocket.WebSocketApp(  # noqa: E8518 -- the address was checked by ir.egress on the snapshot; websocket-client holds the socket open
             dial_url,
             header=headers or None,
             on_open=on_open,

@@ -150,7 +150,7 @@ def create_empty_database(
         def _create() -> None:
             nonlocal already_exists
             try:
-                cr.execute(
+                cr.execute(  # noqa: E8501 -- parameterised SQL(), built above
                     create_sql, log_exceptions=False
                 )
             except psycopg.errors.DuplicateDatabase, psycopg.errors.UniqueViolation:

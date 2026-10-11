@@ -36,7 +36,7 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def razorpay_payment_status(
+    def razorpay_payment_status(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_razorpay_kiosk_order(
@@ -52,7 +52,7 @@ class PosSelfOrderControllerRazorpay(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def razorpay_cancel_status(
+    def razorpay_cancel_status(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_razorpay_kiosk_order(

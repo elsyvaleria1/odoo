@@ -177,7 +177,7 @@ class Client:
         self.timeout = timeout
 
     def _post(self, verb: str, body: dict[str, Any]) -> dict[str, Any]:
-        request = urllib.request.Request(
+        request = urllib.request.Request(  # noqa: S310 -- Constructor rejects base URLs outside HTTP(S).
             f"{self.base_url}{API}{verb}",
             data=json.dumps(body).encode(),
             headers={
@@ -187,7 +187,7 @@ class Client:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with urllib.request.urlopen(request, timeout=self.timeout) as response:  # noqa: S310 -- Constructor rejects base URLs outside HTTP(S).
                 answer = json.loads(response.read() or b"{}")
         except urllib.error.HTTPError as error:
             if error.code == 409:

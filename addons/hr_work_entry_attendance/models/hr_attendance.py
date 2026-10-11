@@ -167,11 +167,11 @@ class HrAttendance(models.Model):
             return res
         start = min(
             self.mapped("check_in")
-            + [Datetime.from_string(vals.get("check_in", False)) or datetime.max]
+            + [Datetime.from_string(vals.get("check_in", False)) or datetime.max]  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
         )
         stop = max(
             self.mapped("check_out")
-            + [Datetime.from_string(vals.get("check_out", False)) or datetime.min]
+            + [Datetime.from_string(vals.get("check_out", False)) or datetime.min]  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
         )
         with self.env["hr.work.entry"]._error_checking(
             start=start, stop=stop, employee_ids=self.employee_id.ids

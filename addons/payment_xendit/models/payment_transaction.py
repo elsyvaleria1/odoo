@@ -36,7 +36,7 @@ class PaymentTransaction(models.Model):
         if not received_token:
             _logger.warning("Received payment data with missing token.")
             return False
-        if not consteq(self.provider_id.xendit_webhook_token, received_token):
+        if not consteq(self.provider_id.xendit_webhook_token, received_token):  # noqa: E8537 -- inbound: a signature an outside service sends us
             _logger.warning(
                 "Received payment data with invalid callback token %r.", received_token
             )

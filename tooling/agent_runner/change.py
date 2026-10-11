@@ -284,7 +284,7 @@ def _open_pull_request(
         },
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 -- Fixed HTTPS GitHub API endpoint.
         return json.loads(response.read()).get("html_url")
 
 

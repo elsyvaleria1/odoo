@@ -37,7 +37,7 @@ class ResourceScheduleException(models.Model):
             end_dt = (
                 date_to_datetime(contract.date_end + timedelta(days=1), tz)
                 if contract.date_end
-                else datetime.max
+                else datetime.max  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
             )
             in_contract = leaves.filtered_domain(
                 [("date_from", ">=", start_dt), ("date_from", "<", end_dt)]

@@ -103,7 +103,7 @@ class CredentialAccessLog(models.Model):
 
     def unlink(self):
         if self and not self._is_cleanup_authorized():
-            raise UserError(
+            raise UserError(  # noqa: E8506 -- the audit trail refuses deletion outside its authorized cleanup
                 self.env._(
                     "Audit log records cannot be deleted!\n\n"
                     "Credential access logs must be preserved for security auditing "

@@ -433,7 +433,7 @@ class AccountAnalyticPlan(models.Model):
                 self.env["account.analytic.account"]._update_accounts_in_analytic_lines(
                     new_fname=new_parent._column_name(),
                     current_fname=plan._column_name(),
-                    accounts=self.env["account.analytic.account"].search(
+                    accounts=self.env["account.analytic.account"].search(  # noqa: E8507 -- one query per plan: the plan names the column to move
                         [("plan_id", "child_of", plan.id)]
                     ),
                 )
@@ -445,7 +445,7 @@ class AccountAnalyticPlan(models.Model):
                 self.env["account.analytic.account"]._update_accounts_in_analytic_lines(
                     new_fname=plan._column_name(),
                     current_fname=previous_parent._column_name(),
-                    accounts=self.env["account.analytic.account"].search(
+                    accounts=self.env["account.analytic.account"].search(  # noqa: E8507 -- one query per plan: the plan names the column to move
                         [("plan_id", "child_of", plan.id)]
                     ),
                 )

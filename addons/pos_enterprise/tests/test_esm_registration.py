@@ -2,7 +2,6 @@ from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.assets.esm_registry import esm_registry
 
 
-
 @tagged("post_install", "-at_install")
 class TestEsmRegistration(TransactionCase):
 

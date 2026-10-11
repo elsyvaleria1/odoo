@@ -110,7 +110,7 @@ class _MetricsMixin:
         start: float = 0.0,
         hooks: Any = None,
     ) -> None:
-        global sql_counter
+        global sql_counter  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
         self.sql_log_count += count
         if statement:
             self.sql_statement_count += 1

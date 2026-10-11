@@ -137,9 +137,9 @@ def anchor_path_error(
         return None
     current: type = model_cls
     for name in anchor.path.split("."):
-        field = current._fields.get(name)
+        field = current._fields.get(name)  # type: ignore[attr-defined]
         if field is None:
-            return f"{current._name}.{name} does not exist"
+            return f"{current._name}.{name} does not exist"  # type: ignore[attr-defined]
         if not (field.store or field.related or field.search):
             return f"{field} is neither stored nor searchable"
         if not field.relational:
@@ -147,7 +147,7 @@ def anchor_path_error(
         if field.comodel_name not in models:
             return f"{field} leads to {field.comodel_name}, which is not loaded"
         current = models[field.comodel_name]
-    reached = current._name
+    reached = current._name  # type: ignore[attr-defined]
     if reached != target:
         return f"its path leads to {reached}, not to {target}"
     return None

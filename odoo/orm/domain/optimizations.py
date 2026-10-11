@@ -161,7 +161,7 @@ def nary_condition_optimization(
                 )
             return result if merged_any else domains
 
-        optimizer._match_operators = frozenset(operators)
+        optimizer._match_operators = frozenset(operators)  # type: ignore[attr-defined]
         nary_optimization(optimizer)
 
         return optimization

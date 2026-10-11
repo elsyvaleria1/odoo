@@ -938,7 +938,7 @@ class CredentialCredential(models.Model):
                     ("encryption_key_version", "<", current_version),
                 ],
             )
-            total_all = model.search_count([])
+            total_all = model.search_count([])  # noqa: E8507 -- one query per model, not per record
             stats = {
                 "total": total_all,
                 "eligible": len(eligible),

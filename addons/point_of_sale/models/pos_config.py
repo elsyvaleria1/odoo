@@ -550,7 +550,7 @@ class PosConfig(models.Model):
             existing = browsed.exists()
 
             if model in domain:
-                dynamic_records[model] = self.env[model].search(domain[model])
+                dynamic_records[model] = self.env[model].search(domain[model])  # noqa: E8507 -- one query per model
             delete_record_ids[model] = (browsed - existing).ids
             if model == "pos.order":
                 delete_record_ids[model] += (
@@ -2056,7 +2056,7 @@ class PosConfig(models.Model):
         frontier = pricelists
         while frontier:
             frontier = (
-                Item.search(
+                Item.search(  # noqa: E8507 -- one query per level of the base chain
                     [
                         ("pricelist_id", "in", frontier.ids),
                         ("base", "=", "pricelist"),

@@ -250,7 +250,7 @@ class StockWarehouseLocation(models.Model):
         if location:
             return location
         raise UserError(
-            self.env._(PARTNER_LOCATION_MISSING[usage])
+            self.env._(PARTNER_LOCATION_MISSING[usage])  # noqa: E8502 -- resolves an _lt() table entry in this env's language
         )
 
     @api.model

@@ -126,7 +126,7 @@ class Environment(Mapping[str, "BaseModel"]):
     privileges: frozenset[int]
     transaction: Transaction
 
-    def __new__(
+    def __new__(  # noqa: PYI034 -- Factory may return an interned instance or a different concrete subtype.
         cls,
         cr: BaseCursor,
         uid: int | None,
@@ -179,137 +179,137 @@ class Environment(Mapping[str, "BaseModel"]):
         return model_name in self.registry
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["decimal.precision"]
     ) -> DecimalPrecisionProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.attachment"]
     ) -> IrAttachmentProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.config_parameter"]
     ) -> IrConfigParameterProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.cron"]
     ) -> IrCronProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.http"]
     ) -> IrHttpProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.default"]
     ) -> IrDefaultProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.model"]
     ) -> IrModelProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.access"]
     ) -> IrAccessProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.model.constraint"]
     ) -> IrModelConstraintProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.model.data"]
     ) -> IrModelDataProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.model.fields"]
     ) -> IrModelFieldsProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.model.fields.selection"]
     ) -> IrModelFieldsSelectionProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.model.inherit"]
     ) -> IrModelInheritProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.model.relation"]
     ) -> IrModelRelationProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.module.module"]
     ) -> IrModuleModuleProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.ui.view"]
     ) -> IrUiViewProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.fields.converter"]
     ) -> IrFieldsConverterProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["res.company"]
     ) -> ResCompanyProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["res.country"]
     ) -> ResCountryProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["res.currency"]
     ) -> ResCurrencyProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["res.lang"]
     ) -> ResLangProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["res.users"]
     ) -> ResUsersProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["auth.user.client"]
     ) -> AuthUserClientProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["res.users.apikeys.scope"]
     ) -> ResUsersApikeysScopeProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["res.groups"]
     ) -> ResGroupsProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.access.log"]
     ) -> IrAccessLogProtocol: ...
 
     @typing.overload
-    def __getitem__(
+    def __getitem__(  # type: ignore[overload-overlap]
         self, model_name: typing.Literal["ir.access.obligation"]
     ) -> IrAccessObligationProtocol: ...
 
@@ -542,7 +542,7 @@ class Environment(Mapping[str, "BaseModel"]):
             and lang != "en_US"
             and not self.registry.locale.is_lang_installed(self, lang)
         ):
-            raise UserError(
+            raise UserError(  # noqa: E8505 -- see above: this one cannot be translated
                 f"Invalid language code: {lang}"
             )
         return lang or None
@@ -753,7 +753,7 @@ class Environment(Mapping[str, "BaseModel"]):
         if not isinstance(query, SQL):
             raise TypeError(f"execute_query expected SQL, got {type(query).__name__}")
         self.flush_query(query)
-        self.cr.execute(query)
+        self.cr.execute(query)  # noqa: E8501 -- query is checked to be SQL above
         try:
             return self.cr.fetchall()
         except ProgrammingError as exc:

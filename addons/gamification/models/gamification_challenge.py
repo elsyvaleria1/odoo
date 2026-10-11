@@ -500,7 +500,7 @@ class GamificationChallenge(models.Model):
                     to_update |= Goals.create(goal_vals)
 
             if squat_domains:
-                Goals.search(Domain.OR(squat_domains)).unlink()
+                Goals.search(Domain.OR(squat_domains)).unlink()  # noqa: E8507 -- one query per challenge: the cron commits after each one
             to_update.update_goal()
 
             if self.env.context.get("commit_gamification"):
@@ -739,7 +739,7 @@ class GamificationChallenge(models.Model):
             rewarded_users = self.env["res.users"]
             challenge_ended = force or (end_date and end_date <= yesterday)
             if challenge.reward_id and (challenge_ended or challenge.reward_realtime):
-                reached_goals = self.env["gamification.goal"]._read_group(
+                reached_goals = self.env["gamification.goal"]._read_group(  # noqa: E8507 -- one query per challenge: the cron commits after each one
                     [
                         ("challenge_id", "=", challenge.id),
                         ("end_date", "=", end_date),
@@ -752,7 +752,7 @@ class GamificationChallenge(models.Model):
                 if challenge.reward_realtime:
                     [[already_rewarded]] = self.env[
                         "gamification.badge.user"
-                    ]._read_group(
+                    ]._read_group(  # noqa: E8507 -- one query per challenge: the cron commits after each one
                         [
                             ("challenge_id", "=", challenge.id),
                             ("badge_id", "=", challenge.reward_id.id),

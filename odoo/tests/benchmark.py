@@ -439,7 +439,7 @@ class BenchmarkCase:
 
     @classmethod
     def setUpClass(cls) -> None:
-        super().setUpClass()
+        super().setUpClass()  # type: ignore[misc]
         cls.all_results = []
 
     def _run_benchmark(

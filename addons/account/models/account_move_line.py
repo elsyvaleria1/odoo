@@ -64,7 +64,7 @@ class AccountMoveLine(models.Model):
         check_company=True,
         bypass_search_access=True,
     )
-    journal_id = fields.Many2one(
+    journal_id = fields.Many2one(  # noqa: E8529 -- partial index (journal_id) WHERE amount_residual < 0: the open-items scan
         related="move_id.journal_id",
         precompute=True,
         store=True,
@@ -79,7 +79,7 @@ class AccountMoveLine(models.Model):
         store=False,
     )
 
-    company_id = fields.Many2one(
+    company_id = fields.Many2one(  # noqa: E8529 -- measured: a 2 M-line ledger aggregates 3-4x slower filtering company and state through account_move
         related="move_id.company_id",
         precompute=True,
         store=True,
@@ -91,17 +91,17 @@ class AccountMoveLine(models.Model):
         string="Company Currency",
         readonly=True,
     )
-    move_name = fields.Char(
+    move_name = fields.Char(  # noqa: E8529 -- composite index (date, move_name, id): the ledger's sort key
         related="move_id.name",
         string="Number",
         store=True,
         index="btree",
     )
-    parent_state = fields.Selection(
+    parent_state = fields.Selection(  # noqa: E8529 -- measured: a 2 M-line ledger aggregates 3-4x slower filtering state through account_move (88 -> 326 ms, 250 -> 679 ms)
         related="move_id.state",
         store=True,
     )
-    date = fields.Date(
+    date = fields.Date(  # noqa: E8529 -- composite indexes (account_id, date) and (date, move_name, id)
         related="move_id.date",
         store=True,
         copy=False,
@@ -112,7 +112,7 @@ class AccountMoveLine(models.Model):
         copy=False,
         aggregator="min",
     )
-    ref = fields.Char(
+    ref = fields.Char(  # noqa: E8529 -- composite index (partner_id, ref): payment matching
         related="move_id.ref",
         store=True,
         index="trigram",
@@ -234,7 +234,7 @@ class AccountMoveLine(models.Model):
         readonly=True,
         check_company=True,
     )
-    payment_id = fields.Many2one(
+    payment_id = fields.Many2one(  # noqa: E8529 -- move_id.origin_payment_id is a non-stored compute over account_payment.move_id: no column to join
         comodel_name="account.payment",
         related="move_id.origin_payment_id",
         string="Originator Payment",
@@ -2394,7 +2394,7 @@ class AccountMoveLine(models.Model):
 
         before = existing()
         _debug.pipeline("invoice_sync_before", invoice_lines=len(before))
-        yield
+        yield  # noqa: RUF075 -- Only synchronize successful mutations; exceptions must propagate.
         after = existing()
         amount_currency_synced = 0
         balance_synced = 0

@@ -83,7 +83,7 @@ class DisplayDriver(Driver):
     @helpers.require_db
     def get_url_from_db(self, server_url=None):
         try:
-            response = requests.get(
+            response = requests.get(  # noqa: E8518 -- runs on the IoT box, which has no database and so no ir.egress
                 f"{server_url}/iot/box/{helpers.get_identifier()}/display_url",
                 timeout=5,
             )

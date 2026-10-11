@@ -2607,7 +2607,7 @@ class AccountReport(models.Model):
                 )
             targets_with_value = {
                 value.target_report_expression_id.id
-                for value in self.env["report.formula.external.value"].search(
+                for value in self.env["report.formula.external.value"].search(  # noqa: E8507 -- one query per report, over every default expression at once
                     [
                         ("company_id", "=", company.id),
                         ("date", ">=", date_from),

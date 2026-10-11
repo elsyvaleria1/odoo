@@ -403,7 +403,7 @@ class ProductProduct(models.Model):
     def create(self, vals_list):
         products = super().create(vals_list)
         products.with_context(
-            valuation_date=datetime.min
+            valuation_date=datetime.min  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
         )._create_standard_price_change_values(
             {product: 0 for product in products if product.standard_price}
         )

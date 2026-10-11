@@ -16,7 +16,7 @@ class WalletCard(models.Model):
         check_company=True,
         help="The asset that carries the card.",
     )
-    trace_id = fields.Many2one(
+    trace_id = fields.Many2one(  # noqa: E8529 -- One2many inverse of stock.lot.highway_tag_ids
         related="asset_id.trace_id",
         store=True,
     )

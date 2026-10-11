@@ -32,7 +32,7 @@ TEST_RUN_KEY = sealing.TEST_RUN_KEY
 def provide_test_run_key() -> bool:
     if not config["test_enable"] or os.environ.get("ODOO_API_ENCRYPTION_KEY"):
         return False
-    os.environ["ODOO_API_ENCRYPTION_KEY"] = TEST_RUN_KEY
+    os.environ["ODOO_API_ENCRYPTION_KEY"] = TEST_RUN_KEY  # noqa: E8519 -- a public test-run key, set only with tests enabled
     _logger.info(
         "Tests are enabled and ODOO_API_ENCRYPTION_KEY is not set: encrypting with "
         "the fixed test-run key, which protects nothing"

@@ -10,7 +10,7 @@ from odoo.exceptions import UserError
 from odoo.tools import frozendict
 
 STR_TO_HASH = {
-    "sha1": hashes.SHA1(),
+    "sha1": hashes.SHA1(),  # noqa: S303 -- SHA1 is required to verify legacy certificate signatures.
     "sha256": hashes.SHA256(),
 }
 
@@ -353,7 +353,7 @@ class CertificateKey(models.Model):
         if self.public:
             raise UserError(self.env._("A private key is required to decrypt data."))
         if hashing_algorithm not in STR_TO_HASH:
-            raise UserError(
+            raise UserError(  # noqa: E8505 -- names the hashing algorithm a developer passed in
                 f"Unsupported hashing algorithm '{hashing_algorithm}'. Currently supported: sha1 and sha256."
             )
 
@@ -398,7 +398,7 @@ class CertificateKey(models.Model):
             pwd = pwd.encode("utf-8")
 
         if hashing_algorithm not in STR_TO_HASH:
-            raise UserError(
+            raise UserError(  # noqa: E8505 -- names the hashing algorithm a developer passed in
                 f"Unsupported hashing algorithm '{hashing_algorithm}'. Currently supported: sha1 and sha256."
             )
 
@@ -437,7 +437,7 @@ class CertificateKey(models.Model):
 
         def check_valid_signature_algorithm():
             if signature_algorithm not in STR_TO_HASH:
-                raise UserError(
+                raise UserError(  # noqa: E8505 -- names the signature algorithm a developer passed in
                     f"Unsupported signature algorithm '{signature_algorithm}'. Currently supported: sha1 and sha256."
                 )
 
@@ -529,7 +529,7 @@ class CertificateKey(models.Model):
         self, company, name="id_ec", curve="SECP256R1", password=None
     ):
         if curve not in STR_TO_CURVE:
-            raise UserError(
+            raise UserError(  # noqa: E8505 -- names the curve a developer passed in
                 f"Unsupported curve algorithm '{curve}'. Currently supported: SECP256R1."
             )
 

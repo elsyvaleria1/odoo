@@ -345,7 +345,7 @@ _ESBUILD_PATH: str | None = None
 
 
 def _get_esbuild_path() -> str | None:
-    global _ESBUILD_PATH
+    global _ESBUILD_PATH  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _ESBUILD_PATH is not None:
         return _ESBUILD_PATH
     odoo_root = Path(odoo.__path__[0]).parent
@@ -498,7 +498,7 @@ class EsbuildCompiler:
 
     @classmethod
     def _get_esbuild_addon_flags(cls, odoo_root: Path) -> tuple[list[str], list[str]]:
-        from odoo.addons import __path__ as _addon_paths
+        from odoo.addons import __path__ as _addon_paths  # type: ignore[attr-defined]
 
         addon_paths = tuple(Path(path).absolute() for path in _addon_paths)
         cache_key = (odoo_root.absolute(), addon_paths)

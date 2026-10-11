@@ -142,7 +142,7 @@ class WizardAccountReturnCreate(models.TransientModel):
 
             foreign_vat_fpos_countries = (
                 self.env["account.fiscal.position"]
-                .search(
+                .search(  # noqa: E8507 -- a transient wizard opened on one company
                     [
                         *self.env["account.fiscal.position"]._check_company_domain(
                             wizard.company_id
@@ -265,7 +265,7 @@ class WizardAccountReturnCreate(models.TransientModel):
             intersecting = (
                 self.env["account.return"]
                 .sudo()
-                .search_fetch(
+                .search_fetch(  # noqa: E8507 -- a transient wizard opened on one company
                     wizard._get_domain_existing_returns(company),
                     ["date_from", "date_to"],
                 )

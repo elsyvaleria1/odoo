@@ -41,7 +41,7 @@ class ResConfigSettings(models.TransientModel):
         stored_token = self.env["ir.config_parameter"].get_param(
             "web_map.token_map_box"
         )
-        if consteq(self.map_box_token, stored_token):
+        if consteq(self.map_box_token, stored_token):  # noqa: E8537 -- outbound: a key we present to an outside service
             return None
 
         referer = self._get_map_box_referer()

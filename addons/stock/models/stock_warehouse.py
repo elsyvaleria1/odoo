@@ -632,7 +632,7 @@ class StockWarehouse(models.Model):
             ("stock.move", "location_id"),
             ("stock.move", "location_dest_id"),
         ):
-            record = self.env[model].search(
+            record = self.env[model].search(  # noqa: E8507 -- three literal (model, field) probes
                 [(field_name, "in", locations.ids)], limit=1
             )
             if not record:

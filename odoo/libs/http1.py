@@ -407,7 +407,7 @@ class _BodyReader(io.RawIOBase):
             self.error = exc
             raise
 
-    def readinto(self, buffer: memoryview | bytearray) -> int:
+    def readinto(self, buffer: memoryview | bytearray) -> int:  # type: ignore[override]
         view = memoryview(buffer).cast("B")
         data = self.read(len(view))
         view[: len(data)] = data

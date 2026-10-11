@@ -97,7 +97,7 @@ class KeyboardUSBDriver(Driver):
     @helpers.require_db
     def send_layouts_list(cls, server_url=None) -> None:
         try:
-            response = requests.post(
+            response = requests.post(  # noqa: E8518 -- runs on the IoT box, which has no database and so no ir.egress
                 server_url + "/iot/keyboard_layouts",
                 data={"available_layouts": json_dumps(cls.available_layouts)},
                 timeout=5,

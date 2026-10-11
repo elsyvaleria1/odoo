@@ -80,7 +80,6 @@ def test_an_escaping_exception_still_restores():
 
 
 class TestForgettingARequest:
-
     def _thread_mid_request(self, monkeypatch):
         thread = as_worker_thread(threading.current_thread())
         for attr in REQUEST_SCOPED_ATTRIBUTES:

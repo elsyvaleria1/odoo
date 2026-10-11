@@ -72,7 +72,7 @@ class Speedscope:
         display_name: str | None = None,
         use_context: bool = True,
         constant_time: bool = False,
-        context_per_name: dict[str, Any] | None = None,
+        context_per_name: dict[str, Any] | None = None,  # noqa: ARG002 -- Accepts the common profiler option interface for compatibility.
         **params: Any,
     ) -> Self:
         entries = []
@@ -206,7 +206,7 @@ class Speedscope:
         use_context: bool = True,
         constant_time: bool = False,
         aggregate_sql: bool = False,
-        **params: Any,
+        **params: Any,  # noqa: ARG002 -- Accepts the common profiler option interface for compatibility.
     ) -> list[_Event]:
         entry_end = previous_end = None
         if not entries:

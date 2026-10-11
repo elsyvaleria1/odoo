@@ -485,7 +485,7 @@ class StockLocation(models.Model):
                 ),
                 (self.browse(), self.browse()),
             )
-            raise UserError(
+            raise UserError(  # noqa: E8506 -- uninstall already excluded above
                 self.env._(
                     "You cannot delete location %(location)s: it still contains "
                     "%(count)s sub-location(s) (archived ones included). Delete or "

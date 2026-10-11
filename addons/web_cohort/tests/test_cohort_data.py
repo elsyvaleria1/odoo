@@ -2,7 +2,6 @@ from odoo import Command
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, freeze_time, tagged
 
-
 FROZEN_TODAY = "2026-06-15"
 
 

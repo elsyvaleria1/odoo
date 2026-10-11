@@ -10,8 +10,6 @@ from lxml import etree
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "cloud_storage" / "utils"))
 from cloud_storage_cleanup import filter_unreferenced_blob_urls, remove_blob_urls
 
-
-
 odoo_url = "http://localhost:8069"
 odoo_db = "odoo_db"
 odoo_username = "admin"
@@ -42,7 +40,7 @@ def get_blob_urls(
     }
 
     while True:
-        response = requests.get(
+        response = requests.get(  # noqa: E8518 -- a standalone script run outside the server, with no ir.egress to reach
             url, headers=headers, params=params, timeout=5
         )
         response_xml = etree.fromstring(response.content)
@@ -59,7 +57,7 @@ def get_blob_urls(
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    token_response = requests.post(
+    token_response = requests.post(  # noqa: E8518 -- standalone operator script; no server-side ir.egress
         f"https://login.microsoftonline.com/{azure_tenant_id}/oauth2/token",
         data={
             "grant_type": "client_credentials",

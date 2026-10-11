@@ -59,7 +59,7 @@ def _renders_failure(operation: str):
 def _check_db_name(name: str) -> None:
     if not re.match(db.DBNAME_PATTERN, name):
         _debug.logic("db_name_rejected", db=name)
-        raise UserError(
+        raise UserError(  # noqa: E8505 -- the database manager runs without a database, so without a language
             "Houston, we have a database naming issue! Make sure you only use letters, numbers, underscores, hyphens, or dots in the database name, and you'll be golden."
         )
 
@@ -185,7 +185,7 @@ class Database(http.Controller):
         csrf=False,
     )
     @_renders_failure("Database creation error")
-    def create(
+    def create(  # noqa: E8528 -- the database manager runs without a database and checks the master password
         self, master_pwd: str, name: str, lang: str, password: str, **post
     ) -> str | Response:
         _debug.lifecycle(
@@ -236,7 +236,7 @@ class Database(http.Controller):
         csrf=False,
     )
     @_renders_failure("Database duplication error")
-    def duplicate(
+    def duplicate(  # noqa: E8528 -- the database manager runs without a database and checks the master password
         self,
         master_pwd: str,
         name: str,
@@ -268,7 +268,7 @@ class Database(http.Controller):
         csrf=False,
     )
     @_renders_failure("Database deletion error")
-    def drop(self, master_pwd: str, name: str) -> str | Response:
+    def drop(self, master_pwd: str, name: str) -> str | Response:  # noqa: E8528 -- the database manager runs without a database and checks the master password
         _debug.lifecycle("db_drop", db=name)
         self._handle_insecure_password(master_pwd)
         self._detach_request_database(name)
@@ -290,7 +290,7 @@ class Database(http.Controller):
         csrf=False,
     )
     @_renders_failure("Database backup error")
-    def backup(
+    def backup(  # noqa: E8528 -- the database manager runs without a database and checks the master password
         self,
         master_pwd: str,
         name: str,
@@ -336,7 +336,7 @@ class Database(http.Controller):
         max_content_length=None,
     )
     @_renders_failure("Database restore error")
-    def restore(
+    def restore(  # noqa: E8528 -- the database manager runs without a database and checks the master password
         self,
         master_pwd: str,
         backup_file: FileStorage,
@@ -381,7 +381,7 @@ class Database(http.Controller):
         csrf=False,
     )
     @_renders_failure("Master password update error")
-    def change_password(self, master_pwd: str, master_pwd_new: str) -> str | Response:
+    def change_password(self, master_pwd: str, master_pwd_new: str) -> str | Response:  # noqa: E8528 -- the database manager runs without a database and checks the master password
         _debug.lifecycle("change_password", has_new=bool(master_pwd_new))
         if config.has_default_admin_password():
             remote_addr = request.httprequest.remote_addr
@@ -392,7 +392,7 @@ class Database(http.Controller):
                     "while the default password is still in place.",
                     remote_addr,
                 )
-                raise UserError(
+                raise UserError(  # noqa: E8505 -- the database manager runs without a database, so without a language
                     "For security, the master password can only be changed "
                     "from localhost while it is still the default. Set "
                     "'admin_passwd' in the configuration file instead."

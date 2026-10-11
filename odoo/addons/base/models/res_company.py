@@ -631,7 +631,7 @@ class ResCompany(models.Model):
             "user_ids",
         }
 
-    @ormcache("tuple(self.env.companies.ids)", "self.id", "self.env.uid")
+    @ormcache("tuple(self.env.companies.ids)", "self.id", "self.env.uid")  # noqa: E8540 -- the companies in use and their tree, no group
     def __get_accessible_branch_ids(self) -> list[int]:
         self.check_singleton()
 

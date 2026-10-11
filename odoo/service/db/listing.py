@@ -144,7 +144,7 @@ def _get_catalog_ttl() -> float:
 
 
 def _invalidate_catalog_cache() -> None:
-    global _catalog_cache, _catalog_generation
+    global _catalog_cache, _catalog_generation  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
 
     with _catalog_lock:
         _catalog_cache = None
@@ -230,7 +230,7 @@ def _get_catalog_cached(cr: Any = None) -> list[str]:
 
 
 def _refresh_catalog(ttl: float, cr: Any = None) -> list[str]:
-    global _catalog_cache
+    global _catalog_cache  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
 
     now = time.monotonic()
     with _catalog_lock:
@@ -353,7 +353,7 @@ def exp_list_lang() -> list:
 @functools.cache
 def _read_countries() -> tuple[tuple[str, str], ...]:
     with _debug.perf("database.countries_read") as span:
-        root = ET.parse(
+        root = ET.parse(  # noqa: S314 -- Reads the bundled res_country_data.xml file only.
             Path(odoo.tools.config.root_path, "addons/base/data/res_country_data.xml")
         ).getroot()
         countries: list[tuple[str, str]] = []

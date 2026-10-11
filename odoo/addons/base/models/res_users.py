@@ -209,7 +209,7 @@ class ResUsers(models.Model):
         return tuple(code for code, _name in self.env["res.lang"].get_installed())
 
     @api.model
-    @tools.ormcache("self.env.uid")
+    @tools.ormcache("self.env.uid")  # noqa: E8540 -- the user's language and timezone
     def _get_context_cached(self) -> tuple[frozendict, bool]:
         user = self.env.user.with_context(prefetch_fields=False)
         try:
@@ -254,7 +254,7 @@ class ResUsers(models.Model):
         return company_ids
 
     @api.model
-    @tools.ormcache("uid", "passwd_hash")
+    @tools.ormcache("uid", "passwd_hash")  # noqa: E8540 -- a credential check, which no group changes
     def _check_uid_passwd_cached(
         self, uid: int, passwd: str, passwd_hash: str
     ) -> datetime.datetime | None:

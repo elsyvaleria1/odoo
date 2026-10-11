@@ -1200,7 +1200,6 @@ def test_the_application_failing_on_a_head_request_gets_a_bodiless_500(server):
 
 
 class TestDrain:
-
     def _slow_request(self, srv):
         _SLOW_GATE.clear()
         sock = socket.create_connection(("127.0.0.1", srv.server_port))
@@ -1254,7 +1253,6 @@ class TestDrain:
 
 
 class TestTheEnvironIsWsgiCompliant:
-
     def test_a_validated_app_serves_a_get_and_a_post(self):
         from wsgiref.validate import validator
 

@@ -121,10 +121,10 @@ class SchemaDiff(DatabaseCommand):
                     opened[0] += 1
                     return real
 
-                real.commit = dry_commit
-                real.rollback = lambda: None
-                real.close = lambda: None
-                real.execute = recording_execute
+                real.commit = dry_commit  # type: ignore[method-assign]
+                real.rollback = lambda: None  # type: ignore[method-assign]
+                real.close = lambda: None  # type: ignore[method-assign]
+                real.execute = recording_execute  # type: ignore[method-assign]
                 with contextlib.ExitStack() as stack:
                     stack.enter_context(patch.object(Registry, "cursor", open_dry))
                     stack.enter_context(

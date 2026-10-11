@@ -130,7 +130,7 @@ class Shell(Command):
             _debug.logic("cli.shell.mode", mode="piped_stdin")
             local_vars["__name__"] = "__main__"
             with _debug.perf("cli.shell.script", source="stdin"):
-                exec(sys.stdin.read(), local_vars)
+                exec(sys.stdin.read(), local_vars)  # noqa: S102 -- Explicit administrator shell executes its stdin script.
             return None
 
         if "env" not in local_vars:

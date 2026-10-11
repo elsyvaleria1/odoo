@@ -661,7 +661,7 @@ class PosOrder(models.Model):
             return list(uuids) if isinstance(uuids, (list, tuple, set)) else [uuids]
 
         for model_name, mapping in record_uuid_mapping.items():
-            owner_records = self.env[model_name].search(
+            owner_records = self.env[model_name].search(  # noqa: E8507 -- one query per related model, over every owner uuid at once
                 [("uuid", "in", mapping.keys())]
             )
             _debug.logic(
@@ -684,7 +684,7 @@ class PosOrder(models.Model):
             for comodel_name, uuids in uuids_by_model.items():
                 related_by_model[comodel_name] = {
                     record.uuid: record
-                    for record in self.env[comodel_name].search(
+                    for record in self.env[comodel_name].search(  # noqa: E8507 -- one query per related model, over every field's uuid at once
                         [("uuid", "in", list(uuids))]
                     )
                 }

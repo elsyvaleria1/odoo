@@ -355,7 +355,7 @@ class Base_ImportImport(models.TransientModel):
             ):
                 continue
 
-            definition_records = target_model.search_fetch(
+            definition_records = target_model.search_fetch(  # noqa: E8507 -- one query per properties field of the import
                 [(definition_record_field, "!=", False)],
                 [definition_record_field, "display_name"],
                 order="id",
@@ -1015,7 +1015,7 @@ class Base_ImportImport(models.TransientModel):
     def _prepare_error_message(self, error) -> str:
         message = error.args[0] if error.args else ""
         if isinstance(message, LazyGettext):
-            return self.env._(message)
+            return self.env._(message)  # noqa: E8502 -- a LazyGettext, extracted where _lt declares it
         return str(error)
 
     def _get_preview_error(self, error) -> dict:

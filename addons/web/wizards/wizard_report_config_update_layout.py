@@ -256,7 +256,7 @@ class WizardReportConfigUpdateLayout(models.TransientModel):
             wizard.font = wizard.company_id.report_config_id.font
             wizard.primary_color = wizard.company_id.report_config_id.primary_color
             wizard.secondary_color = wizard.company_id.report_config_id.secondary_color
-            wizard_layout = wizard.env["report.layout"].search(
+            wizard_layout = wizard.env["report.layout"].search(  # noqa: E8507 -- a transient wizard: one record
                 [
                     (
                         "view_id.key",

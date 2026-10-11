@@ -19,7 +19,7 @@ class SpreadsheetController(Controller):
         auth="user",
         methods=["GET"],
     )
-    def get_spreadsheet_data(self, res_model, res_id, access_token=None, **kw):
+    def get_spreadsheet_data(self, res_model, res_id, access_token=None, **kw):  # noqa: E8539 -- redirect: passes the token on to the page or record check that opens it
         cids_str = request.cookies.get("cids", str(request.env.user.company_id.id))
         try:
             cids = [int(cid) for cid in cids_str.split("-")]

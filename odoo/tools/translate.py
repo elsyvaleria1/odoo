@@ -572,7 +572,7 @@ def _is_iterable_arg(value: object) -> bool:
 
 
 def _materialise(value: object) -> object:
-    return list(value) if _is_iterable_arg(value) else value
+    return list(value) if _is_iterable_arg(value) else value  # type: ignore[call-overload]
 
 
 def get_translation(module: str, lang: str, source: str, args: tuple | dict) -> str:

@@ -78,7 +78,7 @@ def float_to_time(hours: float) -> time:
     if not 0.0 <= hours <= 24.0:
         msg = f"hours must be a number in [0.0, 24.0], got {hours!r}"
         raise ValueError(msg)
-    if hours == 24.0:
+    if hours == 24.0:  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
         return time.max
     fractional, integral = math.modf(hours)
     minutes = int(float_round(60 * fractional, precision_digits=0))

@@ -299,7 +299,7 @@ def acquire_user_delegation_key(
             f"Failed to get access token: {token_response.content}"
         )
     if token_response.status_code != 200:
-        raise ValidationError(f"Failed to get access token: {token_response.content}")
+        raise ValidationError(f"Failed to get access token: {token_response.content}")  # noqa: E8505 -- carries Azure's own untranslated response
     access_token = token_response.json()["access_token"]
 
     key_data = f"""<?xml version='1.0' encoding='utf-8'?>
@@ -317,7 +317,7 @@ def acquire_user_delegation_key(
                 key_request_url, data=key_data, headers=headers, timeout=5
             )
     except requests.exceptions.ConnectionError:
-        raise ValidationError(
+        raise ValidationError(  # noqa: E8505 -- an Azure connection diagnostic for the administrator
             "Failed to get user delegation key: the account name may be incorrect"
         ) from None
     if key_response.status_code in (401, 403):
@@ -325,7 +325,7 @@ def acquire_user_delegation_key(
             f"Failed to get user delegation key: {key_response.content}"
         )
     if key_response.status_code != 200:
-        raise ValidationError(
+        raise ValidationError(  # noqa: E8505 -- carries Azure's own untranslated response
             f"Failed to get user delegation key: {key_response.content}"
         )
 

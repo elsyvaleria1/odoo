@@ -215,7 +215,7 @@ class IapAccount(models.Model):
 
     def _filtered_by_token(self, token):
         return self.filtered(
-            lambda account: consteq(token, account.sudo().account_token)
+            lambda account: consteq(token, account.sudo().account_token)  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
         )
 
     def _get_account_info(self, account, balance, information):

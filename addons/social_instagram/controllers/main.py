@@ -15,7 +15,7 @@ from odoo.addons.social.controllers.main import (
 class SocialInstagramController(SocialController):
     @http.route("/social_instagram/callback", type="http", auth="user")
     @fragment_to_query_string
-    def social_instagram_callback(
+    def social_instagram_callback(  # noqa: E8539 -- inbound: a token an outside service hands over, not one of ours
         self, access_token=None, extended_access_token=None, **kw
     ):
         if not request.env.user.has_group("social.group_social_manager"):
@@ -96,7 +96,7 @@ class SocialInstagramController(SocialController):
     )
     def social_post_instagram_image(self, instagram_access_token, image_id):
         social_post = (
-            request.env["social.post"]
+            request.env["social.post"]  # noqa: E8537 -- content: an outside service fetches the content by its own token
             .sudo()
             .search([("instagram_access_token", "=", instagram_access_token)])
         )

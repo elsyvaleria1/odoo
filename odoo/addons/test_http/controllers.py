@@ -370,7 +370,7 @@ class TestHttp(http.Controller):
         csrf=False,
     )
     def upload_file_retry(self, ufile):
-        global should_fail
+        global should_fail  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
         if should_fail is None:
             raise ValueError("should_fail should be set.")
 
@@ -427,7 +427,7 @@ class TestHttp(http.Controller):
 
     @http.route("/test_http/retry_replay", type="http", auth="user")
     def retry_replay(self):
-        global should_fail
+        global should_fail  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
         default_env = request.env.transaction.default_env
         replay_observations.append(
             {
@@ -448,7 +448,7 @@ class TestHttp(http.Controller):
 
     @http.route("/test_http/concurrency_error", type="http", auth="none")
     def concurrency_error(self):
-        global should_fail
+        global should_fail  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
         if should_fail is None:
             e = "should_fail must be set."
             raise ValueError(e)

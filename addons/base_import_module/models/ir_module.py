@@ -84,7 +84,7 @@ class IrModuleModule(models.Model):
             for lang in langs:
                 imported = 0
                 for lang_ in get_base_langs(lang):
-                    attachment = IrAttachment.sudo().search(
+                    attachment = IrAttachment.sudo().search(  # noqa: E8507 -- one lookup per (module, language) pair
                         [
                             ("name", "=", f"{module}_{lang_}.po"),
                             ("url", "=", f"/{module}/i18n/{lang_}.po"),
@@ -125,7 +125,7 @@ class IrModuleModule(models.Model):
         super()._compute_icon_display()
         IrAttachment = self.env["ir.attachment"]
         for module in self.filtered("imported"):
-            attachment = IrAttachment.sudo().search(
+            attachment = IrAttachment.sudo().search(  # noqa: E8507 -- one lookup per imported module, on its own icon attachment
                 [
                     ("url", "=", module.icon),
                     ("type", "=", "binary"),
@@ -913,7 +913,7 @@ class IrModuleModule(models.Model):
 
         translations = {}
         for lang_ in get_base_langs(lang):
-            attachment = IrAttachment.sudo().search(
+            attachment = IrAttachment.sudo().search(  # noqa: E8507 -- one lookup per base language of the requested one
                 [
                     ("name", "=", f"{module}_{lang_}.po"),
                     ("url", "=", f"/{module}/i18n/{lang_}.po"),
@@ -1032,7 +1032,7 @@ def _domain_asks_for_industries(domain) -> bool:
                 if "industries" in condition.value:
                     return True
             else:
-                raise UserError(f"Unsupported domain condition {condition!r}")
+                raise UserError(f"Unsupported domain condition {condition!r}")  # noqa: E8505 -- a developer diagnostic for an unsupported domain in module data
     return False
 
 

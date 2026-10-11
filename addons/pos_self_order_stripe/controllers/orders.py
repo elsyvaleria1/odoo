@@ -13,7 +13,7 @@ class PosSelfOrderControllerStripe(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def get_stripe_creditentials(self, access_token, payment_method_id):
+    def get_stripe_creditentials(self, access_token, payment_method_id):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config, _ = self._get_pos_config_and_table(access_token, "", {})
         payment_method = pos_config.payment_method_ids.filtered(
             lambda p: p.id == payment_method_id
@@ -26,11 +26,11 @@ class PosSelfOrderControllerStripe(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def stripe_capture_payment(
+    def stripe_capture_payment(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, order_access_token, payment_intent_id, payment_method_id
     ):
         pos_config, _ = self._get_pos_config_and_table(access_token, "", {})
-        order = pos_config.env["pos.order"].search(
+        order = pos_config.env["pos.order"].search(  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             [
                 ("access_token", "=", order_access_token),
                 ("config_id", "=", pos_config.id),

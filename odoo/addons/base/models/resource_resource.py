@@ -451,7 +451,7 @@ class ResourceResource(models.Model):
             ("resource.relation", ("parent_id", "member_id")),
             ("resource.assignment", ("resource_id", "assignee_id")),
         ):
-            self.env[model].sudo().with_context(active_test=False).search(
+            self.env[model].sudo().with_context(active_test=False).search(  # noqa: E8507 -- one query per link model, two of them
                 Domain.OR(Domain(end, "in", self.ids) for end in ends)
             )._check_company()
 
@@ -475,7 +475,7 @@ class ResourceResource(models.Model):
                     resource.type != resource_type
                 )
             )
-            if incompatible and owner.search_count(
+            if incompatible and owner.search_count(  # noqa: E8507 -- one query per host model, not per resource
                 [("resource_id", "in", incompatible.ids)], limit=1
             ):
                 incompatible._check_host_type(resource_type)
@@ -1134,7 +1134,7 @@ class ResourceResource(models.Model):
                 self.env[name]
                 .sudo()
                 .with_context(active_test=False)
-                .search(
+                .search(  # noqa: E8507 -- one query per host model, not per resource
                     [
                         ("resource_id", "in", self.ids),
                     ]
@@ -1253,7 +1253,7 @@ class ResourceResource(models.Model):
                 self.env[model_name]
                 .sudo()
                 .with_context(active_test=False)
-                .search([("resource_id", "in", self.ids)])
+                .search([("resource_id", "in", self.ids)])  # noqa: E8507 -- one query per owner model, not per resource
             )
             for record in records:
                 owners.setdefault(record.resource_id.id, record)
@@ -2226,7 +2226,7 @@ class ResourceResource(models.Model):
         found = {}
         for model_name in set(self._get_kind_model_names().values()):
             extended = self.env[model_name].with_context(active_test=False)
-            for record_id in extended.search([("id", "in", self.ids)]).ids:
+            for record_id in extended.search([("id", "in", self.ids)]).ids:  # noqa: E8507 -- one query per kind model, two of them
                 found[record_id] = model_name
         return {record_id: found.get(record_id, self._name) for record_id in self.ids}
 

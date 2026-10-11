@@ -319,7 +319,7 @@ class IrDefault(models.Model):
         return json_loads(default.json_value) if default else None
 
     @api.model
-    @tools.ormcache("self.env.uid", "self.env.company.id", "model_name", "condition")
+    @tools.ormcache("self.env.uid", "self.env.company.id", "model_name", "condition")  # noqa: E8540 -- ir.default rows bind a user or a company, never a group
     def _get_model_defaults(
         self, model_name: str, condition: str | bool = False
     ) -> dict[str, Any]:

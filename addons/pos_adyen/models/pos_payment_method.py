@@ -360,7 +360,7 @@ class PosPaymentMethod(models.Model):
         for payment_method in self:
             if not payment_method.adyen_terminal_identifier:
                 continue
-            existing_payment_method = self.sudo().search(
+            existing_payment_method = self.sudo().search(  # noqa: E8507 -- one probe per method, on its own terminal identifier
                 [
                     ("id", "!=", payment_method.id),
                     (

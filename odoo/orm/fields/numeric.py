@@ -45,7 +45,7 @@ class Integer(Field[int]):
         __get__ = _prepare_inline_get(0)
 
     @property
-    def _column_type(self) -> tuple[str, str]:
+    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
         return ("int8", "int8") if self.bigint else ("int4", "int4")
 
     _related_bigint = property(attrgetter("bigint"))
@@ -158,7 +158,7 @@ class Float(Field[float]):
         )
 
     @property
-    def _column_type(self) -> tuple[str, str]:
+    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
         return (
             ("numeric", "numeric")
             if self._digits is not None
@@ -253,7 +253,7 @@ class Float(Field[float]):
 
     @override
     def convert_to_export(self, value: typing.Any, record: ModelLike) -> typing.Any:
-        if value or value == 0.0:
+        if value or value == 0.0:  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
             return value
         return ""
 
@@ -514,7 +514,7 @@ class Monetary(Field[float]):
 
     @override
     def convert_to_export(self, value: typing.Any, record: ModelLike) -> typing.Any:
-        if value or value == 0.0:
+        if value or value == 0.0:  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
             return value
         return ""
 

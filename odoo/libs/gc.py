@@ -26,7 +26,7 @@ def _to_ms(ns: float) -> float:
 
 
 def _record_gc_timing(event: str, info: dict[str, Any]) -> None:
-    global _gc_start
+    global _gc_start  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     gen = info["generation"]
     if event == "start":
         _gc_start = _gc_time()
@@ -61,7 +61,7 @@ def gc_set_timing(*, enable: bool) -> None:
         atexit.unregister(_stop_timing_at_exit)
         _debug.lifecycle("gc.timing", enabled=False)
     elif enable:
-        global _gc_timings, _gc_collections
+        global _gc_timings, _gc_collections  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
         _gc_timings = [0, 0, 0]
         _gc_collections = [0, 0, 0]
         gc.callbacks.append(_record_gc_timing)
@@ -120,7 +120,7 @@ _sections_lock = threading.Lock()
 
 @contextlib.contextmanager
 def disabling_gc() -> Generator[bool]:
-    global _sections
+    global _sections  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     with _sections_lock:
         joined = bool(_sections) or gc.isenabled()
         if joined:

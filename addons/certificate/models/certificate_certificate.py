@@ -432,7 +432,7 @@ class CertificateCertificate(models.Model):
         self.check_singleton()
         cert = self._get_parsed_certificate()
         if hashing_algorithm not in STR_TO_HASH:
-            raise UserError(
+            raise UserError(  # noqa: E8505 -- names the hashing algorithm a developer passed in
                 f"Unsupported hashing algorithm '{hashing_algorithm}'. Currently supported: sha1 and sha256."
             )
         return _get_formatted_bytes(

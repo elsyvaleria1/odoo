@@ -469,7 +469,7 @@ def _apply_configured_levels() -> None:
 
 
 def init_logger() -> None:
-    global showwarning
+    global showwarning  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if logging.getLogRecordFactory() is LogRecord:
         return
 

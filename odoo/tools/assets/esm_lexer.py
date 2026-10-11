@@ -277,7 +277,7 @@ def clear_lex_cache() -> None:
 
 
 def _reset_after_fork() -> None:
-    global _lex_cache_lock
+    global _lex_cache_lock  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     _lex_cache_lock = threading.Lock()
     _worker._forget_after_fork()
 

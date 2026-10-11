@@ -49,7 +49,7 @@ class classproperty[T]:
         return self.fget.__get__(None, owner)()
 
     @property
-    def __doc__(self) -> str | None:
+    def __doc__(self) -> str | None:  # type: ignore[override]
         return self.fget.__doc__
 
 
@@ -257,7 +257,7 @@ class lazy:
     def __imod__(self, other: Any) -> Any:
         return operator.imod(self._value, other)
 
-    def __ipow__(self, other: Any) -> Any:
+    def __ipow__(self, other: Any) -> Any:  # type: ignore[misc]
         return operator.ipow(self._value, other)
 
     def __ilshift__(self, other: Any) -> Any:

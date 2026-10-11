@@ -22,7 +22,7 @@ from odoo.libs.debug_log import DebugLog
 if typing.TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Mapping, Sequence
 
-unsafe_eval = eval
+unsafe_eval = eval  # noqa: S307 -- Evaluator entry point; callers validate code and restrict the namespace.
 
 __all__ = ["const_eval", "expr_eval", "safe_eval"]
 
@@ -31,8 +31,8 @@ _ALLOWED_MODULES = ["_strptime", "math", "time"]
 
 def _import(
     name: str,
-    globals: dict | None = None,
-    locals: dict | None = None,
+    globals: dict | None = None,  # noqa: A002 -- Matches the builtin __import__ signature.
+    locals: dict | None = None,  # noqa: A002 -- Matches the builtin __import__ signature.
     fromlist: list[str] | None = None,
     level: int = -1,
 ) -> None:
@@ -342,7 +342,7 @@ def assert_format_guard_not_bound(code_obj: CodeType, expr: str) -> None:
     raise NameError("Binding the format guard is not allowed (%r)" % (expr,))
 
 
-_field_name_split = string._string.formatter_field_name_split
+_field_name_split = string._string.formatter_field_name_split  # type: ignore[attr-defined]
 
 
 def _reject_attribute_fields(field_name: str) -> None:
@@ -543,7 +543,7 @@ def compile_codeobj(
             expr = expr.strip()
         if guard_format and _may_call_format(expr):
             tree = _guard_format_tree(ast.parse(expr, filename or "", mode))
-            code_obj = compile(tree, filename or "", mode)
+            code_obj = compile(tree, filename or "", mode)  # type: ignore[call-overload]
         else:
             code_obj = compile(expr, filename or "", mode)
     except SyntaxError, TypeError, ValueError:
@@ -848,4 +848,4 @@ time = wrap_module(__import__("time"), ["time", "strptime", "strftime"])
 
 pytz: typing.Any = wrap_module(_tz_module, ["utc", "timezone"])
 pytz.UTC = pytz.utc
-dateutil.tz.gettz = pytz.timezone
+dateutil.tz.gettz = pytz.timezone  # type: ignore[attr-defined]

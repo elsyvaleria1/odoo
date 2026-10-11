@@ -80,7 +80,7 @@ class DAVCalendar(models.Model):
     def _compute_ctag(self) -> None:
         Event = self.env["calendar.event"].with_context(active_test=False)
         for calendar in self:
-            [(count, latest)] = Event._read_group(
+            [(count, latest)] = Event._read_group(  # noqa: E8507 -- each calendar counts its own domain
                 calendar._get_domain_event(),
                 aggregates=["__count", "write_date:max"],
             )

@@ -75,7 +75,7 @@ def get_existing_attachment(IrAttachment, vals):
 
 class HTML_Editor(http.Controller):
     def _get_shape_svg(self, module, *segments):
-        shape_path = opj(module, "static", *segments)
+        shape_path = opj(module, "static", *segments)  # noqa: PTH118 -- file_open consumes a module-relative string path.
         try:
             with file_open(shape_path, "r", filter_ext=(".svg",)) as file:
                 return file.read()
@@ -205,7 +205,7 @@ class HTML_Editor(http.Controller):
 
         for attachment in Attachment.browse(ids):
             url = tools.html_escape(attachment.local_url)
-            views = Views.search(
+            views = Views.search(  # noqa: E8507 -- one probe per attachment, on its own url
                 ["|", ("arch_db", "like", f'"{url}"'), ("arch_db", "like", f"'{url}'")]
             )
 

@@ -78,7 +78,7 @@ class TeamMember(models.Model):
             try:
                 domain = literal_eval(member.lead_assignment_domain or "[]")
                 if domain:
-                    self.env["crm.lead"].search(domain, limit=1)
+                    self.env["crm.lead"].search(domain, limit=1)  # noqa: E8507 -- validates each member's own domain
             except SyntaxError, TypeError, ValueError:
                 raise exceptions.ValidationError(
                     self.env._(
@@ -94,7 +94,7 @@ class TeamMember(models.Model):
             try:
                 domain = literal_eval(member.lead_assignment_domain_preferred or "[]")
                 if domain:
-                    self.env["crm.lead"].search(domain, limit=1)
+                    self.env["crm.lead"].search(domain, limit=1)  # noqa: E8507 -- validates each member's own domain
             except SyntaxError, TypeError, ValueError:
                 raise exceptions.ValidationError(
                     self.env._(

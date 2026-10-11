@@ -52,7 +52,7 @@ class RecomputeScheduler:
         protected = self._engine.get_protected_ids(field)
         if protected:
             requested = len(ids)
-            ids = ids - protected
+            ids = ids - protected  # noqa: PLR6104 -- Subtract into a new set without mutating the shared input.
             if len(ids) < requested and _debug.logic.enabled:
                 _debug.logic(
                     "recompute_scheduler.protected_trimmed",
@@ -68,16 +68,16 @@ class RecomputeScheduler:
             if field.is_stored_computed:
                 m = self._marked.get(field)
                 if m:
-                    ids = ids - m
+                    ids = ids - m  # noqa: PLR6104 -- Subtract into a new set without mutating the shared input.
                 r = self.to_recompute.get(field)
                 if r and ids:
-                    ids = ids - r
+                    ids = ids - r  # noqa: PLR6104 -- Subtract into a new set without mutating the shared input.
             else:
                 if cached_ids is not None and not cached_ids:
                     ids = frozenset()
                 seen = self._seen_recursive.get(field)
                 if seen and ids:
-                    ids = ids - seen
+                    ids = ids - seen  # noqa: PLR6104 -- Subtract into a new set without mutating the shared input.
             if not ids:
                 _debug.logic(
                     "recompute_scheduler.recursive_exhausted",

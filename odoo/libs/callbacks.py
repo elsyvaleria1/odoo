@@ -245,7 +245,7 @@ class JournaledList(list[Any]):
             self._log.record(_truncate_list, self, len(self))
         list.extend(self, values)
 
-    def __iadd__(self, values: Iterable[Any], /) -> Self:
+    def __iadd__(self, values: Iterable[Any], /) -> Self:  # type: ignore[misc]
         self.extend(values)
         return self
 
@@ -468,7 +468,7 @@ class JournaledDict(dict[Any, Any]):
         for key, value in kwargs.items():
             self[key] = value
 
-    def __ior__(self, other: Any, /) -> Self:
+    def __ior__(self, other: Any, /) -> Self:  # type: ignore[misc]
         self.update(other)
         return self
 

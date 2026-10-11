@@ -68,7 +68,7 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
         _debug.logic(
             "rpc.method_refused", model=model._name, method=name, reason="private"
         )
-        raise AccessError(
+        raise AccessError(  # noqa: E8505 -- rejection reply to a bad RPC call
             f"Private methods (such as '{model._name}.{name}') "
             f"cannot be called remotely."
         )
@@ -83,7 +83,7 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
                 reason="api_private",
                 declared_in=mro_cls.__name__,
             )
-            raise AccessError(
+            raise AccessError(  # noqa: E8505 -- rejection reply to a bad RPC call
                 f"Private methods (such as '{model._name}.{name}') "
                 f"cannot be called remotely."
             )
@@ -92,14 +92,14 @@ def get_public_method(model: BaseModel, name: str) -> Callable:
     if not callable(method):
         _debug.logic("rpc.method_missing", model=model._name, method=name)
         error = AttributeError(f"The method '{model._name}.{name}' does not exist")
-        error.loglevel = logging.WARNING
+        error.loglevel = logging.WARNING  # type: ignore[attr-defined]
         raise error
 
     if method == getattr(model, name, None):
         _debug.logic(
             "rpc.method_refused", model=model._name, method=name, reason="not_bound"
         )
-        raise AccessError(
+        raise AccessError(  # noqa: E8505 -- rejection reply to a bad RPC call
             f"The method '{model._name}.{name}' cannot be called remotely."
         )
 
@@ -160,7 +160,7 @@ def _call_kw(
     if name == "create":
         if not args:
             _debug.logic("rpc.call_kw.rejected", model=model._name, reason="no_vals")
-            raise AccessError(
+            raise AccessError(  # noqa: E8505 -- names the caller's own protocol error
                 f"Method '{model._name}.create' requires a vals dict or list "
                 f"of vals dicts as its first positional argument."
             )
@@ -168,7 +168,7 @@ def _call_kw(
             _debug.logic(
                 "rpc.call_kw.rejected", model=model._name, reason="create_not_model"
             )
-            raise AccessError(
+            raise AccessError(  # noqa: E8505 -- addresses whoever wrote the override
                 f"Method '{model._name}.create' is not declared with "
                 f"@api.model_create_multi (or @api.model). An override that "
                 f"drops the decorator makes call_kw treat the vals as record "
@@ -183,7 +183,7 @@ def _call_kw(
             _debug.logic(
                 "rpc.call_kw.rejected", model=model._name, method=name, reason="no_ids"
             )
-            raise AccessError(
+            raise AccessError(  # noqa: E8505 -- names the caller's own protocol error
                 f"Method '{model._name}.{name}' requires record ids as its "
                 f"first positional argument."
             )
@@ -331,7 +331,7 @@ def execute_cr(
     recs = env.get(obj)
     if recs is None:
         _debug.logic("rpc.execute_cr.model_missing", model=obj, method=method)
-        raise UserError(
+        raise UserError(  # noqa: E8505 -- the RPC named a model that does not exist
             f"Object {obj} doesn't exist"
         )
     thread = current_worker_thread()
@@ -418,7 +418,7 @@ def _force_lazy_in_sequence(
             items[index] = forced
     if items is None:
         return val
-    return tuple(items) if type(val) is tuple else type(val)(items)
+    return tuple(items) if type(val) is tuple else type(val)(items)  # type: ignore[call-arg]
 
 
 def _force_lazy_in_place(val: Iterable, memo: _LazyMemo, active: set[int]) -> None:

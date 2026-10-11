@@ -125,7 +125,7 @@ class AccountReturnCheck(models.Model):
             )
         new_vals_list = [
             {
-                key: self.env._(value) if isinstance(value, LazyGettext) else value
+                key: self.env._(value) if isinstance(value, LazyGettext) else value  # noqa: E8502 -- resolves the caller's _lt() values in this env's language
                 for key, value in vals_dict.items()
             }
             for vals_dict in vals_list
@@ -220,7 +220,7 @@ class AccountReturnCheck(models.Model):
                     check.supervisor_id = user
 
         cleaned_vals = {
-            key: self.env._(value) if isinstance(value, LazyGettext) else value
+            key: self.env._(value) if isinstance(value, LazyGettext) else value  # noqa: E8502 -- resolves the caller's _lt() values in this env's language
             for key, value in vals.items()
         }
         result = super().write(cleaned_vals)

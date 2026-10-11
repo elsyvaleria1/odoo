@@ -574,7 +574,7 @@ class IrModel(models.Model):
         elif create:
             arch = self.env[self.model].get_view(view_id, view_type)["arch"]
             if view_type in ["graph", "pivot"]:
-                sample_view_arch = ET.fromstring(arch)
+                sample_view_arch = ET.fromstring(arch)  # noqa: S314 -- Parses the server-generated graph or pivot view architecture.
                 sample_view_arch.set("sample", "1")
                 arch = ET.tostring(sample_view_arch, encoding="unicode")
             view = View.create(

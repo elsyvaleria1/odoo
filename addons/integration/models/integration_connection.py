@@ -791,7 +791,7 @@ class IntegrationConnection(models.Model):
     def _zeep_transport(self, purpose: str, timeout: float = 30.0):
         from zeep.transports import Transport
 
-        return Transport(
+        return Transport(  # noqa: E8518 -- zeep sends through the connection's ir.egress session
             session=self._egress_session(purpose),
             timeout=timeout,
             operation_timeout=timeout,

@@ -309,7 +309,7 @@ class DeviceDevice(models.Model):
         while parts:
             leaves = parts - parts.parent_id
             if not leaves:
-                raise ValidationError(
+                raise ValidationError(  # noqa: E8506 -- prevents an infinite cleanup loop
                     self.env._("A device cannot be part of itself.")
                 )
             leaves.with_env(self.env).unlink()

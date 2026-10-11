@@ -286,7 +286,7 @@ def iter_manifests(roots: list[str], excluded: set[str]):
 
 def ensure_odoo_importable() -> None:
     try:
-        import odoo.modules.module
+        import odoo.modules.module  # noqa: F401 -- Probe whether the checkout can be imported before adding its path.
     except ImportError:
         sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 

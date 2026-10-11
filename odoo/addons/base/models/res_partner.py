@@ -1391,7 +1391,7 @@ class ResPartner(models.Model):
                 str(threshold),
             )
         )
-        self.env.cr.execute(query)
+        self.env.cr.execute(query)  # noqa: E8501 -- built via SQL() by the caller
         rows = self.env.cr.fetchall()
         _debug.logic(
             "trigram_threshold_scoped",

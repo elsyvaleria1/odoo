@@ -45,7 +45,7 @@ def _map_carrier_name(html):
 
 
 def easypost_generate_file() -> None:
-    response = requests.get(EASYPOST_URL, timeout=30)
+    response = requests.get(EASYPOST_URL, timeout=30)  # noqa: E8518 -- a standalone script run outside the server, with no ir.egress to reach
     root_html = lxml.html.fromstring(response.text)
     code_carrier_name_map = _map_carrier_name(root_html)
     package_types_by_carriers = _get_package_type(root_html, code_carrier_name_map)

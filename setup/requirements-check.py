@@ -77,7 +77,7 @@ def urlopen(url: str) -> io.BufferedReader:
     Path("/tmp/package_versions_cache/").mkdir(exist_ok=True, parents=True)
     file_path = f"/tmp/package_versions_cache/{file_name}"
     if not Path(file_path).is_file():
-        with _urlopen(url) as response:
+        with _urlopen(url) as response:  # noqa: S310 -- urlsplit validates HTTP(S) before the metadata cache request.
             Path(file_path).write_bytes(response.read())
     return Path(file_path).open("rb")
 

@@ -93,7 +93,7 @@ class Health(http.Controller):
             raise request.prepare_not_found_error()
         presented = request.httprequest.headers.get("Authorization", "")
         scheme, _, offered = presented.partition(" ")
-        if scheme.lower() != "bearer" or not consteq(offered.strip(), token):
+        if scheme.lower() != "bearer" or not consteq(offered.strip(), token):  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             _debug.logic(
                 "metrics_rejected", scheme=scheme, token_presented=bool(offered)
             )

@@ -149,7 +149,7 @@ def compile_rule(module, filename):
         GUARDED_POWER: _rule_power,
         GUARDED_ITERATE: _rule_iterate,
     }
-    exec(compile(module, filename, "exec"), namespace)
+    exec(compile(module, filename, "exec"), namespace)  # noqa: S102 -- Executes the validated, instrumented AST with restricted builtins.
     return namespace[ENTRY_POINT]
 
 

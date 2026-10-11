@@ -16,7 +16,7 @@ _debug = DebugLog(__name__)
 
 def _coerce_port(port: object) -> int:
     try:
-        return int(port)
+        return int(port)  # type: ignore[call-overload]
     except TypeError, ValueError:
         return DEFAULT_PG_PORT
 

@@ -283,7 +283,7 @@ def optimize_geo_operators(condition: DomainCondition, model: BaseModel) -> Doma
             return SQL("ST_DWithin(%s, %s, %s)", column, operand, distance)
         return SQL(
             "%s(%s, %s)",
-            SQL(spatial_op.value),
+            SQL(spatial_op.value),  # noqa: E8501 -- spatial_op.value is a SpatialOperator member's fixed function name
             column,
             operand,
         )

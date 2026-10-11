@@ -41,7 +41,7 @@ class One2many(_RelationalMulti):
     type = "one2many"
     is_one2many = True
 
-    inverse_name: str = None
+    inverse_name: str = None  # type: ignore[assignment]
     copy: bool = False
     _inverse_is_computed: bool = False
 
@@ -318,7 +318,7 @@ class One2many(_RelationalMulti):
             & Domain(inverse, "in", recs.ids)
             & Domain("id", "not in", lines.ids)
         )
-        orphans = comodel.with_context(active_test=False).search(
+        orphans = comodel.with_context(active_test=False).search(  # noqa: E8507 -- see above
             domain
         )
         _debug.logic(

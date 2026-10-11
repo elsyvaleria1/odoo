@@ -994,7 +994,7 @@ Versions:
     def _flexible_duration(self, calendar) -> tuple:
         self.check_singleton()
         leaves = self.env["resource.schedule.exception"]
-        public_holidays = leaves.search(
+        public_holidays = leaves.search(  # noqa: E8507 -- one lookup per flexible leave, on its own calendar and dates
             leaves._get_domain_public_holidays(
                 self.date_from,
                 self.date_to,

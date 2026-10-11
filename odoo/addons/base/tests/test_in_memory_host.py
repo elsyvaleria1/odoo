@@ -15,7 +15,6 @@ from .test_groups import (
 from .test_res_currency import TestResCurrency, TestResCurrencyRateMemoScope
 from .test_res_lang import TestResLangUnsavedRecord, test_res_lang
 
-
 _RAW_SQL = "reads through hand-written SQL: database-bound by design"
 
 

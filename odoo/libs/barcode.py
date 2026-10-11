@@ -28,7 +28,7 @@ _UNSET = object()
 
 
 def _init_barcode() -> tuple[Any, str]:
-    global _barcode_init
+    global _barcode_init  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     with _barcode_init_lock:
         if _barcode_init is not None:
             return _barcode_init

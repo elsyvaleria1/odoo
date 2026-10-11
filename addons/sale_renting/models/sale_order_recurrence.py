@@ -105,7 +105,7 @@ class SaleTemporalRecurrence(models.Model):
     def _get_unit_label(self, duration):
         self.check_singleton()
         if duration == 1:
-            return self.env._(SINGULAR_LABELS[self.unit])
+            return self.env._(SINGULAR_LABELS[self.unit])  # noqa: E8502 -- resolves an _lt() table entry in this env's language
         return dict(self._fields["unit"]._description_selection(self.env))[self.unit]
 
     def _get_converted_duration_and_label(self, duration) -> list:

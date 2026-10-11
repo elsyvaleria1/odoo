@@ -15,7 +15,7 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def iot_payment_cancelled(self, access_token, order_id):
+    def iot_payment_cancelled(self, access_token, order_id):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config = self._get_pos_config(access_token)
         order = pos_config.env["pos.order"].search(
             [("id", "=", order_id), ("config_id", "=", pos_config.id)]
@@ -28,7 +28,7 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
         type="jsonrpc",
         website=True,
     )
-    def iot_payment_success(
+    def iot_payment_success(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, order_id, payment_method_id, payment_info
     ):
         pos_config = self._get_pos_config(access_token)
@@ -61,7 +61,7 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
     @http.route(
         "/pos-self-order/get-iot-box-data/", auth="public", type="jsonrpc", website=True
     )
-    def get_iot_box_data(self, access_token, iot_box_id):
+    def get_iot_box_data(self, access_token, iot_box_id):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config = self._get_pos_config(access_token)
         iot_box = self._kiosk_iot_boxes(pos_config).filtered(
             lambda box: box.id == iot_box_id
@@ -73,7 +73,7 @@ class PosSelfOrderControllerIot(PosSelfOrderController):
     @http.route(
         "/pos-self-order/iot-box-websocket-channel/", auth="public", type="jsonrpc"
     )
-    def iot_box_websocket_channel(
+    def iot_box_websocket_channel(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, message=None, message_type="iot_action"
     ):
         try:

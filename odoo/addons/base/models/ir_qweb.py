@@ -115,7 +115,7 @@ _SAFE_QWEB_OPCODES = (
 )
 
 
-unsafe_eval = eval
+unsafe_eval = eval  # noqa: S307 -- Evaluator entry point; callers validate code and restrict the namespace.
 
 
 FORBIDDEN_FIELD_TAGS = frozenset(
@@ -3282,7 +3282,7 @@ class IrQweb(models.AbstractModel):
                 f"unsupported t-debug value {debugger!r}: keep it empty and "
                 "configure the ``breakpoint`` builtin instead"
             )
-        breakpoint()
+        breakpoint()  # noqa: T100 -- Implements the explicitly requested t-debug template directive.
 
     def _post_processing_att(
         self, tag_name: str, atts: dict[str, Any], *, is_static: bool = False

@@ -719,7 +719,7 @@ class WizardResPartnerMerge(models.TransientModel):
         if self._get_selected_groupby_fields() or not self.match_similar_names:
             exact_fields = self._get_selected_groupby()
             query = self._generate_query(exact_fields, self.maximum_group)
-            self.env.cr.execute(query)
+            self.env.cr.execute(query)  # noqa: E8501 -- built via SQL() by _generate_query
             groups.extend(self.env.cr.fetchall())
             _debug.pipeline("exact_groups", fields=exact_fields, groups=len(groups))
 

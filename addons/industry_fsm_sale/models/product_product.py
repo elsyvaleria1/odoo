@@ -152,7 +152,7 @@ class ProductProduct(models.Model):
                AND sol.product_qty %s %s
         )""",
                     task.id,
-                    SQL(operator),
+                    SQL(operator),  # noqa: E8501 -- one of the five comparisons allowed above
                     value,
                     to_flush=[
                         self.env["sale.order.line"]._fields["order_id"],

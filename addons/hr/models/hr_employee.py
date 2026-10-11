@@ -108,7 +108,7 @@ class HrEmployee(models.Model):
         comodel_name="resource.resource",
         required=True,
     )
-    name = fields.Char(
+    name = fields.Char(  # noqa: E8529 -- identity column of a delegated record: 33 files join hr_employee in raw SQL and read it, and it leads _order and name search
         related="partner_id.name",
         string="Employee Name",
         inherited=True,
@@ -117,14 +117,14 @@ class HrEmployee(models.Model):
         readonly=False,
         tracking=True,
     )
-    active = fields.Boolean(
+    active = fields.Boolean(  # noqa: E8529 -- identity column of a delegated record: every search filters on it, 33 files join hr_employee in raw SQL
         related="resource_id.active",
         string="Active",
         default=True,
         store=True,
         readonly=False,
     )
-    user_id = fields.Many2one(
+    user_id = fields.Many2one(  # noqa: E8529 -- UNIQUE (user_id, company_id) partial
         comodel_name="res.users",
         related="resource_id.user_id",
         string="User",
@@ -1376,7 +1376,7 @@ class HrEmployee(models.Model):
                 )
             else:
                 if states is None:
-                    states = self.env["res.country.state"].search([])
+                    states = self.env["res.country.state"].search([])  # noqa: E8507 -- computed once, on first need
                 employee.allowed_country_state_ids = states
 
     @api.depends("distance_home_work", "distance_home_work_unit")
@@ -2547,7 +2547,7 @@ class HrEmployee(models.Model):
             ] += company
 
         for notice_period, period_companies in companies_by_contract_period.items():
-            employees_contract_expiring += self.env["hr.employee"].search(
+            employees_contract_expiring += self.env["hr.employee"].search(  # noqa: E8507 -- one query per distinct notice period; companies sharing one were merged above
                 [
                     ("company_id", "in", period_companies.ids),
                     ("contract_date_start", "!=", False),
@@ -2561,7 +2561,7 @@ class HrEmployee(models.Model):
                 ]
             )
         for notice_period, period_companies in companies_by_permit_period.items():
-            employees_work_permit_expiring += self.env["hr.employee"].search(
+            employees_work_permit_expiring += self.env["hr.employee"].search(  # noqa: E8507 -- one query per distinct notice period; companies sharing one were merged above
                 [
                     ("company_id", "in", period_companies.ids),
                     ("work_permit_expiration_date", ">=", today),
@@ -2794,7 +2794,7 @@ class HrEmployee(models.Model):
                 barcode = "041" + "".join(choice(digits) for _ in range(9))
                 if barcode in minted:
                     continue
-                if not Employee.search_count([("barcode", "=", barcode)], limit=1):
+                if not Employee.search_count([("barcode", "=", barcode)], limit=1):  # noqa: E8507 -- draws a random barcode until a free one turns up
                     break
             else:
                 raise UserError(

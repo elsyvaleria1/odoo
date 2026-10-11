@@ -330,7 +330,7 @@ class ResourceGpsBinding(models.Model):
             ]
             if period.date_end:
                 domain.append(("timestamp", "<", period.date_end))
-            last = Log.search(
+            last = Log.search(  # noqa: E8507 -- a bounded index read per custody window, as the docstring says
                 domain, order="timestamp desc, id desc", limit=1
             ).timestamp
             item = coverage.setdefault(
@@ -343,7 +343,7 @@ class ResourceGpsBinding(models.Model):
                 item["with_data"] |= start <= last < end
                 if not item["with_data"]:
                     item["with_data"] = bool(
-                        Log.search(
+                        Log.search(  # noqa: E8507 -- a bounded index read per custody window
                             [
                                 *domain,
                                 ("timestamp", ">=", start),

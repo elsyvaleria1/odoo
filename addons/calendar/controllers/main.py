@@ -27,7 +27,7 @@ class CalendarController(http.Controller):
         if not token:
             return request.env["calendar.event"]
         return (
-            request.env["calendar.event"]
+            request.env["calendar.event"]  # noqa: E8537 -- public: an identifier that is not meant to be secret
             .sudo()
             .search([("access_token", "=", token)], limit=1)
         )
@@ -181,7 +181,7 @@ class CalendarController(http.Controller):
     @http.route(
         "/calendar/join_videocall/<string:access_token>", type="http", auth="public"
     )
-    def calendar_join_videocall(self, access_token):
+    def calendar_join_videocall(self, access_token):  # noqa: E8539 -- public: a meeting room every attendee shares
         event = self._event_from_token(access_token)
         if not event:
             raise request.prepare_not_found_error()
@@ -379,11 +379,11 @@ class CalendarController(http.Controller):
         )
 
     @route("/calendar/videocall/<string:access_token>", type="http", auth="public")
-    def calendar_videocall(self, access_token):
+    def calendar_videocall(self, access_token):  # noqa: E8539 -- public: a meeting room every attendee shares
         if not access_token:
             raise Forbidden
         event = (
-            request.env["calendar.event"]
+            request.env["calendar.event"]  # noqa: E8537 -- public: an identifier that is not meant to be secret
             .sudo()
             .search([("access_token", "=", access_token)], limit=1)
         )

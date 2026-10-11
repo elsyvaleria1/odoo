@@ -33,7 +33,6 @@ def _stop_after_init(tmp_path, *args):
 @requires_pg
 @requires_posix
 class TestTheProcessExitCodeIsRead:
-
     def test_a_plain_boot_that_stops_after_init_exits_zero(self, tmp_path):
         proc = _stop_after_init(tmp_path)
         assert proc.returncode == 0, (

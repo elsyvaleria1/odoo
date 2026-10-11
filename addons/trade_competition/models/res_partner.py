@@ -74,7 +74,7 @@ class ResPartner(models.Model):
         record = defaultdict(lambda: {"deals": 0, "won": 0, "lost": 0, "gap": 0.0})
         competitors = self.filtered("is_competitor")
         for model in self.env["competitor.offer"]._competition_order_models():
-            orders = self.env[model].search(
+            orders = self.env[model].search(  # noqa: E8507 -- one search per trade direction, not per partner
                 [
                     ("outcome", "in", ["won", "lost"]),
                     "|",

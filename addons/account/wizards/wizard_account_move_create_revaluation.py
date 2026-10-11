@@ -101,7 +101,7 @@ class WizardAccountMoveCreateRevaluation(models.TransientModel):
         for record in self:
             last_move = (
                 self.env["account.move.line"]
-                .search(
+                .search(  # noqa: E8507 -- a transient wizard opened on one company
                     [
                         (
                             "account_id",

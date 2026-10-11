@@ -15,7 +15,6 @@ from .conftest import prefork_server
 
 
 class TestTheWorkerCensusCrossesTheFork:
-
     @pytest.fixture
     def master(self, tmp_path):
         obj = _prefork.PreforkServer(None)
@@ -429,7 +428,6 @@ class TestProcessSpawnChecksSignallingOncePerCycle:
 
 
 class TestTheWatchdogSelectorIsReused:
-
     @pytest.fixture
     def master(self, prefork):
         prefork.beat = 0
@@ -506,7 +504,6 @@ class TestTheWatchdogSelectorIsReused:
 
 
 class TestARecycledFdIsRegisteredForItsNewOwner:
-
     @pytest.fixture
     def master(self, prefork):
         prefork.beat = 0

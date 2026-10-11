@@ -166,7 +166,7 @@ class AccountAccount(models.Model):
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(debit, credit)] = MoveLines._read_group(
+            [(debit, credit)] = MoveLines._read_group(  # noqa: E8507 -- one aggregate per spreadsheet formula call
                 domain, aggregates=["debit:sum", "credit:sum"]
             )
             results.append({"debit": debit or 0, "credit": credit or 0})
@@ -183,7 +183,7 @@ class AccountAccount(models.Model):
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args, default_accounts=True)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(amount_residual,)] = MoveLines._read_group(
+            [(amount_residual,)] = MoveLines._read_group(  # noqa: E8507 -- one aggregate per spreadsheet formula call
                 domain, aggregates=["amount_residual:sum"]
             )
             results.append({"amount_residual": amount_residual or 0})
@@ -206,7 +206,7 @@ class AccountAccount(models.Model):
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args, default_accounts=True)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])
+            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])  # noqa: E8507 -- one aggregate per spreadsheet formula call
             results.append({"balance": balance or 0})
 
         _debug.pipeline(
@@ -246,7 +246,7 @@ class AccountAccount(models.Model):
             company_id = args["company_id"] or self.env.company.id
             domain = self._get_domain_spreadsheet_formula(args)
             MoveLines = self.env["account.move.line"].with_company(company_id)
-            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])
+            [(balance,)] = MoveLines._read_group(domain, aggregates=["balance:sum"])  # noqa: E8507 -- one aggregate per spreadsheet formula call
             results.append({"balance": balance or 0.0})
 
         _debug.pipeline(

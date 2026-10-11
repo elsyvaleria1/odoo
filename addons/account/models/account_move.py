@@ -4172,7 +4172,7 @@ class AccountMove(models.Model):
         with self._disable_recursion(
             "check_move_validity", default=True, target=False
         ) as disabled:
-            yield
+            yield  # noqa: RUF075 -- Only finalize a successful mutation; the caller rolls back on error.
             if disabled:
                 return
 
@@ -8600,7 +8600,7 @@ class AccountMove(models.Model):
             return []
         return [
             {
-                "label": self.env._(label),
+                "label": self.env._(label),  # noqa: E8502 -- a LazyGettext, extracted where _lt declares it
                 "template": f"/account/static/xls/{stem}.xlsx",
             }
         ]

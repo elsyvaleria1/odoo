@@ -152,7 +152,7 @@ class Data_CleaningRule(models.Model):
     def _onchange_action(self) -> None:
         if self.action == "phone":
             try:
-                import phonenumbers
+                import phonenumbers  # noqa: F401 -- Probe the optional dependency; import failure becomes a user error.
             except ModuleNotFoundError as err:
                 raise ValidationError(
                     self.env._(

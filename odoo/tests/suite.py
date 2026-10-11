@@ -27,7 +27,7 @@ class TestSuite(BaseTestSuite):
     _cleanup: bool
     _removeTestAtIndex: Callable[[int], None]
 
-    def run(
+    def run(  # type: ignore[override]
         self, result: OdooTestResult, debug: bool = False
     ) -> OdooTestResult:
         for index, test in enumerate(self):

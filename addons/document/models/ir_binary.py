@@ -105,7 +105,7 @@ class IrBinary(models.AbstractModel):
             and filename is None
             and record.file_extension
         ):
-            name, extension = splitext(record.name)
+            name, extension = splitext(record.name)  # noqa: PTH122 -- Keep splitext semantics for names with dots and trailing separators.
             if extension == f".{record.file_extension}":
                 filename = record.name
             else:

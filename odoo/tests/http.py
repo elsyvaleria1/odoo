@@ -666,7 +666,7 @@ class HttpCase(TransactionCase):
         Users = self.registry["res.users"]
 
         def setup(_):
-            Users.tour_enabled = False
+            Users.tour_enabled = False  # type: ignore[attr-defined]
 
         with (
             patch.object(Users, "tour_enabled", False),

@@ -172,7 +172,7 @@ def _prepare_reader(
     reader.yields = yields
     reader.cost = cost
     reader.carried = carried
-    reader.read = read
+    reader.read = read  # type: ignore[method-assign]
     return reader
 
 

@@ -475,7 +475,7 @@ class LLMApiService:
         inputs = self.handler.translate_inputs(inputs)
 
         all_responses = []
-        for api_call in range(AI_MAX_SUCCESSIVE_CALLS):
+        for api_call in range(AI_MAX_SUCCESSIVE_CALLS):  # noqa: B007 -- The final call index is reported after the loop.
             responses, next_actions, inputs = self._request_llm(
                 llm_model,
                 system_prompts,

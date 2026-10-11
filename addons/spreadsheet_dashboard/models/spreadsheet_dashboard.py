@@ -80,7 +80,7 @@ class SpreadsheetDashboard(models.Model):
             (
                 model
                 for model in self.sudo().main_data_model_ids.mapped("model")
-                if self.env[model].search_count([], limit=1) == 0
+                if self.env[model].search_count([], limit=1) == 0  # noqa: E8507 -- one per data model, each its own table, first empty one wins
             ),
             None,
         )

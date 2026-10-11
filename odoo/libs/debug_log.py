@@ -264,7 +264,7 @@ class _PerfChannel(_Channel):
         if self.logger.isEnabledFor(logging.DEBUG):
             self.logger.debug("%s", format_event(event, fields))
 
-    def __call__(
+    def __call__(  # type: ignore[override]
         self, event: str, /, cr: Any = None, **fields: Any
     ) -> _Span | _DisabledSpan:
         if not self.logger.isEnabledFor(logging.DEBUG):

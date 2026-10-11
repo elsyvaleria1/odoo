@@ -183,7 +183,7 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
                 ):
                     continue
                 if field_standard == "country":
-                    country = self.env["res.country"].search(
+                    country = self.env["res.country"].search(  # noqa: E8507 -- one lookup per field of the autocomplete response
                         [("code", "=", google_field["short_name"].upper())], limit=1
                     )
                     if not country:
@@ -196,7 +196,7 @@ class AddressAutocompleteAdapterGoogle(models.AbstractModel):
                             pformat(google_fields),
                         )
                         continue
-                    state = self.env["res.country.state"].search(
+                    state = self.env["res.country.state"].search(  # noqa: E8507 -- one lookup per field of the autocomplete response
                         [
                             ("code", "=", google_field["short_name"].upper()),
                             ("country_id", "=", standard_data["country"][0]),

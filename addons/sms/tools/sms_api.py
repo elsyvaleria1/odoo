@@ -85,7 +85,7 @@ class SmsApi(
         if (
             not self.env.registry.ready
         ):
-            raise exceptions.AccessError("Unavailable during module installation.")
+            raise exceptions.AccessError("Unavailable during module installation.")  # noqa: E8505 -- a guard against reaching IAP during module installation
 
         params["account_token"] = self.account.sudo().account_token
         params["dbuuid"] = self.env.registry.settings.get(

@@ -5043,7 +5043,7 @@ class MixinMailThread(models.AbstractModel):
         ):
             return True
         legacy = self._encode_link_legacy_sha1(base_link, signed)
-        if legacy and consteq(legacy, token):
+        if legacy and consteq(legacy, token):  # noqa: E8537 -- stateless: an older signed format the mails already sent carry
             _logger.info("Accepted a legacy SHA-1 action link token on %s", base_link)
             return True
         return False

@@ -993,7 +993,7 @@ class WizardMailMessageSend(models.TransientModel):
         for wizard in self:
             if wizard.res_domain:
                 search_domain = wizard._evaluate_res_domain()
-                res_ids = self.env[wizard.model].search(search_domain).ids
+                res_ids = self.env[wizard.model].search(search_domain).ids  # noqa: E8507 -- model and domain both vary per wizard, so no one query spans them
             else:
                 res_ids = wizard._evaluate_res_ids()
             if not res_ids and wizard.composition_mode == "comment":

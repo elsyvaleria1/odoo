@@ -339,7 +339,7 @@ class ResourceAssetPart(models.Model):
         Part = self.with_context(asset_part_ledger_write=True)
         for part in self.sorted(lambda part: (part.date_installed or now, part.id)):
             moment = part.date_installed or now
-            previous = self.search(
+            previous = self.search(  # noqa: E8507 -- one query per installation, in date order: the part installed just before may be the previous one of the next
                 [
                     ("asset_id", "=", part.asset_id.id),
                     ("position_id", "=", part.position_id.id),

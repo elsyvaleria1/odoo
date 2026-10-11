@@ -322,7 +322,7 @@ def get_param_specs(
         annotation = param.annotation
         if isinstance(annotation, str):
             try:
-                annotation = eval(annotation, getattr(endpoint, "__globals__", None))
+                annotation = eval(annotation, getattr(endpoint, "__globals__", None))  # noqa: S307 -- Resolves trusted Python handler annotations, never request data.
             except Exception:
                 _logger.debug(
                     "%s: cannot resolve annotation %r for %r; parameter left uncoerced",

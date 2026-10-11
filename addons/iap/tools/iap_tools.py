@@ -293,7 +293,7 @@ class IAPServerError(Exception):
 
 def iap_jsonrpc(url, method="call", params=None, timeout=15, *, env, purpose=None):
     if modules.module.current_test:
-        raise exceptions.AccessError("Unavailable during tests.")
+        raise exceptions.AccessError("Unavailable during tests.")  # noqa: E8505 -- a guard against reaching IAP from a test run
 
     payload = {
         "jsonrpc": "2.0",

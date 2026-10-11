@@ -111,7 +111,7 @@ def _prepare_writer(
     writer.name = name
     writer.mimetype = mimetype
     writer.consumes = consumes
-    writer.write = write
+    writer.write = write  # type: ignore[method-assign]
     return writer
 
 

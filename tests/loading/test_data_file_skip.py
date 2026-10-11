@@ -280,7 +280,6 @@ class TestWhatGetsRecorded:
 
 
 class TestAFileWhoseRecordsWereAlreadyRewritten:
-
     def _prepare_store(self, files):
         return {"v": loading._DATA_FILE_CHECKSUM_VERSION, "files": files}
 
@@ -341,7 +340,6 @@ class TestAFileWhoseRecordsWereAlreadyRewritten:
 
 
 class TestAFileThatOverridesAnotherModule:
-
     def _prepare_store(self, files):
         return {"v": loading._DATA_FILE_CHECKSUM_VERSION, "files": files}
 

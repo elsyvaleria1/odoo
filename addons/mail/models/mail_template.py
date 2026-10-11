@@ -306,7 +306,7 @@ class MailTemplate(models.Model):
         domain=[("abstract", "=", False)],
         ondelete="cascade",
     )
-    model = fields.Char(
+    model = fields.Char(  # noqa: E8529 -- the column carries mail.template's own read check: computed, related_sudo makes every reader of it bypass the ACL
         related="model_id.model",
         string="Related Document Model",
         store=True,
@@ -603,7 +603,7 @@ class MailTemplate(models.Model):
                 or not self.env[model].has_access("read")
             ):
                 continue
-            if record := self.env[model].search([], limit=1):
+            if record := self.env[model].search([], limit=1):  # noqa: E8507 -- the loop is over distinct models, not records: one sample row per table
                 samples[model] = record
         _debug.perf.count(
             "rendering_samples", templates=self.ids, models=sorted(samples)

@@ -68,7 +68,7 @@ _debug = DebugLog(__name__)
 TEST_CURSOR_COOKIE_NAME = "test_request_key"
 
 
-class RegistryRLock(threading._RLock):
+class RegistryRLock(threading._RLock):  # type: ignore[misc]
     _owner: int | None
 
     @property
@@ -451,9 +451,9 @@ def _normalise_records(
 
 
 class BaseCase(TestCase):
-    registry: Registry = None
-    env: api.Environment = None
-    cr: Cursor = None
+    registry: Registry = None  # type: ignore[assignment]
+    env: api.Environment = None  # type: ignore[assignment]
+    cr: Cursor = None  # type: ignore[assignment]
     registry_patches: ClassVar[list]
 
     test_tags: set[str] | None = None
@@ -540,7 +540,7 @@ class BaseCase(TestCase):
         )
         raise BlockedRequest(f"External requests verboten (was {r.method} {r.url})")
 
-    def run(self, result: OdooTestResult) -> None:
+    def run(self, result: OdooTestResult) -> None:  # type: ignore[override]
         testMethod = getattr(self, self._testMethodName)
 
         if getattr(testMethod, "_retry", True) and getattr(self, "_retry", True):
@@ -619,7 +619,7 @@ class BaseCase(TestCase):
         cls.addClassCleanup(check_remaining_processes)
 
         def check_remaining_patchers():
-            for patcher in list(_patch._active_patches):
+            for patcher in list(_patch._active_patches):  # type: ignore[attr-defined]
                 if hasattr(patcher, "target"):
                     description = f"{patcher.target}.{patcher.attribute}"
                 else:
@@ -666,7 +666,7 @@ class BaseCase(TestCase):
             patcher = patch.object(
                 requests.sessions.Session,
                 "send",
-                lambda s, r, **kw: cls._request_handler(s, r, **kw),
+                lambda s, r, **kw: cls._request_handler(s, r, **kw),  # noqa: PLW0108 -- A function descriptor binds the patched Session instance.
             )
             patcher.start()
             cls.addClassCleanup(patcher.stop)
@@ -863,7 +863,7 @@ class BaseCase(TestCase):
 
                 yield cm
 
-    def assertRaises(
+    def assertRaises(  # type: ignore[override]
         self,
         exception: type[BaseException],
         func: Callable | None = None,
@@ -999,7 +999,7 @@ class BaseCase(TestCase):
     ) -> Generator[None]:
         if self.warm and not self._counts_no_statements():
             with patch("random.random", lambda: 1), observing_statements():
-                login = self.env.user.login
+                login = self.env.user.login  # type: ignore[attr-defined]
                 expected = counters.get(login, default)
                 if flush:
                     self.env.flush_all()
@@ -2010,7 +2010,7 @@ def _watch_cache_feeding_patches() -> None:
     if getattr(mock._patch, "_clears_caches_it_feeds", False):
         return
     enter = mock._patch.__enter__
-    patch_dict = mock._patch_dict._patch_dict
+    patch_dict = mock._patch_dict._patch_dict  # type: ignore[attr-defined]
 
     def watched_enter(self: Any) -> Any:
         result = enter(self)
@@ -2022,9 +2022,9 @@ def _watch_cache_feeding_patches() -> None:
         _note_patch(self.in_dict)
         return result
 
-    mock._patch.__enter__ = watched_enter
-    mock._patch_dict._patch_dict = watched_patch_dict
-    mock._patch._clears_caches_it_feeds = True
+    mock._patch.__enter__ = watched_enter  # type: ignore[method-assign]
+    mock._patch_dict._patch_dict = watched_patch_dict  # type: ignore[attr-defined]
+    mock._patch._clears_caches_it_feeds = True  # type: ignore[attr-defined]
 
 
 def _get_ormcache_marks(registry: Any) -> dict[str, tuple[int, int]]:

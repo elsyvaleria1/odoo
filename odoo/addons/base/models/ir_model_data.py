@@ -750,7 +750,7 @@ class IrModelData(models.Model):
                     continue
 
                 parent_field = inheriting._inherits[model]
-                children = inheriting.with_context(active_test=False).search(
+                children = inheriting.with_context(active_test=False).search(  # noqa: E8507 -- inheriting varies
                     [(parent_field, "=", res_id)]
                 )
                 children_xids = {

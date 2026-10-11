@@ -28,11 +28,11 @@ def _bootstrap():
 
 _bootstrap()
 
-from odoo import tools
-from odoo.modules.registry import Registry
-from odoo.orm.models.metaclass import MetaModel
+from odoo import tools  # noqa: E402 -- The standalone command bootstraps the checkout first.
+from odoo.modules.registry import Registry  # noqa: E402 -- Requires checkout bootstrap.
+from odoo.orm.models.metaclass import MetaModel  # noqa: E402 -- Requires checkout bootstrap.
 
-from odoo.addons.test_lint.tests._field_spelling import (
+from odoo.addons.test_lint.tests._field_spelling import (  # noqa: E402 -- Requires checkout bootstrap.
     bound_names,
     positional_names,
 )

@@ -282,7 +282,7 @@ class MailController(http.Controller):
         return f"/odoo/{model_in_url}/{res_id}?{urlencode(sorted(url_params.items()))}"
 
     @http.route("/mail/view", type="http", auth="public")
-    def mail_action_view(
+    def mail_action_view(  # noqa: E8539 -- redirect: passes the token on to the page or record check that opens it
         self,
         model: str | None = None,
         res_id: int | str | None = None,

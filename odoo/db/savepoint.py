@@ -52,7 +52,7 @@ class Savepoint:
         self._cr = cr
         self.closed: bool = False
         self._hook_marks: tuple[tuple[Callbacks, HookMark], ...] = ()
-        cr.execute(f'SAVEPOINT "{self.name}"')
+        cr.execute(f'SAVEPOINT "{self.name}"')  # noqa: E8501 -- the name is the counter-made "sp<n>", never data
         if (opened := getattr(cr, "_savepoint_opened", None)) is not None:
             opened()
         self._hook_marks = mark_commit_hooks(cr)
@@ -89,14 +89,14 @@ class Savepoint:
             name=self.name,
             depth=getattr(self._cr, "_savepoint_depth", None),
         )
-        self._cr.execute(f'ROLLBACK TO SAVEPOINT "{self.name}"')
+        self._cr.execute(f'ROLLBACK TO SAVEPOINT "{self.name}"')  # noqa: E8501 -- the name is the counter-made "sp<n>", never data
         rollback_commit_hooks(self._hook_marks)
 
     def _close(self, rollback: bool) -> None:
         try:
             if rollback:
                 self.rollback()
-            self._cr.execute(f'RELEASE SAVEPOINT "{self.name}"')
+            self._cr.execute(f'RELEASE SAVEPOINT "{self.name}"')  # noqa: E8501 -- the name is the counter-made "sp<n>", never data
         finally:
             self.closed = True
             release_commit_hooks(self._hook_marks)

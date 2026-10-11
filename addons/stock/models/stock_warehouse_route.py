@@ -527,7 +527,7 @@ class StockWarehouseRoute(models.Model):
                     route_type,
                 )
             )
-        return self.env._(ROUTE_NAMES[route_type])
+        return self.env._(ROUTE_NAMES[route_type])  # noqa: E8502 -- resolves an _lt() table entry in this env's language
 
     def _sync_resupply_routes(self, previous_resupply_whs) -> None:
         self.check_singleton()

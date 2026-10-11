@@ -36,7 +36,7 @@ class ProductProduct(models.Model):
         ondelete="cascade",
         bypass_search_access=True,
     )
-    is_favorite = fields.Boolean(
+    is_favorite = fields.Boolean(  # noqa: E8529 -- index (is_favorite) partial
         related="product_tmpl_id.is_favorite",
         store=True,
         readonly=False,
@@ -1150,14 +1150,14 @@ class ProductProduct(models.Model):
             attribute_name = attribute_name and attribute_name.strip()
             value_name = value_name.strip()
             if not attribute_name:
-                raise ValueError(
+                raise ValueError(  # noqa: E8511 -- the import wizard shows this text
                     self.env._(
                         "Unable to import products with attribute value without attribute name (defined as: attribute:value): %s",
                         raw,
                     )
                 )
             if attribute_name in seen_attributes:
-                raise ValueError(
+                raise ValueError(  # noqa: E8511 -- the import wizard shows this text
                     self.env._(
                         "It is not possible to import different values for the same attribute: %s",
                         raw,
@@ -1229,7 +1229,7 @@ class ProductProduct(models.Model):
         for vals in with_import_values:
             name = (vals.get("name") or "").strip()
             if not name and not vals.get("product_tmpl_id"):
-                raise ValueError(
+                raise ValueError(  # noqa: E8511 -- the import wizard shows this text
                     self.env._(
                         "Unable to import products with attribute values but without name of product set"
                     )
@@ -1398,7 +1398,7 @@ class ProductProduct(models.Model):
             for ptal in template_attribute_to_ptal.values()
             if ptal.purpose != "variant"
         ]:
-            raise ValueError(
+            raise ValueError(  # noqa: E8511 -- the import wizard shows this text
                 self.env._(
                     "%(attribute)s is a specification of %(product)s, not a variant"
                     " attribute: its values cannot make variants.",

@@ -32,7 +32,7 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
     @http.route(
         "/pos-self-order/pine-labs-fetch-payment-status/", auth="public", type="jsonrpc"
     )
-    def pine_labs_fetch_payment_status(
+    def pine_labs_fetch_payment_status(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_pine_labs_kiosk_order(
@@ -111,7 +111,7 @@ class PosSelfOrderPineLabsController(PosSelfOrderController):
     @http.route(
         "/pos-self-order/pine-labs-cancel-transaction/", auth="public", type="jsonrpc"
     )
-    def pine_labs_cancel_transaction(
+    def pine_labs_cancel_transaction(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, order_id, payment_data, payment_method_id
     ):
         order, payment_method = self._get_pine_labs_kiosk_order(

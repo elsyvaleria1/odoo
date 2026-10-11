@@ -15,7 +15,7 @@ from urllib.request import url2pathname
 from google.protobuf.message import DecodeError
 
 import odoo
-from odoo.libs._vendor.embedded_sass_pb2 import (
+from odoo.libs._vendor.embedded_sass_pb2 import (  # type: ignore[attr-defined]
     COMPRESSED,
     CSS,
     EXPANDED,
@@ -119,7 +119,7 @@ _sass_binary: SassBinary | None = None
 
 
 def _get_sass_binary() -> SassBinary | None:
-    global _sass_binary
+    global _sass_binary  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _sass_binary is None:
         _sass_binary = _find_sass_binary()
     return _sass_binary
@@ -606,7 +606,7 @@ _sass_lock = threading.Lock()
 
 
 def get_sass_compiler() -> SassEmbeddedCompiler:
-    global _sass_compiler
+    global _sass_compiler  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _sass_compiler is None:
         with _sass_lock:
             if _sass_compiler is None:
@@ -617,7 +617,7 @@ def get_sass_compiler() -> SassEmbeddedCompiler:
 
 
 def close_sass_compiler() -> None:
-    global _sass_compiler
+    global _sass_compiler  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     with _sass_lock:
         if _sass_compiler is not None:
             with _sass_compiler._lock:
@@ -627,7 +627,7 @@ def close_sass_compiler() -> None:
 
 
 def _reset_after_fork() -> None:
-    global _sass_compiler, _sass_lock
+    global _sass_compiler, _sass_lock  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     compiler, _sass_compiler = _sass_compiler, None
     _sass_lock = threading.Lock()
     if compiler is not None:

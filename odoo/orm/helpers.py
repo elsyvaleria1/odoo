@@ -43,7 +43,7 @@ def get_class_memos(cls: type) -> dict[str, typing.Any]:
     memos = cls.__dict__.get("_class_memos__")
     if memos is None:
         memos = {}
-        cls._class_memos__ = memos
+        cls._class_memos__ = memos  # type: ignore[attr-defined]
     return memos
 
 

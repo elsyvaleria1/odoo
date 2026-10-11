@@ -30,7 +30,7 @@ class HrEmployeeBankAllocation(models.Model):
         related="employee_id.partner_id",
         string="Account Holder",
     )
-    company_id = fields.Many2one(
+    company_id = fields.Many2one(  # noqa: E8529 -- hr_employee_bank_allocation_comp_rule filters every read by this column
         related="employee_id.company_id",
         store=True,
         index=True,

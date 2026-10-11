@@ -26,7 +26,7 @@ class Collector[K, T](dict[K, tuple[T, ...]]):
     def __getitem__(self, key: K) -> tuple[T, ...]:
         return dict.get(self, key, ())
 
-    @typing.overload
+    @typing.overload  # type: ignore[override]
     def get(self, key: K, /) -> tuple[T, ...]: ...
     @typing.overload
     def get[D](self, key: K, /, default: D) -> tuple[T, ...] | D: ...

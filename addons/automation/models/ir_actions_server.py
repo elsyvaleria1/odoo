@@ -174,7 +174,7 @@ class IrActionsServer(models.Model):
         help="The automation a Sub-workflow step runs and waits for",
     )
 
-    step_key = fields.Char(
+    step_key = fields.Char(  # noqa: E8520 -- names a step in code, not a credential
         string="Key",
         help="How the code of later steps names this one: steps.<key>. "
         "Unique within the automation; derived from the name when left empty.",

@@ -55,8 +55,8 @@ class CalendarEvent(models.Model):
             and isinstance(res["stop"], datetime)
             and res["stop"].second != 0
         ):
-            res["stop"] = datetime.min + round(
-                (res["stop"] - datetime.min) / timedelta(minutes=1)
+            res["stop"] = datetime.min + round(  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
+                (res["stop"] - datetime.min) / timedelta(minutes=1)  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
             ) * timedelta(minutes=1)
         user_id = res.get("user_id")
         resource_ids = (

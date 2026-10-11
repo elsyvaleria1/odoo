@@ -108,7 +108,7 @@ def is_bearer_token_valid(headers, expected_token) -> bool:
         _logger.error("No expected token provided")
         return False
 
-    return consteq(token, expected_token)
+    return consteq(token, expected_token)  # noqa: E8537 -- inbound: a signature an outside service sends us
 
 
 def _execute_custom_verification(verification_method, headers, body, env=None) -> bool:

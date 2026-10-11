@@ -1156,7 +1156,7 @@ def _zeep_transport_class():
 
     from zeep.transports import Transport
 
-    class ClientTransport(Transport):
+    class ClientTransport(Transport):  # noqa: E8518 -- zeep sends through the guarded session it is given
         def __init__(self, client, url, timeout=30):
             super().__init__(
                 session=client.session, timeout=timeout, operation_timeout=timeout

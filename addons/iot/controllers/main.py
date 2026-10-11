@@ -129,7 +129,7 @@ class IoTController(IoTBoxLookup, http.Controller):
         ).prepare_response()
 
     @http.route("/iot/keyboard_layouts", type="http", auth="public", csrf=False)
-    def load_keyboard_layouts(self, available_layouts):
+    def load_keyboard_layouts(self, available_layouts):  # noqa: E8528 -- an IoT box seeds the layout table once, before any box is paired
         if not request.env["iot.keyboard.layout"].sudo().search_count([], limit=1):
             request.env["iot.keyboard.layout"].sudo().create(
                 json_loads(available_layouts)
@@ -239,9 +239,9 @@ class IoTController(IoTBoxLookup, http.Controller):
         }
         if box:
             offered = iot_box.get("token") or ""
-            if not (box.token and consteq(offered, box.token)):
+            if not (box.token and consteq(offered, box.token)):  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
                 pairing_token = request.env["iot.box"]._get_pairing_token()
-                if not (pairing_token and consteq(offered, pairing_token)):
+                if not (pairing_token and consteq(offered, pairing_token)):  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
                     _logger.warning(
                         "IoT %s offered neither the token it was paired with nor "
                         "one this database handed out in the last 15 minutes",

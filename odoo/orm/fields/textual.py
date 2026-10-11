@@ -515,7 +515,7 @@ class Char(BaseString):
         )
 
     @property
-    def _column_type(self) -> tuple[str, str]:
+    def _column_type(self) -> tuple[str, str]:  # type: ignore[override]
         return ("varchar", pg_varchar(self.size))
 
     @override

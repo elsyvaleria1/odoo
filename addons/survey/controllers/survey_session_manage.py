@@ -22,7 +22,7 @@ class UserInputSession(http.Controller):
     MAX_LIVE_ANSWERS = 100
 
     def _get_from_token(self, survey_token: str) -> Any:
-        return request.env["survey.survey"].search(
+        return request.env["survey.survey"].search(  # noqa: E8537 -- public: an identifier that is not meant to be secret
             [("access_token", "=", survey_token)]
         )
 

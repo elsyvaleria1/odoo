@@ -95,7 +95,7 @@ class Secret:
             raise TypeError("a Secret is compared with .matches(), never ==")
         return NotImplemented
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
     def __reduce_ex__(self, protocol: typing.SupportsIndex) -> typing.NoReturn:
         raise TypeError("a Secret is never pickled")

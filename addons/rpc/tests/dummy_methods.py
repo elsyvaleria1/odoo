@@ -178,7 +178,7 @@ class DummyMethods:
         "doc": '<div class="document"></div>',
     }
 
-    def deferred_annotation(self, names: Sequence[str]) -> Sequence[int]:
+    def deferred_annotation(self, names: Sequence[str]) -> Sequence[int]:  # noqa: F821 -- Fixture tests documentation of unresolved deferred annotations.
         pass
 
     deferred_annotation.expected = {

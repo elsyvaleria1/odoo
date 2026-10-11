@@ -1,5 +1,5 @@
 import logging
-import optparse
+import optparse  # noqa: TID251 -- Raises optparse.OptionValueError for the existing configuration parser.
 import os
 import shutil
 import sys

@@ -99,7 +99,7 @@ class HrEmployee(models.Model):
                 )
             else:
                 employee["last_active"] = max(
-                    employee.get("last_active", datetime.min),
+                    employee.get("last_active", datetime.min),  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
                     *(d for d in end_dates if d),
                 )
         return employees

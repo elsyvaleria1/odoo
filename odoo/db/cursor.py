@@ -1350,7 +1350,7 @@ class Connection:
         cr = self.cursor()
         try:
             cr.connection.autocommit = True
-            cr.execute(query, params)
+            cr.execute(query, params)  # noqa: E8501 -- test_lint checks get_rows_autocommit's own callers
             return cr.fetchall() if cr.description is not None else []
         finally:
             cr.close()

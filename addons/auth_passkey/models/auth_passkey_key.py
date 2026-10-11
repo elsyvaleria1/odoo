@@ -91,7 +91,7 @@ class AuthPasskeyKey(models.Model):
     def _get_session_challenge(self):
         challenge = request.session.pop("webauthn_challenge", None)
         if not challenge:
-            raise AccessDenied("Cannot find a challenge for this session")
+            raise AccessDenied("Cannot find a challenge for this session")  # noqa: E8505 -- a developer diagnostic for a broken WebAuthn flow
         return challenge
 
     @api.model

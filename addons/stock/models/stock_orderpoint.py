@@ -360,7 +360,7 @@ class StockWarehouseOrderpoint(models.Model):
                         "child_of",
                         other_warehouse.view_location_id.id,
                     )
-            orderpoints.allowed_location_ids = self.env["stock.location"].search(
+            orderpoints.allowed_location_ids = self.env["stock.location"].search(  # noqa: E8507 -- already batched: one query per (company, warehouse), not per orderpoint
                 loc_domain,
             )
 

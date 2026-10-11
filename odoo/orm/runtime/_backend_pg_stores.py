@@ -152,7 +152,7 @@ class PostgresColumnStore:
         table = SQL.identifier(model._table).code
         column_sql = SQL.identifier(column).code
         cr = typing.cast("Cursor", model.env.cr)
-        cr.executemany(
+        cr.executemany(  # noqa: E8501 -- both names are SQL.identifier().code; executemany takes no SQL params
             f"UPDATE {table} SET {column_sql} = %s WHERE id = %s",
             [(value, id_) for id_, value in rows],
         )

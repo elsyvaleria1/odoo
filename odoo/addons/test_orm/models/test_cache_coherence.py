@@ -2,7 +2,6 @@ from odoo import api, fields, models, tools
 from odoo.exceptions import ValidationError
 
 
-
 class TestOrmCoherenceCategory(models.Model):
     _name = "test_orm.coherence.category"
     _description = (

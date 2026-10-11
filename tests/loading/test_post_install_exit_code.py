@@ -62,7 +62,6 @@ def _read_summary(tmp_path):
 
 @requires_pg
 class TestAHollowPostInstallPhaseFailsTheProcess:
-
     def test_a_prepared_but_unstarted_phase_exits_non_zero(self, base_db, tmp_path):
         proc = _update_base_with_tests(
             base_db,

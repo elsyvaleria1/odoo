@@ -78,7 +78,6 @@ def stream_db():
 
 
 class HandshakeServer(threading.Thread):
-
     def __init__(self):
         super().__init__(daemon=True)
         self.port = free_port()

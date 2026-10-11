@@ -10,7 +10,7 @@ from odoo.addons.social.controllers.main import (
 
 class SocialLinkedinController(SocialController):
     @http.route("/social_linkedin/callback", type="http", auth="user")
-    def social_linkedin_callback(self, access_token=None, code=None, state=None, **kw):
+    def social_linkedin_callback(self, access_token=None, code=None, state=None, **kw):  # noqa: E8539 -- inbound: a token an outside service hands over, not one of ours
         if not request.env.user.has_group("social.group_social_manager"):
             return request.render(
                 "social.social_http_error_view",

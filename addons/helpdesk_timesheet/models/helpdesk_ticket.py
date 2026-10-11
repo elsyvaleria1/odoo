@@ -22,7 +22,7 @@ class HelpdeskTicket(models.Model):
     team_id = fields.Many2one(
         domain="[('use_helpdesk', '=', True), ('use_helpdesk_timesheet', '=', True)] if context.get('default_project_id') else [('use_helpdesk', '=', True)]"
     )
-    project_id = fields.Many2one(
+    project_id = fields.Many2one(  # noqa: E8529 -- One2many inverse of project.project.ticket_ids
         comodel_name="project.project",
         related="team_id.project_id",
         store=True,

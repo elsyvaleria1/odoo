@@ -11,7 +11,7 @@ class PosPrinter(models.Model):
         domain="['&', ('type', '=', 'printer'), ('subtype', '=', 'receipt_printer'), '|', ('company_id', '=', False), ('company_id', '=', company_id)]",
     )
     device_identifier = fields.Char(related="device_id.identifier")
-    proxy_ip = fields.Char(
+    proxy_ip = fields.Char(  # noqa: E8529 -- overrides point_of_sale's stored Char in place: the column belongs to the base field and outlives this module
         related="device_id.iot_ip",
         size=45,
         store=True,

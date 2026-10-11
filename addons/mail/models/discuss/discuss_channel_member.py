@@ -573,7 +573,7 @@ class DiscussChannelMember(models.Model):
 
     def _notify_mute(self) -> None:
         for member in self:
-            if member.mute_until_dt and member.mute_until_dt != datetime.max:
+            if member.mute_until_dt and member.mute_until_dt != datetime.max:  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
                 self.env["ir.cron"]._trigger_ref(
                     "mail.ir_cron_discuss_channel_member_unmute", member.mute_until_dt
                 )

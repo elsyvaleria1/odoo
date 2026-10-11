@@ -42,7 +42,7 @@ def clean_filename(name: str, replacement: str = "") -> str:
 
 if os.name != "nt":
 
-    def is_running_as_nt_service(service_name: str) -> bool:
+    def is_running_as_nt_service(service_name: str) -> bool:  # noqa: ARG001 -- The Windows implementation accepts the same service_name keyword.
         return False
 else:
     from contextlib import contextmanager

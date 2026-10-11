@@ -225,7 +225,7 @@ class StockPickingReport(models.Model):
             wh_location_ids = self.env["stock.location"]._get_allocation_source_ids(
                 warehouse.view_location_id.ids,
             )
-            if Move.search_count(
+            if Move.search_count(  # noqa: E8507 -- already batched per warehouse, and the loop breaks on the first hit
                 [
                     *Move._get_domain_allocatable_demand(
                         wh_location_ids,

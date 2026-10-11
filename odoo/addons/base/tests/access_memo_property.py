@@ -11,7 +11,6 @@ from odoo.libs.lru import LRU
 from odoo.orm.domain import Domain
 from odoo.orm.runtime.transaction import Transaction
 
-
 LONG = int(os.environ.get("ACCESS_MEMO_PROPERTY_STEPS", "0"))
 SEEDS = int(os.environ.get("ACCESS_MEMO_PROPERTY_SEEDS", "0"))
 LANGS = ("en_US", "fr_FR")
@@ -934,7 +933,7 @@ def _write_as(world: World, record: typing.Any, fname: str, value, mode: str) ->
         column = record_field.convert_to_column(value, record)
         if world.sql:
             env.cr.execute(
-                f'UPDATE "{record._table}" SET "{fname}" = %s WHERE id = %s',
+                f'UPDATE "{record._table}" SET "{fname}" = %s WHERE id = %s',  # noqa: E8501 -- table and column of the generator's fixed models
                 (column, record.id),
             )
         else:

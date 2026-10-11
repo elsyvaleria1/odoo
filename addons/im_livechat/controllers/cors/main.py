@@ -33,7 +33,7 @@ class CorsLivechatController(LivechatController):
         cors="*",
         csrf=False,
     )
-    def cors_download_livechat_transcript(
+    def cors_download_livechat_transcript(  # noqa: E8528 -- a cross-origin livechat download, authorised by the guest token in the body, never by a cookie
         self, guest_token, channel_id
     ):
         force_guest_env(guest_token)

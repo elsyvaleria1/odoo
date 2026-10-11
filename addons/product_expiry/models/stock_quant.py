@@ -12,7 +12,7 @@ from odoo.addons.stock.tools.reservation import RemovalStrategy
 def _fefo_sort_key(quant) -> tuple:
     return (
         quant.removal_date is False,
-        quant.removal_date or datetime.min,
+        quant.removal_date or datetime.min,  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
         quant.in_date,
         quant.id,
     )
@@ -33,7 +33,7 @@ class StockQuant(models.Model):
     expiration_date = fields.Datetime(
         related="trace_id.expiration_date",
     )
-    removal_date = fields.Datetime(
+    removal_date = fields.Datetime(  # noqa: E8529 -- FEFO gathers ORDER BY removal_date, in_date, id, and report_stock_quantity reads the column
         related="trace_id.removal_date",
         store=True,
     )

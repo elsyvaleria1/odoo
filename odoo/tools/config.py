@@ -4,7 +4,7 @@ import contextlib
 import functools
 import io
 import logging
-import optparse
+import optparse  # noqa: TID251 -- The existing option API relies on optparse parser and option subclasses.
 import os
 import re
 import sys
@@ -37,7 +37,7 @@ crypt_context = CryptContext(
 _dangerous_logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
-optparse._ = str
+optparse._ = str  # type: ignore[attr-defined]
 
 ALL_DEV_MODE = ("access", "assets", "qweb", "reload", "xml")
 _MODULE_MAP_OPTIONS = frozenset({"init", "update"})
@@ -315,7 +315,7 @@ class _CountingDict(dict[str, Any]):
         self._bump()
         return result
 
-    def __ior__(self, other: Any) -> Self:
+    def __ior__(self, other: Any) -> Self:  # type: ignore[misc, override]
         super().__ior__(other)
         self._bump()
         return self
@@ -573,7 +573,7 @@ class configmanager:
             my_default=False,
             help="install demo data in new databases",
         )
-        group.add_option(
+        group.add_option(  # type: ignore[call-overload]
             "--without-demo",
             dest="with_demo",
             type="without_demo",
@@ -899,7 +899,7 @@ class configmanager:
             help="specify the SMTP port",
             type="int",
         )
-        group.add_option(
+        group.add_option(  # type: ignore[call-overload]
             "--smtp-ssl",
             dest="smtp_ssl",
             type="smtp_ssl",
@@ -1628,13 +1628,13 @@ class configmanager:
         for loglevel, message, args, kwargs in cls._log_entries:
             _dangerous_logger.log(loglevel, message, *args, **kwargs)
         cls._log_entries.clear()
-        cls._log = _dangerous_logger.log
+        cls._log = _dangerous_logger.log  # type: ignore[assignment, method-assign]
 
         for message, args, kwargs in cls._warn_entries:
             kwargs.setdefault("stacklevel", 1)
             warnings.warn(message, *args, **kwargs)
         cls._warn_entries.clear()
-        cls._warn = warnings.warn
+        cls._warn = warnings.warn  # type: ignore[method-assign]
 
     def parse_config(
         self,

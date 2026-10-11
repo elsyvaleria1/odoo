@@ -434,7 +434,7 @@ def sync_foreign_schema(model) -> None:
                 "ALTER FOREIGN TABLE %s ADD COLUMN %s %s",
                 SQL.identifier(table),
                 SQL.identifier(name),
-                SQL(coltype),
+                SQL(coltype),  # noqa: E8501 -- the ORM's own column_type
             )
         )
 

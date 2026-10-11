@@ -27,7 +27,7 @@ _fields: typing.Any = None
 
 
 def _odoo_fields() -> typing.Any:
-    global _fields
+    global _fields  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _fields is None:
         from odoo import fields
 

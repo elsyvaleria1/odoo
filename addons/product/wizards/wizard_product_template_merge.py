@@ -477,7 +477,7 @@ class WizardProductTemplateMerge(models.TransientModel):
         model_mapping = self._get_exclusion_models()
 
         self.env.flush_all()
-        self.env.cr.execute(query)
+        self.env.cr.execute(query)  # noqa: E8501 -- built by _generate_query
 
         line_vals_list = []
         for min_id, template_ids in self.env.cr.fetchall():

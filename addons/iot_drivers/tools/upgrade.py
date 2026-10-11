@@ -47,7 +47,7 @@ def pip(*args):
 
 def get_db_branch(server_url):
     try:
-        response = requests.post(
+        response = requests.post(  # noqa: E8518 -- runs on the IoT box, which has no database and so no ir.egress
             server_url + "/web/webclient/version_info", json={}, timeout=5
         )
         response.raise_for_status()

@@ -181,7 +181,7 @@ class WhatsappAccount(models.Model):
             .filtered(
                 lambda account: (
                     account.webhook_verify_token
-                    and consteq(account.webhook_verify_token, token)
+                    and consteq(account.webhook_verify_token, token)  # noqa: E8537 -- inbound: a signature an outside service sends us
                 )
             )[:1]
         )
@@ -190,7 +190,7 @@ class WhatsappAccount(models.Model):
         return Resolution(
             account,
             {"challenge": challenge},
-            verify=lambda headers, body: consteq(
+            verify=lambda headers, body: consteq(  # noqa: E8537 -- inbound: a signature an outside service sends us
                 account.sudo().webhook_verify_token, token
             ),
         )

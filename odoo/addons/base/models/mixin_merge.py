@@ -559,7 +559,7 @@ class MixinMerge(models.AbstractModel):
                 continue
 
             records_ref = (
-                Model.sudo()
+                Model.sudo()  # noqa: E8507 -- Model varies per turn
                 .with_context(active_test=False)
                 .search([(declaration.name, "in", src_values)])
             )

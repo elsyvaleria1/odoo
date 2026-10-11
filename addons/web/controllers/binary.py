@@ -136,7 +136,7 @@ class Binary(http.Controller):
         auth="public",
         readonly=True,
     )
-    def content_common(
+    def content_common(  # noqa: E8539 -- content: an attachment's own token or ownership token
         self,
         xmlid: str | None = None,
         model: str = "ir.attachment",
@@ -548,7 +548,7 @@ class Binary(http.Controller):
         readonly=True,
         save_session=False,
     )
-    def content_image(
+    def content_image(  # noqa: E8539 -- content: an attachment's own token or ownership token
         self,
         xmlid: str | None = None,
         model: str = "ir.attachment",

@@ -285,7 +285,7 @@ class Field[T](
     tree_siblings: tuple[Field[typing.Any], ...] = ()
     inherited_field: typing.Any = None
 
-    comodel_name: str = None
+    comodel_name: str = None  # type: ignore[assignment]
     context: ContextType = frozendict({})
 
     delegate: bool = False

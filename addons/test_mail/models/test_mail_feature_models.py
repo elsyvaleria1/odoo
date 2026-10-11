@@ -2,7 +2,6 @@ from odoo import api, fields, models
 from odoo.fields import Domain
 
 
-
 class MailTestRecipients(models.Model):
     _name = "mail.test.recipients"
     _description = "Test Recipients Computation"

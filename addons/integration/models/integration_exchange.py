@@ -894,7 +894,7 @@ class IntegrationExchange(models.Model):
             Model = self.env[model_name].sudo().with_context(active_test=False)
             if "log_retention_days" in Model._fields:
                 channels.extend(
-                    Model.search([("log_retention_days", ">", 0)])
+                    Model.search([("log_retention_days", ">", 0)])  # noqa: E8507 -- one query per channel model
                 )
         return channels
 

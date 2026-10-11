@@ -20,7 +20,7 @@ class WalletTransaction(models.Model):
         required=True,
         ondelete="cascade",
     )
-    account_id = fields.Many2one(
+    account_id = fields.Many2one(  # noqa: E8529 -- UNIQUE (external_ref, account_id) partial
         related="card_id.account_id",
         precompute=True,
         store=True,

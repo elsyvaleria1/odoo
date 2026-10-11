@@ -285,7 +285,7 @@ class ApprovalRequestEscalation(models.Model):
                 ("date_confirmed", "<", reminder_threshold),
             ]
 
-            requests_to_remind = self.search(
+            requests_to_remind = self.search(  # noqa: E8507 -- one search per priority, each with its own threshold and batch limit
                 domain,
                 order="date_confirmed asc",
                 limit=CRON_BATCH_LIMIT,

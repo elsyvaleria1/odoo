@@ -25,7 +25,7 @@ def post_init(env) -> None:
         company = company.with_company(company)
         if not company.hr_timesheet_config_id.internal_project_id:
             if not internal_projects_by_company_dict:
-                internal_projects_by_company_read = project.search_read(
+                internal_projects_by_company_read = project.search_read(  # noqa: E8507 -- computed once, on first need
                     [
                         ("name", "=", env._("Internal")),
                         ("allow_timesheets", "=", True),

@@ -490,7 +490,7 @@ class MailingMailing(models.Model):
 
     def _compute_total(self) -> None:
         for mass_mailing in self:
-            total = self.env[mass_mailing.mailing_model_real].search_count(
+            total = self.env[mass_mailing.mailing_model_real].search_count(  # noqa: E8507 -- one count per mailing, on the mailing's own model and domain
                 mass_mailing._get_domain_recipients()
             )
             if (
@@ -2123,7 +2123,7 @@ class MailingMailing(models.Model):
             repr((self.env.cr.dbname, *signed)).encode(),
             hashlib.sha512,
         )
-        if not consteq(token, legacy.hexdigest()):
+        if not consteq(token, legacy.hexdigest()):  # noqa: E8537 -- stateless: an older signed format the mails already sent carry
             return False
         today = fields.Date.to_string(fields.Date.today())
         recorded = settings.get(self.env, LEGACY_TOKEN_LAST_USE) == today

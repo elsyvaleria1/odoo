@@ -24,7 +24,7 @@ class AppointmentAccountPayment(AppointmentController):
     )
     def calendar_booking_cancel(self, booking_token):
         booking_sudo = (
-            request.env["calendar.booking"]
+            request.env["calendar.booking"]  # noqa: E8537 -- session: a checkout's handle to the record it is filling
             .sudo()
             .search([("booking_token", "=", booking_token)], limit=1)
         )
@@ -54,7 +54,7 @@ class AppointmentAccountPayment(AppointmentController):
     )
     def calendar_booking_view(self, booking_token):
         booking_sudo = (
-            request.env["calendar.booking"]
+            request.env["calendar.booking"]  # noqa: E8537 -- session: a checkout's handle to the record it is filling
             .sudo()
             .search([("booking_token", "=", booking_token)], limit=1)
         )

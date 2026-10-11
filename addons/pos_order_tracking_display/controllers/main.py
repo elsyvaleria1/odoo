@@ -6,7 +6,7 @@ from odoo.http import request
 
 class PosOrderTrackingDisplay(http.Controller):
     @http.route("/pos-order-tracking/", auth="public", type="http", website=True)
-    def pos_order_tracking_display(self, access_token):
+    def pos_order_tracking_display(self, access_token):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         preparation_display_sudo = (
             request.env["pos.prep.display"].sudo()._from_tracking_token(access_token)
         )

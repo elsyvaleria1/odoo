@@ -50,7 +50,7 @@ _HEALTH_PARAMS: dict[str, str] = {
 def get_connection_info_for_database(
     db_or_uri: str, readonly: bool = False, settings: PoolSettings | None = None
 ) -> tuple[str, dict]:
-    global _ODOO_PGAPPNAME_WARNED
+    global _ODOO_PGAPPNAME_WARNED  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     settings = resolve(settings)
     app_name = settings.app_name
     if "ODOO_PGAPPNAME" in os.environ:

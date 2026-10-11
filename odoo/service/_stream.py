@@ -130,7 +130,7 @@ def process_streams(db_name: str) -> None:
             return
         if not RUNTIME.lease(db_name, registry):
             return
-        registry[STREAM_MODEL]._reconcile(db_name, RUNTIME)
+        registry[STREAM_MODEL]._reconcile(db_name, RUNTIME)  # type: ignore[attr-defined]
 
 
 def shutdown() -> None:

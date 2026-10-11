@@ -164,13 +164,13 @@ class CalendarEvent(models.Model):
     @api.model
     def _default_start(self):
         now = fields.Datetime.now()
-        return now + (datetime.min - now) % timedelta(minutes=30)
+        return now + (datetime.min - now) % timedelta(minutes=30)  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
 
     @api.model
     def _default_stop(self):
         now = fields.Datetime.now()
         duration_hours = self.get_default_duration()
-        start = now + (datetime.min - now) % timedelta(minutes=30)
+        start = now + (datetime.min - now) % timedelta(minutes=30)  # noqa: DTZ901 -- Odoo stores UTC datetimes without tzinfo; this is a naive bound.
         return start + timedelta(hours=duration_hours)
 
     name = fields.Char(

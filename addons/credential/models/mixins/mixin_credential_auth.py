@@ -96,7 +96,7 @@ class MixinCredentialAuth(models.AbstractModel):
         stored = self.sudo().credential_fingerprint
         if not stored or not token:
             return False
-        return hmac.compare_digest(stored, self._fingerprint_token(token))
+        return hmac.compare_digest(stored, self._fingerprint_token(token))  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
 
     @api.model
     def _get_by_credential_token(self, token, domain=None) -> Self:

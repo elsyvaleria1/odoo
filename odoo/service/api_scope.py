@@ -130,7 +130,7 @@ def check_model_operation(
     rule = rules.rule(model_name)
     operation = operation_of(method)
     if rule is None:
-        raise AccessError(
+        raise AccessError(  # noqa: E8505 -- the API key's own scope, named to its holder
             env._(
                 "The API key's scope '%(scope)s' does not reach '%(model)s'.",
                 scope=rules.key,
@@ -138,7 +138,7 @@ def check_model_operation(
             )
         )
     if not rule.allows(operation):
-        raise AccessError(
+        raise AccessError(  # noqa: E8505 -- the API key's own scope, named to its holder
             env._(
                 "The API key's scope '%(scope)s' does not allow %(operation)s on "
                 "'%(model)s' (%(method)s).",

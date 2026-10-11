@@ -159,7 +159,7 @@ def get_response_schema(handler: typing.Callable) -> dict[str, Any] | None:
         return None
     if isinstance(annotation, str):
         try:
-            annotation = eval(annotation, getattr(handler, "__globals__", None))
+            annotation = eval(annotation, getattr(handler, "__globals__", None))  # noqa: S307 -- Resolves trusted Python handler annotations, never request data.
         except Exception as exc:
             _debug.logic(
                 "http.openapi.return_annotation_unresolved",

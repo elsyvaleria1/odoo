@@ -510,7 +510,7 @@ class HrAttendance(models.Model):
             passes = 0
             while True:
                 passes += 1
-                candidates = Attendance.search(
+                candidates = Attendance.search(  # noqa: E8507 -- walks each employee's window in pages
                     [
                         ("employee_id", "=", employee.id),
                         ("check_out", "!=", False),

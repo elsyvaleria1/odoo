@@ -23,7 +23,7 @@ websocket.enableTrace(True, level=logging.getLevelName(_logger.getEffectiveLevel
 def send_to_controller(params, method="send_websocket", server_url=None) -> None:
     request_path = f"{server_url}/iot/box/{method}"
     try:
-        response = requests.post(request_path, json={"params": params}, timeout=5)
+        response = requests.post(request_path, json={"params": params}, timeout=5)  # noqa: E8518 -- runs on the IoT box, which has no database and so no ir.egress
         response.raise_for_status()
     except requests.exceptions.RequestException:
         _logger.exception("Could not reach database URL: %s", request_path)
@@ -170,7 +170,7 @@ class WebsocketClient(Thread):
 
     def run(self):
         if self.db_name:
-            session_response = requests.get(
+            session_response = requests.get(  # noqa: E8518 -- runs on the IoT box, which has no database and so no ir.egress
                 self.server_url + "/web/login?db=" + self.db_name,
                 allow_redirects=False,
                 timeout=10,
@@ -182,7 +182,7 @@ class WebsocketClient(Thread):
                     "Failed to get session ID, status %s", session_response.status_code
                 )
 
-        self.ws = websocket.WebSocketApp(
+        self.ws = websocket.WebSocketApp(  # noqa: E8518 -- runs on the IoT Box, dialling the Odoo server its operator paired it with; ir.egress does not exist there
             self.websocket_url,
             header={
                 "User-Agent": "OdooIoTBox/1.0",

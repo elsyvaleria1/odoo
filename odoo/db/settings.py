@@ -30,7 +30,7 @@ REPLICA_OVERRIDABLE: tuple[tuple[str, str], ...] = (
 def _coerce_optional_int(value: object) -> int | None:
     if value is None or value == "" or value is False:
         return None
-    return int(value)
+    return int(value)  # type: ignore[call-overload]
 
 
 @dataclass(frozen=True, slots=True)

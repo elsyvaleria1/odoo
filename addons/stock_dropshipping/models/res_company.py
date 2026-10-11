@@ -41,7 +41,7 @@ class ResCompany(models.Model):
         _debug.lifecycle("dropship_picking_type_create", companies=self)
         dropship_vals = []
         for company in self:
-            sequence = self.env["ir.sequence"].search(
+            sequence = self.env["ir.sequence"].search(  # noqa: E8507 -- company setup: one lookup per company
                 [
                     ("code", "=", "stock.dropshipping"),
                     ("company_id", "=", company.id),
@@ -88,7 +88,7 @@ class ResCompany(models.Model):
 
         dropship_vals = []
         for company in self:
-            dropship_picking_type = self.env["stock.picking.type"].search(
+            dropship_picking_type = self.env["stock.picking.type"].search(  # noqa: E8507 -- company setup: one lookup per company
                 [
                     ("company_id", "=", company.id),
                     ("code", "=", "dropship"),

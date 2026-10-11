@@ -377,7 +377,7 @@ def _check_no_mapping_credentials(db_name: str) -> None:
 
 
 def _dump_into_tempfile(write: Callable[[IO[bytes]], None]) -> IO[bytes]:
-    t = tempfile.TemporaryFile()
+    t = tempfile.TemporaryFile()  # noqa: SIM115 -- Returns the open file to its caller; closes it on every failure.
     try:
         write(t)
         t.seek(0)

@@ -3,7 +3,6 @@ import random
 
 from odoo.exceptions import AccessError
 
-
 OPERATIONS = ("read", "write")
 LETTERS = {"read": "r", "write": "u"}
 BREAK = os.environ.get("ACCESS_PROPERTY_BREAK") == "1"

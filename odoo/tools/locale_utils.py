@@ -59,7 +59,7 @@ def get_locales(lang: str) -> Iterator[str]:
 
     seen = set()
     for enc in encodings:
-        ln = locale._build_localename((lang, enc))
+        ln = locale._build_localename((lang, enc))  # type: ignore[attr-defined]
         for name in (ln, locale.normalize(ln)):
             if name not in seen:
                 seen.add(name)

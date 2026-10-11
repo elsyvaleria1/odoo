@@ -396,7 +396,7 @@ class DeviceDevice(models.Model):
         with_history = self.browse(
             device.id
             for device in self
-            if logs.search_count([("device_id", "=", device.id)], limit=1)
+            if logs.search_count([("device_id", "=", device.id)], limit=1)  # noqa: E8507 -- one EXISTS per device; a grouped count reads every fix of the log table
         )
         if with_history:
             raise UserError(

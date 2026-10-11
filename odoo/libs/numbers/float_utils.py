@@ -79,7 +79,7 @@ def _round_r(
     else:
         normalized_value = value / rounding_factor
 
-    if normalized_value == 0.0:
+    if normalized_value == 0.0:  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
         return 0.0
     magnitude = abs(normalized_value)
     if not magnitude < _EXACT_THRESHOLD:
@@ -102,7 +102,7 @@ def _round_r(
     elif rounding_method == "HALF-EVEN":
         integral = math.floor(normalized_value)
         remainder = abs(normalized_value - integral)
-        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon
+        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
         result = (
             integral + (integral & 1)
             if is_half
@@ -111,7 +111,7 @@ def _round_r(
     elif rounding_method == "HALF-DOWN":
         integral = math.floor(abs(normalized_value))
         remainder = abs(normalized_value) - integral
-        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon
+        is_half = remainder == 0.5 or abs(0.5 - remainder) < epsilon  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
         if is_half:
             result = math.copysign(integral, normalized_value)
         else:
@@ -214,7 +214,7 @@ def _round_exact(
 
 def _is_zero_r(value: float, epsilon: float) -> bool:
     return (
-        value == 0.0
+        value == 0.0  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
         or abs(_round_r(value, epsilon)) < epsilon
     )
 
@@ -264,7 +264,7 @@ def _round_half_up_by_factor(value: float, step: float, factor: float) -> float:
     if value == 0:
         return 0.0
     normalized_value = value * factor
-    if normalized_value == 0.0:
+    if normalized_value == 0.0:  # noqa: RUF069 -- Exact representable sentinel/boundary; a tolerance changes the contract.
         return 0.0
     magnitude = abs(normalized_value)
     if not magnitude < _EXACT_THRESHOLD:

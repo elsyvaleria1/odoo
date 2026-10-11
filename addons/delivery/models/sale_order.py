@@ -246,7 +246,7 @@ class SaleOrder(models.Model):
             )
             recipient = order.env["res.partner"].browse(address_values["parent_id"])
             phone = recipient._phone_get_number()
-            shipping_partner = order.env["res.partner"].search(
+            shipping_partner = order.env["res.partner"].search(  # noqa: E8507 -- resolve each order's recipient-owned pickup address
                 [(field, "=", value) for field, value in address_values.items()],
                 limit=1,
             ) or order.env["res.partner"].create(

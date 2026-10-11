@@ -231,7 +231,7 @@ def get_dict_asts(expr: str | ast.AST) -> dict[str, ast.AST]:
         msg = "Non-string literal dict key"
         raise ValueError(msg)
     return {
-        key.value: val
+        key.value: val  # type: ignore[union-attr]
         for key, val in zip(expr.keys, expr.values, strict=False)
     }
 

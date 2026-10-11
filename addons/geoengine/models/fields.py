@@ -601,7 +601,7 @@ class GeoField(fields.Field):
                     "ALTER TABLE %s ALTER COLUMN %s TYPE %s USING ST_Transform(%s, %s)",
                     SQL.identifier(model._table),
                     SQL.identifier(self.name),
-                    SQL(self._postgis_type()),
+                    SQL(self._postgis_type()),  # noqa: E8501 -- the type the field declares
                     SQL.identifier(self.name),
                     self.srid,
                 ),

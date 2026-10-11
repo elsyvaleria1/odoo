@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Literal, NoReturn, overload
 
 import odoo.cli
-import odoo.init
+import odoo.init  # noqa: F401 -- Import initializes the Odoo runtime before CLI dispatch.
 from odoo.db import is_maintenance_db
 from odoo.libs.debug_log import DebugLog
 from odoo.modules import initialize_sys_path, load_script

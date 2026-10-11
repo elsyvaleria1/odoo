@@ -258,7 +258,7 @@ class StockPickingBatch(models.Model):
         for batches in grouped.values():
             batches.allowed_picking_ids = self.env[
                 "stock.picking"
-            ].search(
+            ].search(  # noqa: E8507 -- one query per distinct (company, type, draft); batches sharing one were merged above
                 batches[:1]._get_domain_allowed_picking()
             )
 

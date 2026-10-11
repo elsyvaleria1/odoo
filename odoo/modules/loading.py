@@ -670,8 +670,8 @@ class _PackageLoader:
         self.operation: UpdateOperation | None = None
         self.log_level = logging.DEBUG
         self.model_names: OrderedSet[str] = OrderedSet()
-        self.module: IrModuleModuleProtocol = None
-        self.py_module: types.ModuleType = None
+        self.module: IrModuleModuleProtocol = None  # type: ignore[assignment]
+        self.py_module: types.ModuleType = None  # type: ignore[assignment]
         self.recreated_ids: dict[str, int] = {}
         self.test_time = 0.0
         self.test_queries = 0
@@ -1520,10 +1520,10 @@ class _ModuleLoader:
         self.reinit_modules = reinit_modules
         self.new_db_demo = new_db_demo
         self.models_to_check = models_to_check
-        self.graph: ModuleGraph = None
-        self.env: Environment = None
+        self.graph: ModuleGraph = None  # type: ignore[assignment]
+        self.env: Environment = None  # type: ignore[assignment]
         self.report: OdooTestResult | None = None
-        self.migrations: MigrationManager = None
+        self.migrations: MigrationManager = None  # type: ignore[assignment]
 
     def bootstrap(self) -> bool:
         cr = self.cr

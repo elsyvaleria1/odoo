@@ -103,13 +103,13 @@ class WizardHrApplicantRefuse(models.TransientModel):
                 & Domain("application_status", "=", "ongoing")
             )
             wizard.duplicate_applicant_ids_domain = domain
-            wizard.duplicates_count = self.env["hr.applicant"].search_count(domain)
+            wizard.duplicates_count = self.env["hr.applicant"].search_count(domain)  # noqa: E8507 -- a transient wizard: one record
 
     @api.depends("duplicates", "duplicate_applicant_ids_domain")
     def _compute_duplicate_applicant_ids(self) -> None:
         for wizard in self:
             wizard.duplicate_applicant_ids = (
-                self.env["hr.applicant"].search(wizard.duplicate_applicant_ids_domain)
+                self.env["hr.applicant"].search(wizard.duplicate_applicant_ids_domain)  # noqa: E8507 -- a transient wizard: one record
                 if wizard.duplicates
                 else self.env["hr.applicant"]
             )

@@ -36,7 +36,7 @@ class AccountAnalyticAccount(models.Model):
         index=True,
         required=True,
     )
-    root_plan_id = fields.Many2one(
+    root_plan_id = fields.Many2one(  # noqa: E8529 -- plan_id.root_id is a non-stored compute over parent_path: there is no column to join
         comodel_name="account.analytic.plan",
         related="plan_id.root_id",
         string="Root Plan",
@@ -88,7 +88,7 @@ class AccountAnalyticAccount(models.Model):
     @api.constrains("company_id")
     def _check_company_consistency(self) -> None:
         for company, accounts in groupby(self, lambda account: account.company_id):
-            if company and self.env["account.analytic.line"].sudo().search_count(
+            if company and self.env["account.analytic.line"].sudo().search_count(  # noqa: E8507 -- one query per company; accounts sharing one were merged above
                 [
                     ("auto_account_id", "in", [account.id for account in accounts]),
                     "!",
@@ -152,7 +152,7 @@ class AccountAnalyticAccount(models.Model):
             if not plan:
                 accounts.debit = accounts.credit = accounts.balance = 0
                 continue
-            credit_groups = self.env["account.analytic.line"]._read_group(
+            credit_groups = self.env["account.analytic.line"]._read_group(  # noqa: E8507 -- one query per plan: the plan names the column to group on
                 domain=domain
                 + [(plan._column_name(), "in", self.ids), ("amount", ">=", 0.0)],
                 groupby=[plan._column_name(), "currency_id"],
@@ -162,7 +162,7 @@ class AccountAnalyticAccount(models.Model):
             for account, currency, amount_sum in credit_groups:
                 data_credit[account.id] += convert(amount_sum, currency)
 
-            debit_groups = self.env["account.analytic.line"]._read_group(
+            debit_groups = self.env["account.analytic.line"]._read_group(  # noqa: E8507 -- one query per plan: the plan names the column to group on
                 domain=domain
                 + [(plan._column_name(), "in", self.ids), ("amount", "<", 0.0)],
                 groupby=[plan._column_name(), "currency_id"],

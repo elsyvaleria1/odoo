@@ -1,7 +1,7 @@
 from odoo.http import request
 
 from odoo.addons.hr_contract_salary.controllers import (
-    main,
+    main,  # noqa: F401 -- Registers the salary controller extension before this Sign override.
 )
 from odoo.addons.sign.controllers.main import Sign
 

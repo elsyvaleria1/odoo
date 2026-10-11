@@ -15,7 +15,7 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def process_order(self, order, access_token, table_identifier, device_type):
+    def process_order(self, order, access_token, table_identifier, device_type):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config, table = self._get_pos_config_and_table(
             access_token, table_identifier, order
         )
@@ -213,13 +213,13 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/validate-partner", auth="public", type="jsonrpc", website=True
     )
-    def save_partner(
+    def save_partner(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self,
         access_token,
         name,
         phone,
         street,
-        zip,
+        zip,  # noqa: A002 -- zip is an established RPC address parameter.
         city,
         country_id,
         state_id=None,
@@ -277,7 +277,7 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/remove-order", auth="public", type="jsonrpc", website=True
     )
-    def remove_order(self, access_token, order_id, order_access_token):
+    def remove_order(self, access_token, order_id, order_access_token):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config = self._get_pos_config(access_token)
         pos_order = pos_config.env["pos.order"].browse(order_id)
 
@@ -298,7 +298,7 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/get-user-data", auth="public", type="jsonrpc", website=True
     )
-    def get_orders_by_access_token(
+    def get_orders_by_access_token(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, access_token, order_access_tokens, table_identifier=None
     ):
         pos_config = self._get_pos_config(access_token)
@@ -342,7 +342,7 @@ class PosSelfOrderController(http.Controller):
 
         access_tokens = set({o.get("access_token") for o in order_access_tokens})
         existing_order_tokens = (
-            pos_config.env["pos.order"]
+            pos_config.env["pos.order"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .search([("access_token", "in", access_tokens)])
             .mapped("access_token")
         )
@@ -358,7 +358,7 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def pos_self_order_kiosk_payment(
+    def pos_self_order_kiosk_payment(  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self, pos_config_id, order, payment_method_id, access_token, device_type
     ):
         pos_config = self._get_pos_config(access_token)
@@ -403,7 +403,7 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def pos_kiosk_increment_nb_print(self, access_token, order_id, order_access_token):
+    def pos_kiosk_increment_nb_print(self, access_token, order_id, order_access_token):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config = self._get_pos_config(access_token)
         pos_order = pos_config.env["pos.order"].browse(order_id)
 
@@ -426,7 +426,7 @@ class PosSelfOrderController(http.Controller):
         type="jsonrpc",
         website=True,
     )
-    def change_printer_status(self, access_token, has_paper):
+    def change_printer_status(self, access_token, has_paper):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config = self._get_pos_config(access_token)
         if has_paper != pos_config.has_paper:
             pos_config.write({"has_paper": has_paper})
@@ -434,7 +434,7 @@ class PosSelfOrderController(http.Controller):
     @http.route(
         "/pos-self-order/get-slots", auth="public", type="jsonrpc", website=True
     )
-    def get_slots(self, access_token, preset_id):
+    def get_slots(self, access_token, preset_id):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         pos_config = self._get_pos_config(access_token)
         preset = pos_config.env["pos.preset"].browse(preset_id)
         return preset.get_available_slots()
@@ -446,7 +446,7 @@ class PosSelfOrderController(http.Controller):
 
     def _get_pos_config(self, access_token, check_active_session=True):
         pos_config_sudo = (
-            request.env["pos.config"]
+            request.env["pos.config"]  # noqa: E8537 -- device: a device's or a service's credential, presented by a program
             .sudo()
             .search([("self_ordering_access_token", "=", access_token)], limit=1)
         )
@@ -498,6 +498,6 @@ class PosSelfOrderController(http.Controller):
         return pos_config, table
 
     @http.route(["/pos-self/ping"], type="jsonrpc", auth="public")
-    def pos_ping(self, access_token):
+    def pos_ping(self, access_token):  # noqa: E8539 -- device: a device's or a kiosk's credential, presented by a program
         self._get_pos_config(access_token, check_active_session=False)
         return {"response": "pong"}

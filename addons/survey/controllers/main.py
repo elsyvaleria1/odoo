@@ -61,7 +61,7 @@ class Survey(http.Controller):
             if answer_sudo:
                 return answer_sudo.survey_id, answer_sudo
 
-        survey_sudo = SurveySudo.with_context(active_test=False).search(
+        survey_sudo = SurveySudo.with_context(active_test=False).search(  # noqa: E8537 -- public: an identifier that is not meant to be secret
             [("access_token", "=", survey_token)]
         )
         if answer_token:

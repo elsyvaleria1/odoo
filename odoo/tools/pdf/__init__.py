@@ -173,13 +173,13 @@ def add_banner(
     pdf_stream: io.BytesIO,
     text: str | None = None,
     logo: bool = False,
-    thickness: float = SENTINEL,
+    thickness: float = SENTINEL,  # type: ignore[assignment]
 ) -> io.BytesIO:
     from reportlab.lib import colors
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
-    if thickness is SENTINEL:
+    if thickness is SENTINEL:  # type: ignore[comparison-overlap]
         from reportlab.lib.units import cm
 
         thickness = 2 * cm

@@ -620,7 +620,7 @@ def send_request_stripe_proxy(
     error_msg = _resolve_route_error(route)
     if error_msg:
         _debug.logic("stripe_route_refused", route=route, company=company)
-        raise UserError(company.env._(error_msg))
+        raise UserError(company.env._(error_msg))  # noqa: E8502 -- resolves an _lt() message in the company's language
 
     url = f"{proxy_server}/api/stripe_issuing/v1/{route}"
     _logger.info(
@@ -654,7 +654,7 @@ def send_request_stripe_proxy(
             route=route,
             status=getattr(response, "status_code", 0),
         )
-        raise UserError(company.env._(get_error_message_from_response(response)))
+        raise UserError(company.env._(get_error_message_from_response(response)))  # noqa: E8502 -- resolves an _lt() message in the company's language
     response_content = response.json()
     session_headers = response.headers.get("Set-Cookie", "")
     session_headers = dict(

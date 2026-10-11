@@ -369,7 +369,7 @@ class Headers(Proxy):
     add = ProxyFunc(None)
     add_header = ProxyFunc(None)
     clear = ProxyFunc(None)
-    copy = ProxyFunc(lambda v: Headers(v))
+    copy = ProxyFunc(lambda v: Headers(v))  # noqa: PLW0108 -- Headers is defined after this class body.
     extend = ProxyFunc(None)
     get = ProxyFunc()
     get_all = ProxyFunc()
@@ -390,7 +390,7 @@ class Headers(Proxy):
     def __eq__(self, other: object) -> bool:
         return self._wrapped__ == _unwrap_proxy(other)
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
 
 class ResponseCacheControl(Proxy):
@@ -420,7 +420,7 @@ class ResponseCacheControl(Proxy):
     def __eq__(self, other: object) -> bool:
         return self._wrapped__ == _unwrap_proxy(other)
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
 
 class ResponseStream(Proxy):
@@ -452,7 +452,7 @@ class Response(Proxy):
     delete_cookie = ProxyFunc(None)
     direct_passthrough = ProxyAttr(bool)
     expires = ProxyAttr()
-    force_type = ProxyFunc(lambda v: Response(v))
+    force_type = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108 -- Response is defined after this class body.
     freeze = ProxyFunc(None)
     get_data = ProxyFunc()
     get_etag = ProxyFunc()
@@ -465,7 +465,7 @@ class Response(Proxy):
     json = ProxyAttr()
     last_modified = ProxyAttr()
     location = ProxyAttr(str)
-    make_conditional = ProxyFunc(lambda v: Response(v))
+    make_conditional = ProxyFunc(lambda v: Response(v))  # noqa: PLW0108 -- Response is defined after this class body.
     make_sequence = ProxyFunc(None)
     max_cookie_size = ProxyAttr(int)
     mimetype = ProxyAttr(str)

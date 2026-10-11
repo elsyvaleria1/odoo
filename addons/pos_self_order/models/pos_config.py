@@ -137,7 +137,7 @@ class PosConfig(models.Model):
         string="Has paper",
         default=True,
     )
-    self_ordering_access_token = fields.Char(
+    self_ordering_access_token = fields.Char(  # noqa: E8520 -- published on purpose: printed in every QR code and kiosk URL
         string="Self-Order Token",
         default=lambda self: str(uuid.uuid4()),
         copy=False,
@@ -225,7 +225,7 @@ class PosConfig(models.Model):
 
     def _create_missing_self_order_custom_btn(self) -> None:
         for record in self:
-            exists = record.env["pos_self_order.custom_link"].search_count(
+            exists = record.env["pos_self_order.custom_link"].search_count(  # noqa: E8507 -- one probe per config, on its own links
                 [
                     ("pos_config_ids", "in", record.id),
                     ("url", "=", f"/pos-self/{record.id}/products"),

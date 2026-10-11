@@ -328,7 +328,7 @@ class AccountReturn(models.Model):
         account_status_create_vals = []
         for record in records:
             if record.return_type_category == "audit":
-                accounts = self.env["account.account"].search_fetch(
+                accounts = self.env["account.account"].search_fetch(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
                     domain=self.env["account.account"]._check_company_domain(
                         record.company_ids
                     ),
@@ -338,7 +338,7 @@ class AccountReturn(models.Model):
                 date_from, date_to = record.type_id._get_period_boundaries(
                     record.company_id, eve_of_date_from
                 )
-                previous_return = self.env["account.return"].search(
+                previous_return = self.env["account.return"].search(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
                     domain=[
                         *self.env["account.return"]._check_company_domain(
                             record.company_id
@@ -354,7 +354,7 @@ class AccountReturn(models.Model):
                 if previous_return:
                     previous_accounts_with_status = (
                         self.env["account.audit.account.status"]
-                        .search(
+                        .search(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
                             domain=[
                                 ("audit_id", "=", previous_return.id),
                                 ("status", "!=", False),
@@ -2573,7 +2573,7 @@ class AccountReturn(models.Model):
                     ("date", "<=", fields.Date.to_string(self.date_to)),
                     ("company_id", "in", self.company_ids.ids),
                 ]
-                entries = model.sudo().search(domain, limit=LIMIT_CHECK_ENTRIES)
+                entries = model.sudo().search(domain, limit=LIMIT_CHECK_ENTRIES)  # noqa: E8507 -- one query per check template; each has its own model and domain
                 if entries:
                     if action := template._get_default_check_action_from_model():
                         action["domain"] = [*action.get("domain", []), *domain]
