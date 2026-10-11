@@ -104,6 +104,23 @@ export const stepUtils = {
         );
     },
 
+    goToMenuSteps(sectionXmlid, menuXmlid, description) {
+        // by xmlid: a text match clicks whatever first shows the word, and the
+        // section's button exists only once its app's menus are rendered; the
+        // dropdown opens in the overlay, outside the navbar
+        return [
+            {
+                content: description,
+                trigger: `.o_main_navbar button[data-menu-xmlid="${sectionXmlid}"]`,
+                run: "click",
+            },
+            {
+                content: description,
+                trigger: `.dropdown-item[data-menu-xmlid="${menuXmlid}"]`,
+                run: "click",
+            },
+        ];
+    },
     statusbarButtonsSteps(innerTextButton, description, trigger) {
         const steps = [];
         if (trigger) {

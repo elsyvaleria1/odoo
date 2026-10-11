@@ -6,16 +6,11 @@ registry.category("web_tour.tours").add("account_tax_group", {
     url: "/odoo",
     steps: () => [
         ...accountTourSteps.goToAccountMenu("Go to Invoicing"),
-        {
-            content: "Go to Vendors",
-            trigger: 'span:contains("Vendors")',
-            run: "click",
-        },
-        {
-            content: "Go to Bills",
-            trigger: 'a:contains("Bills")',
-            run: "click",
-        },
+        ...stepUtils.goToMenuSteps(
+            "account.menu_finance_payables",
+            "account.menu_action_move_in_invoice_type",
+            "Go to Bills",
+        ),
         {
             trigger: ".o_breadcrumb .text-truncate:contains(Bills)",
         },
