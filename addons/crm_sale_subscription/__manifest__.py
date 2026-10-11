@@ -7,7 +7,7 @@
     "author": "Odoo S.A.",
     "license": "Other OSI approved licence",
     "depends": [
-        "crm",
+        "sale_crm",
         "sale_subscription",
     ],
     "data": [

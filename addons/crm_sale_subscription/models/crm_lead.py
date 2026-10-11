@@ -1,4 +1,7 @@
 from odoo import models
+from odoo.libs.debug_log import DebugLog
+
+_debug = DebugLog(__name__)
 
 
 class CrmLead(models.Model):
@@ -6,6 +9,17 @@ class CrmLead(models.Model):
 
     def _update_revenues_from_so(self, order) -> None:
         for opportunity in self:
+            _debug.logic(
+                "revenues_from_order",
+                lead=opportunity,
+                order=order,
+                order_currency=order.currency_id,
+                company_currency=opportunity.company_id.currency_id,
+                non_recurring_total=order.non_recurring_total,
+                recurring_monthly=order.recurring_monthly,
+                expected_revenue=opportunity.expected_revenue,
+                recurring_revenue_monthly=opportunity.recurring_revenue_monthly,
+            )
             log_body = ""
 
             if (

@@ -112,7 +112,8 @@ class TestCrmSubscription(TestCrmCommon):
                 "expected_revenue": 0,
             }
         )
-        so2.write({"state": "draft"})
+        so2._action_cancel()
+        so2.action_draft()
         so2.action_confirm()
         self.assertEqual(self.lead_1.expected_revenue, 200)
         self.assertEqual(self.lead_1.recurring_revenue, 240)

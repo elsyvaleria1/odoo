@@ -942,7 +942,7 @@ class SaleOrder(models.Model):
         for order in self:
             related_move = order._get_subscription_invoices()
             if order.subscription_state == "7_upsell":
-                if order.state in ["done", "done"]:
+                if order.state == "done":
                     cancel_message_body = self.env._(
                         "The upsell %s has been cancelled. Please recheck the quantities as they may have been affected by this cancellation.",
                         order._get_html_link(),
