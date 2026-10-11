@@ -242,7 +242,7 @@ class BlogPost(models.Model):
         string="Avatar",
         readonly=False,
     )
-    author_name = fields.Char(
+    author_name = fields.Char(  # noqa: E8529  the website search matches on it in SQL, and display_name has no column to join
         related="author_id.display_name",
         string="Author Name",
         store=True,

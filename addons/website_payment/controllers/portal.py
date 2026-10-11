@@ -53,7 +53,7 @@ class PaymentPortal(payment_portal.PaymentPortal):
         website=True,
         sitemap=False,
     )
-    def donation_transaction(
+    def donation_transaction(  # noqa: E8539  unchecked: a donation's form carries a token it deliberately does not check
         self, amount, currency_id, partner_id, access_token, minimum_amount=0, **kwargs
     ):
         amount = self._cast_as_float(amount)

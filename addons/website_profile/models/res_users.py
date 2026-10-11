@@ -99,6 +99,6 @@ class ResUsers(models.Model):
     def _process_profile_validation_token(self, token, email):
         self.check_singleton()
         validation_token = self._generate_profile_token(self.id, email)
-        if consteq(token, validation_token) and self.karma == 0:
+        if consteq(token, validation_token) and self.karma == 0:  # noqa: E8537  stateless: an older signed format the mails already sent carry
             return self.write({"karma": VALIDATION_KARMA_GAIN})
         return False

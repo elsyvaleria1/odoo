@@ -211,7 +211,7 @@ class IrModelFields(models.Model):
                 for model in set(self.mapped("model"))
             )
             records = (
-                self.env[model_name].with_context(active_test=False).search(domain)
+                self.env[model_name].with_context(active_test=False).search(domain)  # noqa: E8507  one query per (model, html field) pair, over every field at once
             )
             for record in records:
                 content = record[field_name]

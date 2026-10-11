@@ -27,9 +27,7 @@ class WebsiteMail(http.Controller):
             partner_ids = request.env.user.partner_id.ids
         else:
             try:
-                self.env["ir.http"]._check_request_captcha_token(
-                    "website_mail_follow"
-                )
+                self.env["ir.http"]._check_request_captcha_token("website_mail_follow")
             except (ValidationError, UserError) as e:
                 _logger.debug(
                     "website_mail_follow captcha check failed, "
@@ -96,7 +94,7 @@ class WebsiteMail(http.Controller):
         if partner:
             for model in records:
                 mail_followers_ids = (
-                    request.env["mail.followers"]
+                    request.env["mail.followers"]  # noqa: E8507 - one query per model of the request
                     .sudo()
                     ._read_group(
                         [

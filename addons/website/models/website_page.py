@@ -81,7 +81,7 @@ class WebsitePage(models.Model):
         help='Add this page to the "+New" page templates. It will be added to the "Custom" category.',
     )
 
-    website_id = fields.Many2one(
+    website_id = fields.Many2one(  # noqa: E8529  page serving filters and orders on it; TestWebsitePerformance's query pins rise through ir_ui_view
         related="view_id.website_id",
         store=True,
         readonly=False,
@@ -288,13 +288,13 @@ class WebsitePage(models.Model):
                         self.env["website"]._update_vals_homepage_url(
                             old_url_normalized
                         )
-                        websites = self.env["website"].search(
+                        websites = self.env["website"].search(  # noqa: E8507 - url renames are sequential: each page's unique path and homepage rewrite depend on the previous page's write
                             [("homepage_url", "=", old_url_normalized["homepage_url"])]
                         )
                         if page.website_id:
                             websites &= page.website_id
                         else:
-                            websites -= self.search(
+                            websites -= self.search(  # noqa: E8507 - url renames are sequential: each page's unique path and homepage rewrite depend on the previous page's write
                                 [("url", "=", old_url), ("website_id", "!=", False)]
                             ).website_id
                         _debug.lifecycle(

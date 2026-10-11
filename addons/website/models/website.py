@@ -1008,7 +1008,7 @@ class Website(models.Model):
                     )
                 )
 
-            dependency_records = Model.search(Domain.OR(domains))
+            dependency_records = Model.search(Domain.OR(domains))  # noqa: E8507 - one query per dependent model, over every url at once
             if model_name == "ir.ui.view":
                 dependency_records = _handle_views_and_pages(dependency_records)
             if dependency_records:

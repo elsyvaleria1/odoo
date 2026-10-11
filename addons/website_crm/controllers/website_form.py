@@ -1,4 +1,5 @@
 from odoo import Command, tools
+from odoo.exceptions import ValidationError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 
@@ -43,8 +44,10 @@ class WebsiteForm(form.WebsiteForm):
         if model_record:
             try:
                 data = self.extract_data(model_record, request.params)
-            except Exception:
-                pass
+            except ValidationError:
+                _debug.logic(
+                    "form_phone_skipped", reason="invalid_data", model=model_name
+                )
             else:
                 record = data.get("record", {})
                 phone_fields = request.env[model_name]._get_phone_number_fields()

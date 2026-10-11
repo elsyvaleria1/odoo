@@ -376,12 +376,12 @@ class Website(models.Model):
             )
             domain = Domain.AND([domain, Domain([("id", "in", list(ids))])])
             rows = (
-                model.search_read(domain, direct_fields, limit=limit)
+                model.search_read(domain, direct_fields, limit=limit)  # noqa: E8507 - one query per searched model
                 if direct_fields
                 else []
             )
             candidates = (
-                model.search(domain, limit=limit)
+                model.search(domain, limit=limit)  # noqa: E8507 - one query per searched model
                 if indirect_fields
                 else model.browse()
             )
@@ -417,7 +417,7 @@ class Website(models.Model):
             domain &= fields_domain
             perf_limit = 1000
             records = (
-                model.search_read(domain, direct_fields, limit=perf_limit)
+                model.search_read(domain, direct_fields, limit=perf_limit)  # noqa: E8507 - one query per searched model
                 if direct_fields
                 else []
             )
@@ -431,7 +431,7 @@ class Website(models.Model):
                 if exact_records:
                     yield search
             candidates = (
-                model.search(domain, limit=limit)
+                model.search(domain, limit=limit)  # noqa: E8507 - one query per searched model
                 if indirect_fields
                 else model.browse()
             )

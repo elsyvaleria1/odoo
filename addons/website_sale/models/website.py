@@ -295,7 +295,7 @@ class Website(models.Model):
         for website in self:
             website = website.with_company(website.company_id)
             ProductPricelist = website.env["product.pricelist"]
-            website.pricelist_ids = ProductPricelist.sudo().search_fetch(
+            website.pricelist_ids = ProductPricelist.sudo().search_fetch(  # noqa: E8507 - one query per website, in that website's company
                 ProductPricelist._get_domain_website_pricelists(website)
             )
 
@@ -336,7 +336,7 @@ class Website(models.Model):
             {
                 "option": option,
                 "img_src": config["img_src"],
-                "title": self.env._(config["title"]),
+                "title": self.env._(config["title"]),  # noqa: E8502  a LazyGettext, extracted where _lt declares it
             }
             for option, config in const.SHOP_PAGE_STYLE_MAPPING.items()
         ]
@@ -347,7 +347,7 @@ class Website(models.Model):
             {
                 "option": option,
                 "img_src": config["img_src"],
-                "title": self.env._(config["title"]),
+                "title": self.env._(config["title"]),  # noqa: E8502  a LazyGettext, extracted where _lt declares it
             }
             for option, config in const.PRODUCT_PAGE_STYLE_MAPPING.items()
         ]
@@ -437,7 +437,7 @@ class Website(models.Model):
                     else:
                         ecommerce_categories = self.env[
                             "product.public.category"
-                        ].search([], limit=6)
+                        ].search([], limit=6)  # noqa: E8507 - runs for the one ecommerce footer of the list
                         footer_updated = True
                         ecommerce_categories_node[0].attrib["t-value"] = json_dumps(
                             [
@@ -968,7 +968,7 @@ class Website(models.Model):
         for website in self.search([]):
             if not website.send_abandoned_cart_email:
                 continue
-            all_abandoned_carts = self.env["sale.order"].search(
+            all_abandoned_carts = self.env["sale.order"].search(  # noqa: E8507 - one query per website
                 [
                     ("is_abandoned_cart", "=", True),
                     ("cart_recovery_email_sent", "=", False),

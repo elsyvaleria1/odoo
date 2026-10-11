@@ -393,6 +393,20 @@ class WebsiteMenu(models.Model):
             if isinstance(mid, str):
                 new_menu = self.create({"name": menu["name"], "website_id": website_id})
                 replace_id(mid, new_menu.id)
+        page_urls = {
+            url
+            for menu in data["data"]
+            if "#" not in menu["url"]
+            for url in (menu["url"], "/" + menu["url"])
+        }
+        pages = (
+            self.env["website.page"].search(
+                self.env["website"].browse(website_id).website_domain()
+                & Domain("url", "in", list(page_urls))
+            )
+            if page_urls
+            else self.env["website.page"]
+        )
         for menu in data["data"]:
             menu_id = self.browse(menu["id"])
             if "#" in menu["url"]:
@@ -404,11 +418,8 @@ class WebsiteMenu(models.Model):
                     ).path
                     menu["url"] = referer_url + menu["url"]
             else:
-                domain = self.env["website"].browse(website_id).website_domain() & (
-                    Domain("url", "=", menu["url"])
-                    | Domain("url", "=", "/" + menu["url"])
-                )
-                page = self.env["website.page"].search(domain, limit=1)
+                urls = (menu["url"], "/" + menu["url"])
+                page = next((page for page in pages if page.url in urls), pages[:0])
                 if page:
                     _debug.logic("menu_bound", by="page", menu=menu_id.id, page=page.id)
                     menu["page_id"] = page.id

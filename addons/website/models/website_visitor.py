@@ -437,7 +437,7 @@ class WebsiteVisitor(models.Model):
             return self.env["website.visitor"].sudo().browse(visitor_id)
 
         visitor = (
-            self.env["website.visitor"]
+            self.env["website.visitor"]  # noqa: E8537  public: an identifier that is not meant to be secret
             .sudo()
             .search_fetch([("access_token", "=", access_token)])
         )

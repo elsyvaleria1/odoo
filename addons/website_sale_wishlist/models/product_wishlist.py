@@ -85,9 +85,10 @@ class ProductWishlist(models.Model):
 
     @api.model
     def _lazy_current_wishlist(self):
-        return lazy(
-            lambda: request.env["product.wishlist"]._get_current_wishlist()
-        )
+        def current_wishlist():
+            return request.env["product.wishlist"]._get_current_wishlist()
+
+        return lazy(current_wishlist)
 
     @api.model
     def _get_current_wishlist(self):

@@ -453,3 +453,30 @@ class TestAutocompleteInputBounds(tests.HttpCase):
         payload = self._call(max_nb_chars=999)["result"]
         self.assertTrue(payload["results"])
         self.assertNotIn("...", payload["results"][0]["name"])
+
+
+@tests.tagged("post_install", "-at_install")
+class TestNewPageTemplates(tests.TransactionCase):
+    def test_each_group_lists_its_own_templates(self):
+        website = self.env["website"].browse(1)
+        with MockRequest(self.env, website=website):
+            groups = Website().get_new_page_templates()
+        listed = {
+            group["id"]: [template["key"] for template in group["templates"]]
+            for group in groups
+            if not group.get("is_custom")
+        }
+        self.assertTrue(any(listed.values()), "the premise: website declares templates")
+        View = self.env["ir.ui.view"]
+        for group_id, keys in listed.items():
+            expected = View.search(
+                [
+                    ("mode", "=", "primary"),
+                    "|",
+                    ("key", "like", f"new_page_template_sections_{group_id}\\_"),
+                    ("key", "like", f"configurator_pages_{group_id}"),
+                    ("website_id", "in", (False, website.id)),
+                ],
+                order="key",
+            ).mapped("key")
+            self.assertEqual(keys, expected, group_id)

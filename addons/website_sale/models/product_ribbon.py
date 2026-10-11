@@ -104,9 +104,7 @@ class ProductRibbon(models.Model):
             )
         ):
             return True
-        if (
+        return (
             self.assign == "new"
             and self.new_period >= (fields.Datetime.today() - product.publish_date).days
-        ):
-            return True
-        return False
+        )

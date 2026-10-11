@@ -986,6 +986,23 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
         result = []
         groups_html = View._render_template("website.new_page_template_groups")
         groups_el = etree.fromstring(f"<data>{groups_html}</data>")
+        section_groups = [
+            group_el.attrib["id"]
+            for group_el in groups_el
+            if group_el.attrib["id"] != "custom"
+        ]
+        templates = View.search(
+            [
+                ("mode", "=", "primary"),
+                Domain.OR(
+                    Domain("key", "like", escape_psql(marker))
+                    for group_id in section_groups
+                    for marker in self._page_template_markers(group_id)
+                ),
+                request.website.website_domain(),
+            ],
+            order="key",
+        )
         for group_el in groups_el:
             group = {
                 "id": group_el.attrib["id"],
@@ -1012,20 +1029,10 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
                 group["is_custom"] = True
                 result.append(group)
                 continue
-            for template in View.search(
-                [
-                    ("mode", "=", "primary"),
-                    "|",
-                    (
-                        "key",
-                        "like",
-                        escape_psql(f"new_page_template_sections_{group['id']}_"),
-                    ),
-                    ("key", "like", f"configurator_pages_{group['id']}"),
-                    request.website.website_domain(),
-                ],
-                order="key",
-            ):
+            markers = self._page_template_markers(group["id"])
+            for template in templates:
+                if not any(marker in template.key for marker in markers):
+                    continue
                 try:
                     html_tree = html.fromstring(
                         View.with_context(inherit_branding=False)._render_template(
@@ -1069,6 +1076,13 @@ class Website(WebsiteSeoRoutes, WebsiteThemeRoutes, Home):
             templates=sum(len(group["templates"]) for group in result),
         )
         return result
+
+    @staticmethod
+    def _page_template_markers(group_id):
+        return (
+            f"new_page_template_sections_{group_id}_",
+            f"configurator_pages_{group_id}",
+        )
 
     @http.route("/website/save_xml", type="jsonrpc", auth="user", website=True)
     def save_xml(self, view_id, arch):

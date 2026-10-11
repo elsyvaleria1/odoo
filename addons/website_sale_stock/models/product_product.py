@@ -40,7 +40,8 @@ class ProductProduct(models.Model):
         for product in self.search([("stock_notification_partner_ids", "!=", False)]):
             if product._is_sold_out():
                 continue
-            for partner in product.stock_notification_partner_ids:
+            partners = product.stock_notification_partner_ids
+            for partner in partners:
                 self_ctxt = self.with_context(lang=partner.lang)
                 product_ctxt = product.with_context(lang=partner.lang)
                 body_html = self_ctxt.env["ir.qweb"]._render(
@@ -68,7 +69,7 @@ class ProductProduct(models.Model):
 
                 mail = self_ctxt.env["mail.mail"].sudo().create(mail_values)
                 mail.send(raise_exception=False)
-                product.stock_notification_partner_ids -= partner
+            product.stock_notification_partner_ids -= partners
 
     def _to_markup_data(self, website):
         markup_data = super()._to_markup_data(website)

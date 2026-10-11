@@ -159,7 +159,7 @@ class IrModuleModule(models.Model):
                     )
 
                 if find:
-                    imd = self.env["ir.model.data"].search(
+                    imd = self.env["ir.model.data"].search(  # noqa: E8507 - the copy is resolved one record at a time; it may have been created by an earlier pass of this loop
                         [("model", "=", find._name), ("res_id", "=", find.id)]
                     )
                     if imd and imd.noupdate:
@@ -627,7 +627,7 @@ class IrModuleModule(models.Model):
             return res
 
         lang_value_list = [
-            SQL("%(lang)s, o_menu.name->>%(lang)s", lang=SQL("'%s'" % lang))
+            SQL("%(lang)s, o_menu.name->>%(lang)s", lang=SQL.literal(lang))
             for lang in langs
             if lang != "en_US"
         ]
