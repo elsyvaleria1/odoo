@@ -451,7 +451,7 @@ class IrAttachment(models.Model):
         if self._is_s3_hybrid():
             return
         cutoff = fields.Datetime.now() - timedelta(minutes=min_age_minutes)
-        attachments = self.sudo()._with_field_rows()
+        attachments = self._with_field_rows()
         domain = [
             ("type", "=", "binary"),
             ("store_fname", "!=", False),
