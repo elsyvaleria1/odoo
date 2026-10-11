@@ -7,6 +7,7 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import Command, fields, http, tools
 from odoo.api import ValuesType
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Domain
 from odoo.http import Response, request
@@ -1983,6 +1984,8 @@ class WebsiteSlides(WebsiteProfile):
         except UserError as e:
             _logger.error(e)
             return {"error": e.args[0]}
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.exception("Slide creation failed")
             return {

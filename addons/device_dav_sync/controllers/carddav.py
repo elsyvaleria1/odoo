@@ -3,6 +3,7 @@ import logging
 from lxml import etree
 
 from odoo import fields, http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.http import Response, request
 
 from ..lib import webdav_utils as dav
@@ -65,6 +66,8 @@ class CardDAVController(http.Controller):
                 device = self._device(env)
                 env["dav.sync.state"].sudo()._record_many(device, records)
                 device.dav_last_sync = fields.Datetime.now()
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.warning("Failed to record CardDAV sync state", exc_info=True)
 

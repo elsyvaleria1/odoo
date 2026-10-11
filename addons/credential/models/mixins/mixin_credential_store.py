@@ -6,6 +6,7 @@ from typing import Any
 from psycopg import errors as psycopg_errors
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import ValidationError
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
@@ -143,6 +144,8 @@ class MixinCredentialStore(models.AbstractModel):
                     with record.env.cr.savepoint(flush=False):
                         record._log_access_guarded("read")
                 except psycopg_errors.ReadOnlySqlTransaction:
+                    raise
+                except PG_RETRY_EXCEPTIONS:
                     raise
                 except Exception as e:
                     _logger.warning(

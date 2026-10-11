@@ -25,6 +25,7 @@ from . import test_booking_consolidation
 from . import test_booking_migration
 from . import test_base_signature_calls
 from . import test_invitation_links
+from . import test_invitation_link_races
 from . import test_home_tile_agenda
 from . import test_sealed_tokens
 from . import test_recurrence_owner

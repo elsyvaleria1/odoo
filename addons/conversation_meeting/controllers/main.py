@@ -2,6 +2,7 @@ import logging
 import math
 
 from odoo import http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.http import request
 
@@ -64,6 +65,8 @@ class ConversationMeetingController(http.Controller):
                 device._touch_last_seen()
         except UserError as error:
             return self._refuse(result, "audio_exists", str(error), 409)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.exception("Failed to store room audio")
             return self._refuse(
@@ -120,6 +123,8 @@ class ConversationMeetingController(http.Controller):
                 device._touch_last_seen()
         except UserError as error:
             return self._refuse(result, "not_accepted", str(error), 422)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.exception("Failed to process live chunk")
             return self._refuse(

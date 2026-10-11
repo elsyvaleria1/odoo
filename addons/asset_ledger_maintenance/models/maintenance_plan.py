@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Datetime
 from odoo.tools.date_utils import get_timedelta
@@ -379,6 +380,8 @@ class MaintenancePlan(models.Model):
                 with self.env.cr.savepoint():
                     order._create_transfer(*route)
                 started += 1
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception("Cron: could not send plan %s's order out", plan.id)
                 failed += 1

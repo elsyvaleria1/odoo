@@ -2,6 +2,7 @@ import json
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.libs.documents import format_offset
 from odoo.tools import html2plaintext
@@ -123,6 +124,8 @@ class ConversationConversation(models.Model):
                 company_id=self.company_id.id,
             )
             notices = (result.data or {}).get("notices")
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.warning(
                 "Conversation %s: the coach failed: %s", self.id, error, exc_info=True

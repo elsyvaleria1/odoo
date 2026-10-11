@@ -1,6 +1,7 @@
 import logging
 
 from odoo import http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 
 from odoo.addons.mail.controllers.mail import MailController
 
@@ -16,6 +17,8 @@ class CrmController(http.Controller):
         if comparison and record:
             try:
                 record.action_set_won_rainbowman()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception("Could not mark crm.lead as won")
                 return MailController._redirect_to_generic_fallback("crm.lead", res_id)
@@ -29,6 +32,8 @@ class CrmController(http.Controller):
         if comparison and record:
             try:
                 record.action_set_lost()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception("Could not mark crm.lead as lost")
                 return MailController._redirect_to_generic_fallback("crm.lead", res_id)

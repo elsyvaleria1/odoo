@@ -6,6 +6,7 @@ from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 
 from odoo import fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Domain
 from odoo.tools.translate import LazyTranslate
@@ -798,6 +799,8 @@ class TelegramHandlerAccount(models.AbstractModel):
                         "success": success,
                     }
                 )
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.exception("Failed to create financial report log")
 

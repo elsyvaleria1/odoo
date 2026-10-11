@@ -1,4 +1,5 @@
 from odoo import fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
@@ -51,6 +52,8 @@ class WizardAccountBankStatementLineReconcileAuto(models.TransientModel):
                     company_id=self.company_id.id
                 )
             given_up = 0
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             given_up = st_lines._auto_reconcile_isolating_failures(
                 company_id=self.company_id.id, retire=False

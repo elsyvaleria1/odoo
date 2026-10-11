@@ -15,6 +15,7 @@ from typing import Any, Literal, Self
 
 from odoo import SUPERUSER_ID, api, fields, models
 from odoo.api import ValuesType
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
@@ -425,6 +426,8 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
                 server.write({"state": "done", **server._prepare_cleared_error_vals()})
             except UserError:
                 raise
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as err:
                 raise server._prepare_connection_test_error(err) from err
             finally:
@@ -792,7 +795,10 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
                 *label,
                 exc_info=True,
             )
-            self._register_poll_failure(exc)
+            if is_retryable(exc):
+                self.env.cr.rollback()
+            else:
+                self._register_poll_failure(exc)
         finally:
             if message_cr is not None:
                 message_cr.close()

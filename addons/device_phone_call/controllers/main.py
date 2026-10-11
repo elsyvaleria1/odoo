@@ -1,6 +1,7 @@
 import logging
 
 from odoo import http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.http import request
 
 from ..models.device_device import COMPANION_SERVICE
@@ -37,6 +38,8 @@ class DevicePhoneCallController(http.Controller):
             with request.env.cr.savepoint():
                 ingest = request.env["phone.call"].ingest_from_device(device, calls)
                 device._touch_last_seen()
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.exception("Failed to store mobile call log")
             admission.settle(str(error))
@@ -99,6 +102,8 @@ class DevicePhoneCallController(http.Controller):
             return self._error_response(
                 "bad_recording", "Invalid recording payload", 400
             )
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.exception("Failed to store mobile recording")
             admission.settle(str(error))

@@ -31,7 +31,7 @@ class DryRunClearsOnlyWhatItDirtied(TransactionCase):
     _OPTS = {"has_headers": True, "quoting": '"', "separator": ",", "encoding": "utf-8"}
 
     def _seed_sentinels(self):
-        self._clear_registry_caches()
+        self.env.registry.cache_invalidated.clear()
         lrus = self.env.registry.ormcache_lrus
         for name, lru in lrus.items():
             lru[("SENTINEL", name)] = 1

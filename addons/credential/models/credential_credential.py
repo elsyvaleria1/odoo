@@ -75,6 +75,7 @@ def _flush_usage(registry, pending: dict) -> None:
             )
             return
 
+
 DAYS_NO_EXPIRY = 999
 
 EXPIRY_WARNING_DAYS = 30
@@ -693,6 +694,8 @@ class CredentialCredential(models.Model):
             try:
                 with self.env.cr.savepoint():
                     self._create_access_logs(vals_list)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Failed to write delete audit log for credentials %s",
@@ -963,6 +966,8 @@ class CredentialCredential(models.Model):
                         migrated = record._reencrypt_with_current_key()
                         if migrated:
                             record._stamp_encryption_key_version(current_version)
+                except PG_RETRY_EXCEPTIONS:
+                    raise
                 except Exception as e:
                     stats["failed"] += 1
                     error_msg = f"{model_name} (ID: {record.id}): {e!s}"

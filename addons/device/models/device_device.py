@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 import psycopg
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
@@ -538,6 +539,8 @@ class DeviceDevice(models.Model):
                     % self.name
                 )
             return result
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.error("Connection error for device %s: %s", self.name, e)
             self._write_state_retry(
@@ -579,6 +582,8 @@ class DeviceDevice(models.Model):
                 self.env._("Success"),
                 self.env._("Data read successfully"),
             )
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.error("Data reading error for device %s: %s", self.name, e)
             raise UserError(self.env._("Failed to read data: %s") % str(e)) from e
@@ -591,6 +596,8 @@ class DeviceDevice(models.Model):
                 self.env._("Connection Test"),
                 self.env._("Connection successful!"),
             )
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.warning(
                 "Connection test failed for device %s", self.name, exc_info=True
@@ -743,6 +750,8 @@ class DeviceDevice(models.Model):
                 break
             try:
                 device.action_read_data()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as e:
                 _logger.exception("Error polling device %s", device.name)
                 device._write_state_retry(
@@ -881,6 +890,8 @@ class DeviceDevice(models.Model):
                 break
             try:
                 device.action_connect()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Auto-reconnect failed for device %s",
@@ -1144,6 +1155,8 @@ class DeviceDevice(models.Model):
 
             return point
 
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.exception(
                 "Error storing data point for device %s",

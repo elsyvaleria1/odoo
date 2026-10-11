@@ -5,6 +5,7 @@ from typing import Self
 from psycopg import IntegrityError
 
 from odoo import api, exceptions, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.libs.datetime import timezone
 from odoo.tools.safe_eval import safe_eval
 
@@ -331,6 +332,8 @@ class GamificationStreak(models.Model):
                     active_user_ids = streak_type._check_user_activity_batch(
                         streaks.user_id, yesterday
                     )
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Streak type %r (id %s) failed to evaluate activity for %s "
@@ -350,6 +353,8 @@ class GamificationStreak(models.Model):
                     for streak in streaks - qualified:
                         self._process_missed_day(streak)
                     streaks.last_checked_date = today
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Streak run failed for type %r (id %s) over %s streak(s); "

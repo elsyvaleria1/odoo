@@ -7,6 +7,7 @@ import lxml.html
 from markupsafe import Markup
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
@@ -261,6 +262,10 @@ class DocumentsDocument(models.Model):
                         document,
                         rule.filter_domain and ast.literal_eval(rule.filter_domain),
                     )
+            except PG_RETRY_EXCEPTIONS:
+                self.env.cr.rollback()
+                document.ai_to_sort = True
+                _debug.logic("ai_sort_requeued", document=document)
             except Exception:
                 _debug.logic("ai_sort_failed", document=document)
                 _logger.exception("AI Documents: sorting of %s failed", document.id)

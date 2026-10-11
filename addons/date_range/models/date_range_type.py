@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import ValidationError
 from odoo.tools.authority_keys import declare_authority_keys
 from odoo.tools.date_utils import time_unit_selection
@@ -194,6 +195,8 @@ class DateRangeType(models.Model):
                     if not wizard.date_end:
                         continue
                     wizard.action_apply(batch=True)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as error:
                 _logger.warning(
                     "Error autogenerating ranges for date range type %s: %s",

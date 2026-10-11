@@ -15,6 +15,7 @@ from urllib3.exceptions import ReadTimeoutError
 from urllib3.util.retry import Retry
 
 from odoo import fields
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.libs import netguard, redact
 from odoo.libs.guarded_http import CALL_BUDGET, DEFAULT_MAX_BYTES, GuardedSession
@@ -855,6 +856,8 @@ class OutboundAPIClient:
                     "cache_last_error": fields.Datetime.now(),
                 },
             )
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.debug(
                 "Failed to increment cache error counter: %s", e, exc_info=True

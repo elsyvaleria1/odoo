@@ -12,6 +12,7 @@ from werkzeug.utils import send_file
 
 import odoo
 from odoo import api, http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError
 from odoo.http import BadRequest, Response, request
 from odoo.libs.debug_log import DebugLog
@@ -695,6 +696,8 @@ class Binary(http.Controller):
                         )
                     }
                 )
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _debug.logic(
                     "upload_unexpected_failure", model=model, id=id, filename=filename

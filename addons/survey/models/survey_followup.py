@@ -1,6 +1,7 @@
 import logging
 
 from odoo import fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.tools import frozendict
 
 _logger = logging.getLogger(__name__)
@@ -84,6 +85,8 @@ class SurveyFollowupRule(models.Model):
                 self.name,
                 user_input.id,
             )
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.warning(
                 "Follow-up rule '%s' failed for input %s",

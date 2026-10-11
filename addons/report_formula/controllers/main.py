@@ -1,6 +1,7 @@
 from types import GeneratorType
 
 from odoo import http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.http import InternalServerError, prepare_content_disposition_header, request
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
@@ -74,6 +75,8 @@ class ReportFormulaController(http.Controller):
                 "arguments": [e.errors, e.content],
             }
             raise InternalServerError(response=self._generate_response(data)) from e
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             data = http.serialize_exception(e)
             raise InternalServerError(response=self._generate_response(data)) from e

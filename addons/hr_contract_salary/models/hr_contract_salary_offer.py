@@ -356,7 +356,6 @@ class HrContractSalaryOffer(models.Model):
                 partner=offer.applicant_id.partner_id or offer.employee_id.partner_id,
                 role="comment",
                 cause="notification",
-                dated_by_record=True,
             )
             offer._update_cache({"access_token": token}, validate=False)
 

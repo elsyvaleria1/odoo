@@ -117,7 +117,6 @@ class PlanningPlanning(models.Model):
             role="comment",
             cause="notification",
             cause_record=resource,
-            dated_by_record=True,
         )
         return token
 

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Self
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import ValidationError
 from odoo.tools import SQL
 
@@ -160,6 +161,8 @@ class IrAttachment(models.Model):
                     continue
                 client.put_object(Bucket=bucket, Key=blob_name, Body=data)
                 attach.write({"s3_blob_name": blob_name, "s3_mirror_pending": False})
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.warning(
                     "Failed to mirror attachment %s to S3; will retry on the "

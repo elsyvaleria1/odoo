@@ -12,6 +12,7 @@ from dateutil.relativedelta import relativedelta
 from werkzeug.wrappers import Response
 
 from odoo import fields, http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Domain
 from odoo.http import prepare_content_disposition_header, request
@@ -690,6 +691,8 @@ class Survey(http.Controller):
                         "rating",
                     ):
                         answer_sudo._save_lines(question, raw_value)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.debug(
                     "Skipping invalid prefill value for question %s",

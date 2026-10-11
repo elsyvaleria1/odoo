@@ -78,7 +78,7 @@ models (5, via `_inherit`): `base` (Abstract), `ir.ui.view`, `ir.model.fields`,
 |------|-------|--------|---------|
 | `wizard_base_view_trail.py` | 381 | `wizard.base.view.trail` | Trail generation from position records |
 | `wizard_base_view_trail_result.py` | 37 | `wizard.base.view.trail.result` | One generated trail line, shown on the map |
-| `wizard_base_import_geodata.py` | 553 | `wizard.base.import.geodata` | GeoJSON/Shapefile/GeoPackage import with field mapping |
+| `wizard_base_import_geodata.py` | 558 | `wizard.base.import.geodata` | GeoJSON/Shapefile/GeoPackage import with field mapping |
 | `wizard_base_import_geodata_mapping.py` | 30 | `wizard.base.import.geodata.mapping` | One property-to-field mapping line of an import |
 | `wizard_base_export_geodata.py` | 468 | `wizard.base.export.geodata` | GeoJSON/Shapefile/GeoPackage export |
 | `res_config_settings.py` | 162 | extends `res.config.settings` | 4 config params, create-missing and rebuild of spatial indexes, country extent auto-detect |

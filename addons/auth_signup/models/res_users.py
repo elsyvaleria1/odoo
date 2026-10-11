@@ -5,6 +5,7 @@ from ast import literal_eval
 from dateutil.relativedelta import relativedelta
 
 from odoo import Command, api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 
@@ -129,6 +130,8 @@ class ResUsers(models.Model):
         try:
             with self.env.cr.savepoint():
                 return template_user.with_context(no_reset_password=True).copy(values)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             raise SignupError(str(e)) from e
 

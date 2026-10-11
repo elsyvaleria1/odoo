@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from typing import Any, Literal, Self
 
 from odoo import api, exceptions, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.models import ValuesType
 from odoo.tools import frozendict
 from odoo.tools.safe_eval import safe_eval, time
@@ -226,6 +227,8 @@ class GamificationGoal(models.Model):
             try:
                 with self.env.cr.savepoint():
                     self._write_goal_values(handler(definition, goals))
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Goal definition %r (id %s) failed to evaluate; skipping its "

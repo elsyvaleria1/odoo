@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError
 
 _logger = logging.getLogger(__name__)
@@ -69,6 +70,8 @@ class MarketingActivity(models.Model):
         )
         try:
             mailing.action_send_sms(res_ids)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.warning(
                 "Marketing Automation: activity <%s> encountered mass mailing issue %s",

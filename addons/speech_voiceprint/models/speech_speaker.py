@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 
 _logger = logging.getLogger(__name__)
 
@@ -36,6 +37,8 @@ class SpeechSpeaker(models.Model):
         try:
             with self.env.cr.savepoint():
                 self.env["speech.voiceprint"]._identify_speakers(attachment)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception:
             _logger.exception(
                 "Attachment %s: voice identification failed", attachment.id

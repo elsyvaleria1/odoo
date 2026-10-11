@@ -2,6 +2,7 @@ import logging
 from datetime import UTC, timedelta
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import ValidationError
 from odoo.libs.datetime import timezone
 from odoo.tools.date_utils import utcnow
@@ -88,6 +89,8 @@ class HrAttendance(models.Model):
             try:
                 with self.env.cr.savepoint():
                     self._auto_checkout_one(att)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Auto-checkout failed for attendance %s; skipping.", att.id

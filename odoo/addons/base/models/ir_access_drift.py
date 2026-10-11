@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.modules.module import get_manifest, get_module_path
 from odoo.tools import frozendict
 from odoo.tools.convert import (
@@ -266,6 +267,8 @@ class IrAccessDrift(models.Model):
                         if content is not None:
                             convert_xml_import(self.env, module, content, mode="init")
                 legacy = self.env["ir.access"]._load_legacy_access(module, "init")
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.warning("ir.access drift: %s does not replay: %s", module, error)
             return f"{type(error).__name__}: {error}"[:2000], legacy

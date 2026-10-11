@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 from markupsafe import Markup
 
 from odoo import Command, api, fields, models, modules
+from odoo.service.transaction import is_retryable
 from odoo.tools.rendering_tools import QWebError
 
 _logger = logging.getLogger(__name__)
@@ -513,7 +514,8 @@ class EventMail(models.Model):
                 if self.env.cr.in_failed_transaction():
                     self.env.cr.rollback()
                 self.env.invalidate_all()
-                scheduler._warn_error(e)
+                if not is_retryable(e):
+                    scheduler._warn_error(e)
             else:
                 if autocommit and not modules.module.current_test:
                     self.env["ir.cron"]._commit_progress()

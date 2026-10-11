@@ -6,6 +6,7 @@ from . import test_write_groups
 from . import test_merge_write_groups
 from . import test_scoped_grant_fields
 from . import test_access_link
+from . import test_access_link_races
 from . import test_access_graph
 from . import test_access_graph_labels
 from . import test_access_graph_races

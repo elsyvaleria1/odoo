@@ -83,6 +83,9 @@ class CalendarAttendee(models.Model):
     def _get_link_expiry(self) -> datetime:
         return self.event_id._get_link_expiry()
 
+    def _get_link_date_records(self) -> models.BaseModel:
+        return self.event_id
+
     def _issue_invitation_links(self) -> None:
         attendees = self.filtered("partner_id")
         tokens = self.env["access.link"]._issue_each_new(
@@ -90,7 +93,6 @@ class CalendarAttendee(models.Model):
             partner_field="partner_id",
             role="comment",
             cause="notification",
-            dated_by_record=True,
         )
         for attendee in attendees:
             attendee._update_cache(

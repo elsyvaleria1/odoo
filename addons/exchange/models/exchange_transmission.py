@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import frozendict
 
@@ -492,6 +493,8 @@ class ExchangeTransmission(models.Model):
             try:
                 with self.env.cr.savepoint():
                     transmission._read_verdict()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Reading the verdict of transmission %s failed", transmission.id

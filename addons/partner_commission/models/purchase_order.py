@@ -114,7 +114,7 @@ class PurchaseOrder(models.Model):
 
                 self.env["ir.cron"]._commit_progress(1)
             except Exception:
-                self.env.rollback()
+                self.env.cr.rollback()
                 _logger.exception(
                     "_cron_confirm_purchase_orders: PO (id=%s) could not be confirmed",
                     purchase.id,

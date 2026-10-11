@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
@@ -79,6 +80,8 @@ class DocumentsAccessTracking(models.Model):
                 try:
                     with self.env.cr.savepoint():
                         tracking._create_message_track()
+                except PG_RETRY_EXCEPTIONS:
+                    raise
                 except Exception:
                     _debug.logic("tracking_dropped", tracking=tracking.id)
                     _logger.warning(

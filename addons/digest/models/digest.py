@@ -8,6 +8,7 @@ from dateutil.relativedelta import relativedelta
 from markupsafe import Markup
 
 from odoo import api, fields, models, tools
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError
 from odoo.fields import Command, Domain
 from odoo.http import request
@@ -212,6 +213,8 @@ class DigestDigest(models.Model):
                         lang=user.lang,
                         tz=user.tz,
                     )._action_send_to_user(user, tips_count=1)
+                except PG_RETRY_EXCEPTIONS:
+                    raise
                 except Exception:
                     _logger.exception(
                         "Failed to send digest %r to %s", digest.name, user.login

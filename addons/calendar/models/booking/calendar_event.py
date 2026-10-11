@@ -576,7 +576,6 @@ class CalendarEvent(models.Model):
             partner_field="appointment_booker_id",
             role="comment",
             cause="notification",
-            dated_by_record=True,
         )
         for event in bookings:
             event._update_cache(

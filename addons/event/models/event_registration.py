@@ -3,6 +3,7 @@ import os
 from datetime import UTC
 
 from odoo import SUPERUSER_ID, Command, api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import ValidationError
 from odoo.fields import Domain
 from odoo.libs.datetime import timezone
@@ -551,6 +552,8 @@ class EventRegistration(models.Model):
                     scheduler.with_context(
                         event_mail_registration_ids=open_registrations.ids
                     ).with_user(SUPERUSER_ID).execute()
+                except PG_RETRY_EXCEPTIONS:
+                    raise
                 except Exception as e:
                     _logger.exception("Failed to run scheduler %s", scheduler.id)
                     scheduler._warn_error(e)

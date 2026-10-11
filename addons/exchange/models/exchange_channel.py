@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -225,6 +226,8 @@ class ExchangeChannel(models.Model):
             try:
                 with self.env.cr.savepoint():
                     channel._read_inbox()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Reading the inbox of channel %s failed", channel.display_name

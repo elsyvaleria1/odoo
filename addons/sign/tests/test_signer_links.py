@@ -73,6 +73,18 @@ class TestSignerLinks(TestSignControllerCommon):
                     },
                 )
 
+    def test_the_portal_hands_a_signer_their_signing_link(self):
+        sign_request = self.create_sign_request_1_role(self.partner_1, self.partner_4)
+        sign_request.validity = fields.Date.today() + timedelta(days=730)
+        item = sign_request.request_item_ids
+        signing = item.sudo().access_token
+        self.assertEqual(
+            item.sudo()._portal_get_or_create_token(self.partner_1), signing
+        )
+        self.assertEqual(
+            len(self._links(item).filtered(lambda link: not link.revoked_at)), 1
+        )
+
     @mute_logger("odoo.http")
     def test_a_signer_token_opens_its_own_request_only_and_not_once_cancelled(self):
         sign_request = self.create_sign_request_1_role(self.partner_1, self.partner_4)

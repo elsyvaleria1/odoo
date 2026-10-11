@@ -1,6 +1,7 @@
 import logging
 
 from odoo import http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.http import request
 
 from odoo.addons.device_phone_call.controllers.main import DevicePhoneCallController
@@ -35,6 +36,8 @@ class DeviceMobileController(DevicePhoneCallController):
                     device, points
                 )
                 device._touch_last_seen()
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.exception("Failed to store mobile GPS fixes")
             admission.settle(str(error))

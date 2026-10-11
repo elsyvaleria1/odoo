@@ -493,10 +493,7 @@ class TestAccessLink(AccessLinkCase):
     def _issue_dated(self, due, **kwargs):
         self.doc.sudo().date_due = due
         link, _token = self._issue(
-            partner=self.customer,
-            cause="notification",
-            dated_by_record=True,
-            **kwargs,
+            partner=self.customer, cause="notification", **kwargs
         )
         return link
 
@@ -505,33 +502,60 @@ class TestAccessLink(AccessLinkCase):
         link = self._issue_dated(due)
         self.assertTrue(link.dated_by_record)
         self.assertEqual(link.date_to, due + timedelta(days=7))
-        each = self.Link.with_user(self.owner)._issue_each(
-            self.doc.with_user(self.owner),
-            partner_field="partner_id",
-            dated_by_record=True,
+        self.doc.sudo().partner_id = self.customer
+        each = self.Link.with_user(self.owner)._issue_each_new(
+            self.doc.with_user(self.owner), partner_field="partner_id"
         )
         each_link = self.Link.sudo()._resolve(each[self.doc.id], action=None).link
+        self.assertTrue(each_link.dated_by_record)
         self.assertEqual(each_link.date_to, due + timedelta(days=7))
+
+    def test_every_issuer_of_a_notification_hands_out_the_dated_link(self):
+        due = fields.Datetime.now() + timedelta(days=730)
+        self.doc.sudo().write({"date_due": due, "partner_id": self.customer.id})
+        Link = self.Link.with_user(self.owner)
+        doc = self.doc.with_user(self.owner)
+        link, token = Link._issue(doc, partner=self.customer, cause="notification")
+        self.assertTrue(link.dated_by_record)
+        self.assertEqual(link.date_to, due + timedelta(days=7))
+        self.assertEqual(
+            Link._issue_each(doc, partner_field="partner_id"), {doc.id: token}
+        )
+        self.assertEqual(
+            Link._issue_many(doc, self.customer, cause="notification"),
+            {self.customer.id: token},
+        )
+        self.assertEqual(
+            self.Link.sudo().search_count(
+                [("res_model", "=", doc._name), ("res_id", "=", doc.id)]
+            ),
+            1,
+            "no issuer mints a second link beside the dated one",
+        )
+        shared, _token = Link._issue(doc, cause="share")
+        self.assertFalse(shared.dated_by_record)
+        with self.assertRaises(ValueError):
+            Link._issue_many(doc, self.customer, cause="notification", date_to=due)
 
     def test_a_record_without_a_date_keeps_the_cause_s_lifetime(self):
         now = fields.Datetime.now()
-        for cause, days in (("notification", 365), ("share", 30)):
+        for cause, days, dated in (("notification", 365, True), ("share", 30, False)):
             with self.subTest(cause=cause):
-                link, _token = self._issue(cause=cause, dated_by_record=True)
-                self.assertTrue(link.dated_by_record)
+                link, _token = self._issue(cause=cause)
+                self.assertEqual(link.dated_by_record, dated)
                 self.assertAlmostEqual(
                     link.date_to,
                     now + timedelta(days=days),
                     delta=timedelta(minutes=5),
                 )
                 link.sudo().date_to -= timedelta(minutes=1)
-                again, _token = self._issue(cause=cause, dated_by_record=True)
+                again, _token = self._issue(cause=cause)
                 self.assertEqual(again, link, "handed out again, issued earlier")
 
     def test_a_dated_link_moves_with_its_record_both_ways(self):
         now = fields.Datetime.now()
         link = self._issue_dated(now + timedelta(days=10))
-        undated, _token = self._issue(partner=self.customer, cause="notification")
+        undated, _token = self._issue(partner=self.customer, cause="share")
         Link = self.Link.with_user(self.owner)
         for due in (now + timedelta(days=730), now + timedelta(days=3)):
             with self.subTest(due=due):
@@ -544,7 +568,7 @@ class TestAccessLink(AccessLinkCase):
             link.date_to, now + timedelta(days=365), delta=timedelta(minutes=5)
         )
         self.assertAlmostEqual(
-            undated.date_to, now + timedelta(days=365), delta=timedelta(minutes=5)
+            undated.date_to, now + timedelta(days=30), delta=timedelta(minutes=5)
         )
 
     def test_a_dated_link_is_handed_out_again_at_its_record_s_date(self):
@@ -558,8 +582,6 @@ class TestAccessLink(AccessLinkCase):
         )
         self.assertEqual(self._issue_dated(due), link)
         self.assertEqual(link.date_to, due + timedelta(days=7))
-        undated, _token = self._issue(partner=self.customer, cause="notification")
-        self.assertNotEqual(undated, link, "an undated link is another link")
 
     def test_no_path_moves_a_dated_link_past_its_record_s_date(self):
         due = fields.Datetime.now() + timedelta(days=730)
@@ -590,8 +612,8 @@ class TestAccessLink(AccessLinkCase):
             ):
                 path()
         with self.assertRaises(ValueError):
-            self._issue(date_to=beyond, cause="notification", dated_by_record=True)
-        undated, _token = self._issue(cause="notification")
+            self._issue(date_to=beyond, cause="notification")
+        undated, _token = self._issue(cause="share")
         for user in (self.owner, self.env.ref("base.user_admin")):
             with self.subTest(user=user.login), self.assertRaises(AccessError):
                 undated.with_user(user).write({"dated_by_record": True})

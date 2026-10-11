@@ -503,10 +503,11 @@ signed-in users, named people alone, or named people and everyone of their
 commercial entity), the person it was issued to, and an expiry: every link
 has one, no later than its cause's lifetime allows (`_get_cause_lifetimes`,
 extended by modules: a manual share 30 days, a notification 12 months,
-website_slides' course invitation three months), or, for a link issued to
-follow its record's date (`dated_by_record`), no later than the date the
-record gives (`_get_link_expiry` on the record's model: a meeting's end and a
-grace, a request's validity), held by the `_check_lifetime` constraint on every
+website_slides' course invitation three months), or, for a notification
+link to a record whose model defines `_get_link_expiry` (`dated_by_record`,
+set by the issue methods themselves: `_is_dated_by_record`), no later than the
+date the record gives (a meeting's end and a grace, a request's validity),
+held by the `_check_lifetime` constraint on every
 create and write whatever the env; only an administrator waives it
 (`expiry_waived`). A link is revoked, never deleted. Created only by `_issue`; its token, record, cause and
 counters are the server's.
@@ -520,7 +521,7 @@ counters are the server's.
 - `state` (Selection, computed and searchable: live, expired, revoked), `use_ids` (One2many → access.link.use)
 
 **Key Methods:**
-- `_issue(record, partner=, role=, audience=, date_to=, cause=, dated_by_record=, ...)` — a live link and its token, the same one again for the same person, role, audience and cause; `dated_by_record` takes the expiry from the record (`_get_link_expiry`), never from the caller
+- `_issue(record, partner=, role=, audience=, date_to=, cause=, ...)`, `_issue_each`, `_issue_each_new`, `_issue_many` — a live link and its token, the same one again for the same person, role, audience and cause; a link that follows its record's date takes the expiry from the record (`_get_link_expiry`), never from the caller, and minting one rewrites the rows that hold that date (`_lock_record_dates`; `_get_link_date_records` names them where the date is another record's, as an attendee's is its meeting's), so a concurrent move of the date and the issue cannot both commit
 - `_get_latest_date_to(cause)` — the expiry of a link issued now for `cause` that follows no date of its record
 - `_sync_record_expiries(*recordsets)` — the live links that follow those records' date move to it, earlier or later: called where a module writes the date (calendar, sign, survey, planning, hr_contract_salary)
 - `_resolve(token, model=, res_id=, role=, action=)` — the one door: hash, indexed lookup, record, revocation, expiry, role, the record's own refusal (`_record_refusal`, a model whose setting closes a record to links, read on every presentation) and audience; every refusal is `LinkRefused`, a link for signed-in people met by a visitor `LinkLoginRequired`; records the use

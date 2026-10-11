@@ -2,6 +2,7 @@ import logging
 from datetime import timedelta
 
 from odoo import api, fields, models, modules, service
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
@@ -205,6 +206,8 @@ class AccountBankStatementLine(models.Model):
             try:
                 with self.env.cr.savepoint():
                     st_line._try_auto_reconcile_statement_lines(company_id=company_id)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as line_exc:
                 _logger.warning(
                     "_auto_reconcile_isolating_failures giving up on statement line %s: %s",

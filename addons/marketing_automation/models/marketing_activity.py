@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.json import dumps as json_dumps
@@ -703,6 +704,8 @@ class MarketingActivity(models.Model):
             try:
                 with self.env.cr.savepoint():
                     action.run()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as e:
                 _logger.warning(
                     "Marketing Automation: activity <%s> encountered server action issue %s",

@@ -128,7 +128,10 @@ def _statements(body: list[ast.stmt]):
 
 
 def _raises(body: list[ast.stmt]) -> bool:
-    return any(isinstance(statement, ast.Raise) for statement in _statements(body))
+    return any(
+        isinstance(statement, ast.Raise) and statement.exc is not None
+        for statement in _statements(body)
+    )
 
 
 def _calls_a_check(body: list[ast.stmt]) -> bool:
@@ -321,6 +324,11 @@ class TestAuthorityKeyGateSeesItsFaults(lint_case.LintCase):
             "        self.message_post()\n"
             "    if self.env.context.get('declared'):\n"
             "        raise UserError('no')\n"
+            "    if self.env.context.get('auto_start'):\n"
+            "        try:\n"
+            "            self.start()\n"
+            "        except SerializationFailure:\n"
+            "            raise\n"
         )
         self.assertEqual(self._found(text, frozenset({"declared"})), [])
 

@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 import defusedxml.ElementTree as ET
 
 from odoo import fields, http
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.http import request
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
@@ -55,6 +56,8 @@ class AccessDeviceController(http.Controller):
                 if body:
                     self._process_event(device, body, content_type)
             admission.settle()
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.exception("Access device webhook error")
             admission.settle(f"{type(error).__name__}: {error}")
@@ -106,6 +109,8 @@ class AccessDeviceController(http.Controller):
             admission.settle()
             return request.prepare_json_response({"commands": result})
 
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.exception("Access device command poll error")
             admission.annotate(status_code=500)
@@ -157,6 +162,8 @@ class AccessDeviceController(http.Controller):
             return request.prepare_json_response({"status": "ok"})
 
         except Refused:
+            raise
+        except PG_RETRY_EXCEPTIONS:
             raise
         except Exception as error:
             _logger.exception("Access device command result error")

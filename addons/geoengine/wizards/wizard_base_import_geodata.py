@@ -15,6 +15,7 @@ from shapely.geometry import mapping, shape
 from shapely.wkb import loads as wkb_loads
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.fields import Field
 from odoo.libs.json import loads as json_loads
@@ -438,6 +439,8 @@ class WizardBaseImportGeodata(models.TransientModel):
             try:
                 with self.env.cr.savepoint():
                     TargetModel.create(batch_vals)
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as batch_error:
                 if not self.skip_invalid:
                     raise UserError(
@@ -479,6 +482,8 @@ class WizardBaseImportGeodata(models.TransientModel):
                 with self.env.cr.savepoint():
                     target_model.create(vals)
                 created += 1
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as e:
                 logger.warning("Record %s was not imported", index, exc_info=True)
                 errors.append(f"Record {index}: {e}")

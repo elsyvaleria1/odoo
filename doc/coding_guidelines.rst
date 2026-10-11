@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.78
+:Version: 7.79
 :Date: 2026-10-11
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -3185,6 +3185,16 @@ job body) and only to log with ``exc_info=True`` and re-raise or set an error
 state ``[review]``. Catch the narrowest type everywhere else. ``BLE001`` is
 disabled in ``ruff.toml``, so review is the only check.
 
+**A broad handler around a database write lets a concurrency failure through**
+``[review]``. Put ``except PG_RETRY_EXCEPTIONS: raise`` (``odoo.db.errors``)
+before ``except Exception``: a serialization failure or a deadlock is no item's
+fault, and ``retrying()`` reruns the transaction only when it reaches it.
+Swallowed in a savepoint it reports a failure a rerun would not have had;
+swallowed without one it surfaces as ``InFailedSqlTransaction``, which nothing
+retries; converted to a ``UserError`` it is never retried either. Where the
+item was committed as done before its work, the handler rolls back and puts it
+back instead (``ai_document``'s sort).
+
 **Chain exceptions**: ``raise X from Y`` (or ``from None``) inside ``except``
 ``[ruff B904]``.
 
@@ -6303,6 +6313,10 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.79
+     - 2026-10-11
+     - §2.7: a broad handler around a database write re-raises
+       ``PG_RETRY_EXCEPTIONS`` first, so the transaction reruns.
    * - 7.78
      - 2026-10-11
      - §10.11: what only the module loader may do is decided by

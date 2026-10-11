@@ -2,6 +2,7 @@ import logging
 import traceback
 from http import HTTPStatus
 
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 from odoo.http import Controller, request, route
 from odoo.libs.debug_log import DebugLog
@@ -63,6 +64,8 @@ class QuotationDocumentController(Controller):
                     {"error": str(e)},
                     status=e.http_status,
                 )
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception as e:
                 request.env.cr.rollback()
                 logger.exception("Failed to upload document %s", uploaded_file.filename)

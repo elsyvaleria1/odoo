@@ -2,6 +2,7 @@ import json
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.json import loads as json_loads
 from odoo.tools import frozendict
@@ -248,6 +249,8 @@ class AiToolCall(models.Model):
         try:
             with self.env.cr.savepoint():
                 result = tool._ai_tool_run(record, dict(self.arguments or {}))
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.info("AI tool call %s failed: %s", self.id, error, exc_info=True)
             self.sudo().write({"state": "failed", "error": str(error)})

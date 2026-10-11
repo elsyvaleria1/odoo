@@ -1,6 +1,7 @@
 import logging
 
 from odoo import SUPERUSER_ID, api
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import MissingError, ValidationError
 from odoo.http import Controller, request, route
 
@@ -81,6 +82,8 @@ class StripeIssuingController(Controller):
                         "approved": False,
                         "message": f"Invalid event type '{event['type']}'",
                     }
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             response = {
                 "approved": False,

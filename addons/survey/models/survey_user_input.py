@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from markupsafe import Markup, escape
 
 from odoo import Command, api, fields, models, modules
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.guarded_http import RefusedDestination
@@ -503,7 +504,6 @@ class SurveyUser_Input(models.Model):
             partner_field="partner_id",
             role="comment",
             cause="notification",
-            dated_by_record=True,
         )
         for answer in invited:
             answer._update_cache(
@@ -838,6 +838,8 @@ class SurveyUser_Input(models.Model):
                             existing.write(vals)
                         else:
                             self.env["survey.user_input.line"].create(vals)
+                except PG_RETRY_EXCEPTIONS:
+                    raise
                 except Exception:
                     _logger.warning(
                         "Could not store calculated field %s for input %s",

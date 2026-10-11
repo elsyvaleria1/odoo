@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError
 
 _logger = logging.getLogger(__name__)
@@ -131,6 +132,8 @@ class EquityUbo(models.Model):
         try:
             with self.env.cr.savepoint():
                 self._submit_ubo_records(partner_id, data)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.warning("UBO form submission rejected", exc_info=True)
             return {"error": self.env._("Invalid data: %s", e)}

@@ -71,6 +71,9 @@ class SignRequestItem(models.Model):
     def _get_link_expiry(self) -> datetime | None:
         return self.sign_request_id._get_link_expiry()
 
+    def _get_link_date_records(self) -> models.BaseModel:
+        return self.sign_request_id
+
     def _issue_signer_links(self) -> None:
         signers = self
         tokens = self.env["access.link"]._issue_each(
@@ -78,7 +81,6 @@ class SignRequestItem(models.Model):
             partner_field="partner_id",
             role="comment",
             cause="notification",
-            dated_by_record=True,
         )
         for item in signers:
             item._update_cache({"access_token": tokens[item.id]}, validate=False)

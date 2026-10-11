@@ -69,7 +69,6 @@ class SignRequest(models.Model):
                 partner=sign_request.create_uid.partner_id,
                 role="view",
                 cause="notification",
-                dated_by_record=True,
             )
             sign_request._update_cache({"access_token": token}, validate=False)
 
@@ -81,7 +80,6 @@ class SignRequest(models.Model):
             role="comment",
             audience="partners",
             cause="notification",
-            dated_by_record=True,
         )
         return token
 

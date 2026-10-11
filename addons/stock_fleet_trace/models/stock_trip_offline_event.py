@@ -3,6 +3,7 @@ import json
 from datetime import UTC, datetime
 
 from odoo import Command, api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import AccessError, UserError
 
 INCIDENT_FIELDS = (
@@ -158,6 +159,8 @@ class StockTripOfflineEvent(models.Model):
         try:
             with self.env.cr.savepoint():
                 getattr(event, APPLIERS[self.event_type])()
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             message = (
                 error.args[0]

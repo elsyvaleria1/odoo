@@ -1,6 +1,7 @@
 import logging
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.tools import frozendict
 from odoo.tools.safe_eval import safe_eval
 
@@ -160,6 +161,8 @@ class GamificationAchievement(models.Model):
                     new_unlocks = achievement._check_achievement_for_users(users)
                     for unlock in new_unlocks:
                         unlock._grant_rewards()
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _logger.exception(
                     "Achievement %r (id %s) failed to evaluate; skipping it "

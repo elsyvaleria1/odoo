@@ -2,6 +2,7 @@ import logging
 
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
+from odoo.service.transaction import is_retryable, retrying
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -85,6 +86,13 @@ class ResUsersDeletion(models.Model):
                 commit_progress(1)
             except Exception as e:
                 self.env.cr.rollback()
+                if is_retryable(e):
+                    _debug.logic(
+                        "user_deletion_deferred",
+                        request=delete_request.id,
+                        error=type(e).__name__,
+                    )
+                    continue
                 _logger.exception(
                     "User #%i %r could not be deleted. Original request from %r.",
                     user.id,
@@ -112,7 +120,7 @@ class ResUsersDeletion(models.Model):
                     if not commit_progress():
                         break
                     continue
-                partner.unlink()
+                retrying(partner.unlink, self.env)
                 _logger.info(
                     "Partner #%i %r, deleted. Original request from %r.",
                     partner.id,

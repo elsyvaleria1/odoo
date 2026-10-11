@@ -1,5 +1,6 @@
 import logging
 
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.http import Controller, request, route
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
@@ -48,6 +49,8 @@ class ProductDocumentsController(Controller):
                             **self._prepare_additional_document_vals(**kwargs),
                         }
                     )
+            except PG_RETRY_EXCEPTIONS:
+                raise
             except Exception:
                 _debug.logic("product_upload_failed", record=record)
                 logger.exception("Failed to upload document %s", file.filename)

@@ -3385,7 +3385,6 @@ class PlanningSlot(models.Model):
             partner=partner,
             role="view",
             cause="notification",
-            dated_by_record=True,
         )
         return f"/slot/{token}.ics"
 

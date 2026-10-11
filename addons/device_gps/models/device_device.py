@@ -5,6 +5,7 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.wrappers import Response
 
 from odoo import api, fields, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
@@ -339,6 +340,8 @@ class DeviceDevice(models.Model):
                 "info",
             )
 
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.error("Error requesting position for %s: %s", self.name, e)
             raise UserError(self.env._("Error requesting position: %s") % str(e)) from e
@@ -364,6 +367,8 @@ class DeviceDevice(models.Model):
                 self.env._("Tracking started for %s") % self.name,
             )
 
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.error("Error starting tracking for %s: %s", self.name, e)
             raise UserError(self.env._("Error starting tracking: %s") % str(e)) from e
@@ -386,6 +391,8 @@ class DeviceDevice(models.Model):
                 "info",
             )
 
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as e:
             _logger.error("Error stopping tracking for %s: %s", self.name, e)
             raise UserError(self.env._("Error stopping tracking: %s") % str(e)) from e
