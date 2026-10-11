@@ -1,3 +1,7 @@
+from unittest.mock import patch
+
+from odoo import Command
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -85,3 +89,132 @@ class TestPaymentLineRoles(AccountTestInvoicingCommon):
                 ]
             ),
         )
+
+
+@tagged("post_install", "-at_install")
+class TestPaymentCounterpartAccount(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.bank_journal = cls.company_data["default_journal_bank"]
+        cls.payable_nf = cls.company_data["default_account_payable"]
+        cls.payable_ff = cls.copy_account(cls.payable_nf, {"name": "Payable FF"})
+        cls.partner_a.property_account_payable_id = cls.payable_nf
+        cls.partner_b.property_account_payable_id = cls.payable_nf
+
+    def _bill_on(self, account, amount=100.0):
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-07-07",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "goods",
+                            "price_unit": amount,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        bill.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        ).account_id = account
+        bill.action_post()
+        return bill
+
+    def _vendor_payment(self, **vals):
+        return self.env["account.payment"].create(
+            {
+                "amount": 100.0,
+                "date": "2026-07-07",
+                "partner_id": self.partner_a.id,
+                "partner_type": "supplier",
+                "payment_type": "outbound",
+                "journal_id": self.bank_journal.id,
+                **vals,
+            }
+        )
+
+    def _ambiguous_candidates(self):
+        accounts = self.payable_ff | self.payable_nf
+        return patch.object(
+            type(self.env["account.payment"]),
+            "_get_counterpart_account_candidates",
+            lambda payment: accounts,
+        )
+
+    def test_settled_account_survives_contact_and_date_edits(self):
+        bill = self._bill_on(self.payable_ff)
+        payment = self._register_payment(bill, payment_date="2026-07-17")
+        self.assertEqual(payment.destination_account_id, self.payable_ff)
+        self.assertEqual(
+            bill.payment_state, self.env["account.move"]._get_invoice_in_payment_state()
+        )
+        contact = self.env["res.partner"].create(
+            {"name": "Accounts payable desk", "parent_id": self.partner_a.id}
+        )
+
+        payment.action_draft()
+        payment.partner_id = contact
+        payment.date = "2026-07-25"
+        payment.action_post()
+
+        counterpart = payment._seek_for_lines()[1]
+        self.assertEqual(payment.destination_account_id, self.payable_ff)
+        self.assertEqual(counterpart.account_id, self.payable_ff)
+        self.assertEqual(
+            bill.payment_state, self.env["account.move"]._get_invoice_in_payment_state()
+        )
+
+    def test_a_settled_account_lapses_with_its_settled_documents(self):
+        bill = self._bill_on(self.payable_ff)
+        payment = self._register_payment(bill, payment_date="2026-07-17")
+        payment.action_draft()
+        payment.move_id.line_ids.remove_move_reconcile()
+        bill.matched_payment_ids = [Command.unlink(payment.id)]
+
+        payment.partner_id = self.partner_b
+
+        self.assertRecordValues(
+            payment,
+            [
+                {
+                    "destination_account_id": self.payable_nf.id,
+                    "counterpart_account_source": "default",
+                }
+            ],
+        )
+
+    def test_unambiguous_partner_property_is_the_default(self):
+        payment = self._vendor_payment()
+
+        self.assertEqual(payment.destination_account_id, self.payable_nf)
+        self.assertEqual(payment.counterpart_account_source, "default")
+        self.assertFalse(payment.is_counterpart_account_ambiguous)
+
+    def test_ambiguous_advance_requires_an_explicit_choice(self):
+        with self._ambiguous_candidates():
+            payment = self._vendor_payment()
+            self.assertFalse(payment.destination_account_id)
+            self.assertTrue(payment.is_counterpart_account_ambiguous)
+            with self.assertRaisesRegex(UserError, "Choose the counterpart account"):
+                payment.action_post()
+
+            payment.destination_account_id = self.payable_ff
+            self.assertEqual(payment.counterpart_account_source, "explicit")
+            payment.partner_id = self.partner_b
+            payment.action_post()
+
+        self.assertEqual(payment.destination_account_id, self.payable_ff)
+        self.assertEqual(payment._seek_for_lines()[1].account_id, self.payable_ff)
+
+    def test_explicit_choice_survives_a_partner_change(self):
+        payment = self._vendor_payment(destination_account_id=self.payable_ff.id)
+        self.assertEqual(payment.counterpart_account_source, "explicit")
+
+        payment.partner_id = self.partner_b
+
+        self.assertEqual(payment.destination_account_id, self.payable_ff)

@@ -278,11 +278,30 @@ class AccountPayment(models.Model):
     )
     destination_account_id = fields.Many2one(
         comodel_name="account.account",
+        string="Counterpart Account",
         compute="_compute_destination_account_id",
         store=True,
         readonly=False,
         domain="[('account_type', 'in', ('asset_receivable', 'liability_payable'))]",
         check_company=True,
+        tracking=True,
+        help="The receivable or payable account the payment settles. It follows "
+        "the documents being paid; without them, it is your choice or, when the "
+        "partner and journal leave only one candidate, that candidate.",
+    )
+    counterpart_account_source = fields.Selection(
+        selection=[
+            ("settled", "Settled documents"),
+            ("explicit", "Chosen"),
+            ("default", "Partner or journal default"),
+        ],
+        compute="_compute_destination_account_id",
+        store=True,
+        copy=False,
+        readonly=False,
+    )
+    is_counterpart_account_ambiguous = fields.Boolean(
+        compute="_compute_is_counterpart_account_ambiguous",
     )
 
     invoice_ids = fields.Many2many(
@@ -469,6 +488,8 @@ class AccountPayment(models.Model):
                     journal=self.journal_id.display_name,
                 )
             )
+
+        self._check_counterpart_account()
 
         line_name = "".join(
             x[1] for x in self._get_aml_default_display_name_list() if x[1]
@@ -912,46 +933,150 @@ class AccountPayment(models.Model):
             )
             pay.outstanding_account_id = account
 
-    @api.depends("journal_id", "partner_id", "partner_type")
+    @api.depends(
+        "journal_id", "partner_id", "partner_type", "company_id", "invoice_ids"
+    )
     @_debug.perf.timed
     def _compute_destination_account_id(self) -> None:
-        self.destination_account_id = False
-        fallback_account = {}
-
-        def _fallback(company, account_type):
-            key = (company, account_type)
-            if key not in fallback_account:
-                fallback_account[key] = (
-                    self.env["account.account"]
-                    .with_company(company)
-                    .search(
-                        [
-                            *self.env["account.account"]._check_company_domain(company),
-                            ("account_type", "=", account_type),
-                        ],
-                        limit=1,
-                    )
-                )
-            return fallback_account[key]
-
-        account_by_partner_type = {
-            "customer": ("property_account_receivable_id", "asset_receivable"),
-            "supplier": ("property_account_payable_id", "liability_payable"),
-        }
         for pay in self:
-            if pay.partner_type not in account_by_partner_type:
-                continue
-            property_name, account_type = account_by_partner_type[pay.partner_type]
-            pay.destination_account_id = (
-                pay.partner_id.with_company(pay.company_id)[property_name]
-                if pay.partner_id
-                else _fallback(pay.company_id, account_type)
+            settled_account = pay._get_counterpart_account_from_settled_lines(
+                pay._get_settled_counterpart_lines()
             )
+            if settled_account:
+                source = "settled"
+                account = settled_account
+            elif (
+                pay.destination_account_id
+                and pay.counterpart_account_source == "explicit"
+            ):
+                _debug.logic(
+                    "counterpart_account_kept",
+                    payment=pay,
+                    account=pay.destination_account_id,
+                    source=pay.counterpart_account_source,
+                )
+                continue
+            else:
+                candidates = pay._get_counterpart_account_candidates()
+                account = candidates if len(candidates) == 1 else candidates.browse()
+                source = "default" if account else False
             _debug.logic(
-                "destination_account",
+                "counterpart_account_resolved",
                 payment=pay,
-                account=pay.destination_account_id,
-                source=property_name if pay.partner_id else f"fallback {account_type}",
+                account=account,
+                source=source,
+            )
+            pay.destination_account_id = account
+            pay.counterpart_account_source = source
+
+    @api.depends(
+        "journal_id",
+        "partner_id",
+        "partner_type",
+        "company_id",
+        "invoice_ids",
+        "counterpart_account_source",
+    )
+    def _compute_is_counterpart_account_ambiguous(self) -> None:
+        for pay in self:
+            pay.is_counterpart_account_ambiguous = (
+                pay.counterpart_account_source != "settled"
+                and len(pay._get_counterpart_account_candidates()) > 1
+            )
+
+    def _get_counterpart_account_types(self) -> tuple:
+        self.check_singleton()
+        if self.partner_type == "customer":
+            return ("asset_receivable",)
+        if self.partner_type == "supplier":
+            return ("liability_payable",)
+        return ()
+
+    def _get_settled_counterpart_lines(self):
+        self.check_singleton()
+        counterpart_lines = self.move_id.line_ids.filtered(
+            lambda line: line.payment_role == "counterpart"
+        )
+        reconciled = (
+            counterpart_lines.matched_debit_ids.debit_move_id
+            | counterpart_lines.matched_credit_ids.credit_move_id
+        ) - counterpart_lines
+        if reconciled:
+            return reconciled
+        account_types = self._get_counterpart_account_types()
+        return self.invoice_ids.line_ids.filtered(
+            lambda line: line.account_id.account_type in account_types
+        )
+
+    def _get_counterpart_account_from_settled_lines(self, lines):
+        self.check_singleton()
+        accounts = lines.account_id
+        return accounts if len(accounts) == 1 else accounts.browse()
+
+    def _get_counterpart_account_candidates(self):
+        self.check_singleton()
+        Account = self.env["account.account"]
+        partner_property = {
+            "customer": "property_account_receivable_id",
+            "supplier": "property_account_payable_id",
+        }.get(self.partner_type)
+        if not partner_property:
+            return Account
+        if self.partner_id:
+            return self.partner_id.with_company(self.company_id)[partner_property]
+        return (
+            Account.with_company(self.company_id)
+            .search(
+                [
+                    *Account._check_company_domain(self.company_id),
+                    ("account_type", "in", self._get_counterpart_account_types()),
+                ],
+                limit=1,
+            )
+            .with_env(self.env)
+        )
+
+    def _classify_counterpart_account_source(self) -> None:
+        for pay in self:
+            account = pay.destination_account_id
+            if not account:
+                source = False
+            elif account == pay._get_counterpart_account_from_settled_lines(
+                pay._get_settled_counterpart_lines()
+            ):
+                source = "settled"
+            elif account == pay._get_counterpart_account_candidates():
+                source = "default"
+            else:
+                source = "explicit"
+            _debug.logic(
+                "counterpart_account_source_classified",
+                payment=pay,
+                account=account,
+                source=source,
+            )
+            if pay.counterpart_account_source != source:
+                pay.counterpart_account_source = source
+
+    def _check_counterpart_account(self) -> None:
+        for pay in self:
+            if pay.destination_account_id:
+                continue
+            candidates = pay._get_counterpart_account_candidates()
+            raise UserError(
+                self.env._(
+                    "Choose the counterpart account of %(payment)s: it settles no "
+                    "document to take it from, and %(candidates)s are all valid for "
+                    "%(partner)s.",
+                    payment=pay.display_name,
+                    candidates=", ".join(candidates.mapped("display_name")),
+                    partner=pay.partner_id.display_name or pay.company_id.display_name,
+                )
+                if len(candidates) > 1
+                else self.env._(
+                    "Choose the counterpart account of %(payment)s.",
+                    payment=pay.display_name,
+                )
             )
 
     @api.depends(
@@ -1266,6 +1391,14 @@ class AccountPayment(models.Model):
         ]
 
         payments = super().create(vals_list)
+        payments.browse(
+            [
+                pay.id
+                for pay, vals in zip(payments, vals_list, strict=True)
+                if vals.get("destination_account_id")
+                and vals.get("counterpart_account_source") != "settled"
+            ]
+        )._classify_counterpart_account_source()
 
         default_entry_payments = self.env["account.payment"]
         entry_payments_vals = []
@@ -1356,6 +1489,11 @@ class AccountPayment(models.Model):
             draft_moves.action_post()
 
         res = super().write(vals)
+        if (
+            "destination_account_id" in vals
+            and vals.get("counterpart_account_source") != "settled"
+        ):
+            self._classify_counterpart_account_source()
         if with_move := self.filtered("move_id"):
             with_move._sync_to_moves(set(vals.keys()))
         return res
@@ -1586,6 +1724,7 @@ class AccountPayment(models.Model):
         postable = self.filtered(
             lambda pay: pay.state in {False, "draft", "in_process"}
         )
+        postable._check_counterpart_account()
         cash_payments = postable.filtered(
             lambda pay: pay.outstanding_account_id.account_type == "asset_cash"
         )

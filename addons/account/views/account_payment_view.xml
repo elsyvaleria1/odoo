@@ -443,6 +443,22 @@
                                     options="{'no_create': True, 'no_open': True}"
                                     readonly="state != 'draft'"
                                     required="1" />
+                                <field
+                                    name="counterpart_account_source"
+                                    invisible="1" />
+                                <field
+                                    name="is_counterpart_account_ambiguous"
+                                    invisible="1" />
+                                <field
+                                    name="destination_account_id"
+                                    options="{'no_create': True}"
+                                    readonly="state != 'draft'"
+                                    required="is_counterpart_account_ambiguous" />
+                                <field
+                                    name="outstanding_account_id"
+                                    string="Liquidity Account"
+                                    invisible="not outstanding_account_id"
+                                    readonly="1" />
 
                                 <field
                                     name="bank_account_id"

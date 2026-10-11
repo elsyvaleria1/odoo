@@ -1536,6 +1536,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
             "bank_account_id": self.bank_account_id.id,
             "payment_channel_id": self.payment_channel_id.id,
             "destination_account_id": self.line_ids[0].account_id.id,
+            "counterpart_account_source": "settled",
             "write_off_line_vals": [],
         }
 
@@ -1618,6 +1619,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
             "partner_id": batch_values["partner_id"],
             "payment_channel_id": payment_channel.id,
             "destination_account_id": batch_result["lines"][0].account_id.id,
+            "counterpart_account_source": "settled",
             "write_off_line_vals": [],
         }
 
