@@ -5455,12 +5455,8 @@ class MixinMailThread(models.AbstractModel):
             if (user_id := values.get("user_id"))
         }
         if len(user_ids) > 1:
-            users = (
-                self.env["res.users"]
-                .sudo()
-                .with_context(active_test=False)
-                .search_fetch([("id", "in", list(user_ids))], ["active", "partner_id"])
-            )
+            users = self.env["res.users"].sudo().browse(user_ids)
+            users.fetch(["active", "partner_id"])
             users.partner_id.fetch(["lang"])
 
     def _message_auto_subscribe_parents(
