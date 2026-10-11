@@ -6,7 +6,7 @@
     "summary": "Process POS cash payments through configured Glory devices",
     "description": "Adds Glory connection settings and a POS payment interface using the configured WebSocket address and device credentials.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
     ],

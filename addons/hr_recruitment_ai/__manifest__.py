@@ -5,7 +5,7 @@
     "summary": "Add AI assistance to applicant refusal messages",
     "description": "Extend the applicant refusal wizard view with AI message assistance. Uses the AI and recruitment features declared by the module.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment",
         "ai",

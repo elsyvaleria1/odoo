@@ -6,7 +6,7 @@
     "summary": "Configure check numbering and prepare payment checks using installed layouts",
     "description": "Adds bank-journal check sequences, payment check numbers, printing actions and layout settings. Printing requires a compatible check-layout addon, selected journal or company layout and suitable stationery; this addon supplies no country-specific check template.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

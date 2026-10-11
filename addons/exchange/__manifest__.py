@@ -7,7 +7,7 @@
     "summary": "Track document transmission intents and counterparty responses",
     "description": "Provides exchange channels, transmission records, a protocol interface and a mixin for business documents. Keeps business acceptance or rejection separate from transport results. Concrete protocol addons supply document preparation and counterparty operations; connections require the relevant credentials and configuration.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "certificate",

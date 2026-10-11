@@ -7,7 +7,7 @@
     "description": "Adds mandatory document-type rules, verification records, expiration activities and per-entity coverage reports over Documents. Applicable requirements and validity periods come from configuration and recorded dates. The reported status measures those configured records; it does not certify legal or regulatory compliance.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "mixin_report_sql",

@@ -5,7 +5,7 @@
     "summary": "Test Approval behaviour, including admission not in context, approval access, approval mixin",
     "description": "Run regression tests for Approval. Loaded test suites include ``TestAdmissionNotInContext``, ``TestApprovalAccess``, ``TestApprovalMixin``, ``TestApprovalSubjects``, ``TestBindingOnAnAdopter``.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "approval_automation",

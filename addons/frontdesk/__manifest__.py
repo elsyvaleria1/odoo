@@ -6,7 +6,7 @@
     "summary": "Register visitor check-ins and notify their hosts",
     "description": "Provides reception stations, visitor records, host selection, check-in and check-out, and optional drink requests. Email and SMS notifications require the corresponding configured delivery service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "sms",

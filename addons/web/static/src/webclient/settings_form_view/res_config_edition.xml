@@ -9,10 +9,6 @@
             </h3>
         </xpath>
 
-        <xpath expr="//*[@id='license']" position="replace">
-            <a id="license" target="_blank" href="https://www.odoo.com/documentation/latest/legal/licenses.html" style="text-decoration: underline;">Odoo Enterprise Edition License V1.0</a>
-        </xpath>
-
     </t>
 
 </templates>

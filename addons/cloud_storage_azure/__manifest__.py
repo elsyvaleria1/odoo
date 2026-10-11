@@ -6,7 +6,7 @@
     "summary": "Store eligible attachments in Azure Blob Storage",
     "description": "Implements signed upload and download URLs for an Azure storage account and container. Requires tenant and client credentials with access to that storage.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "cloud_storage",

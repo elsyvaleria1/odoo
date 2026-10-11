@@ -9,7 +9,7 @@
 This module enables the barcode scanning feature for the warehouse management system.
     """,
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "web_tour",

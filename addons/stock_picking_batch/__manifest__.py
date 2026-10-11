@@ -6,7 +6,7 @@
     "summary": "Group stock transfers into batches and picking waves",
     "description": "Create batches and waves of stock operations and assign their transfers. Includes grouping and processing actions for warehouse picking workflows.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
     ],

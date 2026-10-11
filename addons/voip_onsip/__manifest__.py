@@ -5,7 +5,7 @@
     "summary": "Configure OnSIP authentication for the phone client",
     "description": "Add OnSIP provider options and authentication usernames to user phone configuration. Requires an OnSIP account and its connection credentials.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "voip",
     ],

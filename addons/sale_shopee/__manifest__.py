@@ -7,7 +7,7 @@
     "summary": "Import Shopee orders and synchronize supported delivery and inventory information",
     "description": "Adds Shopee accounts, shops and item mappings with order import, shipment tracking, label retrieval and inventory synchronization. Requires authorized connections and configured product and stock mappings. Operations depend on the supported fulfillment flow and shop API access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "sale",

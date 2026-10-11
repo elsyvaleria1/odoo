@@ -7,7 +7,7 @@
     "summary": "Retain the legacy FedEx shipping API integration",
     "description": "Contains the legacy FedEx shipping client and carrier configuration. Use the replacement connector (delivery_fedex_rest) for the newer API; the legacy integration is marked unsupported.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_delivery",
         "mail",

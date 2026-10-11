@@ -6,7 +6,7 @@
     "summary": "View and change employee work locations from the calendar",
     "description": "Expose work-location lookup and update actions in calendar scheduling. The update wizard records the selected location for the employee.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_homeworking",
         "calendar",

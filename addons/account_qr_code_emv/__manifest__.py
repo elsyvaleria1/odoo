@@ -5,7 +5,7 @@
     "summary": "Generate merchant-presented EMV payment QR payloads",
     "description": "Provide EMV field serialization, checksums and QR rendering support. Country-specific payment integrations supply merchant account and proxy details.",
     "author": "Odoo SA",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

@@ -5,7 +5,7 @@
     "summary": "Review purchase lines using accrual and closing filters",
     "description": "Adds purchase-line views, filters and actions for accounting closing and accrual review.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "account",

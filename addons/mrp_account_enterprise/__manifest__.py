@@ -6,7 +6,7 @@
     "description": "Add a manufacturing analysis report with expected component, operation and employee costs alongside production costs. Extends manufacturing accounting with reporting views.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/manufacturing",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_account",
     ],

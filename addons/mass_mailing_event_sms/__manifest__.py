@@ -5,7 +5,7 @@
     "summary": "Create SMS campaigns targeting event attendees",
     "description": "Extend attendee mailing and contact-invitation actions with SMS campaigns. Uses event registration recipients and the configured SMS service.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "mass_mailing",

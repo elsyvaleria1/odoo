@@ -6,7 +6,7 @@
     "summary": "Show customers the preparation status of their orders",
     "description": "Provides a public-facing order-status display and updates it from preparation-stage changes.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_enterprise",
         "pos_self_order",

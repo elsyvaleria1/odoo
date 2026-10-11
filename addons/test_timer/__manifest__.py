@@ -6,7 +6,7 @@
     "summary": "Test Timer behaviour, including timer",
     "description": "Run regression tests for Timer. Loaded test suites include ``TestTimer``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "timer",
     ],

@@ -5,7 +5,7 @@
     "summary": "Generate employee work entries from attendance records",
     "description": "Adds attendance as a work-entry source, links entries to attendance and overtime records and updates them when the source attendance changes.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_work_entry",
         "hr_attendance",

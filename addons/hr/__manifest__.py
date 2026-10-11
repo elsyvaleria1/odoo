@@ -11,7 +11,7 @@
     "images": [
         "static/src/img/default_image.png",
     ],
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "digest",

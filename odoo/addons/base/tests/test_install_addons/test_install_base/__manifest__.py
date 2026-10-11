@@ -5,7 +5,7 @@
     "summary": "Provide the dependency fixture for addon installation tests",
     "description": "Supply the base dependency for the automatic-installation and failed-installation fixture modules. The fixture depends on the framework base module.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

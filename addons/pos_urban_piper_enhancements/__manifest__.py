@@ -4,7 +4,7 @@
     "summary": "Configure store hours and handle scheduled UrbanPiper deliveries",
     "description": "Extend UrbanPiper store data with opening times and product updates. Notify the POS of future deliveries and expose their preparation timing.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_urban_piper",
     ],

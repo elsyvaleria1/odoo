@@ -7,7 +7,7 @@
     "description": "Supplies text and binary encryption/decryption helpers, key-version tracking and reencryption support using configured environment keys. Consumers must implement the field mappings and compute/inverse or write hooks that use these helpers. Installing the mixin does not automatically encrypt existing fields or unrelated models.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

@@ -5,7 +5,7 @@
     "summary": "Browse contacts and maintain birth dates and age ranges",
     "description": "Adds the Contacts application menu and directory views over shared contact records. Extends contacts with birth dates, calculated ages and configurable age ranges. Customer and supplier workflows are supplied by their respective business applications.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

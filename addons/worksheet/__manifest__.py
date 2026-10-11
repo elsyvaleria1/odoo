@@ -4,7 +4,7 @@
     "summary": "Create worksheet templates backed by configurable models and reports",
     "description": "Provides worksheet template records linked to generated models, actions and report views, with a Studio editing entry point. Consuming business addons connect these templates to their operational records. Template design requires the Studio dependency and appropriate editing permissions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_studio",
     ],

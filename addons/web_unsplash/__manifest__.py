@@ -6,7 +6,7 @@
     "summary": "Search Unsplash from the image picker and save selected images",
     "description": "Adds image-picker search and controller helpers for retrieving Unsplash results and saving selected images as attachments. Uses configured access and application keys and sends download notifications through HTTP requests. Requires Unsplash service access; image suitability and use rights are not established by the search interface.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "html_editor",

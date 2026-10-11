@@ -8,7 +8,7 @@
     "description": "Provides ticket records, teams, stages, priorities and tags with assignment and portal workflows. Tracks configured SLA deadlines and customer ratings and supplies ticket analysis reports. Resolution and service-target outcomes depend on recorded work and the configured rules.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/helpdesk",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "team",

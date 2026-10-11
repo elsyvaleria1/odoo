@@ -5,7 +5,7 @@
     "summary": "Assign stock transfers to operational teams",
     "description": "Adds team usage, assignment fields and views for stock transfers, with team-specific access rules and navigation.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "team",

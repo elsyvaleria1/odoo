@@ -7,7 +7,7 @@
     "description": "Adds abstract order and line transfer tracking, delivery-delay and stock-match report helpers, and extensions for order links on stock moves and pickings. Also supplies a user warehouse default. Sales and purchase stock bridges implement their concrete logistics flows.",
     "author": "Odoo Community",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade",
         "stock",

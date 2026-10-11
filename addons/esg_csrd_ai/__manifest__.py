@@ -6,7 +6,7 @@
     "summary": "Suggest sustainability metrics from company information",
     "description": "Adds a wizard that requests metric suggestions from an AI service and lets users select which suggestions to create. Requires a configured provider and review of generated content.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_app",
         "esg_csrd",

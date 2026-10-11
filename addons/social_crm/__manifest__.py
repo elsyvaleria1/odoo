@@ -6,7 +6,7 @@
     "summary": "Create leads from social posts or comments and count leads by post source",
     "description": "Adds a lead-creation wizard for social stream posts and comments, customer matching and UTM defaults. Social post statistics count leads sharing the recorded source; they do not establish that the post caused a sale.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "social",
         "crm",

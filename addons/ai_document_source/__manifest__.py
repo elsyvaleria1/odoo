@@ -5,7 +5,7 @@
     "summary": "Add managed documents to AI agent sources",
     "description": "Links AI source records to Documents, checks source access and supports reindexing and attachment recreation. Requires the configured AI indexing service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
         "document",

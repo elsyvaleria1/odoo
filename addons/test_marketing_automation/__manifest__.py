@@ -5,7 +5,7 @@
     "summary": "Test Marketing Automation behaviour, including activity triggers, data campaign, flow",
     "description": "Run regression tests for Marketing Automation. Loaded test suites include ``TestActivityTriggers``, ``TestDataCampaign``, ``TestMarketAutoFlow``, ``TestMassMailing``, ``MarketingCampaignTest``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "marketing_automation",
         "marketing_automation_sms",

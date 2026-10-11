@@ -5,7 +5,7 @@
     "summary": "Link employee expenses to sales orders for customer reinvoicing",
     "description": "Adds sales order selection on eligible expenses and creates reinvoice sales lines from expense accounting entries. Product expense policies and the linked sales order determine reinvoicing; expense approval and customer invoice posting remain in their respective workflows.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "hr_expense",

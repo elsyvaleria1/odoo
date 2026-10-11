@@ -7,7 +7,7 @@
     "description": "Load the vehicle accountant menu extension and the related accounting return check template. Uses vehicle and accounting functionality supplied by its dependencies.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/accounting",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "accountant",
         "resource_asset_vehicle",

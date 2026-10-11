@@ -5,7 +5,7 @@
     "summary": "Carry project references through sales-related stock transfers",
     "description": "Propagates project context into procurement and transfers and connects delivery actions to project sales lines.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_project",
         "sale_stock",

@@ -6,7 +6,7 @@
     "summary": "Open an SMS composer for a visitor linked to a contact with phone numbers",
     "description": "Adds a visitor action that checks the linked contact for phone records and opens the SMS composer for that contact. Requires a usable destination number and SMS service configuration; anonymous visits alone provide no phone number.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "sms",

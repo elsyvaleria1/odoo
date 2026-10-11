@@ -5,7 +5,7 @@
     "summary": "Open field-service stock references without repair-management access",
     "description": "Adds field-service access rules and a stock-reference action that avoids opening repair records for users without repair permissions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "industry_fsm_stock",
         "repair",

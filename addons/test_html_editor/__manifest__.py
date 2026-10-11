@@ -5,7 +5,7 @@
     "summary": "Test HTML Editor behaviour, including collaboration channels, converter back, field converters typed",
     "description": "Run regression tests for HTML Editor. Loaded test suites include ``TestCollaborationChannels``, ``TestConvertBack``, ``TestTypedFieldConverters``, ``TestFieldFromHtml``, ``TestFieldAttributes``.",
     "author": "Odoo S.A., AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "html_editor",
     ],

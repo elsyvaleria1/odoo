@@ -6,7 +6,7 @@
     "summary": "Show employee leave conflicts on shifts and refresh affected planned hours",
     "description": "Adds leave warnings and absence filters for assigned current or future shifts. Schedule-exception changes trigger allocated-hour recomputation for affected shifts; leave requests and approval remain in the Time Off dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "planning",
         "hr_holidays_gantt",

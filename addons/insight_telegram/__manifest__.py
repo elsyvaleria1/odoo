@@ -6,7 +6,7 @@
     "summary": "Ask Odoo from Telegram: answers, PDFs and authorized changes",
     "description": "Lets members of a group talk to a Telegram bot about Odoo data in their own words, by text, voice notes, photos or files. A fast model routes each question to a catalogued report whose figures come from Odoo on a read-only transaction; an optional agent answers the rest, reads the files sent, sends any PDF Odoo prints, and proposes changes that run only after the person says autorizo, in superuser mode in their name, never deleting and never touching the technical side. Every question is logged. Requires a bot with questions enabled and company policies for its machine-learning purposes.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "attachment_indexation",

@@ -5,7 +5,7 @@
     "summary": "Notify configured users about IAP account status and low credits",
     "description": "Adds warning thresholds and recipients to IAP accounts, with email templates for status, errors and exhausted credits.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "iap",
         "mail",

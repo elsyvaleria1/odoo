@@ -5,7 +5,7 @@
     "summary": "Create leads from companies identified among website visitors",
     "description": "Requests company identification for website visits and applies configured lead-generation rules to returned matches. Requires service access and credits; anonymous visits do not necessarily resolve to a company.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "iap_crm",
         "iap_mail",

@@ -4,7 +4,7 @@
     "summary": "Assemble quotation PDFs with product documents and mapped form fields",
     "description": "Attach PDF documents to products and quotations and select how they are included in quotation output. Populate mapped PDF form fields from the sales order.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_product",
         "sale",

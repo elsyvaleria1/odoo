@@ -4,7 +4,7 @@
     "summary": "Extend website navigation, editor controls and optional feature setup",
     "description": "Adds website editor navigation and appearance controls, configurator entries for appointment and helpdesk addons, and appointment snippet installation entries. An enabled website-generator setting exposes an import setup action that creates a website and installs the generator if needed; imported-site conversion belongs to that addon.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
     ],

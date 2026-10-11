@@ -6,7 +6,7 @@
     "description": "Queues agent runs and leases each to exactly one runner machine with the capability it needs. A runner authenticates with its own token, claims a run, keeps its lease alive, reports events and finishes it; an expired lease is handed out again within a bounded number of attempts. Reported spend counts against the company's machine-learning budget, and a company over budget is handed no work.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration_machine_learning",
         "mail",

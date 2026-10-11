@@ -5,7 +5,7 @@
     "summary": "Test Application Workflows behaviour, including flow",
     "description": "Run regression tests for Application Workflows. Loaded test suites include ``TestUi``, ``TestUiMobile``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_tour",
         "crm",

@@ -6,7 +6,7 @@
     "summary": "Assess materiality and assemble CSRD or VSME report drafts",
     "description": "Provides ESRS topic records, impact and financial materiality scoring, stakeholder surveys and Knowledge-based report templates. Report completeness and applicability require user review.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "esg",
         "survey",

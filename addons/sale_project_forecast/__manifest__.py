@@ -4,7 +4,7 @@
     "summary": "Link planned sales shifts to projects and sales order lines",
     "description": "Extend planning slots with project and sales-line relationships. Prepare project planning values from sold services and expose them in planning views.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_planning",
         "sale_project",

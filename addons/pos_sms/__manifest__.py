@@ -4,7 +4,7 @@
     "summary": "Send POS order messages by SMS",
     "description": "Add an SMS sending action to POS orders and supply its message template. Requires the configured SMS service and recipient phone information.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "sms",

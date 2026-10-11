@@ -4,7 +4,7 @@
     "summary": "Request identity verification after configured time or inactivity limits",
     "description": "Adds group-level timeout settings and session checks for password and multifactor reauthentication. The effective limits depend on the user groups and available authentication methods.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_totp",
         "auth_totp_mail",

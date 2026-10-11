@@ -4,7 +4,7 @@
     "summary": "Register Uber Eats as an UrbanPiper delivery provider",
     "description": "Load the Uber Eats provider record for the UrbanPiper POS integration. External order delivery is handled by the configured UrbanPiper connection.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_urban_piper",
     ],

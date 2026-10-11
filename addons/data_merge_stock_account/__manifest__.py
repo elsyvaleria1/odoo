@@ -5,7 +5,7 @@
     "summary": "Warn about accounting consequences when configuring product merges",
     "description": "Adds a warning to deduplication model configuration for products when inventory accounting is installed.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "data_cleaning",
         "stock_account",

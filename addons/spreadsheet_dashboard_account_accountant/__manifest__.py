@@ -5,7 +5,7 @@
     "summary": "Add Accounting, Benchmark spreadsheet dashboards",
     "description": "Install preconfigured spreadsheet dashboards for Accounting, Benchmark. The supplied spreadsheet layouts define their business data sources and calculations.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard",
         "accountant",

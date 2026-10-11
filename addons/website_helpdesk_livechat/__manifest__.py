@@ -5,7 +5,7 @@
     "summary": "Create and find helpdesk tickets from live chat conversations",
     "description": "Adds helpdesk chat commands, chatbot ticket-creation steps, conversation links and team live-chat configuration. Requires an enabled team integration and configured chat channel or chatbot flow; it does not provide an independent messaging service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_helpdesk",
         "website_livechat",

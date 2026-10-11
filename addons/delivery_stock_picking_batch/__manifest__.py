@@ -5,7 +5,7 @@
     "summary": "Group stock transfer batches by carrier and check batch weight limits",
     "description": "Extends batch grouping and automatic merge criteria with carrier and weight information. Operation-type configuration controls grouping and maximum weight; carrier execution and transfer batching are implemented by the dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_delivery",
         "stock_picking_batch",

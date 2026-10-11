@@ -5,7 +5,7 @@
     "summary": "Find duplicate campaign attribution records",
     "description": "Supplies matching rules and merge-enabled model configuration for UTM records in the shared deduplication engine.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "data_cleaning",
         "utm",

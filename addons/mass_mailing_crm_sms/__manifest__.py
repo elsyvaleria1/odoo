@@ -5,7 +5,7 @@
     "summary": "Select SMS A/B-test winners by generated leads",
     "description": "Adds lead count to the SMS campaign winner-selection options supplied by the mailing and CRM integrations.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mass_mailing_crm",
         "mass_mailing_sms",

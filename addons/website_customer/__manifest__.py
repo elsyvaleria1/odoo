@@ -5,7 +5,7 @@
     "summary": "Display published customer references with detail pages and industry filters",
     "description": "Adds a customer reference listing, detail templates and contact publication controls, with map integration supplied by the dependencies. Display depends on configured customer records and publication; this addon does not promise lead generation or commercial results.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_crm_partner_assign",
         "website_partner",

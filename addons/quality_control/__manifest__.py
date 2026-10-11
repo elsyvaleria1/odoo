@@ -8,7 +8,7 @@
     "description": "Extends quality points with test frequency, sampling and measurement settings. Creates and tracks quality checks on stock operations and provides check-decision wizards and spreadsheet templates. Manufacturing-specific checks require the corresponding integration; recorded results do not independently certify product quality.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/quality",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "quality",
         "spreadsheet_edition",

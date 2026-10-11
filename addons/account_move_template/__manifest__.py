@@ -7,7 +7,7 @@
     "description": "Stores journal codes, account prefixes, partners and product lines for a document-generation wizard. Supports journal entries, invoices, credit notes and payment templates, with configurable amount distribution and product-category selection. Journal and account codes must resolve in the selected company; running a template creates a document rather than scheduling recurring execution.",
     "author": "AgroMarin, Akretion, Odoo Community Association (OCA)",
     "website": "https://agromarin.com",
-    "license": "AGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "analytic",

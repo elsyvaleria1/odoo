@@ -6,7 +6,7 @@
     "summary": "Exchange appointment availability and bookings with Reserve with Google",
     "description": "Provide availability feeds and booking create/update endpoints for configured appointment types. Requires merchant and Google Reserve service configuration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "integration",

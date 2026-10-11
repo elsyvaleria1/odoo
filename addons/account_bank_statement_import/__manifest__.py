@@ -5,7 +5,7 @@
     "summary": "Import bank statements through format-specific parsers",
     "description": "Provide statement upload, validation and bank-account setup handling. File-format support is supplied by separate parser modules.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "base_import",

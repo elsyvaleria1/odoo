@@ -6,7 +6,7 @@
     "summary": "Collect invoice payments through configured payment providers",
     "description": "Adds portal invoice payment flows, payment links and transaction tracking. Completed transactions create and reconcile accounting payments; available capture and refund operations depend on the configured provider.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "payment",

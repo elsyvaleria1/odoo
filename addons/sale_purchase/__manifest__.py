@@ -6,7 +6,7 @@
     "description": "Adds the service-to-purchase product option and hooks for creating and updating linked purchase lines from confirmed sales lines. Exposes cross-document actions and cancellation notifications. Requires suitable vendor and service configuration; ordinary products and services without the option do not use this flow.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "purchase",

@@ -6,7 +6,7 @@
     "summary": "Configure reward programs, coupons and loyalty cards",
     "description": "Defines program rules, rewards, points and coupon cards with validity conditions. Sales-channel addons apply these programs to their orders.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

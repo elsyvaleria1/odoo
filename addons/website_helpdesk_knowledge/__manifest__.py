@@ -5,7 +5,7 @@
     "summary": "Include Knowledge articles in website help centers",
     "description": "Adds team article selection, recent-article displays and article search results to help-center pages. Public visibility follows the article publishing and access settings.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_helpdesk",
         "knowledge",

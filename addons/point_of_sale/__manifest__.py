@@ -8,7 +8,7 @@
     "description": "Provides POS sessions, product selection, customer orders, payment recording and receipts. Payment terminals, online providers, restaurant-specific workflows and hardware require the relevant integrations and configuration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/point-of-sale-shop",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade",
         "credential",

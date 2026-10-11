@@ -5,7 +5,7 @@
     "summary": "Review meeting-room bookings on a timeline",
     "description": "Supplies calendar-event Gantt views grouped by room for the room booking integration.",
     "author": "AgroMarin",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "room",
         "calendar_gantt",

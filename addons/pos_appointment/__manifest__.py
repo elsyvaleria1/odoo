@@ -7,7 +7,7 @@
     "description": "Loads bookings for the configured appointment type into the POS and supplies booking details, status actions and links to booking forms and timelines.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "point_of_sale",

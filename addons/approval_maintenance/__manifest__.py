@@ -7,7 +7,7 @@
     "description": "Extends maintenance orders with a request-creation action and a formatted reason containing equipment, products, subject, duration and vendor when present. Uses the inherited approval category and eligibility checks and links the created request back to its order. Approval execution and maintenance workflows come from the dependencies.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval_stock",
         "asset_ledger_maintenance",

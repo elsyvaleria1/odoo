@@ -5,7 +5,7 @@
     "summary": "Analyze records by cohort and elapsed periods",
     "description": "Registers the cohort view, its data aggregation and spreadsheet export. Application models must define the date and measure fields for the analysis.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

@@ -6,7 +6,7 @@
     "summary": "Save application views and filters in a personal dashboard",
     "description": "Adds dashboard rendering and an action that stores selected views, domains and context in a user-specific customized view. Users can arrange available application views; underlying record permissions still determine the data shown, and source applications provide the reports.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard",
     ],

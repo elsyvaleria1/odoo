@@ -6,7 +6,7 @@
     "summary": "Compare recorded timesheets with employee attendance",
     "description": "Provide a reporting model and views combining timesheet and attendance information. Supports grouped analysis of the recorded working time.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_timesheet",
         "hr_attendance",

@@ -7,7 +7,7 @@
     "description": "Extends appointment lead values with the current visitor link and missing country or language values. It applies only when the visitor has no contact or its contact matches the appointment partner; lead generation itself comes from Appointment CRM.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "appointment_crm",
         "website_crm",

@@ -5,7 +5,7 @@
     "summary": "Route module activation requests through approval before installation review",
     "description": "Creates approval requests for module activation and opens the installation dependency review only after approval. Uses the supplied activation category and forbids self-approval in its installation hook. An administrator must explicitly continue installation; the approval decision does not install the module.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "base_install_request",

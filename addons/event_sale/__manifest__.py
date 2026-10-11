@@ -7,7 +7,7 @@
     "description": "Link ticket sales lines to event registrations and expose the related sales orders. Registration state and sale information follow the sales workflow.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event_product",
         "sale",

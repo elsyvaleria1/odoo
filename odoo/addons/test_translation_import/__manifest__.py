@@ -5,7 +5,7 @@
     "summary": "Test Translation Import behaviour, including export wizard, term count",
     "description": "Run regression tests for Translation Import. Loaded test suites include ``TestTranslationFlow``, ``TestImport``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

@@ -6,7 +6,7 @@
     "summary": "Compare applicant skills with job requirements",
     "description": "Stores applicant skills, computes matching and missing skills and exposes matching scores on recruitment views. Transfers relevant skills when creating an employee.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_skills",
         "hr_recruitment",

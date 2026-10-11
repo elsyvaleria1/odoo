@@ -5,7 +5,7 @@
     "summary": "Send WhatsApp template steps in marketing workflows",
     "description": "Adds WhatsApp activity execution, message statistics and tracked links to campaigns. Requires a configured WhatsApp account and usable message templates.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "marketing_automation",
         "whatsapp",

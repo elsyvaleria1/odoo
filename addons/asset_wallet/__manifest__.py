@@ -7,7 +7,7 @@
     "description": "Links wallet cards and transactions to assets and stock lots. Asset views show associated cards, budgets, balances and amounts to reload.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "wallet_reorder",
         "asset_ledger",

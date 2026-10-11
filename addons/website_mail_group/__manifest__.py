@@ -5,7 +5,7 @@
     "summary": "Publish mailing-group discussions and subscription pages",
     "description": "Adds website routes and templates for group discussions and subscription management, using the group access and moderation settings.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail_group",
         "website",

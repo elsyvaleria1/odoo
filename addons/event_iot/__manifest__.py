@@ -5,7 +5,7 @@
     "summary": "Print event registration badges through compatible IoT printers",
     "description": "Adds a 96x82 mm badge format, printer report templates and check-in printing integration. Requires a configured compatible printer and IoT connection; the supplied printer report emits ESC/Label commands.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "iot",
         "event",

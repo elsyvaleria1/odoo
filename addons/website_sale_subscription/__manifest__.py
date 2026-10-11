@@ -5,7 +5,7 @@
     "summary": "Offer recurring plans and subscription pricing in the website cart",
     "description": "Adds recurring price displays, plan selection and subscription cart handling. Products need applicable recurring pricing; the cart rejects conflicting subscription plans and requires a customer address for a plan. Recurring invoices and subscription lifecycle actions come from the subscription dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
         "sale_subscription",

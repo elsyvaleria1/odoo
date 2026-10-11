@@ -5,7 +5,7 @@
     "summary": "Test Sign behaviour, including sign request",
     "description": "Run regression tests for Sign. Loaded test suites include ``TestSignRequest``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sign",
         "sale",

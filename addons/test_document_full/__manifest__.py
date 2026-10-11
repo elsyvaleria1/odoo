@@ -6,7 +6,7 @@
     "description": "Run regression tests for Document Full. Loaded test suites include ``TestIrActionsServerFull``.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/documents",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_account",
     ],

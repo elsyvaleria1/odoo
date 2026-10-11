@@ -7,7 +7,7 @@
     "description": "Defines tax records, groups, repartition data and fiscal-position tax mappings used by order calculations. Adds product tax defaults and company tax settings. Accounting-specific journal accounts and posting behavior are supplied by the accounting addon.",
     "author": "Odoo Community",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "product",
     ],

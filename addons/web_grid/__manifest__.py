@@ -5,7 +5,7 @@
     "summary": "Display and edit grouped measures in a two-dimensional grid",
     "description": "Registers the grid view, cell update handling and availability hooks. Applications supply the row, column and measure fields and the permitted edit behavior.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

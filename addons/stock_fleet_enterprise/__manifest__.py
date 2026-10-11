@@ -6,7 +6,7 @@
     "summary": "View transport batches on maps and timelines",
     "description": "Supplies map and Gantt actions and views for inventory transport batches and their vehicle assignments.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_fleet",
         "web_gantt",

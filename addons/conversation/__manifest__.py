@@ -8,7 +8,7 @@
     "description": "Maintains calls, meetings and visits with participants, recordings, recommendations and proposed tool calls. Uses speech transcription and analysis dependencies with company context, vocabulary and retention policies. Tool calls use configured approval categories and execution identities. Requires suitable speech and model services; meeting-room capture, mobile uploads and business-specific tools are supplied by integration addons.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "hr",

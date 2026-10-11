@@ -6,7 +6,7 @@
     "summary": "Invite buyers and compare and award sales quotations",
     "description": "Adds concrete sales tender and line models, quotation links and buyer-invitation actions. Uses the shared tender workflow to compare recorded offers and allocate awarded quantities. Requires sales quotation data; buyers are represented by existing contacts and the module does not provide an external bidding marketplace.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "trade_tender",

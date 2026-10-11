@@ -5,7 +5,7 @@
     "summary": "Test eLearning Integration behaviour, including ui wslides",
     "description": "Run regression tests for eLearning Integration. Loaded test suites include ``TestUi``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale_slides",
         "website_slides_forum",

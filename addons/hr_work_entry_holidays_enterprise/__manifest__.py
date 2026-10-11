@@ -6,7 +6,7 @@
     "summary": "Expose leave approval and refusal controls on conflicting work entries",
     "description": "Extends work entry forms with linked leave information and buttons to approve or refuse the leave behind a conflict. Adds leave-type display on work entry types; leave workflow methods belong to the dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_work_entry_holidays",
     ],

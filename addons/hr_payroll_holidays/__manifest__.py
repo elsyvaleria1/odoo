@@ -6,7 +6,7 @@
     "summary": "Reconcile employee time off with computed payslips",
     "description": "Check leave requests against payslip periods and handle time-off changes affecting payroll. Adds payroll-related leave activities and payslip error checks.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_holidays_gantt",
         "hr_work_entry_holidays",

@@ -8,7 +8,7 @@
     "summary": "Run configurable checks against accounting data",
     "description": "Provide accounting test definitions and a report of their execution results. Authorized users configure the code used to check accounting consistency.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

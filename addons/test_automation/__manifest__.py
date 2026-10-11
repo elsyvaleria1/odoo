@@ -6,7 +6,7 @@
     "summary": "Test Automation behaviour, including flow, server actions, tour",
     "description": "Run regression tests for Automation. Loaded test suites include ``AutomationRuleTest``, ``TestCompute``, ``TestHttp``, ``TestServerActionsValidation``, ``TestOnUnlinkWarnsForActionsNeedingTheirRecord``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "automation",
         "automation_webhook",

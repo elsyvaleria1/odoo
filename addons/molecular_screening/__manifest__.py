@@ -6,7 +6,7 @@
     "description": "Adds screening campaigns, receptor targets with a redocking validation gate, a compound library keyed on chemical identity with campaign roles, 2D and 3D structures, and docking jobs that stay blocked while their target fails validation. Includes a sketch editor and a 3D viewer; formula, masses, rings, aromaticity, hydrogen-bond counts and Gasteiger partial charges are recomputed on the server, and every property keeps the method that produced it. It records docking runs and results but does not run a docking engine, and it perceives no stereochemistry.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "mail",

@@ -5,7 +5,7 @@
     "summary": "Route supplier deliveries directly to customers",
     "description": "Adds dropshipping routes and adapts procurement, purchase and stock-move handling for supplier-to-customer transfers.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_purchase_stock",
     ],

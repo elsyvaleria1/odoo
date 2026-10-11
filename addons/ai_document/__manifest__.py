@@ -6,7 +6,7 @@
     "summary": "Run configured AI sorting actions on eligible documents",
     "description": "Adds folder sorting prompts, automation rules, document move and tag tools, and manual or scheduled sorting. Requires configured folder instructions and an available AI model through the AI dependency. Only eligible documents with applicable sorting configuration are processed.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
         "document",

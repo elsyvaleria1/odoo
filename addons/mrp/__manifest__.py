@@ -8,7 +8,7 @@
     "description": "Provides bills of materials, manufacturing orders, component consumption, finished products, by-products and unbuild orders. Inventory routes and work-center settings determine the production workflow.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/manufacturing",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_product",
         "stock",

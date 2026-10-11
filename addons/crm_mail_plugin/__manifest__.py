@@ -7,7 +7,7 @@
     "description": "Adds plugin endpoints for contact leads, lead creation and logging email content. Requires the mail-client plugin integration provided by its dependency.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/crm",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "mail_plugin",

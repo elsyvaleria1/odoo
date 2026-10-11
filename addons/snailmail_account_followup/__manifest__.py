@@ -5,7 +5,7 @@
     "summary": "Send payment follow-up documents through the postal-mail service",
     "description": "Adds postal delivery to follow-up configuration and generates the follow-up PDF for the mailing service. Requires service access, credits and a usable postal address.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "snailmail_account",
         "account_followup",

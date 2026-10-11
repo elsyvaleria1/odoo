@@ -4,7 +4,7 @@
     "summary": "Test Sale Product Configurators behaviour, including event sale with product configurator, sale product matrix, sale product configurator",
     "description": "Run regression tests for Sale Product Configurators. Loaded test suites include ``TestEventProductConfiguratorUi``, ``TestSaleMatrixUi``, ``TestProductConfiguratorUi``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event_sale",
         "sale",

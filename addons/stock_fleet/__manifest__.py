@@ -6,7 +6,7 @@
     "summary": "Assign fleet vehicles and drivers to dispatch batches and track trips",
     "description": "Adds vehicle capacity, dock and driver assignments to stock batches, with departure and return odometers and trip progress. Extends deliveries with dispatch requirements, delivery-failure handling and, per operation type, the photo of the signed delivery slip required to validate them. Requires stock batch and fleet configuration and recorded operational events; GPS readings are supplied by a separate integration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_picking_batch",
         "resource_asset_vehicle",

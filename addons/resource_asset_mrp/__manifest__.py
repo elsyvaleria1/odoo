@@ -6,7 +6,7 @@
     "summary": "Associate manufacturing work centers with physical assets",
     "description": "Projects work-center machine vocabulary from shared resource identities. Switching machines preserves other representations and operational use, while reservations remain explicit capacity claims.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_mail",
         "mrp",

@@ -6,7 +6,7 @@
     "summary": "Import custom data modules from uploaded archives",
     "description": "Allow authorized users to upload modules containing declarative data and static assets. Handles their manifest metadata, dependencies and module data loading.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

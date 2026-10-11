@@ -5,7 +5,7 @@
     "summary": "Test Custom Authentication and CORS behaviour, including endpoints",
     "description": "Run regression tests for Custom Authentication and CORS. Loaded test suites include ``TestCustomAuth``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

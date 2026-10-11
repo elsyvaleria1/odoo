@@ -6,7 +6,7 @@
     "description": "Links endpoints to the material resources they represent, without creating or owning resource identities. Several endpoints can represent one resource. Endpoint structure and observation targets remain separate from physical resource containment.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device",
     ],

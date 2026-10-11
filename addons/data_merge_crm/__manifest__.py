@@ -5,7 +5,7 @@
     "summary": "Find and merge duplicate leads using CRM merge handling",
     "description": "Adds lead matching rules and connects the deduplication engine with CRM master-record selection and merge methods.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "data_cleaning",
         "crm",

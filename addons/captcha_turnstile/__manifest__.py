@@ -6,7 +6,7 @@
     "summary": "Check public forms with Cloudflare Turnstile",
     "description": "A captcha provider: the forms of the captcha module get a Turnstile token from a widget shown only when Cloudflare asks the visitor to interact, which the server verifies through the Turnstile service, refusing tokens obtained for another action. The site key is a setting; the secret key is kept in the vault.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "captcha",
         "credential",

@@ -8,7 +8,7 @@
     "description": "Provides attendance records, kiosk and user-menu entry points, employee attendance status and reporting. Calculates worked time and overtime using configured schedules and overtime rules. Kiosk identification, optional automatic check-out and approval behavior depend on company settings.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/employees",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "barcodes",

@@ -6,7 +6,7 @@
     "summary": "Capture restaurant payments with Adyen tip adjustments",
     "description": "Extends restaurant payment handling with Adyen tip updates, capture requests and payment notifications. Requires the Adyen terminal configuration and merchant account.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_adyen",
         "pos_restaurant",

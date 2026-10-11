@@ -6,7 +6,7 @@
     "summary": "Assign UNSPSC classification codes to products and units",
     "description": "Loads the supplied UNSPSC code data, exposes classification fields on products and units and validates the applicability of selected codes.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

@@ -9,7 +9,7 @@ Adds the Committed figure to budget lines and the budget report, so a budget
 shows what is already spoken for and not only what has been billed.
 """,
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_budget",
         "purchase",

@@ -5,7 +5,7 @@
     "summary": "Test Cross-Module Delegated Inheritance behaviour, including inherits",
     "description": "Run regression tests for Cross-Module Delegated Inheritance. Loaded test suites include ``TestInheritsDepends``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "test_inherits",
     ],

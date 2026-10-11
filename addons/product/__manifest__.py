@@ -6,7 +6,7 @@
     "summary": "Manage product variants, pricing rules and supplier information",
     "description": "Provide product templates, variants, categories and pricelists. Includes pricing rules, supplier data and product catalogue helpers used by transaction applications.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "mixin_attribute",

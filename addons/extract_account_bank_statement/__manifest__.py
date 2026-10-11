@@ -6,7 +6,7 @@
     "description": "Maps opening and declared closing balances and period end into a bank statement, creating transactions only when it has no lines. Adds PDF and image import handling that queues extraction and rejects mixed scanned and other file types in one batch. Requires a suitable extraction reader or strategy for the source document; extracted amounts remain subject to statement consistency checks.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_bank_statement_import",
         "extract",

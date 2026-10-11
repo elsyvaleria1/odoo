@@ -8,7 +8,7 @@
     "description": "Provides journals, accounts, taxes, customer invoices, vendor bills, payment registration and reconciliation. Configuration determines the chart of accounts and available accounting workflows; country-specific requirements use localization addons.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/invoicing",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "report_formula",
         "tax",

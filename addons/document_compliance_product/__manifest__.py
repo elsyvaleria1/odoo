@@ -5,7 +5,7 @@
     "summary": "Scope required documents by product category",
     "description": "Adds product entities to document requirement reports and product-category restrictions to document types.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_compliance",
         "document_product",

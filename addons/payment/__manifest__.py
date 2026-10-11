@@ -6,7 +6,7 @@
     "summary": "Manage payment providers, transactions and saved payment tokens",
     "description": "Provides provider configuration, payment forms, transaction states and hooks for payment operations. Provider addons implement service-specific requests; capture, refunds and tokenization are available only when supported by the selected provider.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "onboarding",
         "portal",

@@ -8,7 +8,7 @@
     "description": "Links restaurant tables to booking resources, loads booking data into the POS and notifies the POS when table bookings change.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_restaurant",
         "pos_appointment",

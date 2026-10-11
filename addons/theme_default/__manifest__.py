@@ -10,7 +10,7 @@
         "static/description/cover.png",
         "static/description/theme_default_screenshot.jpg",
     ],
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
     ],

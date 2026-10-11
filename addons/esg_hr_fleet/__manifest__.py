@@ -6,7 +6,7 @@
     "summary": "Estimate commuting emissions from employee vehicle data",
     "description": "Calculates commuting distance and CO2 using vehicle assignments and configured days at the office. A wizard records estimates as emissions and checks for overlapping entries.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "esg",
         "hr_fleet",

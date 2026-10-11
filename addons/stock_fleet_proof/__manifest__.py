@@ -6,7 +6,7 @@
     "description": "A delivery whose operation type requires the signed slip asks its customer, once validated (an offline driver's event included, once it reaches the server), to confirm on every channel that reaches them what it left: the products and quantities, the day, the driver, the reference. They answer Confirm or Not right there; the answer is chained as proof evidence on the delivery, and noted on it in their name. A confirmation counts as the delivery's evidence beside the photo of the signed slip and the signature: proven at the door with a code sent to the customer, it lets the delivery be validated without the photo; given later, it ticks the evidence valid once, which a reviewer may take back. Not right puts an activity on the delivery's responsible; a delivery nobody answers is only noted, and its status stays visible to the reviewers.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "proof",
         "stock_fleet",

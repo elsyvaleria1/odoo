@@ -4,7 +4,7 @@
     "summary": "Expose password-policy settings on signup and password-reset pages",
     "description": "Extend signup configuration with password-policy requirements. Provides frontend assets and translations for password entry guidance.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_password_policy",
         "auth_signup",

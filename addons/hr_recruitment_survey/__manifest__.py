@@ -6,7 +6,7 @@
     "summary": "Send job interview surveys to applicants and link their responses",
     "description": "Adds interview survey selection on jobs, applicant invitation and response actions, and recruitment-specific survey views. Requires a configured survey; question content and scoring are defined through the Survey dependency.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "survey",
         "hr_recruitment",

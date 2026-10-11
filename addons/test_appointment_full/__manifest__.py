@@ -7,7 +7,7 @@
     "description": "Run regression tests for Appointment Full. Loaded test suites include ``OnelineWAppointmentPerformance``, ``TestAppointmentNotificationsMail``, ``TestSyncOdoo2GoogleMail``, ``TestAppointmentNotificationsMicrosoftCalendar``.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "appointment_crm",
         "appointment_hr",

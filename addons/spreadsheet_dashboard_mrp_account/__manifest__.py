@@ -5,7 +5,7 @@
     "summary": "Add Manufacturing spreadsheet dashboards",
     "description": "Install preconfigured spreadsheet dashboards for Manufacturing. The supplied spreadsheet layouts define their business data sources and calculations.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard",
         "mrp_account_enterprise",

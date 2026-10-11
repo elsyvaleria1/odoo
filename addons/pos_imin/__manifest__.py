@@ -6,7 +6,7 @@
     "summary": "Print POS receipts through an available iMin printer service",
     "description": "Adds an iMin printer adapter and detection when the POS other-devices setting is enabled. Requires compatible hardware and its reachable printer service; receipt printing uses the bundled client library and can use an existing fallback printer when the iMin device is disconnected or off.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
     ],

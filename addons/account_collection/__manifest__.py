@@ -5,7 +5,7 @@
     "summary": "Customer payments collected in the field stay in the collector's custody until a remittance hands them in",
     "description": "A collector records the customer's payment on the day the customer paid, in a custody journal: the invoice is settled at once while the money stays booked to the collector's custody account. The collector hands the money in through a remittance, cash to a till or a bank deposit, which the treasury validates; shortages are charged to the collector. A daily check reminds collectors of custody held beyond its working days. The customer receives the receipt by email with a link to verify it and to report a problem to the collection supervisor.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "mixin_report_sql",

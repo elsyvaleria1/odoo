@@ -4,7 +4,7 @@
     "summary": "Process kiosk payments through Stripe",
     "description": "Connects the self-order payment flow to the Stripe POS integration and its payment-status handling. Requires that integration and a configured supported terminal.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_stripe",
         "pos_self_order",

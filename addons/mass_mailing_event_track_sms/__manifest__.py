@@ -5,7 +5,7 @@
     "summary": "Create SMS campaigns targeting event track speakers",
     "description": "Extend the event speaker mailing action with SMS campaigns. Uses the selected event speakers and the configured SMS service.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mass_mailing",
         "mass_mailing_sms",

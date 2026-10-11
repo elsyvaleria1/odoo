@@ -5,7 +5,7 @@
     "summary": "Link purchase orders to subcontracted production and resupply transfers",
     "description": "Expose subcontracting resupply and production records from purchase orders. Extend procurement and return handling for the subcontracting purchase flow.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_subcontracting",
         "purchase_mrp",

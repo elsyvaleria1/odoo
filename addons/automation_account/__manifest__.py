@@ -7,7 +7,7 @@
     "description": "Extends automation runs with bank statement context and with workflow step types that create a document from a template, register and reconcile the run's statement line and apply a credit note to open invoices; each document step names its template, company, partner, date and taxes on its own form, and a step that works on an earlier document names the step that made it. The same operations stay available as helpers for Python steps. A collection banked by another company is settled through an intercompany journal each company sets. A run reports what its remaining declared steps are missing, and the wizard that starts a workflow from a statement line previews what each declared step will create. Requires suitable templates; this addon supplies accounting operations to the shared automation runtime.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "AGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "account_move_template",

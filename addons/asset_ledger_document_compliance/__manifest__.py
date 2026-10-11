@@ -6,7 +6,7 @@
     "description": "Builds a SQL report over active assets, their linked documents and applicable mandatory document types. Reports missing and expiring documents, coverage percentages and document-status classifications, including assets without requirements. Requires configured document requirements and recorded dates; the report measures those records and does not certify regulatory compliance.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger_document",
         "document_compliance",

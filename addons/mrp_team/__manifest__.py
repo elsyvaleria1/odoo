@@ -5,7 +5,7 @@
     "summary": "Assign manufacturing orders to operational teams",
     "description": "Adds team usage, assignment fields and views for manufacturing orders, with team-specific access rules and navigation.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
         "stock_team",

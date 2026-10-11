@@ -6,7 +6,7 @@
     "summary": "Register and authenticate database connections to invoice EDI proxies",
     "description": "Manage proxy registrations, request authentication and tokens for invoice EDI services. Dependent integrations supply the proxy type and service-specific document flow.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "certificate",

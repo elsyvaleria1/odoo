@@ -6,7 +6,7 @@
     "description": "Run regression tests for Delegated Inheritance. Loaded test suites include ``TestInherits``.",
     "author": "Camptocamp",
     "website": "http://www.camptocamp.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

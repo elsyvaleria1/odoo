@@ -5,7 +5,7 @@
     "summary": "Test Access Rights behaviour, including ir rules, feedback, check access",
     "description": "Run regression tests for Access Rights. Loaded test suites include ``TestRules``, ``TestWebSearchReadOverride``, ``TestSudo``, ``TestACLFeedback``, ``TestIRRuleFeedback``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "data": [
         "security/ir.access.csv",
         "data.xml",

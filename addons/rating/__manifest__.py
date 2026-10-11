@@ -6,7 +6,7 @@
     "summary": "Collect customer scores and comments on business records",
     "description": "Provide rating records, feedback pages and links to the rated object. Applications use the rating mixin and templates to request and display feedback.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

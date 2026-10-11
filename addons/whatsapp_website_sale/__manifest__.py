@@ -4,7 +4,7 @@
     "summary": "Send configured WhatsApp confirmations for website sales",
     "description": "Adds a website-specific WhatsApp template setting and sends the selected template when applicable website orders are confirmed.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
         "whatsapp",

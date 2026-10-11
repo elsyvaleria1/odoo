@@ -8,7 +8,7 @@
     "description": "Provides interfaces for creating applications and menus and editing supported model, view, action and report definitions. Tracks customization records and supports exporting them as a module archive. Customization actions require the relevant administrative access and remain subject to the supported editor operations.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/studio",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "approval_automation",

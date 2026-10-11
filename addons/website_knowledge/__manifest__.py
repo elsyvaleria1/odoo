@@ -5,7 +5,7 @@
     "summary": "Publish and search selected Knowledge articles on the website",
     "description": "Adds public article rendering, navigation and search routes, plus website metadata. Article access settings determine which content is available to visitors.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "knowledge",
         "website",

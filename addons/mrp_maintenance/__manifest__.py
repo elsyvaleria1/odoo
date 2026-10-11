@@ -7,7 +7,7 @@
     "description": "Adds production and work-order references on maintenance orders and derives work-center links from their resources. Work-order actions prefill the production, company and work-center resource; maintenance scheduling and equipment history are supplied by the dependencies.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/maintenance",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "maintenance",
         "mrp_workorder",

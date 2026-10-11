@@ -5,7 +5,7 @@
     "summary": "Request leads from the IAP service using company and contact filters",
     "description": "Provides requests filtered by geography, industry, company size and contact roles. Converts returned results into leads and tracks the request cost and state; service credits are required.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "iap_crm",
         "iap_mail",

@@ -6,7 +6,7 @@
     "summary": "Simulate payment outcomes for demonstrations and testing",
     "description": "Provides selectable payment outcomes and simulated saved tokens, captures, cancellations, refunds and express checkout. No money is collected and no payment provider is contacted.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

@@ -6,7 +6,7 @@
     "summary": "Create field service tasks from helpdesk tickets",
     "description": "Adds a task-creation wizard, task links and a default field service project on helpdesk teams. Creating a task requires a customer and a field service project; the ticket remains linked to the generated task.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project_helpdesk",
         "industry_fsm",

@@ -7,7 +7,7 @@
     "description": "Adds a GPS-device link and related telemetry to resource assets and their stock-lot interfaces. Extends GPS reports with asset identity and provides a scheduled odometer-recording action. Requires a configured GPS device and incoming telemetry; this bridge does not itself obtain positions from tracker hardware.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger",
         "device_gps",

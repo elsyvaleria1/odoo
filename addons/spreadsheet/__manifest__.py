@@ -5,7 +5,7 @@
     "summary": "Provide spreadsheet data models, rendering and export tools",
     "description": "Supply the spreadsheet mixin, spreadsheet assets, currency and locale helpers, and a read-only spreadsheet page. Other modules attach spreadsheet records to their business workflows.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "portal",
     ],

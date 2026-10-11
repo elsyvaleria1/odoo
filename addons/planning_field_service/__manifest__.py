@@ -5,7 +5,7 @@
     "summary": "Start and complete planned customer visits and open navigation directions",
     "description": "Adds customer-linked field visits to planning shifts, with start and completion actions and a workflow for declaring visits. Opens navigation using the customer coordinates or address. Location messages require the geolocation feature and location information supplied by the client; the addon does not continuously track employees.",
     "author": "Odoo S.A., AgroMarin",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "planning",
         "sale_planning",

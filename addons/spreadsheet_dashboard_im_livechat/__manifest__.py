@@ -5,7 +5,7 @@
     "summary": "Add Live Chat, Live Chat - Ongoing Sessions spreadsheet dashboards",
     "description": "Install preconfigured spreadsheet dashboards for Live Chat, Live Chat - Ongoing Sessions. The supplied spreadsheet layouts define their business data sources and calculations.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard",
         "im_livechat",

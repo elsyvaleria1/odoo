@@ -5,7 +5,7 @@
     "summary": "Create and edit model-linked website forms and pages from Studio",
     "description": "Adds Studio website editor tabs, form creation and lookup endpoints, and generated model page views. Requires the Website builder and Studio dependencies and appropriate editing access; it does not implement an independent website designer.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_studio",
         "website",

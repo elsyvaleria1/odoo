@@ -5,7 +5,7 @@
     "summary": "Enable sales tenders to award blanket agreements to winning buyers",
     "description": "Applies the shared tender-agreement mixins to sales tenders and offers and adds agreement links to the tender view. Selecting the agreements award mode creates confirmed customer agreements from awarded quantities and net prices; the default award mode remains orders.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_agreement",
         "sale_tender",

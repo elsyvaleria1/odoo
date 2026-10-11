@@ -6,7 +6,7 @@
     "summary": "Display restaurant tables and courses on preparation screens",
     "description": "Adds restaurant table and course data to preparation orders and adapts order merging and display notifications.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_restaurant",
         "pos_enterprise",

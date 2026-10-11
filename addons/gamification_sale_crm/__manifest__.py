@@ -5,7 +5,7 @@
     "summary": "Provide CRM goal definitions and sales challenges",
     "description": "Load goal and challenge definitions for CRM and sales activity. Uses the generic gamification engine to evaluate the configured objectives.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "gamification",
         "sale_crm",

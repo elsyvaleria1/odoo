@@ -5,7 +5,7 @@
     "summary": "Add website forms and snippets for mailing-list subscriptions",
     "description": "Adds newsletter subscription interfaces and routes that create mailing contacts or restore opted-out list subscriptions. Requires a configured mailing list and website form or snippet; the subscription route applies the configured captcha check. Message delivery is supplied by the mailing dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "mass_mailing",

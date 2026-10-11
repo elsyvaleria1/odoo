@@ -4,7 +4,7 @@
     "summary": "Require a configured minimum password length",
     "description": "Adds an administrator setting for minimum password length and validates passwords against that policy when they are changed.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

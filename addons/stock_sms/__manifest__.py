@@ -6,7 +6,7 @@
     "summary": "Send text-message confirmations for stock deliveries",
     "description": "Adds configurable SMS templates and delivery-confirmation handling to stock transfers. Sending uses the configured SMS service.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "sms",

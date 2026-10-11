@@ -6,7 +6,7 @@
     "description": "Connects talk quizzes with the live-talk website interface and displays their participation controls in that context.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event_track_live",
         "website_event_track_quiz",

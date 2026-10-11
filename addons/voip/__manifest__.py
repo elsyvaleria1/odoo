@@ -7,7 +7,7 @@
     "summary": "Make and receive calls through a configured VoIP provider and record call activity",
     "description": "Adds a browser softphone, provider and user credentials, call history and activity queues. Requires a compatible SIP provider, its connection settings and browser media permissions; installing the addon alone does not supply a telephone service or phone number.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "base",

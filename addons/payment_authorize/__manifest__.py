@@ -7,7 +7,7 @@
     "summary": "Accept payments through the Authorize.Net integration",
     "description": "Adds direct checkout and provider-specific transaction-status handling. Implements saved payment tokens, full capture, cancellation and full refunds. Requires a configured Authorize.Net merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Partial capture and partial refunds are not implemented.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

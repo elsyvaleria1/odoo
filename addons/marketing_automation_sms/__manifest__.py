@@ -5,7 +5,7 @@
     "summary": "Send SMS steps in marketing automation workflows",
     "description": "Adds SMS activity execution and delivery-event tracking to campaign workflows. Requires the SMS marketing integration and configured sending service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "marketing_automation",
         "mass_mailing_sms",

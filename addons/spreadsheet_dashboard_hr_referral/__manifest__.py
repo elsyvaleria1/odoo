@@ -5,7 +5,7 @@
     "summary": "Add Recruitment spreadsheet dashboards",
     "description": "Install preconfigured spreadsheet dashboards for Recruitment. The supplied spreadsheet layouts define their business data sources and calculations.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard",
         "hr_referral",

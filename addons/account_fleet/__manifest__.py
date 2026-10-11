@@ -6,7 +6,7 @@
     "summary": "Classify vehicle bill lines as service logs",
     "description": "Use the service log type for an accounting line linked to a vehicle when no other asset log type applies. Extends the asset accounting log flow for fleet vehicles.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_asset_vehicle",
         "resource_asset_account",

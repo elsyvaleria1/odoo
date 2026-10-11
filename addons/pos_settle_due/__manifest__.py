@@ -7,7 +7,7 @@
     "summary": "Settle customer invoice and POS balances at the point of sale",
     "description": "Loads customer amounts due, adds settlement and deposit products and reconciles the resulting payments against linked balances.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "account_followup",

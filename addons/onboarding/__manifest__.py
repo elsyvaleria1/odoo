@@ -6,7 +6,7 @@
     "summary": "Track onboarding steps and completion for application setup",
     "description": "Define onboarding panels and their steps. Store completion progress so applications can guide users through their configuration actions.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

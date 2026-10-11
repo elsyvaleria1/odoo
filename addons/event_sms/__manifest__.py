@@ -5,7 +5,7 @@
     "summary": "Schedule text-message notifications for event attendees",
     "description": "Extend event communication schedules with SMS templates and delivery actions. Uses the SMS service configured for the application.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "sms",

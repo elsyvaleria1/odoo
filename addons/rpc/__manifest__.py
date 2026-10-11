@@ -6,7 +6,7 @@
     "summary": "Expose model RPC calls and their contract documentation",
     "description": "Provide model-call endpoints and documentation for accessible models and methods. Authentication and the caller's model access determine which calls are permitted.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

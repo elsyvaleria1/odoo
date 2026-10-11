@@ -6,7 +6,7 @@
     "summary": "Apply configured coupons, rewards and loyalty points to sales orders",
     "description": "Connects loyalty programs to sales orders with coupon and reward wizards, reward lines, point tracking and related invoice handling. Requires eligible programs, rules and products configured in the loyalty dependency. This bridge supplies the sales-order workflow; website and point-of-sale interfaces use their own addons.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "loyalty",

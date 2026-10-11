@@ -6,7 +6,7 @@
     "description": "Checks the captcha of every route and form that asks for one (login, signup, password reset, website forms, subscriptions) through one provider chosen in the settings, so the forms do not know which. A provider module (reCAPTCHA, Turnstile) supplies the browser script and the server verification; without one, nothing is checked.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

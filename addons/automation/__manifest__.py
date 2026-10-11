@@ -6,7 +6,7 @@
     "summary": "Trigger configured actions and workflows from business-record events",
     "description": "Define automation rules and workflow steps for business models. Rules select the triggering events, matching records and actions to execute.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "bus",
         "digest",

@@ -6,7 +6,7 @@
     "summary": "Send self-service POS orders to preparation displays",
     "description": "Connect self-order processing and cancellation to preparation-display updates. Includes printer-status messages and order details for the display.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_self_order",
         "pos_enterprise",

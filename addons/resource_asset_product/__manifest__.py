@@ -6,7 +6,7 @@
     "summary": "Track product-based assets, cost logs and installed parts",
     "description": "Associates product templates with asset kinds and assets with products. Adds asset logs, kind-specific part positions, installation history and review flags for part replacements.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_mail",
         "product",

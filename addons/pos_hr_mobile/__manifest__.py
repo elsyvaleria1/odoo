@@ -5,7 +5,7 @@
     "summary": "Scan employee badges through the mobile POS client",
     "description": "Adds mobile-client barcode handling to the POS employee login integration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_hr",
         "web_mobile",

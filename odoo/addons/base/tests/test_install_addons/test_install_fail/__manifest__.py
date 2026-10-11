@@ -5,7 +5,7 @@
     "summary": "Exercise failed addon installation with an invalid currency view fixture",
     "description": "Load the currency view fixture used to provoke an installation failure. Depends on the installation base fixture for the rollback test scenario.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "test_install_base",
     ],

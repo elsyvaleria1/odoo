@@ -4,7 +4,7 @@
     "summary": "Record timesheets and timer entries against helpdesk tickets",
     "description": "Adds a timesheet project on helpdesk teams, ticket time entries and timers, and time totals in ticket analysis. Requires timesheets enabled on the team and its project; sales billing is provided by a separate extension.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "timesheet_grid",
         "project_helpdesk",

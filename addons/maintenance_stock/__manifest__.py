@@ -6,7 +6,7 @@
     "summary": "Transfer assets and parts for maintenance orders",
     "description": "Adds maintenance and return operation types, links transfers to maintenance orders and provides a wizard to send selected lots between locations.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "maintenance",
         "resource_asset_stock",

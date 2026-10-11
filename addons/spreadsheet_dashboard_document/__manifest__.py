@@ -6,7 +6,7 @@
     "summary": "Create dashboards from Document spreadsheets",
     "description": "Provides a conversion wizard with dashboard group and access-group selection and actions to open the resulting dashboard.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard_edition",
         "document_spreadsheet",

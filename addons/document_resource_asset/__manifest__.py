@@ -5,7 +5,7 @@
     "summary": "File asset documents by asset kind and company settings",
     "description": "Adds per-kind, per-company centralization settings, folders and tags, plus asset document links and navigation. Automatic document creation requires centralization to be enabled for the asset kind in its company; kinds without a settings row do not enable it.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "resource_mail",

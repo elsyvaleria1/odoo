@@ -5,7 +5,7 @@
     "summary": "Select subcontracting production and transfers for landed costs",
     "description": "Adapts the landed-cost form with subcontracting production search views and eligible completed subcontracting transfers.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_landed_costs",
         "mrp_subcontracting",

@@ -5,7 +5,7 @@
     "summary": "Create or reuse sponsor records for confirmed booths with sponsorship enabled",
     "description": "Adds sponsorship settings on booth categories and sponsor details to registration forms. After booth confirmation, a booth with sponsorship enabled and a contact is linked to an existing matching sponsor or a newly created one; other booths do not create sponsors.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event_exhibitor",
         "website_event_booth",

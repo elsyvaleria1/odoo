@@ -5,7 +5,7 @@
     "summary": "Link course pages to forums and combine learner profile information",
     "description": "Adds forum associations and navigation to courses and adapts forum and learner profile views. Requires a configured course forum; course delivery, discussion moderation and membership behavior are supplied by the dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_slides",
         "website_forum",

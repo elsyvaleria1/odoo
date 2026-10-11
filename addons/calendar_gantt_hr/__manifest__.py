@@ -5,7 +5,7 @@
     "summary": "Show employee working-hour exclusions on booking timelines",
     "description": "Extends calendar Gantt unavailability with employee working schedules.",
     "author": "AgroMarin",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar_gantt",
         "appointment_hr",

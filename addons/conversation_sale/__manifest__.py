@@ -7,7 +7,7 @@
     "description": "Registers a sales tool with a leader approval category. Resolves the named customer or conversation contact and creates a draft quotation from supplied lines, with unresolved products represented as notes. Links the quotation origin to the conversation; sales users review the resulting quantities and products before confirmation.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "conversation",
         "sale",

@@ -6,7 +6,7 @@
     "summary": "Publish and share grouped spreadsheet dashboards",
     "description": "Defines dashboard groups, company and user-group access, favorites and published spreadsheet content. Provides shared dashboard links and export routes.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet",
     ],

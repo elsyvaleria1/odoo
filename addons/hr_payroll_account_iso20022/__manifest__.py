@@ -5,7 +5,7 @@
     "summary": "Export payroll payments in the supported ISO 20022 format",
     "description": "Adds a bank-journal selection and SEPA payment-file export to payroll payment reports, with employee IBAN validation. Bank acceptance depends on the configured payment format and account data.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_payroll_account",
         "account_iso20022",

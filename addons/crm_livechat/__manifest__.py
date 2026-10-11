@@ -6,7 +6,7 @@
     "summary": "Create CRM leads from live chat commands and configured chatbot steps",
     "description": "Adds the /lead command, chatbot lead-creation steps and links between CRM leads and chat conversations. Command-created leads include conversation history and available visitor contact information; chatbot lead creation requires the corresponding configured steps.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "im_livechat",

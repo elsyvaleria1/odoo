@@ -5,7 +5,7 @@
     "summary": "Configure whether timesheet billing uses all eligible time or only validated entries",
     "description": "Extends sales timesheet quantities and invoiced-line selection with an optional validated-only filter; the default includes all otherwise eligible timesheets. Adds billing targets, ranking, project-sharing displays and invoicing controls alongside the timesheet grid dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_timesheet",
         "timesheet_grid",

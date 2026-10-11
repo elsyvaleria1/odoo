@@ -6,7 +6,7 @@
     "description": "Supplies an extensible HTML editor with frontend plugins, attachment and media helpers, and view-editing support. Includes reusable HTML-field history support. Available editing features depend on the plugins and permissions enabled by the consuming application.",
     "author": "odoo",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "bus",
     ],

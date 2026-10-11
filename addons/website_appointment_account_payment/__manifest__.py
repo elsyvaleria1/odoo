@@ -5,7 +5,7 @@
     "summary": "Display booking prices and render appointment payment pages in the website layout",
     "description": "Adapts paid appointment cards, checkout and booking summaries for the website layout and navigation. Price labels require a paid appointment type with a product; booking and payment processing come from Appointment Booking Payments.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "appointment_account_payment",
         "website_enterprise",

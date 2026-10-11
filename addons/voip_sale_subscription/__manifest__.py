@@ -5,7 +5,7 @@
     "summary": "Open related subscriptions from phone calls",
     "description": "Adds subscription counts and a subscription navigation action to call records.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "voip",
         "sale_subscription",

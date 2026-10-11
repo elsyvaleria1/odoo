@@ -5,7 +5,7 @@
     "summary": "Load custom tax computation data in Point of Sale",
     "description": "Extend the tax fields loaded into the POS and its tax computation assets. Uses the custom tax definitions from the Python-tax dependency.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "tax_python",
         "point_of_sale",

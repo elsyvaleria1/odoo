@@ -5,7 +5,7 @@
     "summary": "Build variant quantity grids and provide reusable matrix dialogs",
     "description": "Generates grid headers and cells from active product attribute values, marks possible combinations and optionally displays attribute price extras in the selected currency. Supplies shared dialog assets and report templates; sales or purchase grid extensions connect edits to order lines.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

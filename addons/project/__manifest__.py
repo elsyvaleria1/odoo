@@ -8,7 +8,7 @@
     "description": "Provides projects, task workflows, assignees, dependencies, milestones and customer sharing. Includes project risks, baselines, sprints, retrospectives and progress reports; optional integrations add timesheets and financial data.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/project",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "analytic",
         "loss_reason",

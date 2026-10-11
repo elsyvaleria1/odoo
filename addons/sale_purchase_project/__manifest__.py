@@ -5,7 +5,7 @@
     "summary": "Carry project information into purchases of sold services",
     "description": "Extends service-purchase order and line preparation from sales lines with their project information.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_purchase",
         "project_purchase",

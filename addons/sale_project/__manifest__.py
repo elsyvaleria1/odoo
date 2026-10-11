@@ -4,7 +4,7 @@
     "summary": "Create and link projects, tasks and milestones from configured sales services",
     "description": "Adds service-product project and task settings, sales-line links and project creation actions. Supports billable projects and milestone-based delivered quantities alongside related reports and portal extensions. Generation depends on the service tracking policy and configured templates; not every sales order creates a project.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "sale_team",

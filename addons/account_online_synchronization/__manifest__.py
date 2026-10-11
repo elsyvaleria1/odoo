@@ -6,7 +6,7 @@
     "summary": "Fetch transactions from supported online bank connections",
     "description": "Links bank journals to accounts available through the online synchronization service. Provides transaction fetching, consent renewal and duplicate-review tools. Requires a supported institution, an authorized connection and continued service access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "credential",

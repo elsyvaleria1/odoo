@@ -5,7 +5,7 @@
     "summary": "Identify calls between employees of the same company",
     "description": "Extends call participant company matching using employee records and supplies the required access entries.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "voip",
         "hr",

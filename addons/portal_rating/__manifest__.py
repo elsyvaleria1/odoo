@@ -5,7 +5,7 @@
     "summary": "Display and publish customer ratings in portal discussions",
     "description": "Extend portal messages with rating information and publication controls. Connects rating records to their customer-facing discussion entries.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "portal",
         "rating",

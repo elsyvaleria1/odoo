@@ -6,7 +6,7 @@
     "summary": "Manage external job postings through configurable recruitment platforms",
     "description": "Provide platform, job-post and posting-wizard models with scheduled campaign updates. Platform-specific integrations implement the external service operations.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment",
     ],

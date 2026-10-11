@@ -5,7 +5,7 @@
     "summary": "Enable contextual merge actions for project tasks and tags",
     "description": "Supplies model configuration that enables the shared deduplication merge action for project tasks and tags.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "data_cleaning",
         "project",

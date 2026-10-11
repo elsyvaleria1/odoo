@@ -7,7 +7,7 @@
     "summary": "Track repair orders, component movements and related sales",
     "description": "Provides repair orders with scheduling, warranty flags, technician notes and stock movements for added, removed or recycled components. Links repairs to sales orders and product traceability. Recorded repair completion updates the workflow and related movements; physical repair work remains a technician activity.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_stock",
         "sale",

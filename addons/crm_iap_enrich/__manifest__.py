@@ -5,7 +5,7 @@
     "summary": "Enrich leads with company information from the IAP service",
     "description": "Adds manual and scheduled enrichment of leads and writes company information returned by the service. Requires service access and available credits; enrichment depends on a matching company.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "iap_crm",
         "iap_mail",

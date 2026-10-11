@@ -5,7 +5,7 @@
     "summary": "Test Resource behaviour, including calendar, mixin, performance",
     "description": "Run regression tests for Resource. Loaded test suites include ``TestCalendar``, ``TestScheduleChangeHook``, ``TestResMixin``, ``TestResourcePerformance``, ``TestResource``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

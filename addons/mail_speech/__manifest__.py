@@ -6,7 +6,7 @@
     "description": "Adds call recording controls, timed media uploads and call transcript displays, plus message read-aloud actions. Uploads require current call membership, an accepted audio or video type and a valid time span. Transcription is queued only when supported; transcription and synthesis require configured speech engines.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "speech",

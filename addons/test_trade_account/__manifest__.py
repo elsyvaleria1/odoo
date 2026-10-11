@@ -5,7 +5,7 @@
     "summary": "Test Trade Account behaviour, including document match, invoice, invoice state",
     "description": "Run regression tests for Trade Account. Loaded test suites include ``TestDocumentMatch``, ``TestInvoice``, ``TestInvoiceState``, ``TestLineMatch``, ``TestOrderAmounts``.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "test_trade",
         "trade_account",

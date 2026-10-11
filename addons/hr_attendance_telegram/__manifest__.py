@@ -6,7 +6,7 @@
     "summary": "Record attendance and lunch breaks from configured Telegram commands",
     "description": "Adds employee check-in, checkout and lunch commands with time parsing and attendance fields. Checkout can stop the employee’s active manufacturing work orders, and a scheduled action closes qualifying open attendances at day end. Requires enabled commands and an appropriate linked employee identity.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "telegram",
         "hr_attendance",

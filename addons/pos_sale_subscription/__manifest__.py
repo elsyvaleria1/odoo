@@ -6,7 +6,7 @@
     "summary": "Update subscription sales when linked POS orders are paid",
     "description": "Extends paid POS order processing and subscription invoiced-quantity calculation for linked sales lines.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_sale",
         "sale_subscription",

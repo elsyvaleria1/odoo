@@ -5,7 +5,7 @@
     "summary": "Create tracked links and view their statistics from the website",
     "description": "Add website pages for shortening links and displaying their click statistics. Uses the tracked-link records and redirect handling provided by Link Tracker.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "link_tracker",

@@ -5,7 +5,7 @@
     "summary": "Test RPC behaviour, including rpc path, error, authority keys",
     "description": "Run regression tests for RPC. Loaded test suites include ``TestRpcPath``, ``TestError``, ``TestAuthorityKeyRegistry``, ``TestAuthorityKeyDoors``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
         "rpc",

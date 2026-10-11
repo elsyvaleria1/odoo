@@ -6,7 +6,7 @@
     "summary": "Define event booths, assign contacts and track reservations",
     "description": "Adds booth categories, event-type booth templates, availability counts and reservation confirmation with contact details. Booth sales and online booking require their respective extension modules; this addon provides the event booth records and reservation workflow.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
     ],

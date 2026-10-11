@@ -7,7 +7,7 @@
     "summary": "Manage personal to-do items and convert them into project tasks",
     "description": "Provides personal task views, onboarding items and a creation wizard with assignee and deadline. Selected to-do items can be converted into project tasks.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "project",
     ],

@@ -5,7 +5,7 @@
     "summary": "Track work-order instruction and quality-point changes in engineering revisions",
     "description": "Links work-order instructions and quality steps with engineering change orders and revision bills of materials.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_workorder",
         "mrp_plm",

@@ -5,7 +5,7 @@
     "summary": "Reconcile bank statement lines with payment batches",
     "description": "Adds batch-payment selection and removal to bank reconciliation and exposes the journal items belonging to a batch.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "account_batch_payment",

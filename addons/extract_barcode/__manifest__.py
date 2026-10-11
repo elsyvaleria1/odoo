@@ -6,7 +6,7 @@
     "description": "Registers a document barcode reader backed by zxing-cpp for supported paged document types. Reads available page images, returns distinct decoded text values and logs per-page decoding failures. Requires the declared decoder dependency; downstream extractors interpret the decoded contents.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "extract",
     ],

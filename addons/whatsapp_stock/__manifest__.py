@@ -6,7 +6,7 @@
     "summary": "Queue WhatsApp confirmations for outgoing transfers when company messaging is enabled",
     "description": "Extends transfer confirmation handling to queue messages through the configured stock WhatsApp template. Requires outgoing operation type, enabled company WhatsApp confirmation and a selected template; incoming and internal transfers do not use this path.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_enterprise",
         "whatsapp",

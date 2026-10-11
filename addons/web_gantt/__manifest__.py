@@ -5,7 +5,7 @@
     "summary": "Display and reschedule business records in Gantt views",
     "description": "Provide the Gantt view type, grouped data loading and scheduling operations. Supports rescheduling and undo actions for models configured to use the view.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

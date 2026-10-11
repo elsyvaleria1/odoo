@@ -6,7 +6,7 @@
     "summary": "Parse GS1 barcode elements into identifiers, quantities and dates",
     "description": "Adds GS1 rule definitions, separator handling and parsing of variable-length elements. Rules can interpret decimal quantities and dates and associate quantities with units.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "barcodes",
     ],

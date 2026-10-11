@@ -6,7 +6,7 @@
     "summary": "Generate timesheets for eligible employee leave and public holidays",
     "description": "Creates leave-linked time entries using configured company projects and tasks, employee schedules and eligible non-work leave types. Updates or removes linked entries as leave and public-holiday records change; the module also restricts direct edits to generated entries.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_timesheet",
         "hr_holidays",

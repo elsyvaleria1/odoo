@@ -7,7 +7,7 @@
     "description": "Records operator and asset-manager assignments in asset logs. Provides scheduled operator changes and dated employee assignment history for assets backed by stock lots.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger",
         "resource_asset_hr",

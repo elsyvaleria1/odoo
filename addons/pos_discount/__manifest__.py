@@ -6,7 +6,7 @@
     "summary": "Apply a percentage discount to eligible point-of-sale order lines",
     "description": "Adds a discount control and configured discount product to POS orders. Cashier input is limited to a percentage between zero and one hundred; the POS discount implementation creates discount lines using the applicable tax groups. Requires the discount feature and product configuration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
     ],

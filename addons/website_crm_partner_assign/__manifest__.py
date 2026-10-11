@@ -6,7 +6,7 @@
     "summary": "Publish partner listings and forward CRM leads to selected partners",
     "description": "Adds website partner listings, partner assignment fields and a lead-forwarding wizard. Provides portal pages for assigned leads and opportunities and partner activity reporting. Published listings and lead access depend on partner configuration and the assignment workflow.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "geocoding",
         "crm",

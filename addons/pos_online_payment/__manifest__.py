@@ -4,7 +4,7 @@
     "summary": "Let customers pay POS orders through configured online payment providers",
     "description": "Provide a payment page and transaction flow for POS orders. Checks order access, session state and payment amounts before using compatible configured providers.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "account_payment_provider",

@@ -6,7 +6,7 @@
     "summary": "Coordinate rental pickup quantities with POS order processing",
     "description": "Extends POS order processing and rental sale-line transferred quantities when rental stock operations are enabled.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_sale",
         "sale_stock_renting",

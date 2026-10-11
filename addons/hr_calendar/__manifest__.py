@@ -5,7 +5,7 @@
     "summary": "Show employee working hours and availability in calendar scheduling",
     "description": "Resolve employee schedules for event attendees and calculate unavailable intervals. Adds working-hour information to calendar and partner views.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "calendar",

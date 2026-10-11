@@ -5,7 +5,7 @@
     "summary": "Count and open CRM leads linked to a mailing source",
     "description": "Adds lead and opportunity counts, analysis navigation and mailing statistics based on matching UTM source IDs. Counts include archived leads; attribution reflects stored source links and does not establish that the mailing caused a conversion.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "mass_mailing",

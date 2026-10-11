@@ -4,7 +4,7 @@
     "summary": "Add paid event registrations to the eCommerce checkout",
     "description": "Connects website event registration forms to sales tickets and shopping carts. Creates attendee information from registration submissions and adds ticket-specific cart and payment checks. Requires configured events, ticket products and the eCommerce payment setup used for paid orders.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event",
         "event_sale",

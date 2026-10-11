@@ -8,7 +8,7 @@
     "description": "Provides provider and model catalogs, operation-specific clients, routing and configured fallback chains for supported text and audio operations. Applies company and purpose policies and records request usage. Requires suitable provider credentials and models; available capabilities depend on the configured operation and service.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
     ],

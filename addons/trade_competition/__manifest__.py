@@ -5,7 +5,7 @@
     "summary": "Record competitor offers and calculate comparable prices for trade documents",
     "description": "Stores competitor offers, equivalent products, source information and confidence, with currency, unit and configurable freight or financing adjustments. Supplies shared order comparison and loss-recording helpers. Sales and purchase bridges apply the direction-specific comparison; calculated market prices reflect recorded offers rather than a live market feed.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "incoterm",
         "trade",

@@ -5,7 +5,7 @@
     "summary": "Schedule project tasks on a timeline with dependency constraints",
     "description": "Adds project and task Gantt views, resource availability, workload indicators and dependent-task rescheduling, including shared project views.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project",
         "web_gantt",

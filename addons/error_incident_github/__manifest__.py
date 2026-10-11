@@ -6,7 +6,7 @@
     "description": "Links a pull request to the agent run that pushed its branch and to the incident that run works for, by the branch -- never by matching error signatures. The incident's chatter hears when the pull request opens, its checks pass or fail, and it is merged or closed.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "agent_runner_github",
         "error_incident",

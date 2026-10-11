@@ -7,7 +7,7 @@
     "description": "Adds live-broadcast settings and website components for configured talk videos and chat. The external video stream must be supplied by the event organizer.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event_track",
     ],

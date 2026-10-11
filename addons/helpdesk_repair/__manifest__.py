@@ -4,7 +4,7 @@
     "summary": "Create and access repair orders from helpdesk tickets",
     "description": "Adds repair order links, counts and a repair-creation action on tickets. Ticket information supplies defaults to the repair form; repair operations are implemented by the Repair dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk_stock",
         "repair",

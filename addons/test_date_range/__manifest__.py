@@ -5,7 +5,7 @@
     "summary": "Test Date Range behaviour, including date range search mixin",
     "description": "Run regression tests for Date Range. Loaded test suites include ``TestDateRangeSearchMixin``.",
     "author": "Odoo Community Association (OCA), AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "date_range",
     ],

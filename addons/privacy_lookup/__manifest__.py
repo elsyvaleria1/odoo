@@ -6,7 +6,7 @@
     "summary": "Find and anonymize personal data linked to a selected identity",
     "description": "Provide a lookup wizard for personal records and actions for supported anonymization operations. Record the executed operations in privacy logs.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

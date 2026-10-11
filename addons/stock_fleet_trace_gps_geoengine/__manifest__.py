@@ -6,7 +6,7 @@
     "description": "Adds a View GPS Track button to delivery trips: it draws the vehicle's GPS trail between departure and return on the trail map, with the trip's planned stops, what happened at each (arrival, delivery, not delivered), the incidents and the GPS alerts marked where they happened. The printed trip sheet carries the same as a route map, with each stop numbered as the sheet sequences it.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_fleet_trace_gps",
         "device_gps_geoengine",

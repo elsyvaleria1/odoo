@@ -6,7 +6,7 @@
     "description": "Provides abstract report-query composition, materialized-view lifecycle and rolling-window refresh helpers. Consuming models supply their queries, fields and refresh configuration. This addon provides report infrastructure rather than a business report dataset or dashboard.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

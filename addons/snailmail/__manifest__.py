@@ -6,7 +6,7 @@
     "summary": "Send document letters through the configured postal delivery service",
     "description": "Create postal letter requests with recipients and document attachments. Track delivery processing and failures using the configured postal service.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "iap_mail",
         "mail",

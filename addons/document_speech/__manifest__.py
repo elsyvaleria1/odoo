@@ -6,7 +6,7 @@
     "description": "Adds a Transcribe action and related transcript text, state and availability fields to documents. Delegates transcription to the speech attachment implementation and exposes its subtitle helper; supported recordings and speech-provider configuration are determined by that dependency.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "speech",

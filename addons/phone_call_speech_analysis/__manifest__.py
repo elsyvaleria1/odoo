@@ -6,7 +6,7 @@
     "description": "Adds the speech-analysis mixin to phone calls, whatever line carried them: once the recordings filed on an ended call are transcribed, the call gets a summary, topics, commitments, questions and moments. Requires a configured analysis model; a recording a business layer files on another record is analysed there instead.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "phone_call",
         "speech_analysis",

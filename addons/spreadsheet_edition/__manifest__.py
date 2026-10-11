@@ -5,7 +5,7 @@
     "summary": "Edit shared spreadsheets with revisions and cell discussions",
     "description": "Extend spreadsheet records with collaborative messages, revisions and snapshots. Adds cell discussion threads and spreadsheet download routes.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet",
         "mail",

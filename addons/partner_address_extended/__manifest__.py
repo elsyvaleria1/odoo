@@ -7,7 +7,7 @@
     "summary": "Split contact streets into components and select configured city records",
     "description": "Adds street-name and number fields with synchronization to the street text, a city catalog and country-specific city selection. City data must be configured or supplied by another addon; this module does not provide a complete global address registry.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "partner",
     ],

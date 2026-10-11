@@ -6,7 +6,7 @@
     "summary": "Compose SMS messages and track provider delivery statuses",
     "description": "Adds SMS records, templates, composition actions and messaging integration for business records. Uses the configured SMS API, with the Odoo IAP service as the supplied implementation. Sending requires service access and any applicable account verification and credits.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "iap_mail",

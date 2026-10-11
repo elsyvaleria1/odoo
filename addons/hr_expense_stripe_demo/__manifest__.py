@@ -8,7 +8,7 @@
     "description": "Extends the Stripe expense-card integration with test purchase, simulated funding and shipping-status wizards. Supplies test-account setup behavior for demonstrations. Requires the parent integration and its test connection; simulated operations do not represent live card transactions.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/expenses",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_expense_stripe",
     ],

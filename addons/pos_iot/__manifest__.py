@@ -7,7 +7,7 @@
     "summary": "Connect POS sessions to configured IoT printers, scales, displays and payment devices",
     "description": "Adds POS device selection, IoT data loading and frontend device integration. Requires compatible hardware, its IoT driver and a configured connection; individual payment terminal protocols may require dedicated terminal addons.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "iot",

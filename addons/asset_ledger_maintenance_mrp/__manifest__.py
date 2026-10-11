@@ -5,7 +5,7 @@
     "summary": "Open machinery assets, maintenance plans and orders from Manufacturing",
     "description": "Adds a Maintenance submenu under Manufacturing with links to machinery assets, maintenance plans and maintenance orders. The actions and maintenance behavior are implemented by Asset Ledger Maintenance; this addon contributes menu records only.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger_maintenance",
         "mrp",

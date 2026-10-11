@@ -11,7 +11,7 @@ Convert addresses into GPS coordinates, and coordinates back into place names,
 through a pluggable provider.
     """,
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "web",

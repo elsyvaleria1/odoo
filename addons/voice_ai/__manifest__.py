@@ -6,7 +6,7 @@
     "description": "Adds a voice-command fallback that sends the sentence and offered action choices through the machine-learning gateway under the voice.intent purpose. Requires an eligible configured model and policy. Returned action IDs are filtered against the offered choices and passed to the voice proposal workflow; this addon does not itself execute arbitrary model instructions.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration_machine_learning",
         "voice",

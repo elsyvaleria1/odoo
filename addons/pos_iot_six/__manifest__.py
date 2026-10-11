@@ -6,7 +6,7 @@
     "summary": "Process POS payments through SIX terminals connected to IoT",
     "description": "Adds a SIX terminal choice and POS payment interface for the IoT integration. Requires a supported terminal connected to a configured IoT installation.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "iot_six",
         "pos_iot",

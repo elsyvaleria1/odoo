@@ -4,7 +4,7 @@
     "summary": "Reflect time off in employee workplace presence indicators",
     "description": "Extends the employee presence calculation and frontend presence display when time off and homeworking are installed together.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_holidays",
         "hr_homeworking",

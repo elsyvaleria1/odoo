@@ -8,7 +8,7 @@
     "description": "Extends sales orders with subscription plans, recurring pricing, billing dates, renewals and closure reasons. Includes scheduled invoicing, portal actions and subscription reporting. Automatic payment collection requires a compatible configured payment provider and usable payment authorization.",
     "author": "Camptocamp / Odoo",
     "website": "https://www.odoo.com/app/subscriptions",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "sale",

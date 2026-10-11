@@ -6,7 +6,7 @@
     "summary": "Test Website Modules behaviour, including configurator, controllers, performance",
     "description": "Run regression tests for Website Modules. Loaded test suites include ``TestConfigurator``, ``TestWebEditorController``, ``TestWebsiteAllPerformance``, ``TestWebsiteAllPerformanceShop``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "theme_default",
         "website",

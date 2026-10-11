@@ -5,7 +5,7 @@
     "summary": "Send text messages when tickets enter configured stages",
     "description": "Adds an SMS template to helpdesk stages and sends it on applicable ticket creation or stage changes through the configured SMS service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk",
         "sms",

@@ -6,7 +6,7 @@
     "summary": "Compare project shift allocations with employee timesheet hours and costs",
     "description": "Links planning shifts to timesheets for the same employee and project within the shift date range and adds comparison reports. Matching uses timesheet dates, not clock-time overlap; results depend on recorded timesheets and reporting access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "timesheet_grid",
         "project_forecast",

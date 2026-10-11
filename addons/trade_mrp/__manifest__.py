@@ -6,7 +6,7 @@
     "description": "Extends stock-enabled order lines with phantom bill-of-materials lookup and component-based delivered or received quantities. Uses the applicable order direction, completed moves and unit conversion, with separate dropship and missing-bill-of-materials handling. Requires configured kit products and adopting stock order models.",
     "author": "Odoo Community",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade_stock",
         "mrp",

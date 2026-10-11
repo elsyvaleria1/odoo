@@ -6,7 +6,7 @@
     "description": "Registers a CPU transcription reader using sherpa-onnx with Whisper and voice-activity models supplied in the configured model directory. Missing required models make the engine unavailable; optional speaker models add speaker labels. Shared models normally defer to peer engines, while complete purpose-specific model sets select local processing first.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "speech",
     ],

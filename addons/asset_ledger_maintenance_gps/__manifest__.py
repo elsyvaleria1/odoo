@@ -5,7 +5,7 @@
     "summary": "Read GPS odometers when an asset maintenance plan has no meter value",
     "description": "Extends maintenance-plan odometer calculation with the GPS reading from the asset stock lot. The fallback applies only when the normal calculation yields no current odometer.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger_maintenance",
         "asset_gps",

@@ -7,7 +7,7 @@
     "summary": "Resolve approval managers and escalation chains from employee reporting lines",
     "description": "Extends approval categories and requests with requester-manager steps, employee manager chains and department access settings. Resolution uses an employee in the request company and a suitable active manager user. Required-manager and minimum-approver checks run when submitting a request; employee and user relationships must be configured.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval_app",
         "hr",

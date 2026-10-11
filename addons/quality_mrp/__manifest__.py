@@ -7,7 +7,7 @@
     "summary": "Create and process quality checks for manufacturing orders",
     "description": "Add quality control points, checks and alerts to manufacturing orders and their stock movements. Production workflows check the applicable quality results before completion.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "quality_control",
         "mrp",

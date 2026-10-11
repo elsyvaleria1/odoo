@@ -5,7 +5,7 @@
     "summary": "Create leads from survey responses containing configured lead-generating answers",
     "description": "Adds lead-generation flags to suggested answers and CRM settings to surveys. Completion of supported survey types creates leads for responses selecting a flagged answer, using response and survey values; also connects live-session completion and lead navigation.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "survey",
         "crm",

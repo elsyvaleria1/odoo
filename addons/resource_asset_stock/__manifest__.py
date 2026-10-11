@@ -5,7 +5,7 @@
     "summary": "Create and locate physical assets from serialized stock lots",
     "description": "Links tracked product lots to assets and derives asset locations from inventory. Scrapping the corresponding stock disposes of the asset through its lifecycle action.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_asset_product",
         "stock",

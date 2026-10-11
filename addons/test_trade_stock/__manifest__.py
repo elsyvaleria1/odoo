@@ -5,7 +5,7 @@
     "summary": "Test Trade Stock behaviour, including mixin order line stock",
     "description": "Run regression tests for Trade Stock. Loaded test suites include ``TestMixinOrderLineStock``.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade_stock",
     ],

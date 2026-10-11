@@ -4,7 +4,7 @@
     "summary": "Skip local stock procurement for Gelato order lines",
     "description": "Filters Gelato products out of the sales stock-rule launch so the external fulfillment flow does not create local procurement for those lines.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_gelato",
         "sale_stock",

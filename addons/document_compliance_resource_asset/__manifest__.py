@@ -5,7 +5,7 @@
     "summary": "Scope required documents by asset kind",
     "description": "Adds resource assets to document requirement reports and asset-kind restrictions to document types.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_compliance",
         "document_resource_asset",

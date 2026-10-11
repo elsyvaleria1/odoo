@@ -6,7 +6,7 @@
     "summary": "Send and track documents for employee signatures",
     "description": "Adds employee and contract signature links, request wizards and signature activities in employee plans.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "sign",

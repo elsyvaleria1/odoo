@@ -10,7 +10,7 @@
             ref="base.module_category_administration_administration" />
         <field name="application" eval="True" />
         <field name="summary">Create and Customize Applications</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/web_studio.png</field>
@@ -25,7 +25,7 @@
         <field name="category_id" ref="base.module_category_services_timesheets" />
         <field name="application" eval="True" />
         <field name="summary">Track time &amp; costs</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/timesheet_grid.png</field>
@@ -40,7 +40,7 @@
         <field name="category_id" ref="base.module_category_accounting_accounting" />
         <field name="application" eval="True" />
         <field name="summary">Accounting, Taxes, Budgets, Assets...</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/account_accountant.png</field>
@@ -56,7 +56,7 @@
         <field name="application" eval="True" />
         <field
             name="summary">Centralize, manage, share and grow your knowledge library</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/knowledge.png</field>
@@ -72,7 +72,7 @@
         <field name="application" eval="True" />
         <field
             name="summary">Schedule and track onsite operations, time and material</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/industry_fsm.png</field>
@@ -87,7 +87,7 @@
         <field name="category_id" ref="base.module_category_services_helpdesk" />
         <field name="application" eval="True" />
         <field name="summary">Track support tickets</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/helpdesk.png</field>
@@ -104,7 +104,7 @@
             ref="base.module_category_human_resources_appraisals" />
         <field name="application" eval="True" />
         <field name="summary">Assess your employees</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/hr_appraisal.png</field>
@@ -121,7 +121,7 @@
             ref="base.module_category_marketing_email_marketing" />
         <field name="application" eval="True" />
         <field name="summary">Build automated mailing campaigns</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/marketing_automation.png</field>
@@ -136,7 +136,7 @@
         <field name="sequence">155</field>
         <field name="application" eval="True" />
         <field name="summary">PLM, ECOs, Versions</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/mrp_plm.png</field>
@@ -151,7 +151,7 @@
         <field name="category_id" ref="base.module_category_supply_chain" />
         <field name="application" eval="True" />
         <field name="summary">Quality Alerts, Control Points</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/quality_control.png</field>
@@ -166,7 +166,7 @@
         <field name="category_id" ref="base.module_category_sales_sales" />
         <field name="application" eval="True" />
         <field name="summary">Import Amazon orders and sync deliveries</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/sale_amazon.png</field>
@@ -181,7 +181,7 @@
         <field name="category_id" ref="base.module_category_services_project" />
         <field name="application" eval="True" />
         <field name="summary">Manage your employees' schedule</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/planning.png</field>
@@ -196,7 +196,7 @@
         <field name="category_id" ref="base.module_category_sales_sales" />
         <field name="application" eval="True" />
         <field name="summary">MRR, Churn, Recurring payments</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/sale_subscription.png</field>
@@ -211,7 +211,7 @@
         <field name="category_id" ref="base.module_category_sales_sign" />
         <field name="application" eval="True" />
         <field name="summary">Send documents to sign online</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/sign.png</field>
@@ -226,7 +226,7 @@
         <field name="category_id" ref="base.module_category_supply_chain" />
         <field name="application" eval="True" />
         <field name="summary">Barcode scanner for warehouses</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/stock_barcode.png</field>
@@ -241,7 +241,7 @@
         <field name="category_id" ref="base.module_category_sales_sales" />
         <field name="application" eval="True" />
         <field name="summary">Call using VoIP</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/voip.png</field>
@@ -271,7 +271,7 @@
         <field name="category_id" ref="base.module_category_marketing" />
         <field name="application" eval="True" />
         <field name="summary">Manage your social media and website visitors</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/social.png</field>
@@ -285,7 +285,7 @@
         <field name="category_id" ref="base.module_category_supply_chain" />
         <field name="application" eval="True" />
         <field name="summary">Work Orders, Planning, Routing</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/mrp_workorder.png</field>
@@ -302,7 +302,7 @@
             ref="base.module_category_administration_administration" />
         <field name="application" eval="True" />
         <field name="summary">Support for Android &amp; iOS Apps</field>
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/web_mobile.png</field>
@@ -315,7 +315,7 @@
         <field name="shortdesc">Sepa Direct Debit Payment Provider</field>
         <field name="summary">Checkout with SEPA Direct Debit</field>
         <field name="category_id" ref="base.module_category_accounting_accounting" />
-        <field name="license">OEEL-1</field>
+        <field name="license">Other OSI approved licence</field>
         <field name="author">Odoo S.A.</field>
         <field name="to_buy" eval="True" />
         <field name="icon">/base/static/img/icons/payment_sepa_direct_debit.png</field>

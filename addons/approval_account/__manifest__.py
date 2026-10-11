@@ -8,7 +8,7 @@
     "description": "Adds posting approval bindings, partner and journal flags, company amount thresholds and accounting criteria for approval categories. Ordinary journal entries bypass the invoice approval trigger. Also links request lines to accounting documents and bank statement lines; automatic posting after approval depends on company configuration.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "approval_app",

@@ -8,7 +8,7 @@
     "description": "Binds purchase confirmation to approval requests and adds vendor, product and category approval flags with company amount and request-rate settings. Links approval request lines to purchase order lines and supplies purchase target creation hooks. The applicable category, flags and thresholds determine when approval is required.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "approval_product",

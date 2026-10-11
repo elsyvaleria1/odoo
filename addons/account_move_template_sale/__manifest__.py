@@ -6,7 +6,7 @@
     "description": "Grants sales users access to readable accounting template sources in sales invoice autocomplete. Querying and loading templates belong to Accounting Document Templates.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "AGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_move_template",
         "sale",

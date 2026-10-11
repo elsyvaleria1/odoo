@@ -5,7 +5,7 @@
     "summary": "Connect website visitors to configured live chat channels",
     "description": "Adds per-website channel selection, visitor-to-conversation links, visitor context and chatbot testing pages. The website supplies chat information when a channel is configured; conversation availability and routing depend on live chat rules, operators and chatbot configuration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "im_livechat",

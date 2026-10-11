@@ -6,7 +6,7 @@
     "summary": "Manage employee document folders and open them from employee profiles",
     "description": "Adds company HR folder configuration, employee folders and document links on employee records. Folder creation and filing depend on HR document settings; an employee does not receive access to the HR-only employee folder by default.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "hr",

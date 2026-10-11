@@ -5,7 +5,7 @@
     "summary": "Load product and lot expiration fields into inventory barcode operations",
     "description": "Extend barcode data for products, lots and stock move lines with expiration information. Adds the associated move-line view fields.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_barcode",
         "product_expiry",

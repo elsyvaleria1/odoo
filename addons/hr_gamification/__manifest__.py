@@ -5,7 +5,7 @@
     "summary": "Grant badges to employees and show their challenge progress",
     "description": "Connect gamification badges and goals to employee records. Adds employee badge views and a grant wizard for authorized users.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "gamification",
         "hr",

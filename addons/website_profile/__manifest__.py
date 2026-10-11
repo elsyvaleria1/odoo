@@ -5,7 +5,7 @@
     "summary": "Display user profiles, badges and ranks with profile editing and email validation",
     "description": "Adds website profile pages, avatar and profile access checks, editable profile fields, gamification displays and email validation links. Visibility follows the configured website profile rules; profile statistics depend on records supplied by participating applications.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_partner",
         "gamification",

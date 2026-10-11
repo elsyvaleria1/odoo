@@ -5,7 +5,7 @@
     "summary": "Look up products from scanned barcodes in the POS",
     "description": "Adds POS frontend support for the Barcode Lookup product-creation integration. Requires its configured API key and service access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "product_barcodelookup",

@@ -6,7 +6,7 @@
     "summary": "Display room availability and create calendar-backed bookings",
     "description": "Adds meeting-room asset details and a tablet-oriented booking page. Projects reservation occupancy from the shared resource engine and sends updates when relevant bookings change. Requires configured room resources and access to the room booking page.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_asset_calendar",
     ],

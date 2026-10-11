@@ -5,7 +5,7 @@
     "summary": "Connect web-client features to APIs exposed by a compatible mobile host",
     "description": "Adds JavaScript wrappers for native host methods and mobile-specific web-client behavior. Native calls require a host exposing OdooDeviceUtility and the relevant methods; this addon does not contain or install an Android or iOS application.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

@@ -4,7 +4,7 @@
     "summary": "Test Enterprise Discuss Integration behaviour, including ai draft ui",
     "description": "Run regression tests for Enterprise Discuss Integration. Loaded test suites include ``TestAIDraftUI``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
         "account",

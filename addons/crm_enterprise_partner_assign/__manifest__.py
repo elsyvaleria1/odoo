@@ -5,7 +5,7 @@
     "summary": "Display reseller assignment in enterprise CRM views",
     "description": "Extends the CRM lead views with the reseller-assignment fields supplied by the partner assignment integration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm_enterprise",
         "website_crm_partner_assign",

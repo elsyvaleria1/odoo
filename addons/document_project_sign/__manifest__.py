@@ -5,7 +5,7 @@
     "summary": "Expose the signature-template action on the project Documents folder",
     "description": "Embeds the Documents signature-template action on the project folder when the referenced records exist. The signing workflow and project document association are supplied by the dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_project",
         "document_sign",

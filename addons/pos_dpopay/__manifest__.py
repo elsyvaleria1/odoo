@@ -7,7 +7,7 @@
     "summary": "Request and track POS payments through configured DPO terminals",
     "description": "Adds DPO payment-method settings and requests for transaction initiation, status, results and cancellation, with card or Mobile Money transaction modes. Requires a configured merchant account, terminal identifiers and service credentials. Accepted payment instruments and currencies depend on the provider and terminal setup.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "integration",

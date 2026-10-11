@@ -5,7 +5,7 @@
     "summary": "Link repair orders with related manufacturing orders",
     "description": "Expose manufacturing and repair links and support kit component expansion in repairs. Adds navigation between the related production and repair records.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "repair",
         "mrp",

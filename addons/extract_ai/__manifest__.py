@@ -6,7 +6,7 @@
     "description": "Registers text and vision extraction strategies using schema-generated prompts and the machine-learning gateway. Requires a configured model available for the company and extraction purpose. Text requests use document text; vision requests send only the first rendered page and require a vision-capable model. Model failures return no result to the extraction cascade.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration_machine_learning",
         "extract",

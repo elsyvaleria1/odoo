@@ -5,7 +5,7 @@
     "summary": "Display website visitor lead data in enterprise CRM views",
     "description": "Extends CRM lead views with information supplied by website visitor identification and lead generation.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm_enterprise",
         "website_crm_iap_reveal",

@@ -6,7 +6,7 @@
     "description": "When a shipping order sent with /embarque goes on a delivery order, prepares the freight request of the carrier's approval category as a draft: the carrier's billing partner, the tracking number as reference, the destination and the customer as location, the sheet's total as amount and the single line of the category's product, the sales order, the salesperson and the carrier's bank accounts in the reason, and the sheet attached. The delivery orders it pays for are listed on the request, apart from the approval gate of the transfer, so approving the freight never validates them. A request already open for the same tracking number gets the transfer instead of a second request. The draft is never submitted: whoever owns it checks it against the sheet and submits it.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_shipment_telegram",
         "approval_account",

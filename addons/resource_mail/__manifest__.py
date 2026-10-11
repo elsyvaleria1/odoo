@@ -5,7 +5,7 @@
     "summary": "Give resources a chatter, custody messages and messaging avatar cards",
     "description": "Make resources and the models extending a kind of them mail threads: an asset tracks its changes and posts each operator or manager hand-over in its chatter. Extend the resource model with avatar-card data for messaging interfaces, using the linked resource information instead of requiring a user record.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

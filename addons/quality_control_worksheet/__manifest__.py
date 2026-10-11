@@ -5,7 +5,7 @@
     "summary": "Attach configured worksheets to quality checks",
     "description": "Adds worksheet templates and form actions to quality checks and integrates worksheet completion with the check wizard. Requires a worksheet template for the quality-check model; custom fields and layout are supplied through the worksheet framework.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "quality_control",
         "worksheet",

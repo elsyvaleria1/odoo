@@ -7,7 +7,7 @@
     "summary": "Add product lines and shared document approval criteria",
     "description": "Adds product quantities, units, prices and subtotals to approval requests, plus category criteria and shared document approval helpers. Provides hooks for linked target documents, protected fields and approval snapshots. Sales, purchase and other integration addons supply their specific document bindings and target creation behavior.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval_app",
         "product",

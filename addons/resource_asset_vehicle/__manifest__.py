@@ -7,7 +7,7 @@
     "description": "Adds vehicle assets with plate, VIN and product-model specifications. Provides driver assignments, handover actions, odometer readings and service and cost records using the shared asset infrastructure. Vehicle details and costs are based on entered records.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/fleet",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "resource_asset_product",

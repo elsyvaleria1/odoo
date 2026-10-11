@@ -4,7 +4,7 @@
     "summary": "Add an optional cash-basis calculation mode to accounting reports",
     "description": "Adds a configurable cash-basis report filter and computes report queries through temporary journal-item tables using payment and reconciliation data. Supports report labels and drill-down adaptations; the filter must be enabled on the report and selected in its options.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

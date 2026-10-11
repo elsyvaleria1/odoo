@@ -5,7 +5,7 @@
     "summary": "Draft Knowledge text and use articles as AI agent sources",
     "description": "Adds Knowledge-specific composer configuration and article-backed agent sources with access checks and content extraction. Requires configured AI services.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
         "knowledge",

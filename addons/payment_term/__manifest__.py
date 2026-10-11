@@ -5,7 +5,7 @@
     "summary": "Define installment schedules, due dates and early-payment discounts",
     "description": "Stores payment terms and their lines, computes schedule examples and adds customer and supplier term defaults to contacts. Supplies reusable term calculations and configuration views. Trade and accounting addons consume the terms on orders, invoices and payments; this module does not create those documents itself.",
     "author": "Odoo S.A., AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

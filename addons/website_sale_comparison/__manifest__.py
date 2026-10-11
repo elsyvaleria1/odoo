@@ -5,7 +5,7 @@
     "summary": "Compare selected storefront products by their configured attributes",
     "description": "Adds a product comparison page, comparison controls and attribute categories that organize the table. Also supplies a product-page attribute summary template; useful comparisons require populated product attributes and do not guarantee faster purchasing decisions.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
     ],

@@ -5,7 +5,7 @@
     "summary": "Use rental products in quotation templates",
     "description": "Extend quotation-template product selection for rental orders. Adds the rental template views and menu entries.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_renting",
         "sale",

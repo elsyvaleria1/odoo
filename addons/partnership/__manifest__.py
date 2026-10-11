@@ -6,7 +6,7 @@
     "summary": "Assign membership grades and track partner memberships",
     "description": "Configure partner grades and manage membership assignment and confirmation. The module links membership records to the contacts they concern.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "sale",

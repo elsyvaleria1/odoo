@@ -6,7 +6,7 @@
     "summary": "Provide start, stop, pause and resume timers for adopting models",
     "description": "Defines timer records, reusable model mixins and interface components for elapsed-time tracking. Application models must adopt the mixins and connect timer actions to their workflow; this addon supplies the shared timer infrastructure.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
         "mail",

@@ -5,7 +5,7 @@
     "summary": "Load sample project sales and document folders when demo data is enabled",
     "description": "Provides demonstration folders, a project template, a service product and a sales order combining Project Documents with project sales. It loads no production data, models or views and does not add product folder-template functionality independently of its dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_project",
         "sale_project",

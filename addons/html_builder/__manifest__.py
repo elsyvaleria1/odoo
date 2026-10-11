@@ -6,7 +6,7 @@
     "description": "Supplies frontend builder components, snippet editing tools and plugin infrastructure for consuming applications. Provides shared building blocks used by page and mailing editors. A consuming application supplies the document context and its specific editing options.",
     "author": "Odoo",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

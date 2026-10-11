@@ -6,7 +6,7 @@
     "description": "Stores description templates with company and project restrictions and adds a selector and apply action to tasks. Checks whether the chosen template is valid for its task. Users maintain the template content and apply it through the supplied task interface.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "project",
     ],

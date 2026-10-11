@@ -6,7 +6,7 @@
     "summary": "Record passed certification surveys on linked employee resumes",
     "description": "Creates or updates certification resume entries after a certification survey is completed successfully. Requires an employee linked through the respondent user contact; the configured certification validity determines the end date. These are internal survey results, not independent accreditation.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_skills",
         "survey",

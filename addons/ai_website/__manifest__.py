@@ -5,7 +5,7 @@
     "summary": "Generate draft website page content with a configured AI agent",
     "description": "Extracts snippet structure and prepares generated HTML for website pages through the configured AI service. Generated page content requires editorial review.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
         "website",

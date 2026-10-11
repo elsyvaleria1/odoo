@@ -5,7 +5,7 @@
     "summary": "Test Team behaviour, including team usage, team install, access binds",
     "description": "Run regression tests for Team. Loaded test suites include ``TestTeamUsage``, ``TestSalesTeamRulesRemoved``, ``TestTeamAccessBind``.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "team",
     ],

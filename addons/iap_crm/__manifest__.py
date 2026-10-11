@@ -5,7 +5,7 @@
     "summary": "Preserve company reveal identifiers when merging leads",
     "description": "Adds the reveal identifier field to leads and includes it among fields retained by lead merging.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "iap_mail",

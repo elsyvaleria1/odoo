@@ -6,7 +6,7 @@
     "summary": "Open asset bill lines from serialized stock lots",
     "description": "Relates journal items to their asset stock lot and exposes bill navigation from the lot. Asset log views link to the associated journal entry and make billed amounts read-only.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger",
         "resource_asset_account",

@@ -5,7 +5,7 @@
     "summary": "Compare purchase prices with recorded rival-buyer offers",
     "description": "Links competitor offers to purchase orders and adds vendor-oriented market price, price-gap and recommended-price fields. Applies configured resale-margin and overbid parameters through the shared competition helpers. Requires maintained competitor offers and product pricing inputs; recommendations are calculations from those records.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "trade_competition",

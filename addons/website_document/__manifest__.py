@@ -7,7 +7,7 @@
     "description": "Adds website selection and access-URL computation to shared documents and folders, with website consistency checks. Selecting a website changes link routing; document sharing permissions remain governed by Documents.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/documents",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "website",

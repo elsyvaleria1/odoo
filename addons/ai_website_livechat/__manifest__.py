@@ -5,7 +5,7 @@
     "summary": "Place an AI chat entry point in website pages",
     "description": "Adds a website-builder snippet, agent selection and routes to create the corresponding chat channel. Requires a configured AI agent and livechat integration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_website",
         "ai_livechat",

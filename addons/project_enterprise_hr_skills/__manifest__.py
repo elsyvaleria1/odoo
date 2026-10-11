@@ -5,7 +5,7 @@
     "summary": "Find additional task assignees matching a skill filter",
     "description": "Extend the project scheduling user search with employees whose current skills match the selected task skill filter. Uses employee skill records to resolve candidate users.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project_gantt",
         "project_hr_skills",

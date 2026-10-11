@@ -8,7 +8,7 @@
     "description": "Provides document and folder records, tags, document types, version history and trash handling. Includes sharing links, access membership, file operations and links to business records. Access follows the configured document and folder permissions.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/documents",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "portal",

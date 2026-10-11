@@ -6,7 +6,7 @@
     "summary": "Track lot expiration, removal and alert dates",
     "description": "Configure product shelf-life periods and compute the associated dates on lots. Includes alerts for lots reaching their configured warning dates.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "product_trace_expiry",

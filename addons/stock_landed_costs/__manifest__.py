@@ -7,7 +7,7 @@
     "summary": "Allocate additional costs across eligible stock moves and update valuation",
     "description": "Adds landed-cost documents, split calculations and vendor-bill integration for transfer costs. Eligible moves require FIFO or average costing and a nonzero quantity. Validation checks balanced allocations, updates stock values and creates accounting entries for products with automated valuation; accounts and journals must be configured.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase_stock",
     ],

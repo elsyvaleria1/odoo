@@ -5,7 +5,7 @@
     "summary": "Compare quotations with recorded competitor prices and capture lost business",
     "description": "Links competitor offers to sales quotations and exposes market-price, gap, margin-floor and recommended-price calculations. Uses configurable margin and undercut settings and the shared loss and activity helpers. The comparison depends on recorded offers and costs; this addon does not obtain competitor pricing automatically.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_margin",
         "trade_competition",

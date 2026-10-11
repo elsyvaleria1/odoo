@@ -5,7 +5,7 @@
     "summary": "Link receipts and deliveries to projects",
     "description": "Adds a project field to stock transfers and project actions for receipts, deliveries and all related transfers.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "project",

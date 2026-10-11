@@ -7,7 +7,7 @@
     "description": "Provides event types, dates, slots, tickets, registration questions and attendee records. Includes barcode attendance handling and scheduled registration email workflows. Selling registrations and publishing event websites require their respective integration addons.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "barcodes",

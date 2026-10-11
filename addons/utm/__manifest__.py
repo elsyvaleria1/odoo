@@ -5,7 +5,7 @@
     "summary": "Track campaign, medium and source on business records",
     "description": "Provide UTM campaign, medium and source records and attribution helpers. Applications use the tracking mixin to capture campaign information.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

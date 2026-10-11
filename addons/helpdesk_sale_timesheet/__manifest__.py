@@ -4,7 +4,7 @@
     "summary": "Link ticket timesheets to billable sales order items",
     "description": "Adds sales order item selection, remaining sold hours and invoice navigation to helpdesk tickets. Timesheet billing requires the team time-billing feature and an eligible service sales order item; invoicing uses the sales and timesheet dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk_timesheet",
         "sale_timesheet_enterprise",

@@ -7,7 +7,7 @@
     "summary": "Publish job openings and accept website applications",
     "description": "Adds public job listing, detail and application pages linked to recruitment records. Stores website descriptions and publication information on jobs and processes submitted application data. Recruiting teams manage applicants through the recruitment dependency.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment",
         "website_mail",

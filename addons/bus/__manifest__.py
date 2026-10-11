@@ -5,7 +5,7 @@
     "summary": "Deliver server notifications to subscribed browser clients",
     "description": "Provide notification channels, message delivery and websocket session handling. Applications publish messages to channels and clients subscribe to the channels they use.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

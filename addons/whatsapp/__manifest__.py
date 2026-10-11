@@ -6,7 +6,7 @@
     "summary": "Send supported WhatsApp messages and process incoming conversations",
     "description": "Adds WhatsApp accounts, templates, message records and webhook handling linked to Discuss conversations. Supports template submission and message delivery-status tracking. Requires a configured business account, service credentials and a reachable webhook; storing account secrets requires the server credential encryption key.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "phone_validation",

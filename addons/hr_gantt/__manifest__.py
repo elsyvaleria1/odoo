@@ -5,7 +5,7 @@
     "summary": "Use employee resources in Gantt views",
     "description": "Adds employee-specific support and frontend components for timeline views supplied by dependent applications.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "web_gantt",

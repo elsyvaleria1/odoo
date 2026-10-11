@@ -5,7 +5,7 @@
     "summary": "Configure valuation accounts and open inventory valuation reports",
     "description": "Adds accounting settings for inventory valuation and the associated valuation-report definitions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_account",
         "account",

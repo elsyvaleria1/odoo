@@ -7,7 +7,7 @@
     "description": "Adds event actions for push posts and reminders and connects event registrations to eligible visitor subscriptions. Requires configured website push messaging and recipient subscriptions.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event",
         "social_push_notifications",

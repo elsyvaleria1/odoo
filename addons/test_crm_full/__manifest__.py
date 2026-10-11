@@ -5,7 +5,7 @@
     "summary": "Test CRM Integration behaviour, including performance",
     "description": "Run regression tests for CRM Integration. Loaded test suites include ``TestCrmPerformance``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "crm_iap_enrich",

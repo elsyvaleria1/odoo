@@ -7,7 +7,7 @@
     "summary": "Accept payments through the Xendit integration",
     "description": "Adds direct card payments and redirect checkout for other supported methods and provider-specific transaction-status handling. Implements saved card payment tokens. Requires a configured Xendit merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Manual capture and refunds are not implemented.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

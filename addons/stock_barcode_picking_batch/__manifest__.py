@@ -5,7 +5,7 @@
     "summary": "Process transfer batches in the barcode interface",
     "description": "Adds batch creation, selection, confirmation and cancellation actions with shared barcode data for the included transfers.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_barcode",
         "stock_picking_batch",

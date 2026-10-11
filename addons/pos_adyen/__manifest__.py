@@ -7,7 +7,7 @@
     "summary": "Process POS payments with Adyen terminals",
     "description": "Adds a Adyen terminal payment method and the POS request and response handling for that integration. Requires a supported terminal and configured provider credentials or payment-provider account.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "integration",

@@ -6,7 +6,7 @@
     "description": "Links outgoing deliveries by the visit user, customer hierarchy and permitted companies, including carried goods and deliveries completed on the visit day. Signing in or completing a visit refreshes links. Completion refuses unresolved linked deliveries whose trip has departed until they are marked delivered or not delivered.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "planning_field_service",
         "stock_fleet",

@@ -5,7 +5,7 @@
     "summary": "Populate sustainability report templates with workforce metrics",
     "description": "Adds report variables for employee demographics, employment types, turnover, tenure and pay gaps using the available HR records.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "esg_csrd",

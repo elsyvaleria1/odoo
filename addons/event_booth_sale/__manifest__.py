@@ -6,7 +6,7 @@
     "summary": "Sell selected event booths through sales orders and track invoice payment",
     "description": "Links booth registrations to sales lines and requires booth selection before confirming lines configured for booth service tracking. Updates booth reservations on order confirmation and marks linked booths paid through the invoice payment hook; requires configured booth products and categories.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event_booth",
         "event_sale",

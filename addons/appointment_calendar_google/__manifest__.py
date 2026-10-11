@@ -5,7 +5,7 @@
     "summary": "Google Meet links for appointments booked with Google Calendar synchronization",
     "description": "Offer Google Meet as an appointment type's videoconference: a booked event synchronized with its organizer's Google Calendar gets its Meet link, and staff who do not synchronize are named on the type.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar_google",
         "calendar",

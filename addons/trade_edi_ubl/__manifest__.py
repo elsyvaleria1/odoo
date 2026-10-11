@@ -6,7 +6,7 @@
     "description": "Adds shared UBL order-node construction and import helpers over trade accounting and UBL/CII dependencies. Extends the order mixin with builder selection and uploaded-document decoding hooks. Concrete order integrations supply their direction-specific fields; this addon does not itself transmit documents over Peppol.",
     "author": "Odoo Community",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade_account",
         "account_edi_ubl_cii",

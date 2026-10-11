@@ -6,7 +6,7 @@
     "summary": "Create project tasks from configured website forms",
     "description": "Registers project task fields for website forms and handles submitted contact and description data. Requires a form configured for task creation and an appropriate project; the addon uses the website form builder supplied by its dependency.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "project",

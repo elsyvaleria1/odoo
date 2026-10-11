@@ -5,7 +5,7 @@
     "summary": "Send push messages to subscribed website visitors",
     "description": "Stores visitor push subscriptions and adds push posts to social campaigns. Requires configured Firebase messaging credentials and browser permission from each recipient.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "social",
         "website",

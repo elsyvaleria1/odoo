@@ -5,7 +5,7 @@
     "summary": "Collect online payments for POS self-service orders",
     "description": "Adds a self-order online payment method and links provider transaction confirmation to the order payment status. Requires a configured online payment provider.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_online_payment",
         "pos_self_order",

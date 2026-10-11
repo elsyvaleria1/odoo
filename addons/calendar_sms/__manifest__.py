@@ -5,7 +5,7 @@
     "summary": "Send event reminders by text message",
     "description": "Adds SMS alarm types and message templates to calendar events. Reminder delivery uses the configured SMS service and its account requirements.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "sms",

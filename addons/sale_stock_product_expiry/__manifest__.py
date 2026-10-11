@@ -5,7 +5,7 @@
     "summary": "Exclude expiring stock from sales availability forecasts",
     "description": "Extend quantity forecasts on sales lines with product expiration rules. Stock due for removal is excluded from the forecast quantities used by the widget.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_stock",
         "product_expiry",

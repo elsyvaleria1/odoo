@@ -6,7 +6,7 @@
     "summary": "Expose contact lookup and email logging to authenticated mailbox plugins",
     "description": "Adds plugin authorization, contact search and creation, optional contact enrichment and email-content logging routes. Requires a compatible mailbox plugin and scoped credentials. Base logging accepts contact records; extension addons add other target models, while enrichment depends on the external IAP service.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
         "partner",

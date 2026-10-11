@@ -5,7 +5,7 @@
     "summary": "Manage two-factor authentication and passkeys from the portal account page",
     "description": "Adds portal controls for enabling or disabling two-factor authentication, revoking trusted devices and adding, renaming or deleting passkeys. Uses the authentication dependencies for credential operations; passkey enrollment requires a compatible browser and authenticator.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "portal",
         "auth_totp",

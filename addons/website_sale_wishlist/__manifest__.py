@@ -5,7 +5,7 @@
     "summary": "Save storefront products in a visitor session or customer wishlist",
     "description": "Adds wishlist records, storefront controls and add, remove and listing routes. Anonymous entries are associated with the browser session and can be merged into the customer wishlist at login; saved items do not reserve stock or guarantee future availability.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
     ],

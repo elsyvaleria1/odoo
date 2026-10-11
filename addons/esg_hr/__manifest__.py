@@ -5,7 +5,7 @@
     "summary": "Analyze workforce distribution and pay-gap metrics",
     "description": "Adds an employee reporting model and dashboard data based on gender, department, leadership, country and wage records. Results depend on the completeness of employee data.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "esg",
         "hr",

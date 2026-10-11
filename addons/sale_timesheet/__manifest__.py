@@ -6,7 +6,7 @@
     "summary": "Link recorded timesheets to sales services and invoicing",
     "description": "Adds sales-line assignment to timesheets, project pricing configuration, delivered-time quantities and invoice links. Includes employee-to-sales-line mappings, portal timesheet views and date-range invoicing options. Requires billable project and service setup; recorded time contributes according to the applicable invoicing policy.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_project",
         "hr_timesheet",

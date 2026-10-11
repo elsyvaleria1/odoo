@@ -6,7 +6,7 @@
     "description": "Load the expense-related accounting return check template. The check is used by the accounting review workflow with employee expenses installed.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/accounting",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "accountant",
         "hr_expense",

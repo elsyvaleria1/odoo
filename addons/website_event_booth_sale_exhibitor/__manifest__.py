@@ -5,7 +5,7 @@
     "summary": "Link sold event booths to exhibitor website information",
     "description": "Connects booth sales with exhibitor records and their website presentation when the booth sale and exhibitor integrations are installed together.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event_exhibitor",
         "website_event_booth_sale",

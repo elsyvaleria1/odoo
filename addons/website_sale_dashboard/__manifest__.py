@@ -6,7 +6,7 @@
     "summary": "Open sales graphs and pivots for teams associated with websites",
     "description": "Adds sales-analysis graph and pivot views, search filters and a website dashboard redirect for sales users. The action selects sales report rows whose team has a website and defaults to confirmed orders; it does not independently prove that every included order originated online.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
     ],

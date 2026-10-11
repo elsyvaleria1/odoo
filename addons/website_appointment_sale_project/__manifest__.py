@@ -5,7 +5,7 @@
     "summary": "Link sales-generated tasks to their appointment and copy its dates",
     "description": "Extends task generation from appointment-linked sales lines with the calendar event reference and appointment dates. Adds task navigation to the appointment; requires a sales product configured to generate project work.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_appointment_sale",
         "sale_project",

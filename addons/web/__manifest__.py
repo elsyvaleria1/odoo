@@ -6,7 +6,7 @@
     "summary": "Serve the browser client, business views and user actions",
     "description": "Provide the backend web client, view components, asset bundles and supporting HTTP routes. Application modules extend these views and actions with their business interfaces.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

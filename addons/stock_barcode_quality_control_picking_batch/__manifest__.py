@@ -5,7 +5,7 @@
     "summary": "Load batch-transfer quality fields in the barcode interface",
     "description": "Extend the stock picking batch fields returned to the barcode client. Uses the batch quality controls supplied by the dependent modules.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "quality_control_picking_batch",
         "stock_barcode_quality_control",

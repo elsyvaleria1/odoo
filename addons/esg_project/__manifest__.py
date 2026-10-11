@@ -5,7 +5,7 @@
     "summary": "Track sustainability initiatives as project tasks",
     "description": "Supplies an initiative project, task navigation and an ESG dashboard section for its progress.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "esg",
         "project",

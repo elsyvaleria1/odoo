@@ -62,4 +62,4 @@ Author
   AgroMarin
 
 License
-  LGPL-3
+  0BSD (Zero-Clause BSD; see LICENSE.addons at the repository root)

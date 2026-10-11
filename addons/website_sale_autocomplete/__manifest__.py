@@ -6,7 +6,7 @@
     "summary": "Suggest checkout addresses through the address autocomplete provider",
     "description": "Adds address lookup to the website sale checkout through the address provider chosen in the settings, called with each website's own key so visitors never spend the one internal users' lookups are made with. Without a provider or a website key, the checkout suggests nothing.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
         "address_autocomplete",

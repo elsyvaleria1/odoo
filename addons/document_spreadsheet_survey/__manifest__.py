@@ -5,7 +5,7 @@
     "summary": "Open survey responses in a linked spreadsheet",
     "description": "Builds spreadsheet data from survey answers and comments and links the resulting document to the survey analysis view.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_spreadsheet",
         "survey",

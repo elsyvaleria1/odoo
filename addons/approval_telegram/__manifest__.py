@@ -6,7 +6,7 @@
     "summary": "Keep Telegram-captured data on approval requests, and review and decide them through Telegram buttons and a Mini App",
     "description": "Adds configured approver notifications, approve/refuse/change-request actions and a Mini App for pending requests and owner corrections. Resolves decisions to linked internal users and the existing approval records. Requires a configured bot, enabled notification settings and linked user chats; delivery depends on Telegram access.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "telegram",
         "approval",

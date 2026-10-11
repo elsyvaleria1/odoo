@@ -6,7 +6,7 @@
     "summary": "Configure salary packages and request employment-contract signatures",
     "description": "Provides benefit and personal-information configuration, employee or applicant offers, package calculations and signature requests. Country-specific payroll calculations require the appropriate extensions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_sign",
         "http_routing",

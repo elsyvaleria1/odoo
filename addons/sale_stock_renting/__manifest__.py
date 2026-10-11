@@ -6,7 +6,7 @@
     "description": "Adds rental stock locations, availability calculations, serial-number reservations and pickup and return operations. Stock-transfer behavior depends on the rental picking configuration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_renting",
         "sale_stock",

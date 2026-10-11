@@ -6,7 +6,7 @@
     "summary": "Select eligible employees as POS cashiers using employee credentials",
     "description": "Adds employee cashier selection, PIN and barcode handling, cashier attribution and employee sales reporting. A user still opens the POS session; employee availability follows company and configured access lists, with minimal, basic and advanced employee roles.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "hr",

@@ -5,7 +5,7 @@
     "summary": "Assign AI agents to configured livechat rules",
     "description": "Adds agent selection to livechat rules and manages agent participation and response routes. Supports forwarding between scripted chatbots, AI agents and human operators; generation requires an AI provider.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_app",
         "im_livechat",

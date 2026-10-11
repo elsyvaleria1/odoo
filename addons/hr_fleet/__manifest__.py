@@ -6,7 +6,7 @@
     "summary": "View employee vehicle assignments and release cars on departure",
     "description": "Adds employee vehicle counts and navigation, mobility-card fields and an option to release company cars during employee departure.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_asset_vehicle",
         "resource_asset_hr",

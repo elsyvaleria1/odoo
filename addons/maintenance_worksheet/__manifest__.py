@@ -6,7 +6,7 @@
     "summary": "Open configured worksheets from maintenance orders",
     "description": "Adds worksheet-template selection and worksheet counts to maintenance orders. The worksheet action opens the existing linked worksheet or prepares a new one and requires a selected template for the maintenance-order model.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "maintenance",
         "worksheet",

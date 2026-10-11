@@ -1,5 +1,6 @@
 include requirements.txt
 include LICENSE
+include LICENSE.addons
 include README.md
 graft odoo
 recursive-exclude * *.py[co]

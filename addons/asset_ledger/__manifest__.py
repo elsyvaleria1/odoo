@@ -7,7 +7,7 @@
     "description": "Extend resource assets with ledger attributes, tags and service-activity tracking. Links stock lots and their logs to the asset records and synchronizes shared asset attributes.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_asset_vehicle",
         "stock_fleet",

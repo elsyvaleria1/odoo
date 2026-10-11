@@ -6,7 +6,7 @@
     "description": "Provides scorecard, dimension and band records plus abstract subject, score-line and catalog mixins. Supports measured and catalog-based observations and queued refresh helpers. Consuming addons implement subject observations and classifications; the engine evaluates configured weights rather than supplying a universal predictive model.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

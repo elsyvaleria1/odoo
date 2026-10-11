@@ -47,7 +47,7 @@ MQTT client nor a PLC library.
     "images": [
         "static/description/icon.png",
     ],
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "certificate",
         "integration",

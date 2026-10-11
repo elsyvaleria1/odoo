@@ -5,7 +5,7 @@
     "summary": "Warn before consuming expired lots in manufacturing",
     "description": "Checks component lot expiry before marking production done and presents the expired-lot confirmation wizard when required.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
         "product_expiry",

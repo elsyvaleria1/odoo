@@ -7,7 +7,7 @@
     "summary": "Combine registered extraction strategies and track field results for review",
     "description": "Provides schemas, extractor registration, a strategy cascade and an extraction mixin with result, missing-field and correction records. Supports synchronous and queued extraction and a result-review widget. Usable document formats and extraction capabilities depend on registered readers and separately installed strategies.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "web",

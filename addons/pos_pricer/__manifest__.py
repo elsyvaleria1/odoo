@@ -7,7 +7,7 @@
     "summary": "Update product information on configured Pricer shelf labels",
     "description": "Links products to Pricer stores and tags and sends product and price updates through configured service credentials. Requires supported labels and Pricer service access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "integration",

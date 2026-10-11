@@ -6,7 +6,7 @@
     "description": "Adds Telegram delivery and a test-send action to digests. Requires a configured Telegram bot and a chat linked to the recipient; delivery settings control email replacement, duplication and fallback.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "telegram",
         "digest",

@@ -6,7 +6,7 @@
     "summary": "Scan barcodes and interpret them using configurable nomenclatures",
     "description": "Define barcode nomenclatures and parsing rules, including aliases and encoded values. Provides barcode scanning events for consuming applications.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

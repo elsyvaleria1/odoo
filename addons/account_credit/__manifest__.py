@@ -6,7 +6,7 @@
     "summary": "Manage customer credit profiles, facilities, policy decisions and provision runs",
     "description": "Maintains company-specific customer credit profiles with grades, payment metrics, scorecards, collateral, facilities, events and reviews. Configured policies evaluate orders, deliveries and invoices for allow, warn, approval or block outcomes; customers without a profile are outside that evaluation. Provides aging-based provision matrices and accounting runs that require configured rates and accounts.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "partner",

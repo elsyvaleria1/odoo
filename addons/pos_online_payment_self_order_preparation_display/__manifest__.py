@@ -5,7 +5,7 @@
     "summary": "Update preparation displays after self-order online payment",
     "description": "Extends successful POS online-payment processing to pass paid self-orders into preparation-display handling.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_online_payment_self_order",
         "pos_enterprise",

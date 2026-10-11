@@ -7,7 +7,7 @@
     "description": "Adds /rastreo to selected Telegram bots, without enabling AI questions. A linked internal user in a private chat reads shipments using their own Odoo permissions and the companies they share with the bot. Complete tracking numbers match exactly, including transfers with several numbers. The answer reports the saved status and its read date, and explains missing reads or failed refreshes. Reuses the tracking report also available to the separate questions bot. Reads only: it does not call carriers, change shipments or validate deliveries.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "insight_telegram",
         "delivery_tracking",

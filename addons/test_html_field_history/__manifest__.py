@@ -5,7 +5,7 @@
     "summary": "Test HTML Field History behaviour, including model",
     "description": "Run regression tests for HTML Field History. Loaded test suites include ``TestModel``, ``TestHistoryRpcGuards``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "html_editor",
     ],

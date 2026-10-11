@@ -7,7 +7,7 @@
     "description": "Adds the onboarding bot and its scripted responses to supported messaging interactions.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/discuss",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

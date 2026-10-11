@@ -8,7 +8,7 @@
     "description": "Provides services, connections, receiver authentication, request logging, retry controls and response caching for adopting integrations. Includes outbound OAuth and reusable inbound verification helpers. External operations require configured connections and credentials; storing secrets requires the credential encryption key in the server environment.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "certificate",
         "credential",

@@ -4,7 +4,7 @@
     "summary": "Create and track product returns and replacement transfers from tickets",
     "description": "Adds product and lot selection, return and replacement actions, and links between tickets and stock transfers. The return wizard selects eligible customer deliveries and carries the ticket reference onto the resulting transfer.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk_sale",
         "sale_stock",

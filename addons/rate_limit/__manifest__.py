@@ -6,7 +6,7 @@
     "description": "Provides reusable rate-limit accounting and configuration for callers that explicitly invoke the limiter. Installing it does not automatically limit every route.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

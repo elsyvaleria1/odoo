@@ -8,7 +8,7 @@
     "description": "Starts or reopens conversations from calendar events and accepts room-device audio and chunks through authenticated routes. Adds live coaching notes using the configured analysis service and exports a Markdown minute from the conversation. Requires a configured meeting-room device, recording client, speech processing and model service access; the module does not supply room hardware.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "conversation",

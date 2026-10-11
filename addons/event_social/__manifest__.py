@@ -5,7 +5,7 @@
     "summary": "Schedule social posts from event communication templates",
     "description": "Adds social-post templates to event communication scheduling and creates posts for connected template accounts. Social posts cannot use registration-triggered scheduling; account connectivity and publication are provided by the Social dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "social",

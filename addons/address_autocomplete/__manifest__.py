@@ -6,7 +6,7 @@
     "description": "Adds the address autocomplete field widget, set on the street of partner and company forms, and the server routes answering its suggestions and the chosen address's details. Lookups go to the installed provider chosen in the settings, with the key that provider keeps for internal users; without a provider the widget suggests nothing.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

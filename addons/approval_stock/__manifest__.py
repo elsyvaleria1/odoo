@@ -7,7 +7,7 @@
     "summary": "Apply configured approvals to stock validation and inventory adjustments",
     "description": "Adds approval bindings for transfer validation and counted-inventory application, product-category and location flags, and inventory adjustment records. Links approved requests to stock operations and checks intervening stock moves for inventory counts. Automatic validation after approval is a company setting; applicable rules determine the approval requirement.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "approval_product",

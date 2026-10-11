@@ -4,7 +4,7 @@
     "summary": "Expose password-policy settings on portal account pages",
     "description": "Pass the configured password-policy requirements to the portal layout. Loads the portal-side assets used for password entry guidance.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_password_policy_signup",
         "portal",

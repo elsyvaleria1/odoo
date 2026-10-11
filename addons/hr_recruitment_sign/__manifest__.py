@@ -6,7 +6,7 @@
     "summary": "Send signature requests to job applicants",
     "description": "Adds applicant signature counts and a wizard to choose templates, signers and message content. Links applicable signature records when an applicant becomes an employee.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment",
         "hr_sign",

@@ -5,7 +5,7 @@
     "summary": "Identify related sales orders during accounting reconciliation",
     "description": "Adds reconciliation frontend components and sales-line views for the combined Sales and Accounting workflow.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "account",

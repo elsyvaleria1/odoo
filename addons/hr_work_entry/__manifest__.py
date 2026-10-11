@@ -7,7 +7,7 @@
     "summary": "Generate and validate dated employee work entries",
     "description": "Defines work-entry types, durations and validation states. Generates entries from employee schedules, identifies conflicts and provides regeneration for selected employees and dates.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
     ],

@@ -6,7 +6,7 @@
     "summary": "Retain the legacy USPS shipping API integration",
     "description": "Contains the legacy USPS shipping client and carrier configuration. Use the replacement connector (delivery_usps_rest) for the newer API; the legacy integration is marked unsupported.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_delivery",
         "mail",

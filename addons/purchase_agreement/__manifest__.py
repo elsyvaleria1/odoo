@@ -13,7 +13,7 @@ value, over a period; the purchase orders placed against them draw from the
 commitment. Calls for tenders live in purchase_tender.
 """,
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "trade_agreement",

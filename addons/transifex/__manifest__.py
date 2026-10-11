@@ -5,7 +5,7 @@
     "summary": "Open mapped field and code translations in a Transifex project",
     "description": "Adds translation links and a code-translation interface using project mappings from addon-path .tx/config files. Requires a configured Transifex project URL, a mapped module and a supported language mapping; the remote project must be accessible to the user. Links do not themselves publish translations.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "web",

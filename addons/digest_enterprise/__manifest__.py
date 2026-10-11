@@ -5,7 +5,7 @@
     "summary": "Load additional digest configuration for enterprise applications",
     "description": "Extend the digest configuration through the supplied data records. Metric computation and email delivery are provided by the digest applications.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
         "digest",

@@ -5,7 +5,7 @@
     "summary": "Load manufacturing quality fields in the barcode interface",
     "description": "Extend manufacturing-order data returned to the barcode client. Uses the manufacturing quality workflow supplied by its dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_barcode",
         "quality_mrp",

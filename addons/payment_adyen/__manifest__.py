@@ -7,7 +7,7 @@
     "summary": "Accept payments through the Adyen integration",
     "description": "Adds embedded payment components and provider-specific transaction-status handling. Implements saved payment tokens, full or partial capture, cancellation and full or partial refunds. Requires a configured Adyen merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Express checkout is not implemented.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

@@ -6,7 +6,7 @@
     "summary": "Authenticate users against configured LDAP directories",
     "description": "Connect to an LDAP server to check user credentials and map directory attributes. Company LDAP configuration controls the directory search and user-creation behaviour.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "web",

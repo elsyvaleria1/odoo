@@ -7,7 +7,7 @@
     "description": "Adds subcontracting bills of materials, supplier locations, resupply routes and production records tied to incoming transfers. Provides subcontractor portal access to the relevant production records.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/manufacturing",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
     ],

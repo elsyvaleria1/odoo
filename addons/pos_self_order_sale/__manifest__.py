@@ -4,7 +4,7 @@
     "summary": "Assign sales-team configuration to self-ordering POS kiosks",
     "description": "Provide the kiosk sales team and extend the POS kiosk settings onchange. Connects self-order configuration with the sales-team setup.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_sale",
         "pos_self_order",

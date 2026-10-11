@@ -6,7 +6,7 @@
     "summary": "Include eligible employee-paid expenses in payslip reimbursement",
     "description": "Links approved or posted employee-paid expenses marked for payroll reimbursement to draft payslips and updates their expense inputs. Requires a payroll structure with an expense rule; posting and reconciliation connect the expense accounting entries to the payslip.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_expense",
         "hr_payroll_account",

@@ -5,7 +5,7 @@
     "summary": "Include website contact and application URLs in Monster job postings",
     "description": "Adds the site base URL to the Monster contact payload. When the posting uses the redirect application method, it also supplies the job website URL as CustomApplyOnlineURL; posting and website recruitment behavior come from the dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment_integration_website",
         "hr_recruitment_integration_monster",

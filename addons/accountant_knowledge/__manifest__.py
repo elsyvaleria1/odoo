@@ -6,7 +6,7 @@
     "summary": "Assemble audit reports from Knowledge articles and accounting reports",
     "description": "Adds audit-report records, article templates and PDF assembly with attached documents and accounting report content. Users supply and review the report narrative.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "accountant",
         "knowledge",

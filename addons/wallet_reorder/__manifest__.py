@@ -7,7 +7,7 @@
     "description": "Adds card minimum and maximum balance rules, top-up products and procurement actions. Considers existing purchase lines when calculating a refill and groups procurement by wallet account and company. Requires current balance snapshots, an issuer vendor and purchasing configuration; a purchase order does not itself transfer funds to the issuer.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "wallet",
         "purchase",

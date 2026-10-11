@@ -5,7 +5,7 @@
     "summary": "Create accounting records from documents and file accounting attachments",
     "description": "Adds document actions for creating accounting entries and bank statements, journal folder synchronization, and accounting report export to Documents. Requires journal and folder configuration and the corresponding accounting access rights.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "account",

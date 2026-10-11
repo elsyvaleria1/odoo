@@ -7,7 +7,7 @@
     "description": "Adds asset and operator selection to the GPS trail wizard, labels to map devices and links on client visits. Supplies speed-event, daily-speed and vehicle-stop reports and a scheduled critical-speed alert action. Uses the GPS geospatial and asset-operator dependencies and requires recorded positions and configured alert settings.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device_gps_geoengine",
         "asset_gps_hr",

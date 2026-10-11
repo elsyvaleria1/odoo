@@ -6,7 +6,7 @@
     "description": "Adds a commercial-score dimension to the credit scorecard and displays the customer’s commercial tier on credit profiles and reviews. The observer returns no measurement for a partner without score lines, so an unscored customer does not contribute a zero score. Requires both credit management and partner scoring.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_credit",
         "partner_scoring",

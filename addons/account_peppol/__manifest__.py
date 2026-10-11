@@ -6,7 +6,7 @@
     "summary": "Register an exchange connection and send and receive Peppol invoices",
     "description": "Adds participant registration, electronic invoice sending, incoming document retrieval and exchange status handling through the configured EDI proxy. Uses supported document formats, partner identifiers and receiving journals. Requires a registered connection and eligible recipients.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "account_edi_proxy_client",

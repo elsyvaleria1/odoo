@@ -7,7 +7,7 @@
     "description": "Registers speech readers and writers that select eligible gateway models and invoke supported transcription or synthesis operations. Model availability depends on company policy, credentials, capabilities and request limits. Requires usable service connections; adding a catalog record alone does not implement a new provider protocol.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "speech",
         "integration_machine_learning",

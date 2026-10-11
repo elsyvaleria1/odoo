@@ -7,7 +7,7 @@
     "description": "Extends shared teams with sales usage, invoice targets, dashboard actions and sales-order links. Adds team fields to orders, accounting documents, users and sales reports. Requires the Sales and Teams dependencies; CRM-specific functionality is supplied by its own integration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/crm",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "team",

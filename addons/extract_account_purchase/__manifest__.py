@@ -6,7 +6,7 @@
     "description": "Extends the invoice extraction schema with a purchase-order reference and passes extracted reference tokens, partner and total to the accounting purchase-matching routine. Runs only for vendor bills without invoice lines after extraction updates; matching behavior comes from the purchase dependency.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "extract_account",
         "purchase",

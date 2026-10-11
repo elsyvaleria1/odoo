@@ -6,7 +6,7 @@
     "summary": "Track order preparation stages and preparation times",
     "description": "Provides preparation displays, order-stage management and preparation-time reports with POS integration. Displays and stages must be configured for the relevant POS.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
     ],

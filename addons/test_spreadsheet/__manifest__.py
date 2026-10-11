@@ -5,7 +5,7 @@
     "summary": "Test Spreadsheet behaviour, including spreadsheet",
     "description": "Run regression tests for Spreadsheet. Loaded test suites include ``ValidateSpreadsheetMixinData``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet",
     ],

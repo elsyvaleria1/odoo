@@ -6,7 +6,7 @@
     "summary": "Calculate invoice taxes through configured Avalara AvaTax accounts",
     "description": "Add AvaTax product tax categories, exemptions and service configuration to invoice tax calculation. Requires an Avalara account and configured company credentials.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "payment",

@@ -6,7 +6,7 @@
     "summary": "Create debit notes linked to invoices and bills",
     "description": "Provides a debit-note wizard with date, reason, journal and optional line copying. Links the new entries to their source documents and supports a separate debit-note sequence.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

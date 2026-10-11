@@ -6,7 +6,7 @@
     "summary": "Allocate and analyse costs and revenues with analytic plans and accounts",
     "description": "Define analytic plans, accounts, distributions and entries. Analytic records classify business amounts independently of the general-ledger account structure.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

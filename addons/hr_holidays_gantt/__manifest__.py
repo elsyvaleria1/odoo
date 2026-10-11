@@ -5,7 +5,7 @@
     "summary": "Review employee time off on a timeline",
     "description": "Adds time-off Gantt views and frontend handling for employee leave periods.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_holidays",
         "hr_gantt",

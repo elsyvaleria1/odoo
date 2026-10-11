@@ -6,7 +6,7 @@
     "summary": "Import business records from tabular files",
     "description": "Provide file parsing, field mapping, validation and record-loading tools. Supported spreadsheet formats depend on the available parsing libraries.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

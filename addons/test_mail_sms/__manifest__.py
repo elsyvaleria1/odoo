@@ -6,7 +6,7 @@
     "summary": "Test Mail SMS behaviour, including mail thread phone, phone blacklist, phone format",
     "description": "Run regression tests for Mail SMS. Loaded test suites include ``TestSMSActionsCommon``, ``TestPhoneBlacklist``, ``TestPhoneFormat``, ``TestSMSComposerComment``, ``TestSMSComposerBatch``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "sms",

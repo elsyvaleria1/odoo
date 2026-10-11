@@ -5,7 +5,7 @@
     "summary": "Provide website publication fields and detail pages for contacts",
     "description": "Adds website URLs, publication-related contact views and a contact detail route with its page template. Other website addons can reuse these contact pages; the module does not publish the whole address book automatically.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
     ],

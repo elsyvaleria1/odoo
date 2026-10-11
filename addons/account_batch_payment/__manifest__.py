@@ -7,7 +7,7 @@
     "description": "Create inbound and outbound payment batches for a journal and payment method. File generation is supplied by the applicable payment-format integrations.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/accounting",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

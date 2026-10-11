@@ -7,7 +7,7 @@
     "description": "Adds the extraction mixin to accounting moves with vendor-bill eligibility checks and supplier matching. Exposes extracted line proposals in a review wizard before adding accepted lines to the bill. Requires a usable extraction strategy and source attachment; accounting users remain responsible for products, accounts, taxes and posting.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "extract",

@@ -6,7 +6,7 @@
     "summary": "Authorize incoming and outgoing mail servers with Microsoft OAuth",
     "description": "Authorizes Outlook outgoing and incoming mail servers through the company's Microsoft OAuth client: each server holds its own connection to Microsoft, a personal server authorized by the account it sends as, and logs in with XOAUTH2. Requires the Microsoft OAuth client set under Settings, Integrations.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail_oauth2",
         "integration_microsoft",

@@ -6,7 +6,7 @@
     "summary": "Generate and deliver partner account statements through Telegram",
     "description": "Adds account-statement commands with period selection, PDF delivery and request logs. Self-service uses the linked partner; querying other customers requires a linked internal user who reads the partner ledger in Odoo (accounting read access); a linked customer gets their own statement only. Requires a configured bot and accounting report access; there is no separate manager-role field on the chat.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "telegram",
         "account",

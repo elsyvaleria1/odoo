@@ -5,7 +5,7 @@
     "summary": "Use employee features from the mobile client",
     "description": "Adds mobile-specific employee frontend behavior and assets to the backend client.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "web_mobile",

@@ -6,7 +6,7 @@
     "summary": "Submit job postings and removal requests through the Monster SOAP integration",
     "description": "Adds Monster posting payloads, platform configuration and job-removal requests through the Monster Business Gateway. Requires company Monster credentials, service access and the zeep library; publication depends on the external service accepting the request.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "hr_recruitment_integration_base",

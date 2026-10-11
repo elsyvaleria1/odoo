@@ -6,7 +6,7 @@
     "description": "Captures every unexpected error raised by a request, a scheduled action, a background job or the browser, locates browser errors in the sources through the bundles' source maps, groups the occurrences by origin into incidents, masks secrets before storing them, names the incident in the error a request returns, and shows the user who hit it where it stands, live, in the error dialog, with a notice once it is fixed. Expected errors raised for the user, such as access or validation errors, are not recorded.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

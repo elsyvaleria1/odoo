@@ -5,7 +5,7 @@
     "summary": "Connect attendance overtime with leave allocation and deduction",
     "description": "Adds overtime-linked leave types and allocations, overtime balance checks and attendance-versus-leave reporting. The relevant leave and accrual settings determine how attendance hours affect entitlements; the addon does not convert every extra hour automatically.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_attendance",
         "hr_holidays",

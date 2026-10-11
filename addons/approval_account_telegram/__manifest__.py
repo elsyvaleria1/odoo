@@ -6,7 +6,7 @@
     "summary": "Create payment approval requests and start configured accounting workflows",
     "description": "Adds payment and payment-in-kind chat flows with evidence upload, confirmation and request logs. After approval, starts the configured automation when its prerequisites are met, including a required statement link where applicable. Requires configured bot commands, approval categories and accounting workflows; approval alone does not guarantee workflow completion.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval_account",
         "approval_automation",

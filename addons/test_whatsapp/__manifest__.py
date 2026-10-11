@@ -6,7 +6,7 @@
     "summary": "Test Whatsapp behaviour, including discuss channel, tour, whatsapp composer",
     "description": "Run regression tests for Whatsapp. Loaded test suites include ``DiscussChannel``, ``TestWhatsappTours``, ``WhatsAppComposerRendering``, ``WhatsAppComposerSending``, ``WhatsAppMessage``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "partner",
         "mail",

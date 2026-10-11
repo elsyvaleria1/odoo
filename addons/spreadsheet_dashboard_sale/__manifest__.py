@@ -5,7 +5,7 @@
     "summary": "Add Sales, Product spreadsheet dashboards",
     "description": "Install preconfigured spreadsheet dashboards for Sales, Product. The supplied spreadsheet layouts define their business data sources and calculations.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard",
         "sale",

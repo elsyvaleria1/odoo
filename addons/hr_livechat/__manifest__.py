@@ -5,7 +5,7 @@
     "summary": "Show employee information in live-chat conversation views",
     "description": "Extend live-chat channel, member-history and reporting views with employee information. Uses the existing HR and live-chat records.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "im_livechat",

@@ -7,7 +7,7 @@
     "description": "Adds geometry field types, spatial domain operators and aggregates, raster and vector layer settings, and an OpenLayers map view with styling and editing controls. Includes trail generation and GeoJSON, Shapefile and GeoPackage import/export wizards. Requires PostGIS and the declared Python geometry libraries; consuming addons define the business records and map layers.",
     "author": "Camptocamp,ACSONE SA/NV,Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/geospatial",
-    "license": "AGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

@@ -6,7 +6,7 @@
     "summary": "Register passkeys and authenticate users through WebAuthn",
     "description": "Adds passkey registration, credential management and browser login backed by WebAuthn challenge and origin verification. Requires a compatible browser and authenticator and a correctly configured site URL. Successful passkey authentication skips the separate MFA step in this implementation.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

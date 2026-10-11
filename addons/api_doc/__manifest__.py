@@ -17,7 +17,7 @@ The documents themselves, the group that may read them and their cache are
 no web client still serves it.
 """,
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "rpc",
         "web",

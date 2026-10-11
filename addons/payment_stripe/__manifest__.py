@@ -7,7 +7,7 @@
     "summary": "Accept payments through the Stripe integration",
     "description": "Adds embedded payment elements and provider-specific transaction-status handling. Implements saved payment tokens, full capture, cancellation, full or partial refunds and express checkout. Requires a configured Stripe merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Partial capture is not implemented.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

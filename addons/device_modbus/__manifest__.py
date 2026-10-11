@@ -7,7 +7,7 @@
     "description": "Maps device endpoints, unit IDs, register types and polling intervals to integration streams. Incoming register values are stored as device data points; read actions activate the stream and return the last stored reading. Requires a reachable Modbus device or serial port and the integration stream worker; writes are queued for that worker.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration_modbus",
         "device",

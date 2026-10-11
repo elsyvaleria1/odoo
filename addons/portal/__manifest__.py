@@ -7,7 +7,7 @@
     "summary": "Provide account pages and shared components for external record access",
     "description": "Supplies portal account controllers, templates, sharing helpers and a portal mixin for business addons. Includes portal-user invitation and access-management wizards. Each consuming addon supplies its record pages and access conditions; installing this framework does not expose every business record.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "http_routing",
         "auth_signup",

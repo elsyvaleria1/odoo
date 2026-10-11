@@ -5,7 +5,7 @@
     "summary": "Test Performance Compare behaviour, including compare",
     "description": "Run regression tests for Performance Compare. Loaded test suites include ``TestPerfCompare``.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

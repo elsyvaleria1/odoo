@@ -4,7 +4,7 @@
     "summary": "Look up unknown product barcodes from the inventory barcode interface",
     "description": "Expose Barcode Lookup product creation in the warehouse barcode flow. Requires the Barcode Lookup service configuration and API key.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "product_barcodelookup",
         "stock_barcode",

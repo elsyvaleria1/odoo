@@ -5,7 +5,7 @@
     "summary": "Provide shared accounting export structures for SAF-T localizations",
     "description": "Prepare general-ledger account and entry values for SAF-T reports. Country-specific modules supply their required XML layouts and export details.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

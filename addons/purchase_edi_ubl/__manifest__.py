@@ -9,7 +9,7 @@ When generating the PDF on the order, the PDF will be embedded inside the xml fo
 receiver to retrieve the PDF with only the xml file.
     """,
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "trade_edi_ubl",

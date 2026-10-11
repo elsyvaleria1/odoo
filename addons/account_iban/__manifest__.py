@@ -4,7 +4,7 @@
     "summary": "Validate and format IBAN bank account numbers",
     "description": "Recognize IBAN account numbers, validate their structure and extract their national bank-account components. Applies the checks when bank accounts are created or updated.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

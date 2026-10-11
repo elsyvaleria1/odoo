@@ -7,7 +7,7 @@
 Bridge module between MRP subcontracting and Repair
     """,
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_subcontracting",
         "repair",

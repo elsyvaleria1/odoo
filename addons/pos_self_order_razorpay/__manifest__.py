@@ -5,7 +5,7 @@
     "summary": "Process kiosk payments through Razorpay",
     "description": "Connects the self-order payment flow to the Razorpay POS integration and its payment-status handling. Requires that integration and a configured supported terminal.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_razorpay",
         "pos_self_order",

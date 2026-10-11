@@ -4,7 +4,7 @@
     "summary": "Test Testing Utilities behaviour, including methods, lxml, form impl",
     "description": "Run regression tests for Testing Utilities. Loaded test suites include ``TestBasic``, ``TestLXML``, ``TestDaterange``, ``TestM2O``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "web",

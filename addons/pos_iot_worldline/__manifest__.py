@@ -5,7 +5,7 @@
     "summary": "Process POS payments through Worldline terminals connected to IoT",
     "description": "Adds a Worldline terminal choice and POS payment interface for the IoT integration. Requires a supported terminal connected to a configured IoT installation.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "iot_worldline",
         "pos_iot",

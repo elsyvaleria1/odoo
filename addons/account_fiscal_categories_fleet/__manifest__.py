@@ -6,7 +6,7 @@
     "summary": "Report vehicle costs using vehicle-specific deduction rates",
     "description": "Adds vehicle rate history and vehicle grouping to the fiscal category report. Extends deferred-entry preparation with the associated asset.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_accountant_fleet",
         "account_fiscal_categories",

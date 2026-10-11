@@ -7,7 +7,7 @@
     "summary": "Calculate salesperson or team commissions from configured plans",
     "description": "Defines commission plans, achievement rules, targets, forecasts and reporting. Calculations use eligible sales and invoice data and the plan dates and rates.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "sale_team",

@@ -6,7 +6,7 @@
     "summary": "Load sample purchasing and quality records for manufacturing traceability",
     "description": "Supplies demonstration records connecting purchasing, manufacturing work orders and quality checks. The records are loaded only when demo data is enabled.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase_mrp",
         "quality_mrp_workorder",

@@ -6,7 +6,7 @@
     "summary": "Compare planned shift hours with recorded employee attendance",
     "description": "Adds a planning and attendance analysis report and reporting menus. Comparisons use stored planning slots and attendance records; the addon does not record attendance or infer work performed outside those records.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "planning",
         "hr_attendance",

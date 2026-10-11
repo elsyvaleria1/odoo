@@ -4,7 +4,7 @@
     "summary": "Compare products from the website wishlist",
     "description": "Add comparison controls to wishlist products. Selected products join the website product-comparison list, using its existing duplicate and maximum-product checks.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale_comparison",
         "website_sale_wishlist",

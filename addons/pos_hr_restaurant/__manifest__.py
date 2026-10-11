@@ -5,7 +5,7 @@
     "summary": "Restrict floor-plan editing by cashier role and adjust restaurant idle handling",
     "description": "Hides the restaurant floor-plan editing control from non-admin employees when employee login is enabled. Prevents the restaurant idle timer from resetting on the login screen; these are frontend adaptations to the restaurant and employee POS flows.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_hr",
         "pos_restaurant",

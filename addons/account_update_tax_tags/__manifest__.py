@@ -6,7 +6,7 @@
     "summary": "Update existing journal item tax tags from current tax configuration",
     "description": "Adds a wizard under accounting settings in developer mode to rebuild tax-tag links for the selected company from a starting date. Uses the current tax repartition configuration and rejects child taxes shared by multiple parent taxes; review the period and configuration before applying it.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

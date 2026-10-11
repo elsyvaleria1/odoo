@@ -6,7 +6,7 @@
     "summary": "Generate coupons and gift cards linked to helpdesk tickets",
     "description": "Adds ticket actions and wizards for issuing loyalty cards, coupon values and validity dates. Requires an applicable loyalty program; generated cards remain linked to the originating ticket.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk_sale",
         "sale_loyalty",

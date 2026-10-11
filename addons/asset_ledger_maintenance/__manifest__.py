@@ -6,7 +6,7 @@
     "summary": "Schedule serialized-asset maintenance from intervals and meter readings",
     "description": "Adds maintenance plan templates, dated and distance-based plan triggers, serialized asset links and service log values. Uses the Maintenance and Maintenance Stock applications for maintenance orders and transfers.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger",
         "maintenance",

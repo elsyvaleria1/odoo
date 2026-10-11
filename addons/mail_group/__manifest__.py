@@ -6,7 +6,7 @@
     "summary": "Manage mailing-list membership, conversations and moderation",
     "description": "Adds mailing groups, members, threaded messages and moderation decisions. Provides subscription and unsubscribe routes and message archives with group-specific access rules. Email distribution uses the mail infrastructure and its configured delivery transport.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "portal",

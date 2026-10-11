@@ -5,7 +5,7 @@
     "summary": "Route eligible attachment uploads to a configured cloud provider",
     "description": "Adds cloud attachment types, upload and download hooks and a minimum-file-size setting. A provider addon and storage configuration are required.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

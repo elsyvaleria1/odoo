@@ -7,7 +7,7 @@
     "summary": "Record securities, ownership transactions and company valuations",
     "description": "Provides security classes, issuances and transfers, valuation history, cap-table reporting and beneficial-owner records, with portal views for the relevant contacts.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "portal",
     ],

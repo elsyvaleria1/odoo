@@ -6,7 +6,7 @@
     "summary": "Plan weekly employee work locations and date-specific exceptions",
     "description": "Maintain an employee's usual work location by weekday and temporary location changes. Compute the current location and its presence display.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
     ],

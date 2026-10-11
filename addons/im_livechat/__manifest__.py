@@ -8,7 +8,7 @@
     "description": "Provides embeddable live-chat channels, operator assignment, visitor conversations, scripted chatbot steps and feedback reporting. Includes conversation tags and operator expertise settings. Human responses depend on available operators; scripted answers follow the configured chatbot flow.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/live-chat",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "rating",

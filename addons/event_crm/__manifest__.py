@@ -6,7 +6,7 @@
     "description": "Define lead-generation rules for event registrations and run them manually or on a schedule. Rules select the registrations and lead assignment information.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "crm",

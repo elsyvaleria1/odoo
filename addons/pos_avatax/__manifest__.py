@@ -5,7 +5,7 @@
     "summary": "Request external tax calculations for eligible POS orders through AvaTax",
     "description": "Adds POS line and address preparation, external-tax requests and returned tax data for POS. Requires configured AvaTax service access and a usable location or customer address; eligibility and order state determine when external taxes are applied.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "account_avatax",

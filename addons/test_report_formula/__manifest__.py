@@ -5,7 +5,7 @@
     "summary": "Test Report Formula behaviour, including engine without account",
     "description": "Run regression tests for Report Formula. Loaded test suites include ``TestEngineWithoutAccount``.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "report_formula",
         "spreadsheet_report_formula",

@@ -7,7 +7,7 @@
     "summary": "Schedule meetings, recurring events and appointment bookings",
     "description": "Provides calendar events, attendees, invitations, reminders and recurrence handling. Includes appointment offers, public booking pages and resource allocation records. Booking availability depends on configured offers, schedules and resources.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "phone_validation",

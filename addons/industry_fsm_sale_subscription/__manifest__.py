@@ -5,7 +5,7 @@
     "summary": "Adapt field-service material selection for subscriptions",
     "description": "Extends the material action on field-service tasks when subscription sales are installed.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "industry_fsm_sale",
         "project_sale_subscription",

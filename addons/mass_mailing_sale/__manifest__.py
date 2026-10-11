@@ -5,7 +5,7 @@
     "summary": "Report sales orders and accounting amounts linked to a mailing source",
     "description": "Counts source-linked sales orders with lines across order states and sums signed untaxed amounts on source-linked accounting entries outside draft or cancelled states. Adds analysis links and mailing statistics; the amount query is not restricted to customer invoices or a company domain.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "mass_mailing",

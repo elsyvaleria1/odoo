@@ -6,7 +6,7 @@
     "summary": "Synchronize access-device users and schedules and receive access events",
     "description": "Supports configured ISAPI access panels through direct connections or an EHOME bridge. Provides device users, cards, biometric enrollment commands, work schedules and event reception; device connectivity and credentials are required.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "credential",

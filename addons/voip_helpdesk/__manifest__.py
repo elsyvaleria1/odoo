@@ -5,7 +5,7 @@
     "summary": "Open customer helpdesk tickets from phone calls",
     "description": "Adds total and open-ticket counts and ticket navigation to call records.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "voip",
         "helpdesk",

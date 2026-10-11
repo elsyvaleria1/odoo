@@ -5,7 +5,7 @@
     "summary": "Link AI-created leads with their livechat agent",
     "description": "Adapts lead creation for AI livechat context and adds lead counts and navigation on agents.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_crm",
         "ai_livechat",

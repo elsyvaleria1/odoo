@@ -6,7 +6,7 @@
     "summary": "Apply loyalty points, coupons and gift cards at the point of sale",
     "description": "Loads eligible loyalty programs and rewards into the POS, tracks coupon use and records reward lines and loyalty history when orders are confirmed.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "loyalty",
         "point_of_sale",

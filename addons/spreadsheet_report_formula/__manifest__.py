@@ -5,7 +5,7 @@
     "summary": "Retrieve formula-report values in spreadsheet cells with ODOO.REPORT",
     "description": "Adds a spreadsheet function and batched server lookup for report expressions selected by report reference, line code, expression label and period. Supports company and unposted-entry options and uses the report engine for evaluation; the report and expression must exist and the user must have applicable access.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "report_formula",
         "spreadsheet",

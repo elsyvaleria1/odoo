@@ -13,7 +13,7 @@ product A, 2 shipped from warehouse #1 and 8 from warehouse #2). In this case th
 split per delivery.
     """,
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_avatax_sale",
         "stock",

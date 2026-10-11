@@ -5,7 +5,7 @@
     "summary": "Send invoices through the postal document delivery service",
     "description": "Add postal letters to invoice sending options and prepare their recipients and attachments. Uses the postal service provided by the letter-delivery dependency.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "snailmail",

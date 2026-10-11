@@ -6,7 +6,7 @@
     "summary": "Process stock deliveries and lot assignments for billable field service tasks",
     "description": "Connects task sales lines to stock moves, material pickup and lot or serial assignment. The delivery flow operates on billable tasks with a sales order and checks quantity-decrease exceptions before completing moves; warehouse, route and tracking configuration determine the stock operations.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "industry_fsm_sale",
         "sale_stock",

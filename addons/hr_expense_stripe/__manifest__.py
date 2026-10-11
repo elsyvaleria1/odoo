@@ -9,7 +9,7 @@
     "description": "Adds cardholder and card-management workflows, issuing-account configuration and webhook processing for authorizations, transactions and funding events. Links card expenses to accounting records. Requires an eligible Stripe Issuing account and the configured proxy and credential setup.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/expenses",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_expense",
         "certificate",

@@ -5,7 +5,7 @@
     "summary": "Sell event tickets and register attendees at the point of sale",
     "description": "Loads event tickets and availability into the POS, creates linked attendee registrations and provides ticket and badge printing.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "event_product",

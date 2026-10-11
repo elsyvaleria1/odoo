@@ -7,7 +7,7 @@
     "summary": "Publish helpdesk team pages and accept website ticket submissions",
     "description": "Adds team website pages, ticket forms, attachment handling and help-center search hooks. Teams configure website visibility and enabled help content.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk",
         "website",

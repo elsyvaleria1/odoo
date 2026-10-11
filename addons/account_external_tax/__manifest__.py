@@ -5,7 +5,7 @@
     "summary": "Delegate invoice tax calculation to configured external services",
     "description": "Provide the invoice tax-calculation interface used by external tax connectors. Handles calculation, commitment and cancellation hooks; provider modules implement the service calls.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "payment",

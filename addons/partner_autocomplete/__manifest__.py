@@ -6,7 +6,7 @@
     "summary": "Look up company details when creating contacts",
     "description": "Requests company suggestions and enrichment data by supported identifiers from the IAP service. Results depend on service coverage and access or credits.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "iap_mail",
     ],

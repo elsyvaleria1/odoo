@@ -5,7 +5,7 @@
     "summary": "Keep document integration disabled by default on field-service projects",
     "description": "Adjusts field-service project document setup and document counts when Documents and Field Service are combined.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_project",
         "industry_fsm",

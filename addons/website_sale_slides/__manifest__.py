@@ -5,7 +5,7 @@
     "summary": "Sell course products and enroll customers when sales orders are confirmed",
     "description": "Connects paid-enrollment courses to products, website purchase controls and sales reporting. Order confirmation adds the order contact to matching courses; course products are limited to one unit in the cart. Checkout and payment processing come from eCommerce, and enrollment follows order confirmation rather than a separate payment check here.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_slides",
         "website_sale",

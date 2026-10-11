@@ -8,7 +8,7 @@
     "description": "Provides sales quotations, orders, templates, product configuration and sales analysis. Includes portal confirmation options, payment links and invoice creation from order lines. Physical deliveries and specialized service fulfillment are supplied by their respective integration addons.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/sales",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade_account",
         "mixin_report_sql",

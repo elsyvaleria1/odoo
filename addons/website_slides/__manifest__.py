@@ -8,7 +8,7 @@
     "description": "Provides course channels, lessons, resources, participant enrollment and progress records. Includes website learning pages and quiz-related completion tracking. Access follows course visibility and enrollment settings; external media require access to their hosting services.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/elearning",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "portal_rating",
         "survey",

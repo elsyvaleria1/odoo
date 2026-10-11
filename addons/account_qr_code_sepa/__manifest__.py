@@ -5,7 +5,7 @@
     "summary": "Generate SEPA credit-transfer payment QR codes",
     "description": "Add SEPA QR payload generation to bank-account payment QR methods. Validate the required payment and bank details before rendering the code.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "account_iban",

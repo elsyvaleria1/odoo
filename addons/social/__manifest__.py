@@ -8,7 +8,7 @@
     "description": "Provides social accounts, streams, post templates, scheduled publishing and statistics. Platform-specific addons implement account authorization and publishing; available operations depend on provider access.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/social-marketing",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "web",

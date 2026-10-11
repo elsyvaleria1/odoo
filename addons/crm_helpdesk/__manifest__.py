@@ -7,7 +7,7 @@
     "summary": "Convert helpdesk tickets to leads and create tickets from leads",
     "description": "Adds conversion wizards that transfer inquiry details between CRM leads and helpdesk tickets, with customer and team selection. Requires access to the destination workflow; ticket and lead management remain in the dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "helpdesk",

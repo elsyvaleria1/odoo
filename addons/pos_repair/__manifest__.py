@@ -4,7 +4,7 @@
     "summary": "Handle repair-related sales lines in the POS",
     "description": "Marks repair sale lines in POS data and adapts stock-transfer creation for those lines.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "repair",

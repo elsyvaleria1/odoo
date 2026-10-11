@@ -7,7 +7,7 @@
     "summary": "Share job openings and track employee referral rewards",
     "description": "Provides tracked referral links, applicant attribution, points, reward redemption and referral reports, with configurable stages and reward values.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment",
         "link_tracker",

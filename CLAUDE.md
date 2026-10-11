@@ -1,6 +1,6 @@
 # Odoo 19 — Standalone Framework and Addons
 
-Standalone repository at `github.com/Agro-Marin/odoo`, containing the framework, community addons, and the non-localization addons formerly held in `enterprise`. Localization modules live in the sibling `l10n` checkout (`Agro-Marin/l10n`). Module license declarations and the preserved enterprise notices continue to apply.
+Standalone repository at `github.com/Agro-Marin/odoo`, containing the framework, community addons, and the non-localization addons formerly held in `enterprise`. Localization modules live in the sibling `l10n` checkout (`Agro-Marin/l10n`). All bundled modules use 0BSD under `LICENSE.addons`, declared as `Other OSI approved licence` in their manifests. The framework outside the module directories retains LGPL-3; bundled third-party components retain their own licenses. The enterprise notices preserve upstream history and copyright attribution.
 
 | Document | Role |
 |---|---|

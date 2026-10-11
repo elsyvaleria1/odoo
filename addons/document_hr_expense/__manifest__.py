@@ -5,7 +5,7 @@
     "summary": "Create expenses from eligible documents and open linked expense files",
     "description": "Adds a Documents action for image and PDF files that are not shortcuts or already linked to an expense. The user must be linked to an employee. Also adds expense document counts and navigation; this extension does not promise automatic import of every expense attachment.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "hr_expense",

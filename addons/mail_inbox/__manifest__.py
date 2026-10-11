@@ -6,7 +6,7 @@
     "description": "An inbox is an email address served by Odoo, for one person or a team. Mail sent to it arrives as a Discuss conversation in the Email tab, one per correspondent, whose members are the inbox's users and the sender; a reply written there is sent by email from the inbox's address, threaded with the messages it answers, and the correspondent's next reply lands in the same conversation. Requires the address to be routed to Odoo (an incoming mail server and an alias domain).",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

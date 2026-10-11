@@ -6,7 +6,7 @@
     "summary": "Manage debit mandates and generate SEPA collection files",
     "description": "Adds customer mandates, mandate validity checks, payment collection batches and XML export for the implemented pain.008 versions. Requires usable mandates, bank details and company creditor information. Exported requests must be submitted to the bank; a generated file or notification does not establish collection.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_iban",
         "account_batch_payment",

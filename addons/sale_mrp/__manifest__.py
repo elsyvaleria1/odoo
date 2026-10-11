@@ -6,7 +6,7 @@
     "summary": "Link sales demand to manufacturing orders and kit components",
     "description": "Expose the sales orders served by manufacturing and the production orders serving sales. Extend kit quantities and procurement handling in the sales flow.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
         "sale_stock",

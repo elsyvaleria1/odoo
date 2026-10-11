@@ -5,7 +5,7 @@
     "summary": "Accept customer orders from QR menus and kiosks",
     "description": "Provides a customer ordering interface, product availability, table identifiers and configurable ordering modes. Payment methods require the relevant self-order payment integration and configuration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_restaurant",
         "http_routing",

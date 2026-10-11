@@ -6,7 +6,7 @@
     "summary": "Preserve sales reward quantities and exclude imported sales lines from POS loyalty points",
     "description": "Loads reward identifiers from sales order lines and adapts their import into POS. Imported sales lines do not earn POS loyalty points, and reward lines retain their sales quantities; program calculation belongs to the loyalty dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_sale",
         "pos_loyalty",

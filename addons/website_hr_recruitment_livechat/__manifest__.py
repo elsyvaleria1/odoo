@@ -5,7 +5,7 @@
     "summary": "Load a sample jobs-page chatbot when demo data is enabled",
     "description": "Provides a demonstration live chat rule and scripted recruitment questions for the jobs page. The addon loads only demo records and supplies no independent production chatbot engine; recruitment and live chat behavior come from its dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_hr_recruitment",
         "im_livechat",

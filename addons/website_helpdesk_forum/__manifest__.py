@@ -7,7 +7,7 @@
     "summary": "Expose selected forums in help centers and link forum posts with tickets",
     "description": "Adds team forum configuration, help-center forum search and ticket-to-post or post-to-ticket actions. Requires the corresponding help-center feature and forum access; forum discussions and helpdesk workflow remain in their dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_forum",
         "website_helpdesk",

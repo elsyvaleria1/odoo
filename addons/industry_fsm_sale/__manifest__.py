@@ -5,7 +5,7 @@
     "summary": "Link field-service tasks to quotations, material lines and invoicing",
     "description": "Adds quotation and invoice links to field-service tasks and exposes a product catalog for recording task materials on sales orders. Connects task timesheets to sales lines and supports task-related invoicing actions. Uses the sales and timesheet dependencies for billing calculations.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "industry_fsm",
         "sale_timesheet_enterprise",

@@ -5,7 +5,7 @@
     "summary": "Update stored fields with AI-generated values in server actions",
     "description": "Adds an Update with AI evaluation mode and prompt to field-write server actions. Uses the AI field implementation and configured provider to generate the selected stored field value.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_fields",
     ],

@@ -4,7 +4,7 @@
     "summary": "Connect helpdesk website pages with course forums",
     "description": "Extend helpdesk website templates and forum template selection for the eLearning/forum combination. Uses the existing course and forum records.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_helpdesk",
         "website_slides_forum",

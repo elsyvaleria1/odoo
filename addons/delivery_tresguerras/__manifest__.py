@@ -7,7 +7,7 @@
     "description": "Adds Tres Guerras (Autotransportes de Carga Tresguerras) as a carrier tracking provider. Reads shipment status, service, origin, destination, weight, package count and movement history from the service the carrier's mobile app uses. Shows HTTPS links to available receipts and delivery evidence on known carrier hosts. Maps event codes to transfer status and distinguishes home delivery from pickup at the branch (Ocurre). Documents depend on what the carrier has published. Reads only: it books no shipment and touches no account. Set the provider on the carrier's form.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "delivery_tracking",
     ],

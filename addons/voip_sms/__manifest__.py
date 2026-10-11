@@ -5,7 +5,7 @@
     "summary": "Open SMS messaging from the phone interface",
     "description": "Load phone-client extensions for SMS actions. Message delivery uses the configured SMS service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "voip",
         "sms",

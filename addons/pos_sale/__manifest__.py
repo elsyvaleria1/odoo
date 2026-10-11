@@ -7,7 +7,7 @@
     "summary": "Settle sales orders and collect down payments through the point of sale",
     "description": "Adds sales-order lookup, settlement and fixed or percentage down payments in POS, with links to originating sales lines and invoice quantities. Also extends sales-team and sales-analysis integration. Down payments require a configured POS down-payment product; invoicing and fulfillment follow the associated order and POS configuration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "sale",

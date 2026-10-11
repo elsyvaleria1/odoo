@@ -5,7 +5,7 @@
     "summary": "Use employee contract calendars when evaluating automation rules",
     "description": "Extend automation calendar selection for employee-related rules. Adds the corresponding rule configuration view.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "automation",
         "hr",

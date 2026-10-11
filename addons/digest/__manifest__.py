@@ -6,7 +6,7 @@
     "summary": "Email scheduled business-metric digests to subscribers",
     "description": "Configure digest recipients, recurrence and enabled metrics. Provides subscription controls and scheduled delivery of the selected KPI values.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "portal",
     ],

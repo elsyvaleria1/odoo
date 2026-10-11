@@ -6,7 +6,7 @@
     "summary": "Import supported Winbooks accounting exports",
     "description": "Reads exported Winbooks files from an uploaded archive and imports partners, accounts, journals, entries and analytic data. Provides import options and a result summary.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "account_vat",

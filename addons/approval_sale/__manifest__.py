@@ -8,7 +8,7 @@
     "description": "Binds sales confirmation to approval requests and adds customer, product and category approval flags with company amount and request-rate settings. Supplies sales target creation hooks and sales criteria for approval categories, including credit-related conditions. Requirements depend on the configured rules and the order.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "approval_product",

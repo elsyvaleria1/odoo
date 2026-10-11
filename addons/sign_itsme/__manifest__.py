@@ -5,7 +5,7 @@
     "summary": "Offer itsme identification during document signing when IAP credits are available",
     "description": "Not installable. The itsme® IAP proxy reports a signer's identity in a callback that carries nothing this database can verify: the signer's own link token and an unkeyed sha256 of the reported name and birthdate. Anyone holding the signing link could therefore record any identity as verified by itsme®. The module stays uninstallable until the proxy signs its answer with a key the database holds, or lets the database fetch the verified result itself.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sign",
         "iap",

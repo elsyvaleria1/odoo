@@ -5,7 +5,7 @@
     "summary": "Test Event Integration behaviour, including event crm, event event, event mail",
     "description": "Run regression tests for Event Integration. Loaded test suites include ``TestEventCrm``, ``TestEventEvent``, ``TestEventMailInternals``, ``TestEventMailSchedule``, ``TestEventSaleMail``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "event_booth",

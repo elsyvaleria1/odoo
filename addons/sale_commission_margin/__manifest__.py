@@ -6,7 +6,7 @@
     "summary": "Calculate commission achievements from sales margins",
     "description": "Adds margin-based achievement types and margin rate handling to commission calculations.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_commission",
         "sale_margin",

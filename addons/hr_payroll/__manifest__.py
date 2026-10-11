@@ -7,7 +7,7 @@
     "summary": "Calculate payslips using configured salary rules and work entries",
     "description": "Provides salary structures and rules, payslips and pay runs, payroll inputs, salary attachments and reporting. Country-specific rules, rates and payment formats require the corresponding localization and configuration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_work_entry_enterprise",
         "mail",

@@ -6,7 +6,7 @@
     "summary": "Process POS payments with configured Tyro terminals",
     "description": "Adds terminal pairing, merchant settings, receipt options and surcharge-product configuration to the Tyro POS payment interface. Requires a supported terminal and merchant account.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
     ],

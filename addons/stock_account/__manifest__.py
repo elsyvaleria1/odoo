@@ -7,7 +7,7 @@
     "summary": "Value stock movements and connect inventory values to accounting",
     "description": "Adds product cost and valuation settings, stock-move values, inventory valuation reports and accounting integration. Supports valuation closing and cost-related journal-line helpers according to configured policies. Requires suitable product, company, journal and account setup; it does not provide a standalone invoice-from-picking workflow.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "account",

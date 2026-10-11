@@ -8,7 +8,7 @@
     "description": "Provides applicants, job-specific recruitment stages, sources, refusal reasons and talent pools. Links interviews to calendar events and supports creating employee records from applicants. Public job listings and online applications are supplied by the website recruitment addon.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/recruitment",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "calendar",

@@ -6,7 +6,7 @@
     "summary": "Deliver message push notifications to registered mobile devices",
     "description": "Registers mobile devices and sends messaging notification payloads through the configured notification service. Adds mobile back-button handling for messaging views; notification delivery requires a registered compatible client and service access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "iap_mail",
         "mail",

@@ -8,7 +8,7 @@
     "description": "Adds lead and opportunity records, sales stages, conversion and merging actions, activity reporting and configurable team assignment. Calculates automated opportunity probabilities from recorded outcome frequencies. Probability estimates describe the available history and do not guarantee a sale.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/crm",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "sale_team",

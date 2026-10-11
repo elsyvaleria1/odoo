@@ -6,7 +6,7 @@
     "summary": "Deliver a connected user's Odoo notifications and chats to their Telegram, and post their Telegram replies back",
     "description": "A user who connected Telegram (Preferences) receives their inbox notifications, direct and group chats and channel mentions in Telegram, each with a link back to Odoo and a Mark as Read button, according to preferences that say always, only while away, or never. Nothing already read in Odoo is sent: delivery waits a grace period and checks again. Replying to one of those messages in Telegram posts the reply on the same record or conversation as that user, under their access rights; a reply to an internal note stays a note, and a reply that would reach external followers asks first. They go to one chat: the one the user connected last through a bot delivering them, or the one they choose in Preferences, which also says whether they are being delivered and why not. When Telegram starts refusing them, or the user blocks the bot, Odoo tells the user once, in Odoo. Requires a bot with Deliver Odoo Notifications enabled; Connect Telegram opens that bot. A Telegram group, connected with a link made in Odoo, is a Telegram channel of Discuss: its people's messages are posted there as their contacts, forum topics are sub-channels, and what Odoo users write goes to the group under their names.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "telegram",

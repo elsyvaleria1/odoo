@@ -6,7 +6,7 @@
     "summary": "Receive food-delivery platform orders through UrbanPiper",
     "description": "Process UrbanPiper webhooks into POS orders and synchronize configured stores and products. Requires an UrbanPiper account and configured service credentials.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "integration",

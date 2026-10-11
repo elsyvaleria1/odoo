@@ -6,7 +6,7 @@
     "summary": "Create, edit and share spreadsheets stored in Documents",
     "description": "Adds spreadsheet document handling, templates, collaboration messages, CSV/XLSX import and spreadsheet sharing controls. Access follows the document and spreadsheet permissions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "spreadsheet_edition",

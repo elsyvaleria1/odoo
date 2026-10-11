@@ -6,7 +6,7 @@
     "summary": "Analyse product sales, purchase amounts and margins from invoices",
     "description": "Provide a product margin reporting wizard and calculated invoice-based indicators. Users select the reporting conditions before viewing product amounts.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

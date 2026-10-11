@@ -5,7 +5,7 @@
     "summary": "Copy completed delivery quantities into matching intercompany receipt moves",
     "description": "Adds warehouse and receipt configuration to intercompany orders and mirrors eligible completed delivery move lines into existing matching receipts when synchronization is enabled. Applies to shared products on outgoing or dropship sales deliveries; matching uses the intercompany purchase reference and product. This synchronization does not validate the receiving transfer.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_stock",
         "purchase_stock",

@@ -6,7 +6,7 @@
     "summary": "Import Lazada orders and exchange supported delivery and inventory information",
     "description": "Adds Lazada shops, item mappings and order-item records. Provides order synchronization, package and shipping-label handling, and configured inventory updates. Requires authorized shop connections and product, warehouse and delivery configuration for the supported fulfillment flows.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "sale",

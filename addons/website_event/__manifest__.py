@@ -7,7 +7,7 @@
     "description": "Adds public event listings, event pages and registration forms. Paid ticket sales require the website event sales integration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "website_partner",

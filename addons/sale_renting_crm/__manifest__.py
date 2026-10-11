@@ -6,7 +6,7 @@
     "summary": "Create rental quotations from CRM opportunities",
     "description": "Add rental quotation actions and counts to opportunities. A creation wizard links the generated rental order to the opportunity.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_renting",
         "sale_crm",

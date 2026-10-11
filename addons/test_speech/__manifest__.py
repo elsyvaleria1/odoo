@@ -7,7 +7,7 @@
     "description": "Run regression tests for Speech. Loaded test suites include ``TestMediaSegment``, ``TestSegmentOwnership``, ``TestTheMixinDoesNotSquatAConsumersFieldNames``, ``TestTranscription``, ``TestTimeline``.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "speech",
         "mail_speech",

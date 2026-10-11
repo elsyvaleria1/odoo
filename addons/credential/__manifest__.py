@@ -8,7 +8,7 @@
     "description": "Provides company-scoped credential records, typed credential fields, validation hooks, access logs and OAuth helpers. Encryption requires ODOO_API_ENCRYPTION_KEY. Integrations must explicitly use these records or the encryption mixin; installing the vault does not migrate arbitrary secrets. Certificate parsing and signing belong to the certificate addon.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "mixin_encryption",

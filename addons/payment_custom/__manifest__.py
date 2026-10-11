@@ -6,7 +6,7 @@
     "summary": "Display payment instructions and retain transactions for manual confirmation",
     "description": "Adds configurable offline payment instructions, including wire-transfer details. Checkout records a pending transaction; this addon does not contact a bank or automatically establish that funds were received.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

@@ -6,7 +6,7 @@
     "summary": "Assign purchase orders to operational teams",
     "description": "Adds team usage, assignment fields and views for purchase orders, with team-specific access rules and navigation.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "team",

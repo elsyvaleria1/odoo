@@ -8,7 +8,7 @@
     "description": "Adds survey invitations, linked responses, completion notifications and result access to appraisals. The invitation wizard uses a selected survey template and reachable employee contacts; survey participation and result access follow the configured appraisal and survey workflow.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appraisals",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_appraisal",
         "survey",

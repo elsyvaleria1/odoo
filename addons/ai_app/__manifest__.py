@@ -5,7 +5,7 @@
     "summary": "Configure AI agents, topics and composer rules through the backend",
     "description": "Add management views and menus for agents, topics and AI composer rules supplied by the AI foundation module. The underlying providers and document-source processing come from its dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "attachment_indexation",
         "ai",

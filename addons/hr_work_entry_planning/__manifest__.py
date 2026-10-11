@@ -5,7 +5,7 @@
     "summary": "Generate employee work entries from planned shifts",
     "description": "Adds planning as a work-entry source and links entries to planning slots. Slot changes update the corresponding work entries subject to validation restrictions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_work_entry_enterprise",
         "planning",

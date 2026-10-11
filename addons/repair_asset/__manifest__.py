@@ -5,7 +5,7 @@
     "summary": "Record repairs and installed parts against physical assets",
     "description": "Links repair orders to assets and records replaced or installed parts when repairs finish. Stock move lines can identify the asset position being serviced.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "repair",
         "resource_asset_stock",

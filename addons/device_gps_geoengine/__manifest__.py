@@ -7,7 +7,7 @@
     "description": "Adds geometry fields, map views, a trail wizard and geofence configuration over device GPS records. Scheduled actions evaluate geofence alerts, client visits and unmapped stops; bus messages update device positions in connected maps. Requires PostGIS, recorded GPS data and configured client areas. Asset and operator dimensions are supplied by a separate bridge.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device_gps",
         "geoengine",

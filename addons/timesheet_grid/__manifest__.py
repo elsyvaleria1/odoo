@@ -9,7 +9,7 @@
     "description": "Extends timesheet records with validation status, manager actions, grid views and timers. Adds configurable entry and validation reminders and time-rounding settings. Uses the underlying timesheet and project records for employee time and cost information.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/timesheet",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project_gantt",
         "web_grid",

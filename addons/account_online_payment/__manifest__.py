@@ -4,7 +4,7 @@
     "summary": "Initiate and track eligible SEPA credit-transfer batches through a linked bank service",
     "description": "Adds online initiation, signing and status polling for SEPA credit-transfer batches on payment-enabled bank links. Requires online bank connectivity and provider activation; identity verification may be required. This is an outgoing batch-payment integration, not customer invoice checkout.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_online_synchronization",
         "account_batch_payment",

@@ -5,7 +5,7 @@
     "summary": "Show task warnings when assignees are absent",
     "description": "Adds leave warnings, absence searching and time-off grouping to task views using the employee leave records.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project_gantt",
         "hr_holidays_gantt",

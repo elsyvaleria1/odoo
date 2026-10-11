@@ -7,7 +7,7 @@
     "description": "Extends devices with position history, fuel, speed, odometer and other telemetry fields, ingestion helpers and tracking reports. Uses configured mappings and validation thresholds and accepts tracker uploads through its controller. Requires a compatible data source and device transport; maps and geofences are provided by the separate geospatial addon.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device_transport",
     ],

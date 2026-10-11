@@ -4,7 +4,7 @@
     "summary": "Exchange receipt, PIN and status messages with a Belgian fiscal data module",
     "description": "Adds the serial device handler, message framing, receipt-registration actions and response parsing for the supported fiscal data module. Requires compatible hardware and an IoT runtime. The point-of-sale fiscal integration supplies business receipt data; installing this driver is not fiscal certification.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "iot",
     ],

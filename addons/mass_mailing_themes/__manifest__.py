@@ -7,7 +7,7 @@
     "description": "Supplies email theme templates and their image attachments for the mailing editor.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/mailing",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mass_mailing",
     ],

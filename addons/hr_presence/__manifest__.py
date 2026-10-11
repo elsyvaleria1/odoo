@@ -18,7 +18,7 @@ An HR manager can override the verdict for the day, and reach the employee by
 email or SMS, log a note, or record the absence as time off.
     """,
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "hr_holidays",

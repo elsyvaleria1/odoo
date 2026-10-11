@@ -5,7 +5,7 @@
     "summary": "Generate a ticket-linked coupon and open its website sharing action",
     "description": "Extends the ticket coupon wizard to create a loyalty card for the ticket contact using the selected program, points and expiry date, then opens the program share action. Requires an applicable website loyalty program; redemption is handled by the dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale_loyalty",
         "helpdesk_sale_loyalty",

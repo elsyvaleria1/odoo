@@ -6,7 +6,7 @@
     "summary": "Request website conversion from an external service and import its returned pages",
     "description": "Submits a source URL to the configured website scraper service, polls for results and creates website pages and image attachments from the returned payload. Requires service access and an accepted request; the addon does not promise a complete or exact copy of the source website.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "website_enterprise",

@@ -6,7 +6,7 @@
     "description": "Adds a vehicle catalog route, quote-only product settings and a per-website WhatsApp destination. Supplied templates replace the cart call to action for quote-only products with a quote link. Requires published catalog products and a configured destination; the module provides presentation and links rather than a WhatsApp messaging service.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger",
         "website_sale",

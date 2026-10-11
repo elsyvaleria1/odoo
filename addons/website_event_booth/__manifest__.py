@@ -5,7 +5,7 @@
     "summary": "Display available event booths and accept website reservation details",
     "description": "Adds event booth menus, selection pages and contact registration routes. Requested booths must be available, belong to the event and share one category before confirmation. Sales and payment handling require their respective extensions; this addon supplies the website reservation flow.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event",
         "event_booth",

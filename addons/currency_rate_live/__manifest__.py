@@ -5,7 +5,7 @@
     "summary": "Import exchange rates from configured rate providers",
     "description": "Fetch provider exchange-rate data and create company currency rates. Settings choose the provider and scheduled update frequency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

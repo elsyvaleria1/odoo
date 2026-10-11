@@ -17,7 +17,7 @@ If the automated inventory valuation is active, the necessary accounting entries
 """,
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/manufacturing",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
         "stock_account",

@@ -5,7 +5,7 @@
     "summary": "Collect phone-number subscriptions through an SMS newsletter block",
     "description": "Adds a phone-number variant of the website newsletter block and adapts subscription handling to its phone field. Requires a configured mailing list and the SMS mailing dependency; adding a subscriber does not itself send a campaign.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_mass_mailing",
         "mass_mailing_sms",

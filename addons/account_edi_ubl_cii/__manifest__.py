@@ -5,7 +5,7 @@
     "summary": "Import and export electronic invoices using supported UBL and CII formats",
     "description": "Provides XML import and export builders for the supported UBL and CII invoice formats, including Peppol BIS, XRechnung, NLCIUS, E-FFF and Factur-X. Adds invoice attachments and format-specific PDF packaging through the invoice sending workflow. Format selection and output depend on partner, company and invoice data; network delivery and additional jurisdiction-specific rules are supplied by their respective addons.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

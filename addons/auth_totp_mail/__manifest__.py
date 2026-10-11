@@ -11,7 +11,7 @@ by sending an email to the target user. This email redirects them to:
 - the portal security settings page if the user is not internal.
     """,
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_totp",
         "mail",

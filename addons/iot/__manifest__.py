@@ -7,7 +7,7 @@
     "summary": "Register IoT boxes and devices and connect browser actions to them",
     "description": "Adds IoT box and device records linked to the shared device registry, pairing routes, handler delivery and browser communication support. Connects reports to selected printing devices. Requires a reachable IoT runtime and suitable installed device handlers for the hardware being used.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device",
         "integration",

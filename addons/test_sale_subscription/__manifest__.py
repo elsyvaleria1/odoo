@@ -6,7 +6,7 @@
     "description": "Run regression tests for Sale Subscription. Loaded test suites include ``TestSubscriptionPaymentIntegration``.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/accounting",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_subscription",
         "payment_demo",

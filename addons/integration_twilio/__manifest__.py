@@ -7,7 +7,7 @@
     "description": "Keeps one Twilio account per company in the credential vault and sends every Twilio API call through the integration transport. Sends SMS through the account when the company selects Twilio as its SMS provider, records delivery status from signed callbacks, and turns SMS received on the company's Twilio numbers into one Discuss conversation per sender, whose replies are sent back as SMS from the same number. Syncs the account's numbers and their capabilities and can point a number's incoming-SMS webhook at Odoo. Requires a Twilio Account SID and Auth Token, numbers able to send and receive SMS, and a public HTTPS base URL for Twilio's webhooks.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "integration",

@@ -5,7 +5,7 @@
     "summary": "Coordinate Amazon order amounts with AvaTax invoicing",
     "description": "Adapts order creation, subtotal calculation and invoice values when Amazon sales and AvaTax are installed together.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_amazon",
         "account_avatax",

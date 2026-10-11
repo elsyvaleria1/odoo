@@ -6,7 +6,7 @@
     "summary": "Create SEPA mandates and payment records from EUR checkout transactions",
     "description": "Adds an IBAN checkout form, mandate-linked payment tokens and matching of initial pending transactions to bank statement lines. Requires a company creditor identifier and an IBAN payment journal. Reused active mandates can confirm transactions before bank collection; payment records must still be submitted to the bank through the accounting workflow. This addon does not contact a bank API.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_sepa_direct_debit",
         "account_payment_provider",

@@ -6,7 +6,7 @@
     "description": "Add recruitment and stage analysis reports with applicant drill-down actions. Includes recruitment leaderboard calculations.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/recruitment",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment",
     ],

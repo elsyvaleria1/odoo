@@ -7,7 +7,7 @@
     "description": "Gives each vehicle a stock location so the goods of a trip are on the vehicle while it travels. Loading moves them there, every stop records what the customer took and what was rejected with its reason, route incidents (spill, damage, theft, breakdown, relief driver, fuel) are recorded and, once approved, move stock, a breakdown hands the load to another vehicle, and the return creates the unloading the warehouse confirms. Each trip keeps a tamper-evident log of checkpoints and a balance of loaded, delivered, returned and written-off quantities per product and lot. Requires dispatch trips from stock_fleet.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_fleet",
         "sale_stock",

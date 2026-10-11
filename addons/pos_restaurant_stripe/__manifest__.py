@@ -6,7 +6,7 @@
     "summary": "Handle Stripe terminal tips in restaurant payments",
     "description": "Extends the restaurant POS frontend for Stripe tipping. Requires a configured Stripe terminal payment method.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_stripe",
         "pos_restaurant",

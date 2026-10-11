@@ -7,7 +7,7 @@
     "summary": "Accept payments through the Mercado Pago integration",
     "description": "Adds redirect checkout and provider-specific transaction-status handling. Implements saved payment tokens and OAuth account authorization. Requires a configured Mercado Pago merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Manual capture and refunds are not implemented.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

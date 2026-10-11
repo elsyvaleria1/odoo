@@ -7,7 +7,7 @@
     "description": "Links work centers to machinery assets and displays theoretical and actual fuel efficiency with their deviation.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
         "asset_ledger",

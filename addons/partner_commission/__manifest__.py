@@ -5,7 +5,7 @@
     "summary": "Calculate configured reseller commissions and create related purchase lines",
     "description": "Adds commission plans and rules, referrers on sales and invoices, and commission purchase-order links. Processes commissions through invoice payment and reversal hooks and provides scheduled purchase-order confirmation according to settings. Amounts depend on configured rules and eligible sales documents.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "sale_subscription_partnership",

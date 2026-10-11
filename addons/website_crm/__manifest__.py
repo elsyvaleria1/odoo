@@ -6,7 +6,7 @@
     "summary": "Create CRM leads or opportunities from configured website forms",
     "description": "Extends website form handling with CRM lead creation, website team and salesperson defaults, and visitor links. Includes contact-input processing for submitted leads. Forms must be configured to target CRM records; installing the addon does not convert every website form into a lead form.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "crm",

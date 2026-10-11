@@ -7,7 +7,7 @@
     "summary": "Retain the legacy DHL Express shipping API integration",
     "description": "Contains the legacy DHL Express shipping client and carrier configuration. Use the replacement connector (delivery_dhl_rest) for the newer API; the legacy integration is marked unsupported.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_delivery",
         "mail",

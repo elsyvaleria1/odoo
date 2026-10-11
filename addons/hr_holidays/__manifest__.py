@@ -8,7 +8,7 @@
     "description": "Provides time-off types, requests, allocations, accrual plans and employee leave balances. Includes approval actions, calendar integration and leave reports. Entitlements and accrual outcomes follow the configured types, schedules and plans.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/time-off",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "calendar",

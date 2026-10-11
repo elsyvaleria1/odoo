@@ -6,7 +6,7 @@
     "description": "Adds to each approval category which decisions need a proof of identity (none, approvals, or approvals and refusals) and which proof methods are accepted. On such a category, an approver deciding from the request's form or from their approval activity is shown the figures they decide on and asked for a proof (a passkey, or another accepted method); the proof covers the request, the decision, the approver's row and the source document's protected fields, and is refused if any of them moved meanwhile. A decision arriving without a proof (bulk decisions, marking the activity done, Telegram, a direct call) is refused. Each proven decision's log row links the evidence. Categories requiring a proof cannot auto-approve by consent.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "proof",

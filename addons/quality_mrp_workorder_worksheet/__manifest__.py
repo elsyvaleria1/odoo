@@ -5,7 +5,7 @@
     "summary": "Open quality worksheets from manufacturing work orders",
     "description": "Adds worksheet actions and frontend handling to work-order quality checks using configured worksheet templates.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "quality_control_worksheet",
         "quality_mrp_workorder",

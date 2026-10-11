@@ -5,7 +5,7 @@
     "summary": "Prepare website job descriptions and application links for job-board posting",
     "description": "Adds website application URLs and HTML descriptions to job-board posting forms. An optional generation action sends flattened website job text to the configured OLG service and uses its returned content; service access and request limits apply, and generated copy requires review.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment_integration_base",
         "website_hr_recruitment",

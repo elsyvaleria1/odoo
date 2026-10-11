@@ -6,7 +6,7 @@
     "summary": "Test Website behaviour, including canonical slug redirect, controller args, custom snippet",
     "description": "Run regression tests for Website. Loaded test suites include ``TestCanonicalSlugRedirect``, ``TestWebsiteControllerArgs``, ``TestWebsiteControllers``, ``TestCustomSnippet``, ``TestWebsiteError``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_unsplash",
         "website",

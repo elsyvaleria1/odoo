@@ -5,7 +5,7 @@
     "summary": "Display address-linked records on maps with optional route rendering",
     "description": "Adds the map view type, contact coordinate handling and map-service settings. Uses Mapbox when a token is configured and OpenStreetMap services otherwise; routing requires Mapbox configuration. Mapping depends on usable addresses or coordinates and external service access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

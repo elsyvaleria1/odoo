@@ -7,7 +7,7 @@
     "description": "Adds lead-generation settings and links appointment events to opportunities. New leads are created for enabled appointment types with an external attendee and no existing opportunity; eligible existing leads can be reused.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "crm",

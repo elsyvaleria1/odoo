@@ -5,7 +5,7 @@
     "summary": "Carry stock destination information into purchase tender offers",
     "description": "Extends purchase tender offer preparation with the stock destination and procurement links supplied by the inventory integration.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase_tender",
         "purchase_stock",

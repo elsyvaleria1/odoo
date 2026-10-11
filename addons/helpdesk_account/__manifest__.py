@@ -4,7 +4,7 @@
     "summary": "Create and access credit notes from helpdesk tickets",
     "description": "Adds ticket links to credit notes and adapts the invoice-reversal wizard to select invoices and sales orders for a ticket. Accounting access and an invoice eligible for reversal are required.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk_sale",
         "account",

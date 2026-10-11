@@ -5,7 +5,7 @@
     "summary": "Review work entries and conflicts on a timeline",
     "description": "Adds employee-grouped Gantt views with availability and progress calculations for work entries.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_work_entry",
         "hr_gantt",

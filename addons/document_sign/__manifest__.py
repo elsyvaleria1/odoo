@@ -6,7 +6,7 @@
     "summary": "Create signing templates from documents and file completed signed documents",
     "description": "Adds document actions and import dialogs for signature templates, completed-document filing and signer access. Requires the Sign workflow and configured document folders; it does not itself provide external signer identity verification.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "sign",

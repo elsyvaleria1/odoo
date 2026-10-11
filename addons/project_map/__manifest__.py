@@ -5,7 +5,7 @@
     "summary": "Display project tasks on a map",
     "description": "Adds task map views, assignee names and map navigation actions using the geographic data available on the task contacts.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project",
         "web_map",

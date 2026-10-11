@@ -5,7 +5,7 @@
     "summary": "Calculate sales order taxes through configured external tax services",
     "description": "Prepare sales lines for external tax calculation during quotation and order processing. Provider-specific modules implement the tax service and its credentials.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_external_tax",
         "sale",

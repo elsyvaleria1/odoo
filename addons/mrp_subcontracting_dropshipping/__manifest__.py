@@ -6,7 +6,7 @@
     "summary": "Route purchased components directly to subcontractors",
     "description": "Provide subcontractor dropshipping configuration, routes and stock-flow handling. Link dropshipped component moves to subcontracted manufacturing orders.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_subcontracting",
         "stock_dropshipping",

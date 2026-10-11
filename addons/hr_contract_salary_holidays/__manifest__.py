@@ -4,7 +4,7 @@
     "summary": "Create extra time-off allocations from signed salary offers",
     "description": "Extends salary-offer signature processing with the configured extra leave allocation.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_contract_salary",
         "hr_holidays",

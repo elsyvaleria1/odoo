@@ -6,7 +6,7 @@
     "summary": "Create or update products from the Barcode Lookup service",
     "description": "Look up product information and images using scanned or entered barcodes. Requires a Barcode Lookup API key and service availability.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "product",

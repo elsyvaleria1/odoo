@@ -5,7 +5,7 @@
     "summary": "Test ORM behaviour, including access scope, attributes, autovacuum",
     "description": "Run regression tests for ORM. Loaded test suites include ``TestX2manyScopeFollowsWhatTheRulesRead``, ``TestComputedX2manyUserScope``, ``TestAttributes``, ``TestAutovacuum``, ``TestBackendDifferential``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "web",

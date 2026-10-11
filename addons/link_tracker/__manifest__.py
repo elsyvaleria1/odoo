@@ -6,7 +6,7 @@
     "summary": "Shorten URLs and use them to track clicks and UTMs",
     "description": "Create short URLs with campaign tracking parameters and record clicks on their redirects. Includes click statistics and scheduled cleanup of stored IP addresses.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "utm",
         "mail",

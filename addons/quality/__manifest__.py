@@ -7,7 +7,7 @@
     "summary": "Define quality points, checks, teams and staged alerts",
     "description": "Provides quality control-point definitions, check records with pass or fail actions, sampling rules and alert stages. Quality execution interfaces, measurement-specific fields and manufacturing integration are supplied by extension modules; this addon defines the shared records and configuration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "team",

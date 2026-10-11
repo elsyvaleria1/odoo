@@ -6,7 +6,7 @@
     "summary": "Test Enterprise Mail behaviour, including activity, activity performance, mail compose message ai",
     "description": "Run regression tests for Enterprise Mail. Loaded test suites include ``TestActivity``, ``TestActivityPerformance``, ``TestMailComposeMessageAI``, ``TestMailPerformance``, ``TestMailTemplateAI``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
         "document",

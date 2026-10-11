@@ -6,7 +6,7 @@
     "summary": "Raise, review and configure approval requests from one application",
     "description": "Adds the Approvals application, request categories, manual request forms, templates and document requirements. Checks configured required fields and explicitly assigned attachment requirements at confirmation. Routing and decisions are supplied by the approval engine; categories and approvers determine the workflow.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
     ],

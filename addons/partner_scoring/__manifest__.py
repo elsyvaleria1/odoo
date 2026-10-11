@@ -7,7 +7,7 @@
     "description": "Connects contact attribute values to the shared scoring engine, with weighted aggregation, score breakdown records and tier bands. Supplies an initial attribute catalog and partner scorecard. Scores depend on maintained attributes and chosen weights; this addon scores customer records rather than CRM opportunities.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mixin_attribute",
         "partner",

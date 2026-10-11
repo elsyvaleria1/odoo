@@ -5,7 +5,7 @@
     "summary": "Group account balances by fiscal category and deduction rate",
     "description": "Adds account fiscal categories and dated deduction rates, with a report that groups balances and deductible amounts by category, account and rate.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

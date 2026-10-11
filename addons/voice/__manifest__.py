@@ -7,7 +7,7 @@
     "description": "Adds command interpretation, voice UI controls, screen integration hooks, form-field dictation and spoken feedback through browser synthesis. A command is heard by the browser's recogniser or, through speech, by a server engine the company's policy allows, without keeping the audio. Supported changes or confirmations are staged in the current interface. Requires browser permissions and an available engine; command coverage depends on the active screen, language and registered handlers.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "speech",
     ],

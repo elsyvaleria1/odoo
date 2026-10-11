@@ -5,7 +5,7 @@
     "summary": "Create email campaigns targeting event attendees",
     "description": "Add event actions for mailing attendees and inviting contacts. Populate campaign recipient filters from event registration information.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "mass_mailing",

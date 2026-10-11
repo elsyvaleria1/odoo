@@ -5,7 +5,7 @@
     "summary": "Select SMS A/B-test winners by quotations or invoiced revenue",
     "description": "Adds quotation count and invoiced revenue to the SMS campaign winner-selection options.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mass_mailing_sale",
         "mass_mailing_sms",

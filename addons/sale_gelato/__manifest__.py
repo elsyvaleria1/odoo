@@ -6,7 +6,7 @@
     "summary": "Send configured print-product orders to Gelato",
     "description": "Synchronizes product template information and print files, requests shipping rates and submits supported sales orders to Gelato. Requires API credentials and configured Gelato products and shipping services.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "document",

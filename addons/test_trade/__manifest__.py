@@ -6,7 +6,7 @@
     "summary": "Test Trade behaviour, including catalog, confirm validation, duplicates",
     "description": "Run regression tests for Trade. Loaded test suites include ``TestCatalog``, ``TestConfirmValidation``, ``TestDuplicateOrders``, ``TestHeaderMisc``, ``TestLineAmounts``.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade",
     ],

@@ -6,7 +6,7 @@
     "description": "Extend analytic account views with grid presentation. Supplies the year-range computation used by the analytic grid.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/accounting",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_grid",
         "analytic",

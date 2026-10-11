@@ -6,7 +6,7 @@
     "summary": "Let internal users request application installation",
     "description": "Collect installation requests and send them to users responsible for application management. Provides request views and actions for reviewing and installing requested modules.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

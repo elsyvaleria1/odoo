@@ -6,7 +6,7 @@
     "summary": "Populate payslip inputs from configured sales commission plans",
     "description": "Adds a payslip input type to commission plans and aggregates matching commission report entries for each employee user, company and payslip payment-date range. Amounts are converted to the payslip currency; salary rules and payroll payment processing are supplied by Payroll.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_commission",
         "hr_payroll",

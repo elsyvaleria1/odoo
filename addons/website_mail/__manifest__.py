@@ -5,7 +5,7 @@
     "summary": "Let website users subscribe to supported record discussions",
     "description": "Adds the website follow widget, subscription endpoints and follower-status checks. It uses the mail follower mechanism and the record access checks in those endpoints; other addons supply the pages and records where the widget appears.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "mail",

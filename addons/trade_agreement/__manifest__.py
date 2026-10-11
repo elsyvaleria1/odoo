@@ -6,7 +6,7 @@
     "description": "Defines abstract agreement and agreement-line behavior, validity dates, price breaks and order integration. Supplies lifecycle checks and helpers for applying agreement terms and tracking confirmed quantities. Sales and purchase agreement addons provide the concrete business models and interfaces.",
     "author": "Odoo Community",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade",
     ],

@@ -5,7 +5,7 @@
     "summary": "Use certification surveys as course lessons and track learner results",
     "description": "Adds survey-backed certification lessons, attempt links, completion handling and certificate information on learner profiles. Requires configured certification surveys and their scoring rules; passing records the configured course assessment and does not establish external accreditation.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_slides",
         "survey",

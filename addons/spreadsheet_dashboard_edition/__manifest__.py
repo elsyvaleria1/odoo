@@ -5,7 +5,7 @@
     "summary": "Edit spreadsheet dashboard content and comments",
     "description": "Adds an editor action, spreadsheet metadata and cell-thread access checks for dashboards.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_dashboard",
         "spreadsheet_edition",

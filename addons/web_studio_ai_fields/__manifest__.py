@@ -5,7 +5,7 @@
     "summary": "Configure AI-computed fields in Studio",
     "description": "Adds AI field options and editor components to Studio. Field generation uses the configured AI service and the computation behavior supplied by the AI fields addon.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_fields",
         "web_studio",

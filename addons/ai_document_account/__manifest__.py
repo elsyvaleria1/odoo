@@ -5,7 +5,7 @@
     "summary": "Use accounting company context in AI document sorting",
     "description": "Adds the document or environment company to AI sorting context and adapts candidate tools and setup prompts for accounting documents.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_document",
         "document_account",

@@ -4,7 +4,7 @@
     "summary": "Configure field-service worksheets on sold service products",
     "description": "Adds worksheet template selection to products and propagates the configured worksheet behavior to their field-service project setup.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "industry_fsm_sale",
         "industry_fsm_report",

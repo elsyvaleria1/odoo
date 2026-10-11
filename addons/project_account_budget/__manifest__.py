@@ -5,7 +5,7 @@
     "summary": "Review analytic budgets and progress from projects",
     "description": "Adds budget totals, progress and line navigation to the project panel and includes budget information in project updates.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_budget",
         "project",

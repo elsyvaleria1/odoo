@@ -5,7 +5,7 @@
     "summary": "Connect call views and contact information to CRM opportunities",
     "description": "Adds CRM actions, opportunity information in phone contact data and CRM-specific call interface extensions. Requires CRM access and a configured VoIP service for calling; call transport is implemented by the VoIP dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "voip",

@@ -5,7 +5,7 @@
     "summary": "Test Spreadsheet Edition behaviour, including spreadsheet history basic rights, spreadsheet controllers, spreadsheet",
     "description": "Run regression tests for Spreadsheet Edition. Loaded test suites include ``SpreadsheetMixinHistoryTest``, ``SpreadsheetMixinControllerTest``, ``SpreadsheetMixinTest``, ``SpreadsheetRevisionTest``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_edition",
         "test_spreadsheet",

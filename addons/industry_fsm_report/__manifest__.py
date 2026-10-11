@@ -6,7 +6,7 @@
     "summary": "Complete task worksheets and include their contents in field service reports",
     "description": "Adds project and task worksheet templates, worksheet forms, report rendering and portal report context. Requires worksheets enabled on the project and a task template; report rendering selects the latest worksheet linked to the task.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "worksheet",
         "industry_fsm",

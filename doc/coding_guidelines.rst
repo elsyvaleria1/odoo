@@ -537,7 +537,7 @@ from the workspace root::
        "summary": "Add internal notes to sales orders",
        "description": "Add an internal notes field to the sales order form. Notes are not printed on quotations.",
        "author": "AgroMarin",
-       "license": "LGPL-3",
+       "license": "Other OSI approved licence",
        "depends": ["sale"],
        "data": [
            "security/ir.access.csv",
@@ -570,8 +570,10 @@ from the workspace root::
   ``post_init_hook`` that generates one checks
   ``_is_encryption_key_configured()`` first; a file needing
   ``ODOO_API_ENCRYPTION_KEY`` fails on every server lacking it.
-* **``license`` matches how the module is distributed**: ``LGPL-3``,
-  ``OPL-1``, ``AGPL-3`` or ``OEEL-1``. Do not copy a neighbour's unchecked.
+* **Bundled modules use 0BSD**, as described in ``LICENSE.addons``.
+  Declare ``"license": "Other OSI approved licence"`` in their manifests,
+  the supported Odoo selection value for 0BSD. Preserve the license notices
+  of bundled third-party components.
 
 **External dependencies go in the manifest and in the owning repo's
 requirements file** ``[review]``: ``requirements-addons.txt`` here,

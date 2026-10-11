@@ -14,7 +14,7 @@ to automatically plan the shifts for employees whom are able to take the shift
 Plan shifts and keep an eye on the hours consumed on your plannable products.
     """,
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "sale_team",

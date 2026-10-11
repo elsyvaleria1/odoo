@@ -5,7 +5,7 @@
     "summary": "Export payment batches using configured ISO 20022 credit-transfer layouts",
     "description": "Adds SEPA and other implemented ISO 20022 credit-transfer formats, journal settings and payment export checks. Layout and payment-method configuration determine the XML structure and required bank details; file creation does not connect to a bank or guarantee acceptance.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_batch_payment",
         "account_iban",

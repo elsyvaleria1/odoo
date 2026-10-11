@@ -3,8 +3,9 @@ Most of the files are
 
   Copyright (c) 2014-2015 Odoo S.A.
 
-and published under the Odoo Enterprise Edition License,
-as described in the LICENSE file.
+The modules shipped in this repository are now licensed under 0BSD,
+as described in LICENSE.addons. The original upstream license text is
+preserved in LICENSE.enterprise; existing copyright attribution remains.
 
 Some files may also contain contributions from third
 parties. In this case the original copyright of

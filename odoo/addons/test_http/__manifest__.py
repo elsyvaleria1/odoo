@@ -5,7 +5,7 @@
     "summary": "Test HTTP behaviour, including captcha, device, echo reply",
     "description": "Run regression tests for HTTP. Loaded test suites include ``TestCaptcha``, ``TestDevice``, ``TestHttpEchoReplyHttpNoDB``, ``TestHttpEchoReplyJsonNoDB``, ``TestHttpEchoReplyHttpWithDB``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
         "mail",

@@ -5,7 +5,7 @@
     "summary": "Select rental dates and add rental products to online carts",
     "description": "Connects rental pricing and dates to eCommerce product pages, configurators and carts. Adds rental-period constraints and checkout validation using configured duration and day restrictions. Rental fulfillment uses the parent rental workflow and any installed stock integration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
         "sale_renting",

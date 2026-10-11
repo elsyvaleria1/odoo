@@ -4,7 +4,7 @@
     "summary": "Carry a ticket sales order item onto its generated field service task",
     "description": "Extends the ticket task-creation wizard to copy sale_line_id when the source ticket has one. Sales billing and field service workflows are supplied by the dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk_fsm",
         "helpdesk_sale_timesheet",

@@ -7,7 +7,7 @@
     "summary": "Build loan repayment schedules and related accounting entries",
     "description": "Manage loan terms, schedule lines and repayment state. Provides actions to generate schedules, post accounting entries and close loans.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_depreciation",
         "accountant",

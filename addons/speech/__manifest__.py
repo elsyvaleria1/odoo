@@ -8,7 +8,7 @@
     "description": "Adds attachment transcript state, timed cues, speaker records, vocabulary, subtitle routes and transcription actions. Extends media timelines with joined transcripts and provides live chunk and dictation infrastructure. Requires a separately installed and usable transcription or synthesis engine; this addon ships no engine and cannot transcribe every stored recording on its own.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "media",
         "bus",

@@ -7,7 +7,7 @@
     "description": "Adds carrier status and a Shipment Tracking tab to transfers. Reads each tracking number once per carrier, retains shipment details and movement history, and links to documents published by the carrier. A transfer with several numbers is delivered only when all numbers report delivery. Failed reads retain the last successful result; changing the carrier or numbers clears the old tracking data. A scheduled action posts status changes and gives the responsible a to-do when an open transfer is delivered; it never validates a transfer. Connectors supply the data and permit document links; this module reads nothing on its own.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_delivery",
     ],

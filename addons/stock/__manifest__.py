@@ -8,7 +8,7 @@
     "description": "Provides warehouses, receipts, deliveries, internal transfers, reservations, lots and serial numbers, packages, inventory counts and replenishment rules. Optional integrations connect stock movement to purchasing, sales and accounting.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/inventory",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "product_trace",
         "barcodes_gs1_nomenclature",

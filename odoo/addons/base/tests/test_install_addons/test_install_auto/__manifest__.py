@@ -5,7 +5,7 @@
     "summary": "Exercise automatic addon installation with a scheduled-action fixture",
     "description": "Declare an automatically installed addon depending on the installation base fixture. Loads a scheduled action used by the installation tests.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "test_install_base",
     ],

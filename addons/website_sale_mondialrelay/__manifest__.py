@@ -5,7 +5,7 @@
     "summary": "Select a Mondial Relay pickup point as the checkout delivery address",
     "description": "Adds pickup-point selection and shipping-address updates for carts using a Mondial Relay carrier. Requires an identified cart customer and a pickup country allowed by the carrier. Checkout checks that the selected carrier and pickup address agree; provider access comes from the delivery integration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
         "delivery_mondialrelay",

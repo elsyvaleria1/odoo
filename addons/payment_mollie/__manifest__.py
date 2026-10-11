@@ -8,7 +8,7 @@
     "description": "Adds redirect checkout and provider-specific transaction-status handling. Requires a configured Mollie merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Tokenization, manual capture and refunds are not implemented.",
     "author": "Odoo S.A., Applix BV, Droggol Infotech Pvt. Ltd.",
     "website": "https://www.mollie.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

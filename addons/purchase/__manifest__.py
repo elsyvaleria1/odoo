@@ -8,7 +8,7 @@
     "description": "Provides purchase quotations, orders, templates, supplier pricing and order analysis. Links vendor bills to purchase lines and supports bill matching and down-payment workflows. Inventory receipts, tenders and purchase agreements are supplied by their respective integration addons.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/purchase",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade_account",
         "mixin_report_sql",

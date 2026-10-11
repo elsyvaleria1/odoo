@@ -5,7 +5,7 @@
     "summary": "Connect subscription sales items, generated project work and project profitability",
     "description": "Adds subscription navigation from analytic accounts and projects, subscription items in project profitability, and adaptations to service and recurring-task generation. Requires eligible subscription sales items and project service configuration; recurring billing remains in the subscription dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_project",
         "sale_subscription",

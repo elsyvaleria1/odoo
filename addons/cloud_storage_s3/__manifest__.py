@@ -7,7 +7,7 @@
     "description": "Adds S3 configuration, attachment upload and access helpers, mirror queuing and bucket-import support over the cloud-storage dependency. Requires a configured bucket, region and credentials with suitable permissions. Storage and local-mirror behavior depend on the selected mode and successful background processing.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "cloud_storage",
         "credential",

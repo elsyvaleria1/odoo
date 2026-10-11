@@ -5,7 +5,7 @@
     "summary": "Scope payment providers by website and add donation payment pages",
     "description": "Adds website-specific provider selection, payment-page adaptations, donation transactions and donation notifications. Providers without a website restriction remain eligible across websites subject to the inherited checks; processing requires an enabled compatible provider and its account configuration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website",
         "account_payment_provider",

@@ -4,7 +4,7 @@
     "summary": "Send POS receipts and invoice messages through WhatsApp",
     "description": "Configure WhatsApp templates for POS receipts and invoices and send them from POS orders. Uses the WhatsApp message composer and configured business account.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "whatsapp",

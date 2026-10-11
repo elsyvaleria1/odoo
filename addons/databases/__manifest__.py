@@ -6,7 +6,7 @@
     "summary": "Track connected Odoo databases and retrieve their available information",
     "description": "Extends projects with database connection details, synchronization actions and remote user-management tools. Reads supported remote information through authenticated API calls. Requires reachable compatible databases and credentials with the permissions needed for each operation.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "project",

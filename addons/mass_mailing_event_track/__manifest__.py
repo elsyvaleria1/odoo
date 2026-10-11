@@ -5,7 +5,7 @@
     "summary": "Create email campaigns targeting event track speakers",
     "description": "Add a speaker mailing action to events. Build campaign recipient filters from the event's track speakers.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event_track",
         "mass_mailing",

@@ -6,7 +6,7 @@
     "description": "Provides an analysis mixin and finding records linked to a recording owner, plus speaker-level analysis fields. Uses the extraction and model dependencies when a completed transcript is ready or analysis is requested. Requires configured analysis services and company policy; generated findings are model interpretations for review.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "speech",
         "extract_ai",

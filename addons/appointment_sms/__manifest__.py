@@ -7,7 +7,7 @@
     "description": "Defines a calendar SMS alarm marked as a default for new appointment types and adds a phone-use notice to the booking form when SMS reminders are selected. Sending uses the Calendar SMS dependency and requires a usable recipient phone number and configured SMS service.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "calendar_sms",

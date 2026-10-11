@@ -7,7 +7,7 @@
     "summary": "Assess employee skills during appraisals and compare target job requirements",
     "description": "Copies employee skills into confirmed appraisals and applies assessed skill changes through the appraisal workflow. Adds target-job skill comparisons, skill reporting and skill-related goals; requires employee skill records and the appraisal process.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_appraisal",
         "hr_skills",

@@ -5,7 +5,7 @@
     "summary": "Confirm approved sale orders from Telegram",
     "description": "Once a sale order's approval request is approved and the company does not confirm it automatically, the users named on the approval category receive the order summary in Telegram and a button that confirms it as them. Requires an approval bot with notifications enabled and linked user chats.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval_telegram",
         "approval_sale",

@@ -5,7 +5,7 @@
     "summary": "Record manufacturing quantities and lots through barcode scanning",
     "description": "Adds barcode actions for production orders, component and by-product move lines, lot selection and partial-production handling.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_barcode",
         "mrp",

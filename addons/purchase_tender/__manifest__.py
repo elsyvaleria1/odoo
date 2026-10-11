@@ -6,7 +6,7 @@
     "summary": "Invite vendors and compare and award purchase quotations",
     "description": "Adds concrete purchase tender records, offer links, vendor invitation and comparison actions over the shared tender workflow. Awards can allocate quantities among recorded offers and confirm selected orders. Requires prepared purchase quotations and configured suppliers; no external tender portal is supplied here.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "trade_tender",

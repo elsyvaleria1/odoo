@@ -5,7 +5,7 @@
     "summary": "Provide text-message templates for field-service tasks",
     "description": "Supplies field-service SMS template data used by the project stage notification integration. Delivery requires the configured SMS service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "industry_fsm",
         "project_sms",

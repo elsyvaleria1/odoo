@@ -5,7 +5,7 @@
     "summary": "Record completed online courses on linked employee resumes",
     "description": "Adds course links and completion displays to employee resumes. The course completion hook creates missing training entries for employees linked through the learner user contact; course enrollment and delivery are supplied by eLearning.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_skills",
         "website_slides",

@@ -5,7 +5,7 @@
     "summary": "Send calendar reminders using WhatsApp templates",
     "description": "Adds a WhatsApp alarm type and sends reminders through the configured template and responsible account.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "whatsapp",

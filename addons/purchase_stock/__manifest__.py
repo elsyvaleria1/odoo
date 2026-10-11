@@ -7,7 +7,7 @@
     "summary": "Generate receipts and supplier purchases from stock demand",
     "description": "Connects purchase lines with stock moves and receipts, adds buy procurement rules and replenishment vendor selection, and supplies receipt matching and purchase delivery metrics.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_account",
         "purchase",

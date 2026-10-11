@@ -5,7 +5,7 @@
     "summary": "Send payment follow-ups using WhatsApp templates",
     "description": "Adds WhatsApp delivery to follow-up levels and the follow-up wizard. Requires a configured WhatsApp account, a usable template and a recipient number.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_followup",
         "whatsapp",

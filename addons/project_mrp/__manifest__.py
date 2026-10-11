@@ -5,7 +5,7 @@
     "summary": "Link manufacturing orders and bills of materials to projects",
     "description": "Adds project links to production orders and bills of materials, carries them through procurement and exposes production counts and navigation on projects.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
         "project",

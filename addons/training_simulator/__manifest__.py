@@ -6,7 +6,7 @@
     "description": "A catalogue of training simulators by area and the record of every session: who played, which scenario, how long, the errors and the result. Each simulator lives in its own module and plays on a snapshot of real data taken when the session starts; what happens in the game is kept only in the session, so production records are never touched. The tests of each simulator prove it with TrainingNeutralityCase.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

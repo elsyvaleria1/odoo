@@ -5,7 +5,7 @@
     "summary": "Enable AI drafting in signature-request emails",
     "description": "Adds the AI text-draft interface to the signature request composer. Requires the configured AI generation service.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sign",
         "ai",

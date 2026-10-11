@@ -6,7 +6,7 @@
     "summary": "Publish event talks, agendas and speaker proposals",
     "description": "Adds talk and speaker records, event agendas, website talk pages and proposal forms. Live streams, quizzes and other presentation features require their corresponding extensions.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event",
     ],

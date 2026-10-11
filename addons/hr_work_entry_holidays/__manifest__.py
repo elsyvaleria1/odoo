@@ -6,7 +6,7 @@
     "summary": "Generate and reconcile work entries for employee time off",
     "description": "Map approved leave intervals to work-entry types. Update work entries and handle leave conflicts when time-off requests are validated, refused or cancelled.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_holidays",
         "hr_work_entry",

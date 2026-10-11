@@ -7,7 +7,7 @@
     "description": "Extends Point of Sale with floors, tables, guest counts and course records. Adds restaurant screens and configurable bill printing, splitting and tip handling. Printing requires a suitable printer connection and configuration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/point-of-sale-restaurant",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
     ],

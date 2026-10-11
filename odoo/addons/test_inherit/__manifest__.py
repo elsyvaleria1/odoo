@@ -5,7 +5,7 @@
     "summary": "Test Model Inheritance behaviour, including inherit",
     "description": "Run regression tests for Model Inheritance. Loaded test suites include ``test_inherits``, ``test_inherits_demo``, ``test_override_property``, ``TestInherit``, ``TestXMLIDS``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "test_orm",

@@ -6,7 +6,7 @@
     "summary": "File generated payslips and provide document-based payslip notifications",
     "description": "Adds payslip document tags, folder selection, access links and notification or resend actions. Creation checks depend on an employee user or enabled company HR document settings, together with the base document rules. Payroll generation remains in the payroll dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_hr",
         "hr_payroll",

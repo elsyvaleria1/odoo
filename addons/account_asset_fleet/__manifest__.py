@@ -6,7 +6,7 @@
     "summary": "Include depreciation entries in vehicle asset costs",
     "description": "Extends depreciation move preparation and asset-log amount calculation when fleet assets carry depreciation boards.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_fleet",
         "resource_asset_account",

@@ -5,7 +5,7 @@
     "summary": "Group asset document requirements by the current asset manager",
     "description": "Adds the employee asset-manager dimension to the asset compliance report using the current custody assignment.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_ledger_document_compliance",
         "asset_ledger_hr",

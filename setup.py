@@ -30,7 +30,7 @@ setup(
     author=release["author"],
     author_email="info@odoo.com",
     classifiers=CLASSIFIERS,
-    license="LGPL-3.0-only",
+    license="LGPL-3.0-only AND 0BSD",
     scripts=["setup/odoo"],
     packages=find_namespace_packages(include=["odoo*", "addons*"]),
     package_dir={"%s" % lib_name: "odoo"},

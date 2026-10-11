@@ -6,7 +6,7 @@
     "summary": "Sign users in through configured OAuth providers",
     "description": "Add provider selection and callback processing to the login flow. Requires provider configuration and maps the returned identity to an application user.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_signup",
     ],

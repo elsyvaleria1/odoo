@@ -6,7 +6,7 @@
     "summary": "Test Data Module Installation behaviour, including data module installed",
     "description": "Run regression tests for Data Module Installation. Loaded test suites include ``TestDataModuleInstalled``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "test_data_module",
     ],

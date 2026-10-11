@@ -4,7 +4,7 @@
     "summary": "Calculate payroll results for salary-offer simulations",
     "description": "Connects the salary configurator with payslip calculations and exposes calculated payroll results in the offer. Results depend on configured payroll structures and rules.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_contract_salary",
         "hr_payroll",

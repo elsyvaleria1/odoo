@@ -7,7 +7,7 @@
     "description": "Provides hierarchical report definitions, expressions, columns, options and report exports. Includes expression evaluation and extension hooks for custom handlers. Business-specific report definitions and data sources are supplied by consuming addons.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "web",

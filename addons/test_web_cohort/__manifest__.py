@@ -6,7 +6,7 @@
     "summary": "Test Web Cohort behaviour, including web cohort",
     "description": "Run regression tests for Web Cohort. Loaded test suites include ``TestCohortForward``, ``TestCohortBackward``, ``TestCohortEmptyFuturBackward``, ``TestCohortEmpty``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_cohort",
     ],

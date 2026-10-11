@@ -6,7 +6,7 @@
     "summary": "Add payment checkout to configured paid appointment bookings",
     "description": "Creates an intermediate booking and draft invoice when an appointment type requires payment, then converts the booking to an event through the paid-booking flow. Requires a configured booking product and payment provider; pending or failed checkout remains a booking and availability is checked before event creation.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "account_payment_provider",

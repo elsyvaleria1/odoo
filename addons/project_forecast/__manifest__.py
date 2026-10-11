@@ -6,7 +6,7 @@
     "summary": "Associate planning shifts and templates with projects",
     "description": "Adds project selection to planning slots and shift templates, project planned-hour totals, project reporting dimensions and project information on shared schedules. Requires Planning and Project; this addon does not predict project completion dates.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project",
         "planning",

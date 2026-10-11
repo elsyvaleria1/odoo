@@ -5,7 +5,7 @@
     "summary": "Include subscription sales in CRM opportunity revenue tracking",
     "description": "Extend opportunity revenue updates from sales orders for subscriptions. Adjusts the related opportunity tracking behaviour.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm",
         "sale_subscription",

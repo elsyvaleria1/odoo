@@ -4,7 +4,7 @@
     "summary": "Test Website Sale Full behaviour, including ui rental comparison, ui rental wishlist",
     "description": "Run regression tests for Website Sale Full. Loaded test suites include ``TestUi``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale_comparison",
         "website_sale_renting",

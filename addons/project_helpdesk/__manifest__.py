@@ -6,7 +6,7 @@
     "summary": "Convert helpdesk tickets into tasks and tasks into tickets",
     "description": "Provides conversion wizards with destination project or helpdesk team and stage selection.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project",
         "helpdesk",

@@ -6,7 +6,7 @@
     "summary": "Assign employees to projects and tasks and derive their linked users",
     "description": "Adds employee assignment fields, views and scheduling integration to projects and tasks. Task users combine employee-linked users with direct user assignments; project managers derive from selected employees. Installation backfills employee associations where possible, and subsequent employee user changes update linked assignments.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "project",
         "hr",

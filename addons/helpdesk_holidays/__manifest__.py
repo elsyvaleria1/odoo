@@ -6,7 +6,7 @@
     "summary": "Subtract employee leave from helpdesk assignment availability",
     "description": "Extends working-user interval calculation with employee leave intervals when leave computation is requested. Adds the time-off integration to helpdesk team configuration; it does not manage leave approval.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk",
         "hr_holidays_gantt",

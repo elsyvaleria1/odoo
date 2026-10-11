@@ -6,7 +6,7 @@
     "description": "Defines the phone call every telephony source files on: the softphone, a phone system and a company handset. Holds the number, direction, outcome, timing, contact, responsible user and company, matches the number to a contact of that company, and files the call's recordings on its timeline for transcription. Placing, receiving and recording calls belong to the addons that drive a line.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "phone_validation",

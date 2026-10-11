@@ -5,7 +5,7 @@
     "summary": "Store eligible attachments in Google Cloud Storage",
     "description": "Implements signed upload and download URLs for a configured bucket. Requires a service-account key with the necessary bucket access.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "cloud_storage",
     ],

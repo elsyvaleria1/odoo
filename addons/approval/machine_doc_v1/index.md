@@ -19,7 +19,8 @@ dashboards.
 | Dependencies | `mail`, and nothing else. `approval_automation` (which needs `automation`) and `approval_analytics` (which needs `mixin_report_sql`) were split out at 19.0.2.0.0 so that adopting `mixin.approval` costs one manifest row rather than nineteen prerequisites; both auto-install |
 | Conflicts | `approvals` (upstream module — the two cannot coexist, and NOTHING enforces it: this fork's loader reads no `excludes` manifest key, so the one that used to sit here was inert) |
 | Application | No: the Approvals application (menu root, generic request categories, demo) is `approval_app`, so the modules adopting `mixin.approval` pull in no application tile. Configuration without it: Settings > Technical > Approvals |
-| License | LGPL-3 |
+| License | Other OSI approved licence |
+| License identifier | 0BSD (see repository-root LICENSE.addons) |
 | Python models | 12 own + 5 extensions, across 35 files in `models/` (plus `__init__.py`), + 2 wizards + 3 report models. One of the 35 declares no model: `approval_trace.py`, the campaign instrumentation (conventions.md, "Campaign Instrumentation") |
 | Views | 15 XML files (9 `views/` + 4 `reports/` + 2 `wizards/`) |
 | Wizards | 2 transient models |

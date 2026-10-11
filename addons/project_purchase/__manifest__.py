@@ -5,7 +5,7 @@
     "summary": "Link purchase orders and purchase costs to projects",
     "description": "Adds project references to purchase orders, propagates analytic distribution to lines and supplies purchase navigation and profitability entries.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "project_account",

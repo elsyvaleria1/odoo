@@ -6,7 +6,7 @@
     "summary": "Price delivery methods and add shipping charges to sales orders",
     "description": "Configure delivery carriers, availability conditions and shipping prices. Adds delivery-charge lines to orders; provider-specific modules supply external shipping services.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "payment_custom",

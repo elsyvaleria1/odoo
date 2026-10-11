@@ -5,7 +5,7 @@
     "summary": "Define and run browser tours for application workflows",
     "description": "Store tour definitions and their steps, expose tour configuration and track consumed tours. Supports application walkthroughs and browser test scenarios.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

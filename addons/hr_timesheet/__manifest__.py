@@ -8,7 +8,7 @@
     "description": "Adds timesheet entries linked to employees, projects, tasks and analytic accounting. Computes task time totals and remaining hours and provides analysis and portal views. Employee cost information comes from the hourly-cost dependency; billing and advanced validation are supplied by integration addons.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/timesheet",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "hr_hourly_cost",

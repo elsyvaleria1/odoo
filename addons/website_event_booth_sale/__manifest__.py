@@ -5,7 +5,7 @@
     "summary": "Add selected event booths to the website sales checkout",
     "description": "Connects booth registration to sales cart lines and adapts booth quantity and contact handling. Requires sale-enabled booth categories and products; ordering and payment processing are supplied by the event sales and eCommerce dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event_booth_sale",
         "website_event_booth",

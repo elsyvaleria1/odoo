@@ -6,7 +6,7 @@
     "summary": "Warn about vehicle information needed for payroll",
     "description": "Supplies payroll dashboard warning definitions for employee vehicle data. Payroll calculations remain in the payroll and country-specific modules.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_payroll",
         "hr_fleet",

@@ -8,7 +8,7 @@
     "description": "Adds SMS mailing lists, test sends, delivery traces, unsubscribe links and A/B testing. Delivery requires the configured SMS service and sufficient credits.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/sms-marketing",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "portal",
         "mass_mailing",

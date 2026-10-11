@@ -5,7 +5,7 @@
     "summary": "Test AI Fields behaviour, including ai fields, ai fields access",
     "description": "Run regression tests for AI Fields. Loaded test suites include ``TestAiFieldsCrons``, ``TestAiFields``, ``TestAiFieldsAccess``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai_fields",
     ],

@@ -6,7 +6,7 @@
     "summary": "Perform quality checks while processing manufacturing work orders",
     "description": "Link quality checks to work orders and provide pass, fail and measurement actions for their check sequence. Adds work-order quality alerts and product quality-control links.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "quality_mrp",
         "mrp_workorder",

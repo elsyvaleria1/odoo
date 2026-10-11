@@ -8,7 +8,7 @@
     "description": "Provides website records, page editing, themes, menus, publication controls, search and SEO metadata. Supports multiple websites and configured forms that create permitted records. Online stores, blogs, forums and other business websites are supplied by their respective addons.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/website",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "digest",

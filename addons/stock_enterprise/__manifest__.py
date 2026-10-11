@@ -6,7 +6,7 @@
     "summary": "Review stock operations through maps and cohort reports",
     "description": "Adds transfer map views, stock-move views and cohort reporting to Inventory, with associated settings and frontend components.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock",
         "web_cohort",

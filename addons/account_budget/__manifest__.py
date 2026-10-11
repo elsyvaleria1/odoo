@@ -6,7 +6,7 @@
     "summary": "Compare analytic budgets with recorded costs and revenues",
     "description": "Define budget periods, lines and revisions and calculate their achieved amounts. Provides budget confirmation, completion and analysis views.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "accountant",
     ],

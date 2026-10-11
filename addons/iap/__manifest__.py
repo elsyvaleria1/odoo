@@ -6,7 +6,7 @@
     "summary": "Manage service accounts and credit access for consuming addons",
     "description": "Adds service definitions, credential-backed account tokens, account configuration and remote credit-balance or purchase links, plus service-request helpers. Consumer addons implement their specific paid features; balances and service availability depend on the external IAP endpoint and account.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
         "credential",

@@ -7,7 +7,7 @@
     "summary": "Review formatting corrections and merge candidate duplicate records",
     "description": "Provides configurable cleaning and matching rules, candidate review, merge actions and scheduled processing. The selected models, matching thresholds and merge settings determine which records are affected.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "data_recycle",
         "phone_validation",

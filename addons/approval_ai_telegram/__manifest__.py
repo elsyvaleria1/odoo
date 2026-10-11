@@ -6,7 +6,7 @@
     "summary": "Collect approval requests from text or voice with optional AI classification",
     "description": "Adds a guided request-intake flow, optional model-based category suggestions, manual category selection and confirmation before creation. Uses the model gateway for classification and speech services for eligible voice notes. Requires enabled commands, linked internal users and configured approval categories; AI service access is needed only for the enabled AI features.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration_machine_learning",
         "speech_telegram",

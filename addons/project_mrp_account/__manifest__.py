@@ -5,7 +5,7 @@
     "summary": "Include manufacturing analytic costs in project profitability",
     "description": "Propagates project analytic accounts into manufacturing moves and work-order entries and reports their costs in project profitability.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_account",
         "project_mrp",

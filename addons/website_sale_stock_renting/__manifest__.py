@@ -5,7 +5,7 @@
     "summary": "Calculate rental product availability using warehouse stock and booked periods",
     "description": "Adds date-range availability, preparation time and cart warnings for rental stock products. Stock checks use the website warehouse and configured out-of-stock policy; valid rental dates are required for period-based quantities.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale_renting",
         "website_sale_stock",

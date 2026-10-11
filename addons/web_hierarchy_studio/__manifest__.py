@@ -5,7 +5,7 @@
     "summary": "Edit hierarchy view settings in Studio",
     "description": "Adds Studio editor components for the hierarchy view type. Requires the corresponding view implementation and Studio.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_studio",
         "web_hierarchy",

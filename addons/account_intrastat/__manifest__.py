@@ -5,7 +5,7 @@
     "summary": "Collect trade classifications and invoice data for Intrastat reporting",
     "description": "Provide commodity, transaction and transport reference data and invoice fields for Intrastat. Country modules add their declaration layouts and export formats.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
     ],

@@ -7,7 +7,7 @@
     "description": "Maps device and profile settings to MQTT streams, including broker URL, TLS selection, topics, client ID, QoS and optional credentials. Connect actions activate streams and send actions enqueue frames; read actions return stream status. Requires a reachable broker, appropriate topics and a running integration stream worker.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration_mqtt",
         "device",

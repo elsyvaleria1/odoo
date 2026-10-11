@@ -8,7 +8,7 @@
     "description": "Consumes the supported PLC counter payload through device MQTT streams, storing timestamped readings and hourly counter buckets with reset handling. Links configured devices to work centers and records counters against active work orders for quantity and rate reporting. Requires matching payload identifiers, MQTT credentials, certificates where configured and a running stream worker.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device",
         "device_mqtt",

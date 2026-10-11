@@ -6,7 +6,7 @@
     "summary": "Test Mail Integration behaviour, including controller attachment, controller reaction, controller update",
     "description": "Run regression tests for Mail Integration. Loaded test suites include ``TestPortalAttachmentController``, ``TestPortalMessageReactionController``, ``TestPortalMessageUpdateController``, ``TestPortalThreadController``, ``TestIrMailServerPersonal``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "mail_bot",

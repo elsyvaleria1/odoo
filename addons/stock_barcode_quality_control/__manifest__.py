@@ -5,7 +5,7 @@
     "summary": "Open quality checks and refresh their results in barcode transfers",
     "description": "Connects barcode picking actions to transfer quality checks, including on-demand checks. Saves the current transfer before opening the quality action and refreshes line data afterwards; quality points, check types and transfer configuration come from the quality dependencies.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_barcode",
         "quality_control",

@@ -5,7 +5,7 @@
     "summary": "Create sales orders from supported UBL order documents",
     "description": "Map UBL order headers, products and amounts into sales order values. Uses product identification criteria when matching imported order lines.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "trade_edi_ubl",

@@ -6,7 +6,7 @@
     "summary": "Capture IoT camera images and expose device triggers in work order steps",
     "description": "Adds camera capture to picture checks, workcenter trigger information and IoT printer targeting for quality reports. The camera path requires a configured IoT box and device identifier; measurement handling may be supplied by additional quality extensions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_workorder",
         "quality_iot",

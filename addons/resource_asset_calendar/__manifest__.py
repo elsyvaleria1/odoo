@@ -5,7 +5,7 @@
     "summary": "Restrict appointment bookings by asset availability",
     "description": "Links assets to appointment types and checks their bookable state when preparing slots and validating booking lines.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "resource_mail",
         "calendar",

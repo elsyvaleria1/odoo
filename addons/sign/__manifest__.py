@@ -8,7 +8,7 @@
     "description": "Provides document templates with signature and input fields, signing requests, recipient roles and completion records. Includes invitation links, portal access and downloadable completed documents. Optional authentication methods and certificate features require their relevant configuration or integration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/sign",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "attachment_indexation",

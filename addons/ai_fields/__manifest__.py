@@ -5,7 +5,7 @@
     "summary": "Fill configured fields and properties using AI prompts",
     "description": "Adds prompt and record-domain settings for AI-computed fields and scheduled filling of eligible empty values. Requires a configured AI provider; generated values depend on the prompt and source records.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
     ],

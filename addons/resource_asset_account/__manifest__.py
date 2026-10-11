@@ -6,7 +6,7 @@
     "summary": "Link bill and analytic lines to assets and their cost history",
     "description": "Adds asset references to accounting lines, derives asset logs from bills and links installed parts to their bill lines. Flagged part reviews can hold related bill payments.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "resource_asset_product",

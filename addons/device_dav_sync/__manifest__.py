@@ -11,7 +11,7 @@
     "images": [
         "static/description/icon.png",
     ],
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device",
         "calendar",

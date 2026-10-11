@@ -6,7 +6,7 @@
     "summary": "Share employee job-referral links through WhatsApp",
     "description": "Adds a job action and referral message template for the WhatsApp composer. Requires a configured WhatsApp account and recipient number.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_referral",
         "whatsapp",

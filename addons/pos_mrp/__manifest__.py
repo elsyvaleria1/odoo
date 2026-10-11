@@ -6,7 +6,7 @@
     "summary": "Calculate POS product costs through related manufacturing moves",
     "description": "Extends POS stock-move selection and Anglo-Saxon unit-cost calculation for manufactured products.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "mrp",

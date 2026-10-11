@@ -8,7 +8,7 @@
     "description": "Stores prepaid-wallet accounts linked to accounting accounts, cards and holders, balance observations, transactions and statements. Provides low-balance indicators and scheduled consolidation of older snapshots. Data must be entered or imported by a separate integration; this addon does not itself post top-ups or consumption as accounting entries.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "mail",

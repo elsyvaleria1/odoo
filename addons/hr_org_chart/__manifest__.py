@@ -5,7 +5,7 @@
     "summary": "Browse employee managers and subordinates in an organization chart",
     "description": "Add organization-chart views and data endpoints for employees. Resolve managers, subordinate relationships and links to employee records.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "web_hierarchy",

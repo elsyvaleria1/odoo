@@ -4,7 +4,7 @@
     "summary": "Expose rental orders in project sales navigation",
     "description": "Extends project sales-order domains and actions and adds the associated rental sales view integration.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_renting",
         "sale_project",

@@ -5,7 +5,7 @@
     "summary": "Create helpdesk tickets from email content through the mailbox integration",
     "description": "Adds an authenticated mail-plugin ticket-creation endpoint and contact ticket listings. The endpoint requires an existing contact and ticket creation rights; mail content logging extends the plugin model whitelist. A compatible configured mailbox client is required.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "helpdesk",
         "mail_plugin",

@@ -7,7 +7,7 @@
     "description": "Suggests the order of a delivery trip's stops from TomTom's routing with live traffic, and stores the estimated arrival at each customer, with a service time per stop. Opens the route in Google Maps for the driver. When the trip departs, each seller gets a Telegram message with a WhatsApp link to tell the customer the estimated arrival. While the trip is on the road the arrival times are refreshed from the vehicle's GPS, and a delay above a threshold is reported to the supervisor, the driver and the seller. The scan wizard can read codes with the phone camera, and the trip sheet and delivery slip print a QR code. Requires a TomTom API key held as a credential of the outbound endpoint TomTom Routing (one per company, or one without a company for all of them), warehouse and customer coordinates, and linked Telegram chats.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_fleet_trace",
         "sale_stock",

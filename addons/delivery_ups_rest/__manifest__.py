@@ -6,7 +6,7 @@
     "summary": "Request UPS rates and shipment labels through the REST integration",
     "description": "Implements rate requests, shipment creation, return labels, tracking links and cancellation using UPS REST endpoints. Requires a UPS shipper account, client credentials and configured package and service options.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_delivery",
         "mail",

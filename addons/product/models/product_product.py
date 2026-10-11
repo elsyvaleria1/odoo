@@ -71,9 +71,9 @@ class ProductProduct(models.Model):
     )
     # Verbatim from OCA product-attribute's product_manufacturer (AGPL-3;
     # OpenERP SA and the Odoo Community Association), which reached this module
-    # through agromarin's port of it. They ship under this module's LGPL-3 by
-    # the fork owner's decision of 2026-09-09, recorded in the knowledge vault
-    # under research/2026-09-09-product-manufacturer-licence-provenance.md
+    # through agromarin's port of it. The original provenance is recorded in
+    # research/2026-09-09-product-manufacturer-licence-provenance.md in the
+    # knowledge vault. The current module license is 0BSD (LICENSE.addons).
     manufacturer_id = fields.Many2one(comodel_name="res.partner")
     manufacturer_pname = fields.Char(string="Manufacturer Product Name")
     manufacturer_pref = fields.Char(string="Manufacturer Product Code")

@@ -7,7 +7,7 @@
     "summary": "Record employee skills, certification dates and resume entries",
     "description": "Adds skill types, levels, employee and job skill assignments, certification validity fields and resume histories. Provides skill reports and printable employee resumes. Recorded proficiency and certification dates are maintained in the database; the addon does not independently verify qualifications.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
     ],

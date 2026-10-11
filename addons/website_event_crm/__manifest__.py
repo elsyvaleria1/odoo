@@ -6,7 +6,7 @@
     "description": "Extend the lead description and preparation values from website event registration information. Uses the event lead-generation rules supplied by its dependencies.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event_crm",
         "website_event",

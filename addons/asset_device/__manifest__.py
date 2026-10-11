@@ -7,7 +7,7 @@
     "description": "Links a device to its own asset and reads serial number, IMEI and plate from that asset. Validates identity consistency and adds navigation between devices and assets.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "device_resource",
         "asset_ledger",

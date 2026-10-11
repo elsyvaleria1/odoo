@@ -5,7 +5,7 @@
     "summary": "Extract searchable text from supported document attachments",
     "description": "Index text from PDF, office-document and spreadsheet attachments. Available formats depend on the installed extraction libraries; PDF extraction uses pdfminer.six.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

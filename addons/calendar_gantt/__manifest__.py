@@ -5,7 +5,7 @@
     "summary": "Display resource and staff bookings on a timeline",
     "description": "Adds Gantt views for calendar bookings, with resource availability and appointment actions adapted to the timeline.",
     "author": "AgroMarin",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "web_gantt",

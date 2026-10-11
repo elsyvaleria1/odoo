@@ -5,7 +5,7 @@
     "summary": "Test Field Conversion behaviour, including html",
     "description": "Run regression tests for Field Conversion. Loaded test suites include ``TestCharExport``, ``TestIntegerExport``, ``TestFloatExport``, ``TestCurrencyExport``, ``TestTextExport``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

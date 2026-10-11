@@ -5,7 +5,7 @@
     "summary": "Display check numbers during bank reconciliation",
     "description": "Exposes payment check numbers on journal items and adds them to the reconciliation views.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "account_check_printing",

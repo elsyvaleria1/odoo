@@ -8,7 +8,7 @@
     "description": "Provides survey questions, answer records, invitations, scoring, quotas and response statistics. Supports live sessions and configured completion certificates or follow-up actions. Scores and certificates reflect the survey rules configured in the database.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/surveys",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_signup",
         "http_routing",

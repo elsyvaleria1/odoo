@@ -5,7 +5,7 @@
     "summary": "Create email campaigns for course participants",
     "description": "Add a mailing action to courses. Initialize campaign recipients from the selected course's members.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_slides",
         "mass_mailing",

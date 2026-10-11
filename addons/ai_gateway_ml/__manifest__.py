@@ -7,7 +7,7 @@
     "description": "Adds company-purpose policy checks, credential-vault lookup, gateway transport selection and Anthropic model integration to AI services. Missing usable vault keys fall back to inherited credential lookup. File or raw-data requests and requests without a transport service retain inherited transport after the policy check; configured models and provider access are required.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "ai",

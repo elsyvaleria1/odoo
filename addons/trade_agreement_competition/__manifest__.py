@@ -5,7 +5,7 @@
     "summary": "Compare agreement line prices with eligible recorded competitor offers",
     "description": "Adds computed market price, comparison scope and percentage gap to agreement lines. Uses the current date, trade direction, company and partner to select eligible recorded offers, with partner, industry and broader market scopes supplied by the competition dependency. Converts prices to the agreement unit and currency. Sales and purchase bridges expose the fields in their forms.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "trade_agreement",
         "trade_competition",

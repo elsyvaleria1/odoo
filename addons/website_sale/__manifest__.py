@@ -8,7 +8,7 @@
     "description": "Provides product pages, shopping carts, checkout, customer order pages and sales-order creation. Online payment and shipping options depend on configured providers and delivery integrations.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/ecommerce",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "website_payment",

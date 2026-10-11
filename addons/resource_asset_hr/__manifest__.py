@@ -5,7 +5,7 @@
     "summary": "Select asset custodians by employee and review their assigned assets",
     "description": "Exposes asset operator, future operator and manager assignments through employee fields and adds employee asset navigation. Custody remains recorded on resource assignments. The departure wizard can end custody assignments when its release-assets option is enabled, which is the default.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "resource_mail",

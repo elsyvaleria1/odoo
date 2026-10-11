@@ -263,7 +263,7 @@
 | `webclient/menus/` | pages | 6 | `menu` service, tree helpers, the home menu layout parser, command providers, the localStorage menu cache, and the per-user usage table that ranks the palette's `/` namespace and the home menu's recent row |
 | `webclient/navbar/` | pages | 1 | Navigation bar: home-menu toggle, app brand, sub-menus, systray, mobile sidebar |
 | `webclient/promote_studio/` | pages | 4 | Studio upsell: the install dialog, its systray item, the "Add Custom Field" entry patched into the list optional-columns menu and the "Automations" entry patched into the group config menu |
-| `webclient/settings_form_view/` | pages | 0 | Template extension stamping the edition and licence on the Settings about block |
+| `webclient/settings_form_view/` | pages | 0 | Template extension stamping the edition on the Settings about block |
 | `webclient/share_target/` | pages | 1 | `shareTarget` service receiving files from the PWA service worker |
 | `webclient/share_url/` | pages | 1 | `navigator.share` of the current URL: a user-menu item and the burger-menu button, shown only in a standalone (PWA) display |
 | `webclient/switch_company_menu/` | pages | 3 | Company switcher dropdown, its rows, and the toggle/log-into actions |

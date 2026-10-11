@@ -6,7 +6,7 @@
     "summary": "Find records to archive or delete using configured rules",
     "description": "Provides model-specific selection domains, reviewable candidate records and scheduled processing. Rules select archive or deletion and manual or automatic execution.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

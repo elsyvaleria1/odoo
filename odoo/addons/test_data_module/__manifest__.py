@@ -6,5 +6,5 @@
     "summary": "Provide an addon without a Python initializer for data-module installation tests",
     "description": "Supply a manifest-only addon fixture. The separate data-module installation test suite checks loading an addon without a Python initializer.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
 }

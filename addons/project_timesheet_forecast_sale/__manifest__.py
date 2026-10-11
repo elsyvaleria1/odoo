@@ -6,7 +6,7 @@
     "description": "Connect sales line planning hours, project shifts and analytic timesheet entries. Provides planning and timesheet analysis views with project drill-down actions.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/project",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project_timesheet_forecast",
         "sale_timesheet",

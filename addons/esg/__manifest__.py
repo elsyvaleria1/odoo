@@ -6,7 +6,7 @@
     "summary": "Estimate carbon emissions from accounting entries and recorded activities",
     "description": "Applies configured emission factors to accounting lines and other activity records, tracks uncertainty and presents carbon reports by source and scope. Estimates depend on the supplied quantities, factors and classifications.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "web_hierarchy",

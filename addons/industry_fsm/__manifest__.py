@@ -7,7 +7,7 @@
     "summary": "Schedule onsite tasks and record the time spent on them",
     "description": "Extend project tasks with field-service workflows, customer navigation and timesheet timer actions. Uses projects and timesheets to track onsite work.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "project_gantt",
         "project_map",

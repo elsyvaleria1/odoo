@@ -5,7 +5,7 @@
     "summary": "Read business cards through the extraction framework for CRM lead creation",
     "description": "Sets the attachment extraction type to business_card and maps returned card fields to CRM lead values. Uses the configured extraction strategies and falls back to the inherited business-card reader when no cards are returned; provider access and any fallback service requirements come from the dependencies.",
     "author": "AgroMarin",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "crm_enterprise",
         "extract_ai",

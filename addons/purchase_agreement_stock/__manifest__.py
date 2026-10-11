@@ -7,7 +7,7 @@
     "summary": "Use purchase agreements when preparing replenishment orders",
     "description": "Extend purchase and procurement values with the selected agreement and picking type. Supplies agreement-related stock configuration and views.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase_agreement",
         "purchase_stock",

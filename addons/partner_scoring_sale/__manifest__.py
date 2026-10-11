@@ -6,7 +6,7 @@
     "description": "Adds a stored order tier and a confirmation snapshot used by sales reporting. A nonempty snapshot takes precedence over the current customer tier; if no tier was captured, the displayed tier continues to follow the commercial partner.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "partner_scoring",
         "sale",

@@ -6,7 +6,7 @@
     "description": "Adds to the Delivered form of the driver screen a step for the customer at the door: with signal, the driver sends them a code on their own channels (email, Telegram) and types the code they read out. The code proves the delivery as the customer received it, which then counts as its evidence: no photo of the slip, no drawn signature needed. Offered on full deliveries only: a code given before a partial one would vouch for what the customer did not take. Without signal the step is not shown and the driver captures the signature as before; the customer is asked on their own channels once the delivery reaches the server.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_fleet_proof",
         "stock_fleet_trace",

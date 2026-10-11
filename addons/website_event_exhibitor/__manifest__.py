@@ -8,7 +8,7 @@
     "description": "Adds exhibitor website pages and event-page presentation using the configured sponsor and exhibitor information.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_event",
     ],

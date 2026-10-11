@@ -6,7 +6,7 @@
     "summary": "Provide the core registry, users, companies and module-management models",
     "description": "Define the base business and system models used by the server, including users, companies, contacts, modules and access configuration. Loaded as the foundation for application modules.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "data": [
         "data/res_bank.xml",
         "data/res.lang.csv",

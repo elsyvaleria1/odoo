@@ -5,7 +5,7 @@
     "summary": "A cash sale handed over on the route takes its goods from the stock the salesperson's vehicle carries to sell",
     "description": "When a salesperson on a departed traced trip collects a cash sale whose customer takes the goods at once, and the vehicle carries enough unreserved stock of every product of the order, the delivery leaves from the vehicle's location and counts as delivered in the trip's balance. Otherwise it leaves from the warehouse, as a counter pickup. What the vehicle does not sell comes back with the trip's unloading.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_collection_sale_fleet",
         "stock_fleet_trace",

@@ -6,7 +6,7 @@
     "summary": "Write, organize and share internal articles",
     "description": "Provides hierarchical articles, editable content, access roles and sharing controls, with templates and embedded application content.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
         "digest",

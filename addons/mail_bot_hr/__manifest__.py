@@ -6,7 +6,7 @@
     "description": "Adds bot status and notification fields to the user form supplied by the HR integration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/discuss",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail_bot",
         "hr",

@@ -6,7 +6,7 @@
     "description": "Registers an OCR text reader using RapidOCR and the declared ONNX Runtime dependency. Runs when the document reader cost ceiling permits it and cheaper readers have not supplied text. Produces page-separated text for downstream strategies; recognition and line structure depend on the source image and OCR model.",
     "author": "AgroMarin",
     "website": "https://agromarin.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "extract",
     ],

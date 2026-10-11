@@ -7,7 +7,7 @@
     "summary": "Plan replenishment from product demand forecasts",
     "description": "Provides period-based forecasts, target stock and replenishment quantities with actual-demand and supply comparisons. Can launch replenishment using configured manufacturing or purchasing routes.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "base_import",
         "mrp",

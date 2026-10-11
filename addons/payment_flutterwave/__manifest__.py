@@ -7,7 +7,7 @@
     "summary": "Accept payments through the Flutterwave integration",
     "description": "Adds redirect checkout and provider-specific transaction-status handling. Implements saving supported payment tokens during payment. Requires a configured Flutterwave merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Manual capture and refunds are not implemented.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

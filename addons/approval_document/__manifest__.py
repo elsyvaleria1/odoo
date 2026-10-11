@@ -5,7 +5,7 @@
     "summary": "Request view or edit access to documents through approval",
     "description": "Adds authenticated access-request pages for eligible document links and a document approval-access adapter. The supplied category routes review to the owner and document managers; approval grants the requested role through document sharing. Shortcut requests must target the underlying document.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "document",

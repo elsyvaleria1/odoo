@@ -8,7 +8,7 @@
     "description": "Provides expense records with receipts, employee and company payment handling, approval actions and accounting links. Includes splitting, duplicate-review and posting wizards. Posting and payment follow the configured journals and workflow; customer reinvoicing requires the sales integration.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/expenses",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "web_tour",

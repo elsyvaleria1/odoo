@@ -6,7 +6,7 @@
     "summary": "Provide AI agents, source indexing and model-provider connections",
     "description": "Supply AI agent and topic models, document-source indexing, chat responses and AI tools backed by configured model providers. Provider credentials and agent configuration determine which services and sources are available.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "mail",

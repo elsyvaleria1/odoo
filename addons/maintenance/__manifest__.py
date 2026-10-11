@@ -7,7 +7,7 @@
     "description": "Provides maintenance orders, plans, team assignment and resource or asset links. Tracks maintenance dates and service-history metrics and supports configured resource blocking. Scheduling and reported metrics depend on entered orders, plans and asset information.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/maintenance",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval",
         "mail",

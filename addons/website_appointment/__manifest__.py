@@ -7,7 +7,7 @@
     "description": "Publish appointment types and booking pages on websites. Creates calendar events from the selected slots and supports appointment invitation links.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "website_enterprise",

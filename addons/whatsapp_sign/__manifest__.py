@@ -4,7 +4,7 @@
     "summary": "Send signature request links and status messages through configured WhatsApp templates",
     "description": "Adds WhatsApp as a signing communication channel with access links, completion messages and attachment downloads. Requires configured approved message templates, WhatsApp service access and signer phone numbers; document signing remains in the Sign dependency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sign",
         "whatsapp",

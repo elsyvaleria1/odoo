@@ -1,7 +1,13 @@
 
 For copyright information, please see the COPYRIGHT file.
 
-Odoo is published under the GNU LESSER GENERAL PUBLIC LICENSE, Version 3
+All modules shipped in addons/ and odoo/addons/ are licensed under the
+Zero-Clause BSD license (0BSD), included at the end of this document.
+That grant supersedes their earlier module license declarations. Bundled
+third-party libraries, fonts, and assets retain their own licenses and notices.
+
+The Odoo framework outside those module directories is published under the
+GNU LESSER GENERAL PUBLIC LICENSE, Version 3
 (LGPLv3), as included below. Since the LGPL is a set of additional
 permissions on top of the GPL, the text of the GPL is included at the
 bottom as well.
@@ -857,3 +863,36 @@ Public License instead of this License.  But first, please read
 
 
 **************************************************************************
+
+Module licensing
+================
+
+SPDX-License-Identifier: 0BSD
+
+All modules shipped in addons/ and odoo/addons/ in this repository are
+licensed under the Zero-Clause BSD license below. This grant covers module
+source code, tests, documentation, and project-authored assets. It supersedes
+earlier LGPL, AGPL, Odoo Enterprise, and Odoo Proprietary license declarations
+for that module code, with authorization from the relevant copyright holders.
+Existing copyright notices and contributor attribution remain applicable.
+
+Bundled third-party libraries, fonts, and other third-party assets retain
+their respective licenses and notices. The framework outside these module
+directories remains covered by LICENSE.
+
+Module manifests use "Other OSI approved licence", the Odoo-supported
+selection value for this license. The specific license is 0BSD.
+
+Zero-Clause BSD
+===============
+
+Permission to use, copy, modify, and/or distribute this software for
+any purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
+DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.

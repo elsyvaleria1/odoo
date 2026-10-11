@@ -5,7 +5,7 @@
     "summary": "Review employee attendances and overtime on a timeline",
     "description": "Adds attendance Gantt views with working-hour availability, overtime progress and links to attendance details.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_attendance",
         "hr_gantt",

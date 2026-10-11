@@ -5,7 +5,7 @@
     "summary": "Calculate sales order margins from line revenues and costs",
     "description": "Add cost and margin calculations to sales lines and order totals. Extend sales analysis with margin information.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
     ],

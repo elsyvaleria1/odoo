@@ -7,7 +7,7 @@
     "summary": "Import Amazon orders and synchronize supported shipment and offer information",
     "description": "Adds Amazon accounts, marketplaces and product offers with order-import and shipment-synchronization workflows. Supports the implemented Amazon-fulfilled and merchant-fulfilled order handling. Requires authorized seller accounts, product mappings and appropriate stock and delivery configuration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "sale_team",

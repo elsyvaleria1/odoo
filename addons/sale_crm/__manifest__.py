@@ -6,7 +6,7 @@
     "summary": "Create sales quotations from CRM opportunities",
     "description": "Link quotations and orders to opportunities and expose their sales totals. Provides actions to create or inspect the associated sales documents.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "crm",

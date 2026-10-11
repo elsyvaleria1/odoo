@@ -4,7 +4,7 @@
     "summary": "Send payment links through WhatsApp",
     "description": "Add a WhatsApp sending action to the payment-link wizard. Uses the payment-link message template and the configured WhatsApp account.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
         "whatsapp",

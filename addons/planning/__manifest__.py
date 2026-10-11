@@ -7,7 +7,7 @@
     "summary": "Assign resource shifts and publish employee schedules",
     "description": "Provides planning slots, roles, templates and recurring shift generation. Includes scheduling views, publication actions and employee pages for supported assignment and shift-change actions. Availability and allocation depend on configured resources, working schedules and planning settings.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "hr_hourly_cost",

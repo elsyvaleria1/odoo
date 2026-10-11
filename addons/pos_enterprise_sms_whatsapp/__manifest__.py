@@ -5,7 +5,7 @@
     "summary": "Notify customers when orders are received or ready",
     "description": "Adds SMS and WhatsApp templates to preparation displays and sends configured notifications on preparation events. Requires the corresponding messaging account and templates.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_enterprise",
         "whatsapp",

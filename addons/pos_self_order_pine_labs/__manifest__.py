@@ -5,7 +5,7 @@
     "summary": "Process kiosk payments through Pine Labs",
     "description": "Connects the self-order payment flow to the Pine Labs POS integration and its payment-status handling. Requires that integration and a configured supported terminal.",
     "author": "Odoo IN Pvt Ltd",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_pine_labs",
         "pos_self_order",

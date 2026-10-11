@@ -7,7 +7,7 @@
     "description": "Adds relationship types and dated links between contacts, including inverse labels and relationship attributes. Provides contact relationship views and a path-inspection wizard. Network results reflect recorded links and configured types rather than independently verified personal or commercial relationships.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "partner",
         "web",

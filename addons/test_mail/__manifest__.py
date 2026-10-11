@@ -6,7 +6,7 @@
     "summary": "Test Mail behaviour, including base id spaces, controller attachment, controller binary",
     "description": "Run regression tests for Mail. Loaded test suites include ``TestBaseIdSpaces``, ``TestBaseSuggestedMessageSort``, ``TestAttachmentController``, ``TestPublicBinaryController``, ``TestMessageController``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "test_orm",

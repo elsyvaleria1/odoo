@@ -7,7 +7,7 @@
     "summary": "Manage asset depreciation boards and their accounting entries",
     "description": "Create depreciation boards linked to resource assets and generate their depreciation journal entries. Includes depreciation profiles, board adjustments and asset accounting reports; asset identity and lifecycle are supplied by Resource Assets.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "resource_mail",

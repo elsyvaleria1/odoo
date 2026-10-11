@@ -5,7 +5,7 @@
     "summary": "Save geolocation information from AvaTax address validation",
     "description": "Extend the partner address validation wizard with geolocation values. Applies the validated address information when the user saves the result.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_avatax",
         "geocoding",

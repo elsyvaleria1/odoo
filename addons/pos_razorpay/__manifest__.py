@@ -7,7 +7,7 @@
     "summary": "Request, track and refund Razorpay terminal payments for INR companies",
     "description": "Adds payment initiation, status lookup, cancellation and refund requests through the Razorpay POS integration. Requires merchant credentials, a configured terminal and a company whose currency is INR; available payment instruments depend on the provider and terminal.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "point_of_sale",
         "integration",

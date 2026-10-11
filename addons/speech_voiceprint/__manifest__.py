@@ -5,7 +5,7 @@
     "summary": "Match transcript speakers against enrolled employee voiceprints",
     "description": "Adds employee enrollment and revocation endpoints, stored speaker embeddings and threshold-based matching on transcript speakers. Requires the local decoding and inference libraries and a configured model file. Enrollment records consent and matching can leave speakers unidentified; it is not guaranteed identity verification.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr",
         "speech",

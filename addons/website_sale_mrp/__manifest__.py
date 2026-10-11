@@ -5,7 +5,7 @@
     "summary": "Account for shared kit components when calculating unavailable cart quantities",
     "description": "Adds a storefront quantity endpoint and sale-order calculations for kits and their components already present in the cart. Uses phantom bills of materials and free component stock to adjust availability; stock management and checkout are supplied by dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale_stock",
         "sale_mrp",

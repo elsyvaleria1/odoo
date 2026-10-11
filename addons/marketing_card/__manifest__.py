@@ -5,7 +5,7 @@
     "summary": "Generate personalized image cards for mailing campaigns",
     "description": "Provides card templates, campaign-specific dynamic content, preview images and tracked sharing links. Mailing integration generates cards for selected recipients.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "link_tracker",
         "mass_mailing",

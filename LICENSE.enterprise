@@ -1,10 +1,18 @@
 
-For copyright information, please see the COPYRIGHT file.
+Historical upstream license notice
+==================================
 
-Odoo Enterprise Edition is published under the Odoo Enterprise
+The text below is preserved as the original upstream licensing notice.
+Modules shipped in this repository are now licensed under 0BSD with
+authorization from their copyright holders; see LICENSE.addons for the
+current module license and its third-party exclusions.
+
+For copyright information, please see COPYRIGHT.enterprise.
+
+Upstream Odoo Enterprise Edition was published under the Odoo Enterprise
 Edition License v1.0, as included below.
 
-This license applies only to the part of this software that is
+The upstream notice applied only to the part of that software that was
 not distributed as part of Odoo Community Edition.
 
 ********************************************************************************

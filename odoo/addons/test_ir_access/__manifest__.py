@@ -5,7 +5,7 @@
     "summary": "Test Access Policy behaviour, including ir access, verbs, separation of duties",
     "description": "Run regression tests for Access Policy. Loaded test suites include ``TestIrAccess``, ``TestAccessOperator``, ``TestDelegatedAccess``, ``TestRetiredAccessTables``, ``TestGroupsWithAccess``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "web",

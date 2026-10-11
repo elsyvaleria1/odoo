@@ -5,7 +5,7 @@
     "summary": "Retain the enterprise subcontracting module dependency",
     "description": "Declares the manufacturing subcontracting dependency. This addon currently supplies no additional models, views, assets or hooks.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp_subcontracting",
     ],

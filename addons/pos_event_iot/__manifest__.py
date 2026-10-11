@@ -5,7 +5,7 @@
     "summary": "Print event badges from POS receipts through IoT",
     "description": "Extends the POS receipt screen with event badge printing and loads the event badge format into POS data. Printing attendee badges updates attendance; a configured report and compatible IoT printer are required for device output.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "iot",
         "pos_event",

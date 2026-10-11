@@ -7,7 +7,7 @@
     "description": "Adds date-range types, named periods, parent relationships, overlap rules and generation settings. Supplies a generation wizard, scheduled range creation and backend domain-editor integration, plus a mixin for model search fields. Consumers configure the relevant date field and period types; periods are not limited to calendar months or years.",
     "author": "ACSONE SA/NV, Odoo Community Association (OCA), AgroMarin",
     "website": "https://github.com/OCA/server-ux",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

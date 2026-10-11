@@ -7,7 +7,7 @@
     "description": "Configure overdue-payment follow-up stages and their email, SMS or letter actions. Generate reminders and track the next follow-up date for the selected customers.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/invoicing",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "sms",

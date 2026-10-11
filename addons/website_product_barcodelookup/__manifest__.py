@@ -5,7 +5,7 @@
     "summary": "Use Barcode Lookup information on website products",
     "description": "Extend product data and image updates from Barcode Lookup for website presentation. Requires the configured Barcode Lookup integration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "product_barcodelookup",
         "website_sale",

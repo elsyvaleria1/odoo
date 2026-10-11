@@ -8,7 +8,7 @@
     "description": "Provides direct and group conversations, mail routing, templates, followers, notifications and activity scheduling. Supplies chatter mixins for business records and browser calling components. Email delivery requires configured mail transport; calls require compatible clients and network access.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/discuss",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "integration",

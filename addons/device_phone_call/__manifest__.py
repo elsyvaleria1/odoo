@@ -6,7 +6,7 @@
     "description": "Adds authenticated device routes for call-log batches and call recordings, on the companion app's wire contract, and the phone-system device category. Each reported call becomes a phone call of the device's company, matched to a contact and to the device's user; a recording is filed on the call it belongs to, and one that arrives ahead of its call-log entry makes a call that the entry completes on arrival.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "device",

@@ -7,7 +7,7 @@
     "description": "Enrollments own credentials and revocation. Channels own routing and inbound policy. Hardware bindings are optional; software enrollment does not manufacture equipment. Existing device endpoints remain compatibility adapters.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "device",
     ],

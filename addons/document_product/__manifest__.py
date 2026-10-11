@@ -7,7 +7,7 @@
     "description": "Adds product document configuration, counts and navigation. The create-product action creates one product template for the selected documents, links their attachments and uses the first suitable image as its product image; it does not extract a product catalog from file contents.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/documents",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "product",

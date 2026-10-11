@@ -6,7 +6,7 @@
     "description": "Adds the Passkey proof method. The passkey signs a WebAuthn challenge derived from the proof challenge's one-time token and its digest of the record's figures, so the signature covers those figures. Only the user's own passkeys are offered and accepted, with user verification (fingerprint, face or device PIN) required and the sign count advanced. The evidence keeps the signed authenticator data, client data, signature and public key, so the signature can be checked again later. Requires a browser and authenticator supporting WebAuthn and a correctly configured site URL, as passkey login does.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_passkey",
         "proof",

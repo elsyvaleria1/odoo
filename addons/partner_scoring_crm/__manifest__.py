@@ -6,7 +6,7 @@
     "description": "Adds a related customer tier field, lead view integration and a registered scoring-frequency field. The tier follows the commercial partner; predictive scoring uses the existing CRM mechanism and its configured fields.",
     "author": "AgroMarin",
     "website": "https://agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "partner_scoring",
         "crm",

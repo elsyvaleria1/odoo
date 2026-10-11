@@ -5,7 +5,7 @@
     "summary": "Connect self-order kiosks to configured IoT devices",
     "description": "Loads IoT box configuration for kiosks and handles device payment results and cancellation. Requires a configured compatible IoT installation.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "pos_iot",
         "pos_self_order",

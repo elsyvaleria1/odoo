@@ -7,7 +7,7 @@
     "summary": "Accept payments through the Razorpay integration",
     "description": "Adds direct checkout and provider-specific transaction-status handling. Implements saved payment tokens, full capture, cancellation and full or partial refunds. Requires a configured Razorpay merchant account and credentials; available currencies and payment methods depend on the account and integration configuration. Partial capture is not implemented.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "payment",
     ],

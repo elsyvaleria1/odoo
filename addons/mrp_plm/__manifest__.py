@@ -8,7 +8,7 @@
     "description": "Provides engineering change orders, stages, revision records and document links for products and bills of materials. Supports configured approval workflows and actions to apply revised bills of materials. Manufacturing orders can inspect available changes and update their bill of materials through the provided actions.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/plm",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_product",
         "mrp",

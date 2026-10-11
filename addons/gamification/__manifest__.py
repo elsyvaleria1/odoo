@@ -7,7 +7,7 @@
     "summary": "Track user goals and award badges through configured challenges",
     "description": "Configure challenges, goal definitions and badges. Evaluate goal progress and manage badge grants using the configured periods and participants.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

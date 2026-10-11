@@ -7,7 +7,7 @@
     "summary": "Normalize phone numbers and manage phone blacklist records",
     "description": "Adds country-aware parsing and formatting through phonenumbers, normalized number lookup and blacklist management. Provides phone-aware model helpers and a mail-thread mixin for adopting records; format validation does not establish ownership or reachability of a number, and delivery integrations must apply blacklist rules.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
         "mail",

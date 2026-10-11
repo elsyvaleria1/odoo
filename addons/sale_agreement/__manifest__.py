@@ -6,7 +6,7 @@
     "description": "Adds customer agreement records and lines linked to sales orders, with agreed quantities, dates, prices and price breaks. Order lines use the agreement pricing helpers and confirmed quantities contribute to agreement usage. Requires configured customer agreements and uses the shared trade-agreement lifecycle.",
     "author": "Odoo Community",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale",
         "trade_agreement",

@@ -7,7 +7,7 @@
     "description": "Adds employee work-interval checks to appointment availability. Applies configured non-flexible employee calendars to eligible staff users; the appointment setting controls whether employee working hours restrict the slots.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appointments",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "hr",

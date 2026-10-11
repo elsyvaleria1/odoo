@@ -6,7 +6,7 @@
     "summary": "Test Discuss Integration behaviour, including avatar card tour, livechat hr holidays, im livechat portal",
     "description": "Run regression tests for Discuss Integration. Loaded test suites include ``TestAvatarCardTour``, ``TestLivechatHrHolidays``, ``TestImLivechatPortal``, ``TestDiscussFullPerformance``, ``TestInboxPerformance``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "crm",

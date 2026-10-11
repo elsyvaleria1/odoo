@@ -4,7 +4,7 @@
     "summary": "Accept a customer UPS account on eligible website delivery orders",
     "description": "Adds checkout routes for setting or clearing the UPS account and checking carrier service availability. The selected carrier must enable bill-my-account; shipment rating and account acceptance depend on the UPS integration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "delivery_ups",
         "website_sale",

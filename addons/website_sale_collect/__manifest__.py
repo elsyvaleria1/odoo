@@ -5,7 +5,7 @@
     "summary": "Offer store pickup and location-based stock availability at online checkout",
     "description": "Configure in-store delivery methods and their warehouses. Select pickup locations and compatible payment options when a customer checks out.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "geocoding",
         "payment_custom",

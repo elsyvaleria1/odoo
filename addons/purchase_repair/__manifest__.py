@@ -5,7 +5,7 @@
     "summary": "Open related purchases from repairs and repairs from purchases",
     "description": "Adds linked-record counts and navigation actions to purchase and repair orders.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "repair",
         "purchase_stock",

@@ -6,7 +6,7 @@
     "summary": "Create sales-order spreadsheets from quotation templates",
     "description": "Associate a spreadsheet template with a quotation template and create the order's spreadsheet from it. Provides order navigation, copy handling and cell discussions.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet_edition",
         "sale",

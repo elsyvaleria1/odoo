@@ -7,7 +7,7 @@
     "description": "Provides abstract order and line mixins for workflow, totals, pricing, merging, templates and reporting. Adds shared order configuration and contact order statistics. Sales and purchasing addons define the concrete business orders and their application interfaces.",
     "author": "Odoo Community",
     "website": "https://www.odoo.com",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
         "portal",

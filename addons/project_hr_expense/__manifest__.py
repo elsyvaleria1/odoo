@@ -5,7 +5,7 @@
     "summary": "Include employee expenses in project profitability",
     "description": "Uses project analytic distributions on expenses and adds expense drilldowns and amounts to the project profitability panel.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "project_account",
         "hr_expense",

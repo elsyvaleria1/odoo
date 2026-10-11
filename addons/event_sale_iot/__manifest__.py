@@ -5,7 +5,7 @@
     "summary": "Prevent automatic badge printing while an event registration requires payment",
     "description": "Patches the event registration summary dialog to disable automatic printing when its has_to_pay flag is set. Event sales supplies this flag for registrations with sale status to_pay; badge design and printer support come from other addons.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "iot",
         "event_sale",

@@ -5,7 +5,7 @@
     "summary": "Calculate sales order taxes through AvaTax",
     "description": "Prepare AvaTax service parameters from sales orders and preserve the relevant grouping values when creating invoices. Requires configured AvaTax fiscal positions and credentials.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_external_tax",
         "account_avatax",

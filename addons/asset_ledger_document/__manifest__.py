@@ -6,7 +6,7 @@
     "summary": "Expose linked asset documents and asset-specific document references",
     "description": "Resolves a document’s asset from its resource model and record ID, and adds asset document views and references for fuel cards, highway passes and property-related documents. Supplies folders, tags and document actions alongside the asset and document dependencies. Matching is based on linked records rather than searching document text for serial numbers.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document_product",
         "document_resource_asset",

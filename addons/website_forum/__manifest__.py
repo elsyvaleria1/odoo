@@ -8,7 +8,7 @@
     "description": "Provides forums, posts, answers, tags, votes and moderation actions. Includes website pages and configurable privacy and karma rules. Posting and moderation permissions depend on the forum configuration and user access.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/forum",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "auth_signup",
         "website_mail",

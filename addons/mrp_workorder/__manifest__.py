@@ -7,7 +7,7 @@
     "summary": "Plan and execute work orders through shop-floor and quality-check interfaces",
     "description": "Extends manufacturing with work-order planning views, shop-floor interaction and employee session tracking. Connects work orders to quality checks, instructions, components and production completion actions. Available operations depend on configured manufacturing orders, work centers and quality points.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "quality",
         "mrp",

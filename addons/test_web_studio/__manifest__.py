@@ -6,7 +6,7 @@
     "summary": "Test Web Studio behaviour, including approvals, approval activity, exports",
     "description": "Run regression tests for Web Studio. Loaded test suites include ``TestStudioApprovals``, ``TestStudioApprovalsUIUnit``, ``TestApprovalsActivity``, ``TestStudioExports``, ``TestSpecificStudioExports_SaleOrder``.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "web_studio",
         "website",

@@ -8,7 +8,7 @@
     "description": "Adds rentable products, duration-based pricing and rental dates on sales orders. Provides pickup and return quantity actions, rental status and delay-related pricing. Physical inventory transfer integration is supplied by the rental stock addon.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/rental",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "mixin_report_sql",
         "sale",

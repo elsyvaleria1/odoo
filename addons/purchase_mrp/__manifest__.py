@@ -6,7 +6,7 @@
     "summary": "Link purchased components and services to manufacturing orders",
     "description": "Expose related purchase and manufacturing orders from their respective forms. Carry manufacturing demand and stock-move information through purchase procurement.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mrp",
         "purchase_stock",

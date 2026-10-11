@@ -8,7 +8,7 @@
     "description": "Supplies client helpers for repositories, branches, commits, webhooks, issues, pull requests and reviews, plus a GraphQL query method. Seeds a GitHub integration service and uses the shared transport and credential records. Adds check run, commit status, workflow run, compare and branch calls; mints GitHub App installation tokens limited to named repositories from an app credential; and receives signed webhook deliveries that keep pull requests and the checks of their head commit current, for other modules to follow. Calling addons must provide credentials with permissions for the requested GitHub operation.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "mail",

@@ -5,7 +5,7 @@
     "summary": "Filter planning resources and analysis by recorded employee skills",
     "description": "Exposes current employee skills on planning slots and planning analysis. When a skill filter is present, resource group expansion restricts the displayed resources to matching employees; this does not independently assign shifts or evaluate proficiency.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "planning",
         "hr_skills",

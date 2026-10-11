@@ -8,7 +8,7 @@
     "description": "Adds blogs, posts, tags, publication controls and website routes for reading and searching posts. Provides feed generation and integration with website editing and messaging. Authors maintain the content and choose which posts to publish.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/blog",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_mail",
         "website_partner",

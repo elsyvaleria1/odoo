@@ -5,7 +5,7 @@
     "summary": "Let a bot deliver Odoo notifications only to the Telegram of a company phone assigned to its user",
     "description": "A bot delivering Odoo notifications can be restricted to company phones: a user's notifications, replies and inbox then reach only a Telegram account whose number, shared by its owner and vouched for by Telegram, is the SIM number of an active Mobile Phone device the user carries. A connected account without a shared number is asked for it. The device form shows the Telegram account of the phone's number and who it acts as.",
     "author": "AgroMarin",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "device_mobile",
         "mail_telegram",

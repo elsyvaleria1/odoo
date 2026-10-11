@@ -6,7 +6,7 @@
     "summary": "Synchronize calendar events with authorized Google accounts",
     "description": "Map calendar events and recurring appointments between the application and Google Calendar. Requires a configured Google connection and user authorization.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar_sync",
         "integration_google",

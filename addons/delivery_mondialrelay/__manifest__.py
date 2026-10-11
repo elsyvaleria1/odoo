@@ -5,7 +5,7 @@
     "summary": "Select a Mondial Relay pickup point as the shipping address",
     "description": "Integrates the pickup-point selection widget and stores the selected address. It does not implement the shipping web service; the supplied example delivery pricing must be configured for the deployment.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_delivery",
     ],

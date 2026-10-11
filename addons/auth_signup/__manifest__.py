@@ -5,7 +5,7 @@
     "summary": "Register user accounts and handle password-reset invitations",
     "description": "Provide signup, invitation and password-reset routes and token handling. Availability follows the configured signup policy and account invitation state.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

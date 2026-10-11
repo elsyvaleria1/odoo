@@ -5,7 +5,7 @@
     "summary": "Create carrier shipments and retrieve labels for stock transfers",
     "description": "Connect stock pickings to delivery carriers and shipment actions. Provider-specific modules supply carrier calls for labels, tracking, returns and cancellation where supported.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_stock",
         "delivery",

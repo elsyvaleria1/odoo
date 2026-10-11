@@ -6,7 +6,7 @@
     "summary": "Publish and track content on connected Facebook pages",
     "description": "Adds Facebook account authorization, publishing and stream synchronization to Social Publishing. Requires provider credentials and permissions for the selected pages; available operations depend on the provider API and account access.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "social",

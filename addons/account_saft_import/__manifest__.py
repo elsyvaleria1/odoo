@@ -6,7 +6,7 @@
     "summary": "Import supported SAF-T account, partner, tax and transaction records",
     "description": "Adds a SAF-T XML import wizard that maps accounts, partners, taxes, journals and entries and can prepare opening-balance adjustments. Country extensions adapt specific layouts; the importer does not claim to support every national SAF-T variant.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account_saft",
         "account_base_import",

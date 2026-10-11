@@ -5,7 +5,7 @@
     "summary": "Link employee resume entries to onsite training events",
     "description": "Adds an onsite course type, an event reference, display defaults and training-related views for resume entries. This addon does not implement an event-completion hook that automatically creates resume entries.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_skills",
         "event",

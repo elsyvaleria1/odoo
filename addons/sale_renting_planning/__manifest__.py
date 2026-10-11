@@ -4,7 +4,7 @@
     "summary": "Link rental order periods with planned resource shifts",
     "description": "Adds role settings for rental synchronization and creates or updates planning slots from rental sales lines. Planning slots can create or reuse rental orders.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_planning",
         "sale_renting",

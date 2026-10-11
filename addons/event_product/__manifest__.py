@@ -5,7 +5,7 @@
     "summary": "Configure products and prices for event tickets",
     "description": "Link event ticket definitions to products and calculate ticket pricing. Validates product service tracking used by event ticket flows.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "event",
         "product",

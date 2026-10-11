@@ -5,7 +5,7 @@
     "summary": "Enter purchase quantities by product variant through a grid",
     "description": "Connects purchase orders to the shared order matrix mixin and adds grid controls and quotation or order report layouts. Requires configurable product variants; nonzero quantity changes are refused when a grid cell matches multiple purchase lines.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "purchase",
         "trade_product_matrix",

@@ -7,7 +7,7 @@
     "summary": "Route approval requests through configured steps, decisions and delegation",
     "description": "Provides approval categories, requests, approver steps, decision records, delegation and escalation. Supplies mixins and bindings for consuming models to enforce configured approval workflows. The application menu and generic request categories are supplied by the separate Approvals application addon.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

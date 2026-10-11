@@ -5,7 +5,7 @@
     "summary": "Use bill-of-material costs in sales margin calculations",
     "description": "Handle BoM prices to compute sale margin.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_mrp",
         "sale_stock_margin",

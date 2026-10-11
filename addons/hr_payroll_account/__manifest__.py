@@ -4,7 +4,7 @@
     "summary": "Create journal entries from completed employee payslips",
     "description": "Map payroll structures and salary rules to accounting journals and accounts. Generates payslip journal entries and links them to payroll records.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_payroll",
         "accountant",

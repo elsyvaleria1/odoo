@@ -7,7 +7,7 @@
     "summary": "Collect employee meal orders and track lunch account balances",
     "description": "Provides meal suppliers, products, toppings, ordering locations and employee lunch orders. Tracks lunch cash movements and balances and supports configured order and notification schedules. The lunch balance records account for recorded movements; they do not constitute bank transfers.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "mail",
     ],

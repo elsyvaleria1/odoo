@@ -6,7 +6,7 @@
     "description": "Adapts stock procurement, delivered quantities, returns and forecast reporting for recurring stock subscription lines. Post-invoice processing closes the invoiced delivery period and can launch procurement for the next period; stock routes and subscription configuration determine the resulting moves.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/subscriptions",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "sale_subscription",
         "sale_stock",

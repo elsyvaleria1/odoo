@@ -7,7 +7,7 @@
     "description": "Shows asset operator and license plate information on GPS device views and adds operator fields to GPS reports. Provides a vehicle-trip SQL report with attendance-based operator assignment and estimated fuel cost from a configured per-distance rate. Requires GPS history and appropriate asset, employee and attendance records.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "OPL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "asset_gps",
         "asset_ledger_hr",

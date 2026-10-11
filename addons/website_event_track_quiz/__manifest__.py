@@ -8,7 +8,7 @@
     "description": "Adds talk quiz questions, answers and scoring, with website participation and result displays.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/events",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_profile",
         "website_event_track",

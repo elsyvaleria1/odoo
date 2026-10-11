@@ -6,7 +6,7 @@
     "description": "Defines abstract models for entity-attribute-value families, including value membership and usage checks. Consuming addons declare concrete attribute, value and line models and link them to business records. This infrastructure addon does not provide a standalone attribute-management application.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "base",
     ],

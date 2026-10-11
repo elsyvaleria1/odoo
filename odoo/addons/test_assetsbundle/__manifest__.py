@@ -5,7 +5,7 @@
     "summary": "Test Asset Bundles behaviour, including assetsbundle, attachment store, css pipeline",
     "description": "Run regression tests for Asset Bundles. Loaded test suites include ``TestJavascriptAssetsBundle``, ``TestAssetsBundleWithIRAMock``, ``AssetsNodeOrmCacheUsage``, ``TestExternalAssetFilter``, ``TestAssetErrorTaxonomy``.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "web",
     ],

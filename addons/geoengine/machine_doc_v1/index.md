@@ -20,7 +20,8 @@ three consumers each had their own idea.
 |-----|-------|
 | Technical name | `geoengine` |
 | Category | GeoBI |
-| License | AGPL-3 |
+| License | Other OSI approved licence |
+| License identifier | 0BSD (see repository-root LICENSE.addons) |
 | Dependencies | `web` |
 | External Python | `shapely`, `pyproj`, `shapefile` (Shapefile import/export, no GDAL) |
 | External DB | PostGIS |

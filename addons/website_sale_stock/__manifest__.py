@@ -6,7 +6,7 @@
     "summary": "Display stock availability and apply configured cart quantity limits",
     "description": "Reads product availability for the website warehouse and adds stock information to product pages and carts. Supports product-specific out-of-stock selling rules and availability email requests. Inventory quantities and warehouse operations come from the stock dependencies.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
         "sale_stock",

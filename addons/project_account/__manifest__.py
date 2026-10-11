@@ -4,7 +4,7 @@
     "summary": "Add vendor bill costs and other analytic amounts to project profitability",
     "description": "Extends profitability for projects with an analytic account using eligible vendor bills and refunds, plus analytic entries without journal-item links. Separates other costs and revenues and provides accounting drill-downs where user access permits; amounts depend on the entries and analytic allocation.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "project",

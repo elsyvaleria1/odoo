@@ -5,7 +5,7 @@
     "summary": "Query accounting balances and fiscal periods from spreadsheets",
     "description": "Adds spreadsheet functions and server queries for debit, credit, residual amounts, partner balances and accounting tags, with fiscal-date helpers and journal-item drilldowns.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "spreadsheet",
         "account",

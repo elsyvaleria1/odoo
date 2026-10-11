@@ -5,7 +5,7 @@
     "summary": "Enable AI drafting in the invoice email composer",
     "description": "Adds the AI text-draft interface to the invoice-send wizard. Generation uses the configured AI service supplied by the AI integration.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "ai",
         "account",

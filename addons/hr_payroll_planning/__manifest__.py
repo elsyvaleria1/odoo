@@ -5,7 +5,7 @@
     "summary": "Open planned shifts associated with payslips",
     "description": "Adds planning-slot counts and navigation to payslip forms.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_work_entry_planning",
         "hr_payroll",

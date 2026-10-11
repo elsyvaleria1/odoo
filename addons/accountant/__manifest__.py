@@ -7,7 +7,7 @@
     "description": "Adds accounting menus, views and access-group configuration over the accounting dependencies. Enables the invoice in-payment state, extends review eligibility and maintains tax-return journal dashboard visibility. Installation initializes accounting onboarding and conditionally requests the cash-basis reporting addon for configured country cases.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/accounting",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "account_depreciation",

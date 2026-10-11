@@ -6,7 +6,7 @@
     "summary": "Apply eligible coupons, rewards and gift cards in the online store",
     "description": "Connects sales loyalty programs to eCommerce carts, coupon activation and reward selection. Adds website eligibility settings, sharing links and wallet top-up handling. Discounts and rewards follow the configured programs and their conditions.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "website_sale",
         "website_links",

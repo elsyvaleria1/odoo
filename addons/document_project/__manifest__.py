@@ -6,7 +6,7 @@
     "summary": "Link document folders to projects and open their contents from project records",
     "description": "Adds project folder configuration, document counts and navigation, and project folder destinations for project and task attachments. Folder creation uses project privacy and company settings, and the addon protects linked project folders from automatic cleanup.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "document",
         "project",

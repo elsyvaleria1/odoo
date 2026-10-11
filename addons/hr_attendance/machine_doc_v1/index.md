@@ -17,7 +17,8 @@ against this document. None of them is typed by hand here or there.
 |---|---|
 | Version | 2.5 |
 | Application | yes |
-| License | LGPL-3 |
+| License | Other OSI approved licence |
+| License identifier | 0BSD (see repository-root LICENSE.addons) |
 | Dependencies | `hr`, `barcodes`, `geocoding` |
 | ORM models (new) | 5 in `models/` |
 | Models extended | `hr.employee`, `hr.version`, `ir.http`, `res.company`, `res.config.settings`, `res.users`, `resource.calendar`, `resource.calendar.attendance` |

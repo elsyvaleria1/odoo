@@ -6,7 +6,7 @@
     "summary": "Generate and track stock operations for sales orders",
     "description": "Links sales lines with stock moves and orders with transfers, adding warehouse, route, shipping-policy and delivery-status fields. Provides delivery matching, customer-delay reporting and invoice-related stock information. Requires configured products, stock rules and warehouses; service-only orders need not generate stock transfers.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "stock_account",
         "sale",

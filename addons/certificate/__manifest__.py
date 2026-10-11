@@ -6,7 +6,7 @@
     "summary": "Store certificates and keys for signing and verification",
     "description": "Parses certificate metadata and validity dates, associates private keys and exposes signing and signature-verification helpers. Supports encrypted credential storage through its dependencies; callers select the supported algorithm and supply compatible keys.",
     "author": "Odoo S.A.",
-    "license": "AGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "credential",
         "web",

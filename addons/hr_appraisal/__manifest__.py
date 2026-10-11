@@ -8,7 +8,7 @@
     "description": "Provides employee appraisals, feedback templates, assessment notes and goals. Supports configured appraisal intervals, invitations and links to review meetings. Managers and employees supply the feedback and recorded assessments.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/appraisals",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar",
         "hr_gantt",

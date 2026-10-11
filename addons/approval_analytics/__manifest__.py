@@ -6,7 +6,7 @@
     "summary": "Report approval outcomes, elapsed times and approver workload",
     "description": "Adds category and approver SQL reports plus dashboard metrics and reporting menus for the Approvals application. Calculates request-state counts, approval and response times, workload and configured SLA comparisons from approval records; results depend on recorded workflow dates and category targets.",
     "author": "AgroMarin",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "approval_app",
         "mixin_report_sql",

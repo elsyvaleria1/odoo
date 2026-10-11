@@ -5,7 +5,7 @@
     "summary": "Open related job applications from phone calls",
     "description": "Adds application counts and navigation to call records, with applicant access checks and caller data.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "hr_recruitment",
         "voip",

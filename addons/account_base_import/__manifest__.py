@@ -5,7 +5,7 @@
     "summary": "Import accounting records with journal-item grouping and setup summaries",
     "description": "Adds accounting import entry points, setup views and import summaries. Account loading can match existing accounts, and journal-item loading separates move headers from lines before creating entries; imported data still needs appropriate accounts, journals and mappings.",
     "author": "Odoo S.A.",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "account",
         "base_import",

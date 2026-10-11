@@ -8,7 +8,7 @@
     "description": "Defines campaigns, participants and activity workflows with email and server-action steps. Tracks execution, opens, clicks and replies and provides a test-participant launch flow.",
     "author": "Odoo S.A.",
     "website": "https://www.odoo.com/app/marketing-automation",
-    "license": "OEEL-1",
+    "license": "Other OSI approved licence",
     "depends": [
         "automation",
         "mass_mailing",

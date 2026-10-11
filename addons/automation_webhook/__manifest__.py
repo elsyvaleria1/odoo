@@ -7,7 +7,7 @@
     "description": "Adds webhook endpoints, request payload access and rule dispatch. Rules can configure inbound credentials, request logging and rate limits; the selected authentication mode controls access.",
     "author": "AgroMarin",
     "website": "https://www.agromarin.mx",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "integration",
         "automation",

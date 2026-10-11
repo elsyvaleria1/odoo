@@ -6,7 +6,7 @@
     "summary": "Synchronize calendar events with authorized Microsoft accounts",
     "description": "Map application calendar events and recurrences to Outlook Calendar. Requires Microsoft connection settings and user authorization.",
     "author": "Odoo S.A.",
-    "license": "LGPL-3",
+    "license": "Other OSI approved licence",
     "depends": [
         "calendar_sync",
         "integration_microsoft",
