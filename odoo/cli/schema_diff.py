@@ -4,10 +4,14 @@ import re
 import sys
 import typing
 from collections import Counter
+from pathlib import Path
 from unittest.mock import patch
 
-from odoo.db import BaseCursor
+from odoo.db import BaseCursor, Cursor
 from odoo.libs.debug_log import DebugLog
+from odoo.libs.worker_thread import working_on_database
+from odoo.service.settings import ServerSettings
+from odoo.service.settings import current as current_settings
 
 from . import DatabaseCommand
 
@@ -19,7 +23,6 @@ _META_DML = re.compile(
     r"^\s*(INSERT INTO|UPDATE|DELETE FROM)\s+\"?(ir_[a-z_]+|res_groups|res_users)\"?",
     re.IGNORECASE,
 )
-_MIGRATION = re.compile(r"^module (\S+): Running migration (\S+) (\S+)$")
 
 
 class _Recorder:
@@ -38,42 +41,23 @@ class _Recorder:
         elif match := _META_DML.match(text):
             self.meta[f"{match.group(1).upper()} {match.group(2)}"] += 1
 
-
-class _MigrationLog(logging.Handler):
-    def __init__(self, recorder: _Recorder) -> None:
-        super().__init__(logging.INFO)
-        self.recorder = recorder
-
-    def emit(self, record: logging.LogRecord) -> None:
-        if match := _MIGRATION.match(record.getMessage()):
-            module, version, script = match.groups()
-            self.recorder.migrations.append((module, version, script))
+    def record_migration(
+        self, installed_version: str, pyfile: str, addon: str, version: str | None
+    ) -> None:
+        self.migrations.append((addon, version or installed_version, Path(pyfile).stem))
 
 
 class SchemaDiff(DatabaseCommand):
     name = "schema_diff"
     description = (
         "Run an install or upgrade in a transaction that is rolled back, and "
-        "print the DDL and migrations it would have committed"
+        "print the DDL and migrations it would have committed. -u, -i and "
+        "--reinit are the server's options and mean what they mean to it"
     )
 
     def __init__(self) -> None:
         super().__init__()
         self.add_config_arguments(self.parser)
-        self.parser.add_argument(
-            "-u",
-            "--update",
-            dest="update",
-            default="",
-            help="comma-separated modules to upgrade",
-        )
-        self.parser.add_argument(
-            "-i",
-            "--init",
-            dest="init",
-            default="",
-            help="comma-separated modules to install",
-        )
         self.parser.add_argument(
             "--all",
             dest="show_all",
@@ -84,16 +68,34 @@ class SchemaDiff(DatabaseCommand):
     def run(self, cmdargs: list[str]) -> None:
         parsed_args, unknown = self.parse_args(cmdargs)
         db_name = self.bootstrap_config(parsed_args, extra_args=unknown)
-        upgrade = [m for m in parsed_args.update.split(",") if m]
-        install = [m for m in parsed_args.init.split(",") if m]
-        if not upgrade and not install:
-            self.parser.error("name at least one module with -u or -i")
+        settings = current_settings()
+        if not settings.update_module:
+            self.parser.error("name at least one module with -u, -i or --reinit")
+        with working_on_database(db_name):
+            self._preview(db_name, settings, show_all=parsed_args.show_all)
 
+    def _preview(
+        self, db_name: str, settings: ServerSettings, *, show_all: bool
+    ) -> None:
+        from odoo.modules import migration
         from odoo.modules.registry import Registry
 
         recorder = _Recorder()
-        handler = _MigrationLog(recorder)
-        logging.getLogger("odoo.modules.migration").addHandler(handler)
+        run_migration_script = migration.run_migration_script
+
+        def recording_migration(
+            cr: Cursor,
+            installed_version: str,
+            pyfile: str,
+            addon: str,
+            stage: str,
+            version: str | None = None,
+        ) -> None:
+            # read off the call, not the "Running migration" log line, which a
+            # --log-level above info never emits
+            recorder.record_migration(installed_version, pyfile, addon, version)
+            run_migration_script(cr, installed_version, pyfile, addon, stage, version)
+
         registry = Registry(db_name)
         error: BaseException | None = None
         try:
@@ -133,6 +135,11 @@ class SchemaDiff(DatabaseCommand):
                 real.execute = recording_execute  # type: ignore[method-assign]
                 with contextlib.ExitStack() as stack:
                     stack.enter_context(patch.object(Registry, "cursor", open_dry))
+                    stack.enter_context(
+                        patch.object(
+                            migration, "run_migration_script", recording_migration
+                        )
+                    )
                     for name, value in (
                         ("setup_signaling", lambda self: None),
                         ("check_signaling", lambda self: self),
@@ -143,8 +150,9 @@ class SchemaDiff(DatabaseCommand):
                         Registry.new(
                             db_name,
                             update_module=True,
-                            upgrade_modules=upgrade,
-                            install_modules=install,
+                            upgrade_modules=settings.update,
+                            install_modules=settings.init,
+                            reinit_modules=settings.reinit,
                             run_tests=False,
                         )
                     except Exception as exc:
@@ -154,10 +162,9 @@ class SchemaDiff(DatabaseCommand):
                             vars(real).pop(name, None)
                         real.rollback()
         finally:
-            logging.getLogger("odoo.modules.migration").removeHandler(handler)
             Registry.remove(db_name)
 
-        self._report(recorder, error, show_all=parsed_args.show_all)
+        self._report(recorder, error, show_all=show_all)
         if error is not None:
             _logger.error("the upgrade would fail: %s", error, exc_info=error)
             sys.exit(1)
