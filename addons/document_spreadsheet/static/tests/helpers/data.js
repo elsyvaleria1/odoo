@@ -61,7 +61,11 @@ export class DocumentsDocument extends Documents {
         return false;
     }
 
-    action_view_new_spreadsheet(route, args) {
+    get_spreadsheet_revisions_after() {
+        return null;
+    }
+
+    action_view_new_spreadsheet() {
         const spreadsheetId = this.env["document.document"].create({
             name: "Untitled spreadsheet",
             mimetype: "application/o-spreadsheet",
@@ -132,6 +136,10 @@ export class SpreadsheetTemplate extends models.Model {
     thumbnail = fields.Binary({ string: "Thumbnail", type: "binary" });
     display_thumbnail = fields.Binary({ string: "Thumbnail" });
     sequence = fields.Integer({ string: "Sequence", type: "integer" });
+
+    get_spreadsheet_revisions_after() {
+        return null;
+    }
 
     fetch_template_data(route, args) {
         const [id] = args.args;

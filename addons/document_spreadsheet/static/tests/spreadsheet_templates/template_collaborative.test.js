@@ -71,7 +71,7 @@ test("Sync status is correctly rendered", async function () {
     expect(getSynchedStatus()).toBe("Saved");
 });
 
-test("receiving bad revision reload", async function () {
+test("a revision the server history no longer has reloads", async function () {
     mockService("action", {
         doAction(actionRequest) {
             if (actionRequest === "reload_context") {
@@ -88,5 +88,6 @@ test("receiving bad revision reload", async function () {
         nextRevisionId: "the next revision id",
         revision: {},
     });
+    await animationFrame();
     expect.verifySteps(["reload"]);
 });

@@ -25,6 +25,10 @@ export class SpreadsheetTest extends models.Model {
     dispatch_spreadsheet_message() {
         return false;
     }
+
+    get_spreadsheet_revisions_after() {
+        return null;
+    }
 }
 
 export class SpreadsheetCellThread extends models.Model {

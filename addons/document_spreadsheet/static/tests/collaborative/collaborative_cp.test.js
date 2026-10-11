@@ -7,11 +7,12 @@ import {
 import { describe, expect, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-mock";
 import { setCellContent } from "@spreadsheet/../tests/helpers/commands";
+import { getCellContent } from "@spreadsheet/../tests/helpers/getters";
 import {
     joinSession,
     leaveSession,
 } from "@spreadsheet_edition/../tests/helpers/collaborative_helpers";
-import { mockService } from "@web/../tests/web_test_helpers";
+import { mockService, onRpc } from "@web/../tests/web_test_helpers";
 import { user } from "@web/core/user";
 
 defineDocumentSpreadsheetModels();
@@ -73,7 +74,7 @@ test("Sync status is correctly rendered", async function () {
     expect(getSynchedStatus()).toBe("Saved");
 });
 
-test("receiving bad revision reload", async function () {
+test("a revision the server history no longer has reloads", async function () {
     mockService("action", {
         doAction(actionRequest) {
             if (actionRequest === "reload_context") {
@@ -90,5 +91,41 @@ test("receiving bad revision reload", async function () {
         nextRevisionId: "the next revision id",
         revision: {},
     });
+    await animationFrame();
     expect.verifySteps(["reload"]);
+});
+
+test("a missed revision is caught up from the server, not by a reload", async function () {
+    mockService("action", {
+        doAction(actionRequest) {
+            if (actionRequest === "reload_context") {
+                expect.step("reload");
+            } else {
+                return super.doAction(...arguments);
+            }
+        },
+    });
+    const { model, transportService } = await createSpreadsheet();
+    const head = model.session.getRevisionId();
+    const sheetId = model.getters.getActiveSheetId();
+    const revision = (serverRevisionId, nextRevisionId, col, content) => ({
+        type: "REMOTE_REVISION",
+        version: 1,
+        clientId: "raoul",
+        serverRevisionId,
+        nextRevisionId,
+        commands: [{ type: "UPDATE_CELL", sheetId, col, row: 0, content }],
+    });
+    const missed = revision(head, "missed", 0, "missed");
+    const received = revision("missed", "received", 1, "received");
+    onRpc("get_spreadsheet_revisions_after", ({ args }) => {
+        expect.step(`after ${args[1] === head ? "the head" : args[1]}`);
+        return [missed, received];
+    });
+    transportService.broadcast(received);
+    await animationFrame();
+    expect.verifySteps(["after the head"]);
+    expect(getCellContent(model, "A1")).toBe("missed");
+    expect(getCellContent(model, "B1")).toBe("received");
+    expect(model.session.getRevisionId()).toBe("received");
 });

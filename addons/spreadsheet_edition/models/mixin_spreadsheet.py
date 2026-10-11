@@ -116,11 +116,10 @@ class MixinSpreadsheet(models.AbstractModel):
 
     def _get_spreadsheet_metadata(self, access_token=None):
         self.check_singleton()
-        self._check_collaborative_spreadsheet_access("read", access_token)
+        spreadsheet_sudo = self._collaborative_sudo("read", access_token)
         can_write = self._check_collaborative_spreadsheet_access(
             "write", access_token, raise_exception=False
         )
-        spreadsheet_sudo = self.sudo()
         return {
             "id": spreadsheet_sudo.id,
             "name": spreadsheet_sudo.display_name or "",
@@ -340,8 +339,7 @@ class MixinSpreadsheet(models.AbstractModel):
         ) as span:
             metadata = self._get_spreadsheet_metadata(access_token)
 
-            self._check_collaborative_spreadsheet_access("read", access_token)
-            spreadsheet_sudo = self.sudo()
+            spreadsheet_sudo = self._collaborative_sudo("read", access_token)
 
             serialized_metadata = json.dumps(metadata, ensure_ascii=False)
             serialized_snapshot = (
@@ -481,8 +479,38 @@ class MixinSpreadsheet(models.AbstractModel):
         """Build spreadsheet collaboration messages from the saved
         revision data"""
         self.check_singleton()
+        return self._serialize_revisions(self.spreadsheet_revision_ids)
+
+    @api.readonly
+    def get_spreadsheet_revisions_after(
+        self, revision_uuid: str, access_token=None
+    ) -> list[dict] | None:
+        """The collaboration messages a client whose head is `revision_uuid`
+        has not received, in order; None when that revision is no longer in
+        the history (a restore dropped it), where only a reload catches up."""
+        self.check_singleton()
+        spreadsheet = self._collaborative_sudo("read", access_token)
+        revisions = spreadsheet.with_context(
+            active_test=False
+        ).spreadsheet_revision_ids.sorted("id")
+        head = revisions.filtered(
+            lambda revision: revision.revision_uuid == revision_uuid
+        )
+        if head:
+            after = revisions.filtered(lambda revision: revision.id > head.id)
+        elif revision_uuid == json_loads(
+            spreadsheet._get_spreadsheet_serialized_snapshot()
+        ).get("revisionId", "START_REVISION"):
+            after = spreadsheet.spreadsheet_revision_ids.sorted("id")
+        else:
+            return None
+        return [
+            json_loads(message) for message in spreadsheet._serialize_revisions(after)
+        ]
+
+    def _serialize_revisions(self, revisions) -> list[str]:
         result = []
-        for revision in self.spreadsheet_revision_ids:
+        for revision in revisions:
             server_revision_id = self._get_parent_uuid(revision)
             serialized = extend_serialized_json(
                 revision.commands,
@@ -493,6 +521,13 @@ class MixinSpreadsheet(models.AbstractModel):
             )
             result.append(serialized)
         return result
+
+    def _collaborative_sudo(self, operation: str, access_token=None):
+        # The collaborative data (revisions, snapshot) is read and written past
+        # the record rules once the share or record check passed: one place
+        # that never elevates without it.
+        self._check_collaborative_spreadsheet_access(operation, access_token)
+        return self.sudo()
 
     def _check_collaborative_spreadsheet_access(
         self, operation: str, access_token=None, *, raise_exception=True
@@ -609,11 +644,10 @@ class MixinSpreadsheet(models.AbstractModel):
         - otherwise, returns the empty skeleton of the spreadsheet with all the revisions since its creation
         """
         self.check_singleton()
-        self._check_collaborative_spreadsheet_access("read")
+        spreadsheet_sudo = self._collaborative_sudo("read")
         _debug.lifecycle(
             "spreadsheet_history_requested", records=self, from_snapshot=from_snapshot
         )
-        spreadsheet_sudo = self.sudo()
         initial_date = spreadsheet_sudo.create_date
 
         if from_snapshot:

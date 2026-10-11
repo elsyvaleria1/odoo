@@ -421,3 +421,58 @@ class SpreadsheetORMAccess(SpreadsheetTestCommon):
         self.spreadsheet.with_user(self.user).dispatch_spreadsheet_message(
             {"type": "CLIENT_MOVED"}
         )
+
+    def dispatch_revisions(self, spreadsheet, *revision_ids):
+        for revision_id in revision_ids:
+            spreadsheet.dispatch_spreadsheet_message(
+                self.new_revision_data(spreadsheet, nextRevisionId=revision_id)
+            )
+
+    def missed_after(self, spreadsheet, head):
+        missed = spreadsheet.get_spreadsheet_revisions_after(head)
+        return missed and [
+            (message["serverRevisionId"], message["nextRevisionId"])
+            for message in missed
+        ]
+
+    def test_a_head_misses_the_revisions_after_it(self):
+        spreadsheet = self.create_spreadsheet()
+        self.dispatch_revisions(spreadsheet, "first", "second", "third")
+        self.assertEqual(
+            self.missed_after(spreadsheet, "first"),
+            [("first", "second"), ("second", "third")],
+        )
+        self.assertEqual(self.missed_after(spreadsheet, "third"), [])
+
+    def test_the_start_of_the_history_misses_every_revision(self):
+        spreadsheet = self.create_spreadsheet()
+        self.dispatch_revisions(spreadsheet, "first", "second")
+        self.assertEqual(
+            self.missed_after(spreadsheet, "START_REVISION"),
+            [("START_REVISION", "first"), ("first", "second")],
+        )
+
+    def test_a_head_before_a_snapshot_misses_the_snapshot_too(self):
+        spreadsheet = self.create_spreadsheet()
+        self.dispatch_revisions(spreadsheet, "first", "second")
+        self.snapshot(
+            spreadsheet, "second", "snapshot", {"sheets": [], "revisionId": "snapshot"}
+        )
+        self.dispatch_revisions(spreadsheet, "after-snapshot")
+        missed = spreadsheet.get_spreadsheet_revisions_after("first")
+        self.assertEqual(
+            [(message["type"], message["nextRevisionId"]) for message in missed],
+            [
+                ("REMOTE_REVISION", "second"),
+                ("SNAPSHOT_CREATED", "snapshot"),
+                ("REMOTE_REVISION", "after-snapshot"),
+            ],
+        )
+        self.assertEqual(
+            self.missed_after(spreadsheet, "snapshot"), [("snapshot", "after-snapshot")]
+        )
+
+    def test_a_head_the_history_no_longer_has_cannot_catch_up(self):
+        spreadsheet = self.create_spreadsheet()
+        self.dispatch_revisions(spreadsheet, "first")
+        self.assertIsNone(spreadsheet.get_spreadsheet_revisions_after("dropped"))

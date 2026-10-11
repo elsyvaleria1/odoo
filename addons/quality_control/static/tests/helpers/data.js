@@ -23,6 +23,10 @@ class QualityCheckSpreadsheet extends SpreadsheetMixin {
     ];
 
     dispatch_spreadsheet_message() {}
+
+    get_spreadsheet_revisions_after() {
+        return null;
+    }
 }
 
 function mockQualitySpreadsheetData(_request, { res_model, res_id }) {

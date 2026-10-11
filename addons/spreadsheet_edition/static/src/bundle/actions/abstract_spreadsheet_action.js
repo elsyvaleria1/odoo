@@ -460,9 +460,53 @@ export class AbstractSpreadsheetAction extends Component {
     /**
      * Reload the spreadsheet if an unexpected revision id is triggered.
      */
-    onUnexpectedRevisionId() {
-        log.logic("unexpectedRevisionId:reload", () => ({ resId: this.resId }));
-        this.actionService.doAction("reload_context");
+    async onUnexpectedRevisionId() {
+        if (this.catchingUp) {
+            this.catchUpAgain = true;
+            return;
+        }
+        this.catchingUp = true;
+        try {
+            do {
+                this.catchUpAgain = false;
+                if (!(await this._catchUp())) {
+                    log.logic("unexpectedRevisionId:reload", () => ({
+                        resId: this.resId,
+                    }));
+                    this.actionService.doAction("reload_context");
+                    return;
+                }
+            } while (this.catchUpAgain);
+        } finally {
+            this.catchingUp = false;
+        }
+    }
+
+    /**
+     * Replays the revisions this session missed, in order, as the bus would
+     * have delivered them.
+     * @returns {Promise<boolean>} false when the server no longer has this
+     * session's revision, or replaying did not move the session past it
+     */
+    async _catchUp() {
+        const { session } = this.model;
+        const head = session.getRevisionId();
+        const missed = await this.orm.call(
+            this.resModel,
+            "get_spreadsheet_revisions_after",
+            [this.resId, head, this.accessToken],
+        );
+        log.logic("unexpectedRevisionId:catchUp", () => ({
+            resId: this.resId,
+            missed: missed?.length,
+        }));
+        if (!missed) {
+            return false;
+        }
+        for (const message of missed) {
+            session.onMessageReceived(message);
+        }
+        return !missed.length || session.getRevisionId() !== head;
     }
 
     /**

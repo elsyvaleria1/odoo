@@ -43,6 +43,10 @@ export class SaleOrderSpreadsheet extends SpreadsheetMixin {
     ];
 
     dispatch_spreadsheet_message() {}
+
+    get_spreadsheet_revisions_after() {
+        return null;
+    }
 }
 
 export function defineSpreadsheetSaleModels() {
