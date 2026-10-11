@@ -67,6 +67,7 @@ def counting_statements(cr: Any) -> Iterator[StatementCount]:
 
 
 class _MetricsMixin:
+    _thread: threading.Thread
     sql_from_log: dict[str, tuple[int, float]]
     sql_into_log: dict[str, tuple[int, float]]
     sql_log_count: int
