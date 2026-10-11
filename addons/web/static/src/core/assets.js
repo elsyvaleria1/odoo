@@ -361,7 +361,9 @@ export function loadCSS(url, options) {
     return assets.loadCSS(url, options);
 }
 
-export class AssetsLoadingError extends Error {}
+export class AssetsLoadingError extends Error {
+    name = "AssetsLoadingError";
+}
 
 /**
  * @param {string[]} specifiers

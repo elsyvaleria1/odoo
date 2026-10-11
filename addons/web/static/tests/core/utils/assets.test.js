@@ -419,6 +419,15 @@ test("loadBundle: load same bundles in 2 iframes", async () => {
     await expect(secondLoad).rejects.toThrow(/was interrupted: the page was hidden/);
 });
 
+test("AssetsLoadingError names itself, whatever the minifier calls its class", () => {
+    const error = new AssetsLoadingError("The loading of x failed");
+    expect(error.name).toBe("AssetsLoadingError");
+    expect(String(error)).toBe("AssetsLoadingError: The loading of x failed");
+    expect(error.stack.startsWith("AssetsLoadingError: The loading of x failed")).toBe(
+        true,
+    );
+});
+
 test("getBundle: non-ok JSON response rejects and is not cached", async () => {
     let failRequests = true;
     mockFetch((input) => {
