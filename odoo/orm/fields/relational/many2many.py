@@ -656,6 +656,36 @@ class Many2many(_RelationalMulti):
             return SQL("FALSE") if exists else SQL("TRUE")
         rel_table, rel_id1, rel_id2 = self._get_relation_triple()
         rel_alias = query.get_table_alias(alias, self.name)
+        if query.evaluates_per_row:
+            links_alias = query.get_table_alias(alias, f"{self.name}__links")
+            query.add_join(
+                "LEFT JOIN",
+                links_alias,
+                SQL(
+                    "(SELECT %s AS id, ARRAY_AGG(%s) AS ids FROM %s AS %s GROUP BY %s)",
+                    SQL.identifier(rel_alias, rel_id1),
+                    SQL.identifier(rel_alias, rel_id2),
+                    SQL.identifier(rel_table),
+                    SQL.identifier(rel_alias),
+                    SQL.identifier(rel_alias, rel_id1),
+                ),
+                SQL(
+                    "%s = %s",
+                    SQL.identifier(links_alias, "id"),
+                    SQL.identifier(alias, "id"),
+                ),
+            )
+            links = SQL.identifier(links_alias, "ids")
+            if not coquery.where_clause and coquery._ids is None:
+                linked = SQL("%s IS NOT NULL", links)
+            else:
+                matching = (
+                    SQL("%s::integer[]", list(coquery._ids))
+                    if coquery._ids is not None
+                    else SQL("ARRAY%s", coquery.subselect())
+                )
+                linked = SQL("COALESCE(%s && %s, FALSE)", links, matching)
+            return linked if exists else SQL("NOT %s", linked)
         if not coquery.where_clause:
             return SQL(
                 "%sEXISTS (SELECT 1 FROM %s AS %s WHERE %s = %s)",

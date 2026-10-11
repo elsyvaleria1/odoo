@@ -873,8 +873,15 @@ def _active_roots_without_search(
     active_name = comodel._active_name
     if not active_name or not comodel.env.context.get("active_test", True):
         active_name = None
-    probe = active_name or comodel._rec_name
-    if not probe or probe not in comodel._fields or not comodel._fields[probe].store:
+    probe = active_name or next(
+        (
+            name
+            for name in (comodel._rec_name, "write_date", "create_date")
+            if name and name in comodel._fields and comodel._fields[name].store
+        ),
+        None,
+    )
+    if not probe:
         return None
     try:
         roots.mapped(probe)

@@ -1,5 +1,6 @@
 import itertools
 import re
+from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
 from odoo.libs.debug_log import DebugLog
@@ -118,6 +119,7 @@ class Query:
         "_any_value_orderby",
         "_empty_by_construction",
         "_env",
+        "_evaluates_per_row",
         "_groupby",
         "_having",
         "_ids",
@@ -155,6 +157,20 @@ class Query:
         self._ids: tuple[int, ...] | None = None
 
         self._empty_by_construction: bool = False
+        self._evaluates_per_row: bool = False
+
+    @property
+    def evaluates_per_row(self) -> bool:
+        return self._evaluates_per_row
+
+    @contextmanager
+    def per_row_conditions(self) -> Iterator[None]:
+        previous = self._evaluates_per_row
+        self._evaluates_per_row = True
+        try:
+            yield
+        finally:
+            self._evaluates_per_row = previous
 
     def _invalidate_ids(self) -> None:
         if self._ids:

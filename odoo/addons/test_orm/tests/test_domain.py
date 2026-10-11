@@ -567,6 +567,62 @@ class TestDomain(TransactionExpressionCase):
         )
         self.assertEqual(res_search, child_2 + child_3)
 
+    def test_many2many_per_row_conditions_agree_with_exists(self):
+        Child = self.env["test_orm.any.child"]
+        urgent, other = self.env["test_orm.any.tag"].create(
+            [{"name": "Urgent"}, {"name": "Other"}]
+        )
+        tagged, other_tagged, _untagged = Child.create(
+            [
+                {"tag_ids": [Command.set(urgent.ids)]},
+                {"tag_ids": [Command.set(other.ids)]},
+                {},
+            ]
+        )
+        Child.create(
+            [
+                {"link_sibling_id": tagged.id},
+                {"link_sibling_id": other_tagged.id},
+            ]
+        )
+        domains = [
+            [("tag_ids", "any", [("name", "=", "Urgent")])],
+            [("tag_ids", "not any", [("name", "=", "Urgent")])],
+            [("tag_ids", "=", False)],
+            [("tag_ids", "!=", False)],
+            [("tag_ids", "in", urgent.ids)],
+            [("link_sibling_id.tag_ids", "any", [("name", "=", "Urgent")])],
+            [
+                (
+                    "link_sibling_id",
+                    "any",
+                    [("tag_ids", "not any", [("name", "=", "Urgent")])],
+                )
+            ],
+        ]
+
+        def truth_per_row(domain, per_row):
+            query = Child._search([])
+            condition = Domain(domain).optimize_full(Child)
+            if per_row:
+                with query.per_row_conditions():
+                    sql = condition._to_sql(Child, query.table, query)
+            else:
+                sql = condition._to_sql(Child, query.table, query)
+            rows = self.env.execute_query(
+                query.statement(SQL('"test_orm_any_child".id'), sql)
+            )
+            return sorted(rows), sql.code
+
+        for domain in domains:
+            with self.subTest(domain=domain):
+                expected, exists_sql = truth_per_row(domain, per_row=False)
+                actual, per_row_sql = truth_per_row(domain, per_row=True)
+                self.assertEqual(actual, expected)
+                if not str(domain[0][0]).startswith("link_sibling_id"):
+                    self.assertIn("EXISTS", exists_sql)
+                    self.assertNotIn("EXISTS", per_row_sql)
+
 
 class TestDomainComplement(TransactionExpressionCase):
     def test_inequalities_int(self):
@@ -1077,6 +1133,19 @@ class TestDomainOptimize(TransactionCase):
         self.assertEqual(
             Domain("id", "parent_of", categ_child.ids).optimize_full(model),
             Domain("id", "in", OrderedSet([categ_child.id, categ.id])),
+        )
+
+    def test_many2many_hierarchy_roots_known_to_the_superuser_take_no_query(self):
+        parent = self.env["res.company"].create({"name": "Root company"})
+        child = self.env["res.company"].create(
+            {"name": "Branch company", "parent_id": parent.id}
+        )
+        users = self.env["res.users"].sudo().with_context(active_test=False)
+        child.mapped("parent_path")
+        with self.assertQueryCount(0):
+            domain = Domain("company_ids", "parent_of", child.ids).optimize_full(users)
+        self.assertEqual(
+            domain, Domain("company_ids", "in", OrderedSet([child.id, parent.id]))
         )
 
     def test_condition_hierarchy_boolean_values(self):
