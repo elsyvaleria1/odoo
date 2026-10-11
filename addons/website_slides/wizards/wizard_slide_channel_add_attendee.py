@@ -57,7 +57,10 @@ class WizardSlideChannelAddAttendee(models.TransientModel):
 
     @api.depends("channel_id", "enroll_mode")
     def _compute_send_email(self) -> None:
-        self.send_email = self.channel_visibility != "public" or self.enroll_mode
+        for wizard in self:
+            wizard.send_email = (
+                wizard.channel_visibility != "public" or wizard.enroll_mode
+            )
 
     def action_invite(self):
         self.check_singleton()

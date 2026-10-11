@@ -12,7 +12,7 @@
                     t-att-data-channel-id="slide.channel_id.id"
                     t-att-data-channel-enroll="slide.channel_id.enroll"
                     t-att-data-signup-allowed="signup_allowed"
-                    t-att-data-session-answers="session_answers">
+                    t-att-data-channel-requested-access="slide.channel_id.has_requested_access">
 
                     <div
                         class="o_wslides_slide_fs_header d-flex flex-shrink-0 text-white">
@@ -211,7 +211,6 @@
                             t-att-data-can-self-mark-uncompleted="slide.can_self_mark_uncompleted"
                             t-att-data-is-member="is_member"
                             t-att-data-is-member-or-invited="is_member_or_invited"
-                            t-att-data-session-answers="session_answers"
                             t-att-data-website-share-url="slide.website_share_url"
                             t-att-data-email-sharing="bool(slide.channel_id.share_slide_template_id)">
                             <div class="ms-2 o_wslides_sidebar_content overflow-hidden">
@@ -296,7 +295,6 @@
                                         t-att-data-can-self-mark-uncompleted="slide.can_self_mark_uncompleted"
                                         t-att-data-is-member="is_member"
                                         t-att-data-is-member-or-invited="is_member_or_invited"
-                                        t-att-data-session-answers="session_answers"
                                         t-att-data-website-share-url="slide.website_share_url">
                                         <a
                                             t-if="can_access"

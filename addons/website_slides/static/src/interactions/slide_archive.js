@@ -4,6 +4,7 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { Interaction } from "@web/public/interaction";
 import { ConfirmationDialog } from "@web/ui/dialog";
+import { syncEmptySectionFlags } from "@website_slides/js/public/slides_course_utils";
 
 export class SlideArchive extends Interaction {
     static selector = ".o_wslides_js_slide_archive";
@@ -25,28 +26,7 @@ export class SlideArchive extends Interaction {
                 );
                 if (isArchived) {
                     this.el.closest(".o_wslides_slides_list_slide")?.remove();
-                    const categories = document.querySelectorAll(
-                        ".o_wslides_slide_list_category",
-                    );
-                    for (const category of categories) {
-                        const categoryHeaderEl = category.querySelector(
-                            ".o_wslides_slide_list_category_header",
-                        );
-                        const categorySlideEl = category.querySelector(
-                            ".o_wslides_slides_list_slide:not(.o_not_editable)",
-                        );
-                        const emptyFlagContainerEl = categoryHeaderEl.querySelector(
-                            ".o_wslides_slides_list_drag",
-                        );
-                        const emptyFlagEl = emptyFlagContainerEl.querySelector("small");
-
-                        if (!categorySlideEl && !emptyFlagEl) {
-                            const smallEl = document.createElement("small");
-                            smallEl.classList.add("ms-1", "text-muted", "fw-bold");
-                            smallEl.innerText = _t("(empty)");
-                            this.insert(smallEl, emptyFlagContainerEl);
-                        }
-                    }
+                    syncEmptySectionFlags(document);
                 }
             },
             cancel: () => {},

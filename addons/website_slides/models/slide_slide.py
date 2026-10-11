@@ -38,7 +38,7 @@ class SlideSlide(models.Model):
         "most_voted": "likes desc",
         "latest": "date_published desc",
     }
-    _order = "sequence asc, is_category asc, id asc"
+    _order = "sequence asc, is_category desc, id asc"
     _mail_partner_fields = ()
     _partner_unfollow_enabled = True
     _access_anchors = frozendict(
@@ -476,10 +476,10 @@ class SlideSlide(models.Model):
     @api.depends("date_published", "is_published")
     def _compute_is_new_slide(self) -> None:
         for slide in self:
-            slide.is_new_slide = (
-                slide.date_published > fields.Datetime.now() - relativedelta(days=7)
-                if slide.is_published
-                else False
+            slide.is_new_slide = bool(
+                slide.is_published
+                and slide.date_published
+                and slide.date_published > fields.Datetime.now() - relativedelta(days=7)
             )
 
     def _get_placeholder_filename(self, field):
@@ -501,7 +501,7 @@ class SlideSlide(models.Model):
         for slides in channel_slides.values():
             current_category = self.env["slide.slide"]
             slide_list = list(slides)
-            slide_list.sort(key=lambda s: (s.sequence, not s.is_category))
+            slide_list.sort(key=lambda s: (s.sequence, not s.is_category, s.id))
             for slide in slide_list:
                 if slide.is_category:
                     current_category = slide
@@ -513,7 +513,9 @@ class SlideSlide(models.Model):
         for slide in self:
             slide.has_questions = bool(slide.survey_id.question_ids)
 
-    @api.depends("slide_category", "has_questions", "channel_id.is_member")
+    @api.depends(
+        "slide_category", "has_questions", "is_published", "channel_id.is_member"
+    )
     @api.depends_context("uid")
     def _compute_mark_complete_actions(self) -> None:
         for slide in self:
@@ -611,6 +613,13 @@ class SlideSlide(models.Model):
         for slide in self:
             slide.embed_count = mapped_data.get(slide.id, 0)
 
+    @api.model
+    def _get_category_count_field_names(self) -> list[str]:
+        return [
+            f"nbr_{slide_category}"
+            for slide_category in self._fields["slide_category"].get_values(self.env)
+        ]
+
     @api.depends(
         "slide_ids.sequence",
         "slide_ids.active",
@@ -619,13 +628,9 @@ class SlideSlide(models.Model):
         "slide_ids.is_category",
     )
     def _compute_slides_statistics(self) -> None:
-        keys = [
-            "nbr_%s" % slide_category
-            for slide_category in self.env["slide.slide"]
-            ._fields["slide_category"]
-            .get_values(self.env)
-        ]
-        default_vals = dict.fromkeys(keys + ["total_slides"], 0)
+        default_vals = dict.fromkeys(
+            [*self._get_category_count_field_names(), "total_slides"], 0
+        )
 
         res = self.env["slide.slide"]._read_group(
             [
@@ -650,6 +655,7 @@ class SlideSlide(models.Model):
         "category_id.slide_ids",
         "category_id.slide_ids.user_has_completed",
     )
+    @api.depends_context("uid")
     def _compute_category_completed(self) -> None:
         for slide in self:
             if not slide.category_id:
@@ -742,14 +748,12 @@ class SlideSlide(models.Model):
             )
         )
 
+        membership_by_slide = {
+            slide_partner.slide_id.id: slide_partner for slide_partner in slide_partners
+        }
         for record in self:
-            record.user_membership_id = next(
-                (
-                    slide_partner
-                    for slide_partner in slide_partners
-                    if slide_partner.slide_id == record
-                ),
-                self.env["slide.slide.partner"],
+            record.user_membership_id = membership_by_slide.get(
+                record.id, self.env["slide.slide.partner"]
             )
             record.user_vote = record.user_membership_id.vote
             record.user_has_completed = record.user_membership_id.completed
@@ -934,10 +938,8 @@ class SlideSlide(models.Model):
 
     @api.onchange("slide_category")
     def _on_change_slide_category(self) -> None:
-        if self.slide_category != "infographic" and self.image_binary_content:
-            self.image_binary_content = False
-        elif self.slide_category != "document" and self.document_binary_content:
-            self.document_binary_content = False
+        if self.binary_content:
+            self.binary_content = False
 
     @api.depends("name", "channel_id.website_id.domain")
     def _compute_website_url(self) -> None:
@@ -1190,7 +1192,7 @@ class SlideSlide(models.Model):
             : self.EMBED_URL_MAX_LENGTH
         ]
 
-    def _post_publication(self) -> bool:
+    def _post_publication(self) -> None:
         for slide in self.filtered(
             lambda slide: (
                 slide.website_published and slide.channel_id.publish_template_id
@@ -1214,7 +1216,6 @@ class SlideSlide(models.Model):
                 email_layout_xmlid="mail.mail_notification_light",
                 **kwargs,
             )
-        return True
 
     def _send_share_email(self, email, fullscreen) -> list:
         courses_without_templates = self.channel_id.filtered(
@@ -1243,13 +1244,36 @@ class SlideSlide(models.Model):
             for record in self
         ]
 
-    def action_like(self):
-        self.check_access("read")
-        return self._action_vote(upvote=True)
+    def action_like(self) -> None:
+        self._check_can_vote()
+        self._action_vote(upvote=True)
 
-    def action_dislike(self):
+    def action_dislike(self) -> None:
+        self._check_can_vote()
+        self._action_vote(upvote=False)
+
+    def _check_can_vote(self) -> None:
         self.check_access("read")
-        return self._action_vote(upvote=False)
+        for channel in self.channel_id:
+            if not channel.is_member:
+                reason, message = (
+                    "not_a_member",
+                    self.env._("You must be member of this course to vote"),
+                )
+            elif not channel.allow_comment:
+                reason, message = (
+                    "votes_disabled",
+                    self.env._("Votes and comments are disabled for this course"),
+                )
+            elif not channel.can_vote:
+                reason, message = (
+                    "karma",
+                    self.env._("You don't have enough karma to vote"),
+                )
+            else:
+                continue
+            _debug.logic("slide_vote_refused", reason=reason, channels=channel)
+            raise UserError(message)
 
     def _action_vote(self, upvote=True) -> None:
         self_sudo = self.sudo()
@@ -1290,10 +1314,8 @@ class SlideSlide(models.Model):
                 )
             )
 
-        bool(
-            self._action_set_viewed(
-                self.env.user.partner_id, quiz_attempts_inc=quiz_attempts_inc
-            )
+        self._action_set_viewed(
+            self.env.user.partner_id, quiz_attempts_inc=quiz_attempts_inc
         )
 
     def _action_set_viewed(self, target_partner, quiz_attempts_inc=False):
@@ -1439,12 +1461,13 @@ class SlideSlide(models.Model):
         action["context"] = {"search_default_slide_id": self.id}
         return action
 
-    def _check_quiz_survey(self) -> None:
-        for slide in self.filtered(lambda s: not s.survey_id):
-            survey = (
-                self.env["survey.survey"]
-                .sudo()
-                .create(
+    def _ensure_quiz_survey(self) -> None:
+        without_survey = self.filtered(lambda slide: not slide.survey_id)
+        surveys = (
+            self.env["survey.survey"]
+            .sudo()
+            .create(
+                [
                     {
                         "title": slide.name or self.env._("Quiz"),
                         "scoring_type": "scoring_without_answers",
@@ -1456,8 +1479,11 @@ class SlideSlide(models.Model):
                         "is_attempts_limited": False,
                         "active": True,
                     }
-                )
+                    for slide in without_survey
+                ]
             )
+        )
+        for slide, survey in zip(without_survey, surveys, strict=True):
             slide.survey_id = survey
 
     def _get_quiz_info(self, target_partner, quiz_done=False):
@@ -1512,7 +1538,7 @@ class SlideSlide(models.Model):
             if not_found_message and resp is not None and resp.status_code == 404:
                 return {}, not_found_message
             return {}, self._log_external_metadata_error(
-                url, resp.text if resp else error
+                url, resp.text if resp is not None else error
             )
         except requests.exceptions.RequestException as error:
             return {}, self._log_external_metadata_error(url, error)
@@ -1554,8 +1580,7 @@ class SlideSlide(models.Model):
             return False
         if not (response.headers.get("content-type") or "").startswith("image/"):
             return False
-        content = response.content[: self.THUMBNAIL_MAX_BYTES]
-        return base64.b64encode(content) if content else False
+        return base64.b64encode(response.content) if response.content else False
 
     def _set_thumbnail(self, slide_metadata, thumbnail_url, image_url_only) -> None:
         if not thumbnail_url:
@@ -1824,7 +1849,14 @@ class SlideSlide(models.Model):
             }
         return {
             "model": "slide.slide",
-            "base_domain": [website.website_domain()],
+            "base_domain": [
+                website.website_domain(),
+                [
+                    ("is_category", "=", False),
+                    ("website_published", "=", True),
+                    ("channel_id.is_visible", "=", True),
+                ],
+            ],
             "search_fields": search_fields,
             "fetch_fields": fetch_fields,
             "mapping": mapping,

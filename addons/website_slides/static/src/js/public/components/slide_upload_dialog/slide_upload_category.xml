@@ -89,7 +89,7 @@
                 autocomplete="off"
             />
         </div>
-        <div t-if="!this.state.defaultCategoryID" class="mb-3">
+        <div t-if="!this.defaultCategoryId" class="mb-3">
             <label for="category_id" class="col-form-label">Section</label>
             <SelectMenu
                 togglerClass="'form-control form-select'"

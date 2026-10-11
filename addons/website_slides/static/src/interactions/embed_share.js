@@ -19,12 +19,15 @@ export class EmbedShare extends Interaction {
             "#wslides_share_embed_id_" + currentTargetEl.id.split("id_")[1],
         );
         await this.waitFor(browser.navigator.clipboard.writeText(embedEl.value || ""));
-        const bsPopover = Popover.getOrCreateInstance(currentTargetEl, {
-            title: "Copied!",
-            trigger: "manual",
-            placement: "bottom",
-        });
-        this.registerCleanup(() => bsPopover.dispose());
+        let bsPopover = Popover.getInstance(currentTargetEl);
+        if (!bsPopover) {
+            bsPopover = new Popover(currentTargetEl, {
+                title: "Copied!",
+                trigger: "manual",
+                placement: "bottom",
+            });
+            this.registerCleanup(() => bsPopover.dispose());
+        }
         bsPopover.show();
         this.waitForTimeout(() => bsPopover.hide(), 800);
     }

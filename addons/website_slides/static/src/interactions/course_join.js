@@ -1,8 +1,11 @@
 /** @odoo-module native */
+import { makeLogger } from "@web/core/debug/debug_logger";
 import { rpc } from "@web/core/network";
 import { _t } from "@web/core/translation";
 import { renderToElement } from "@web/core/utils/render";
 import { Popover } from "@web/libs/bootstrap";
+
+const log = makeLogger("website_slides.course_join");
 
 export class CourseJoinBehavior {
     /**
@@ -35,6 +38,8 @@ export class CourseJoinBehavior {
             function () {
                 document.location.reload();
             };
+        this.popover = null;
+        host.registerCleanup(() => this.popover?.dispose());
         this.setup(options);
         host.addListener(el, "click", (ev) => {
             if (ev.target.closest(".o_wslides_js_course_join_link")) {
@@ -86,7 +91,8 @@ export class CourseJoinBehavior {
      * @param {String|HTMLElement} message
      */
     _popoverAlert(el, message) {
-        const popover = new Popover(el, {
+        this.popover?.dispose();
+        this.popover = new Popover(el, {
             trigger: "focus",
             delay: { hide: 300 },
             placement: "bottom",
@@ -96,7 +102,7 @@ export class CourseJoinBehavior {
                 return message;
             },
         });
-        popover.show();
+        this.popover.show();
     }
 
     /**
@@ -108,7 +114,10 @@ export class CourseJoinBehavior {
         );
         if (!data.error) {
             this.afterJoin();
-        } else if (data.error === "public_user") {
+            return;
+        }
+        log.logic("join: refused", () => ({ channelId, error: data.error }));
+        if (data.error === "public_user") {
             const popupContent = renderToElement("slide.course.join.popupContent", {
                 channelId: channelId,
                 courseUrl: encodeURIComponent(document.URL),

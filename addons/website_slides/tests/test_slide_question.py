@@ -16,7 +16,7 @@ class TestSlideQuizSurvey(slides_common.SlidesCase):
             }
         )
         self.assertFalse(slide.survey_id)
-        slide._check_quiz_survey()
+        slide._ensure_quiz_survey()
         self.assertTrue(slide.survey_id)
         self.assertEqual(slide.survey_id.scoring_success_min, 100.0)
         self.assertEqual(slide.survey_id.questions_layout, "one_page")
@@ -32,7 +32,7 @@ class TestSlideQuizSurvey(slides_common.SlidesCase):
                 "is_published": True,
             }
         )
-        slide._check_quiz_survey()
+        slide._ensure_quiz_survey()
         self.assertFalse(slide.has_questions)
 
         self.env["survey.question"].create(

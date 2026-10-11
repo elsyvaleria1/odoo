@@ -112,8 +112,4 @@
         </div>
     </t>
 
-    <t t-name="website_slides.UploadDialogInstallModule">
-        <SlideInstallModule moduleData="this.state.installModuleData"/>
-    </t>
-
 </templates>

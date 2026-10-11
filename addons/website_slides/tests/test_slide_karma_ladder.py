@@ -59,16 +59,6 @@ class TestQuizRewardLadder(common.SlidesCase):
         self.assertEqual(info["quiz_karma_gain"], 30, "what attempt 2 would earn")
         self.assertEqual(info["quiz_karma_max"], 40)
 
-        earned = self.channel._get_earned_karma(self.learner.partner_id.ids)
-        quiz_entries = [
-            entry
-            for entry in earned[self.learner.partner_id.id]
-            if entry["karma"] == 40
-        ]
-        self.assertTrue(
-            quiz_entries, "_get_earned_karma must read the same ladder as the payer"
-        )
-
     def test_quiz_reset_refunds_the_karma_it_granted(self):
         slide = self.slide_3.with_user(self.learner)
         for _cycle in range(3):

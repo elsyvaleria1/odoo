@@ -10,7 +10,7 @@ export class SlideUnsubscribeDialog extends Component {
     static components = { CheckBox, Dialog };
     static props = {
         channelId: t.number(),
-        isFollower: t.string().optional(),
+        isFollower: t.boolean().optional(),
         visibility: t.string(),
         enroll: t.string().optional(),
         close: t.function(),
@@ -21,8 +21,8 @@ export class SlideUnsubscribeDialog extends Component {
         this.state = proxy({
             buttonDisabled: false,
         });
-        this.channelID = parseInt(this.props.channelId, 10);
-        this.isFollower = this.props.isFollower === "True";
+        this.channelID = this.props.channelId;
+        this.isFollower = Boolean(this.props.isFollower);
         this.updateState("subscription");
         this.isChecked = this.isFollower;
     }

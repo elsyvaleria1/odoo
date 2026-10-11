@@ -671,13 +671,9 @@ class SlideChannel(models.Model):
             "total_time": 0,
             "total_slides": 0,
         }
-        keys = [
-            "nbr_%s" % slide_category
-            for slide_category in self.env["slide.slide"]
-            ._fields["slide_category"]
-            .get_values(self.env)
-        ]
-        default_vals.update(dict.fromkeys(keys, 0))
+        default_vals.update(
+            dict.fromkeys(self.env["slide.slide"]._get_category_count_field_names(), 0)
+        )
 
         result = {cid: dict(default_vals) for cid in self.ids}
         read_group_res = self.env["slide.slide"]._read_group(
@@ -869,7 +865,10 @@ class SlideChannel(models.Model):
                 channel.can_comment = user_karma >= channel.karma_slide_comment
                 channel.can_vote = user_karma >= channel.karma_slide_vote
 
-    @api.depends("prerequisite_channel_ids", "channel_partner_ids.member_status")
+    @api.depends(
+        "prerequisite_channel_ids",
+        "prerequisite_channel_ids.channel_partner_ids.member_status",
+    )
     @api.depends_context("uid")
     def _compute_prerequisite_user_has_completed(self) -> None:
         completed_prerequisite_channels = (
@@ -886,8 +885,8 @@ class SlideChannel(models.Model):
         )
         for channel in self:
             channel.prerequisite_user_has_completed = all(
-                channel in completed_prerequisite_channels
-                for channel in channel.prerequisite_channel_ids
+                prerequisite in completed_prerequisite_channels
+                for prerequisite in channel.prerequisite_channel_ids
             )
 
     def _init_column(self, column_name, *, new_column=False):
@@ -921,7 +920,9 @@ class SlideChannel(models.Model):
             self.env.registry.clear_cache("stable")
         for channel in channels:
             if channel.user_id:
-                channel._action_add_members(channel.user_id.partner_id)
+                channel._action_add_members(
+                    channel.user_id.partner_id, enforce_access=False
+                )
             if channel.enroll_group_ids:
                 channel._add_groups_members()
 
@@ -955,11 +956,8 @@ class SlideChannel(models.Model):
 
         if vals.get("user_id"):
             self._action_add_members(
-                self.env["res.users"].sudo().browse(vals["user_id"]).partner_id
-            )
-            self.activity_reschedule(
-                ["mail_activity_data_todo"],
-                new_user_id=vals.get("user_id"),
+                self.env["res.users"].sudo().browse(vals["user_id"]).partner_id,
+                enforce_access=False,
             )
         if "enroll_group_ids" in vals or "active" in vals:
             self.env.registry.clear_cache("stable")
@@ -1118,10 +1116,18 @@ class SlideChannel(models.Model):
         }
 
     def _action_add_members(
-        self, target_partners, member_status="joined", raise_on_access=False
+        self,
+        target_partners,
+        member_status="joined",
+        raise_on_access=False,
+        enforce_access=True,
     ):
         SlideChannelPartnerSudo = self.env["slide.channel.partner"].sudo()
-        allowed_channels = self._filter_add_members(raise_on_access=raise_on_access)
+        allowed_channels = (
+            self._filter_add_members(target_partners, raise_on_access=raise_on_access)
+            if enforce_access
+            else self
+        )
         if not allowed_channels or not target_partners:
             _debug.logic(
                 "members_not_added",
@@ -1204,10 +1210,22 @@ class SlideChannel(models.Model):
                 )
         return result_channel_partners
 
-    def _filter_add_members(self, raise_on_access=False):
-        allowed = self.filtered(lambda channel: channel.enroll == "public")
+    def _filter_add_members(self, target_partners, raise_on_access=False):
+        if self.env.su:
+            return self
+        if target_partners == self.env.user.partner_id:
+            allowed = self.filtered(lambda channel: channel.enroll == "public")
+        else:
+            allowed = self.browse()
         if controlled_access := (self - allowed):
             allowed += controlled_access._filtered_access("write")
+            if allowed != self:
+                _debug.logic(
+                    "add_members_filtered",
+                    channels=self - allowed,
+                    partners=len(target_partners),
+                    self_enrollment=target_partners == self.env.user.partner_id,
+                )
             if raise_on_access and allowed != self:
                 _debug.logic(
                     "add_members_refused",
@@ -1251,56 +1269,9 @@ class SlideChannel(models.Model):
     def _add_groups_members(self) -> None:
         for channel in self:
             channel._action_add_members(
-                channel.mapped("enroll_group_ids.all_user_ids.partner_id")
+                channel.mapped("enroll_group_ids.all_user_ids.partner_id"),
+                enforce_access=False,
             )
-
-    def _get_earned_karma(self, partner_ids):
-        total_karma = defaultdict(list)
-
-        slide_completed = (
-            self.env["slide.slide.partner"]
-            .sudo()
-            .search(
-                [
-                    ("partner_id", "in", partner_ids),
-                    ("channel_id", "in", self.ids),
-                    ("completed", "=", True),
-                    ("quiz_attempts_count", ">", 0),
-                ]
-            )
-        )
-        for partner_slide in slide_completed:
-            slide = partner_slide.slide_id
-            if not slide.has_questions:
-                continue
-            total_karma[partner_slide.partner_id.id].append(
-                {
-                    "karma": slide._get_quiz_reward(partner_slide.quiz_attempts_count),
-                    "channel_id": slide.channel_id,
-                }
-            )
-
-        channel_completed = (
-            self.env["slide.channel.partner"]
-            .sudo()
-            .search(
-                [
-                    ("partner_id", "in", partner_ids),
-                    ("channel_id", "in", self.ids),
-                    ("member_status", "=", "completed"),
-                ]
-            )
-        )
-        for partner_channel in channel_completed:
-            channel = partner_channel.channel_id
-            total_karma[partner_channel.partner_id.id].append(
-                {
-                    "karma": channel.karma_gen_channel_finish,
-                    "channel_id": channel,
-                }
-            )
-
-        return total_karma
 
     def _remove_membership(self, partner_ids):
         if not partner_ids:
@@ -1309,19 +1280,9 @@ class SlideChannel(models.Model):
             )
 
         self.message_unsubscribe(partner_ids=partner_ids)
-        if self:
-            removed_channel_partner = (
-                self.env["slide.channel.partner"]
-                .sudo()
-                .search(
-                    [
-                        ("channel_id", "in", self.ids),
-                        ("partner_id", "in", partner_ids),
-                    ]
-                )
-            )
-            if removed_channel_partner:
-                removed_channel_partner.action_archive()
+        self.env["slide.channel.partner"].sudo().search(
+            [("channel_id", "in", self.ids), ("partner_id", "in", partner_ids)]
+        ).action_archive()
 
     @api.model
     def _send_share_mail(self, template, record, emails, **extra_context):
@@ -1360,6 +1321,7 @@ class SlideChannel(models.Model):
         ]
 
     def action_view_slides(self):
+        self.check_singleton()
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "website_slides.slide_slide_action"
         )
@@ -1404,7 +1366,11 @@ class SlideChannel(models.Model):
         if not partner:
             return
         if not self._decide_access_request(partner, False, approve=True):
-            self._action_add_members(partner, raise_on_access=True)
+            _debug.logic(
+                "grant_access_without_request", channels=self, partner=partner.id
+            )
+            self.check_access("write")
+            self._action_add_members(partner)
 
     def action_refuse_access(self, partner_id) -> None:
         self.check_singleton()
@@ -1462,7 +1428,7 @@ class SlideChannel(models.Model):
         start = offset or 0
         end = start + limit if limit else None
 
-        slides_by_category = defaultdict(lambda: self.env["slide.slide"])
+        slides_by_category = defaultdict(all_slides.browse)
         for slide in all_slides:
             slides_by_category[slide.category_id.id] += slide
 
@@ -1563,7 +1529,7 @@ class SlideChannel(models.Model):
     def _search_get_detail(self, website, order, options):
         with_description = options["displayDescription"]
         with_date = options["displayDetail"]
-        my = options.get("my")
+        my = str(options.get("my")) == "1"
         search_tags = options.get("tag")
         slide_category = options.get("slide_category")
         domain = [website.website_domain(), [("is_visible", "=", True)]]

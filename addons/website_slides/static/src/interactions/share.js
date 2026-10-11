@@ -1,7 +1,10 @@
 /** @odoo-module native */
 import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
-import { getDocumentMaxPage } from "@website_slides/js/public/slides_course_utils";
+import {
+    getDocumentMaxPage,
+    parseSlideBoolean,
+} from "@website_slides/js/public/slides_course_utils";
 
 import { SlideShareDialog } from "../js/public/components/slide_share_dialog/slide_share_dialog.js";
 
@@ -21,10 +24,10 @@ export class Share extends Interaction {
             category: data.category,
             documentMaxPage:
                 data.category === "document" ? getDocumentMaxPage() : undefined,
-            emailSharing: data.emailSharing === "True",
+            emailSharing: parseSlideBoolean(data.emailSharing),
             embedCode: data.embedCode,
             id: parseInt(data.id),
-            isChannel: data.isChannel === "True",
+            isChannel: parseSlideBoolean(data.isChannel),
             name: data.name,
             url: data.url,
         });

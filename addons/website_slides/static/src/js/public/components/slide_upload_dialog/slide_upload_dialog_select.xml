@@ -16,16 +16,6 @@
                 />
             </div>
         </div>
-        <ModuleToInstallIcon
-            t-if="this.props.modulesToInstall.length"
-            t-foreach="this.props.modulesToInstall"
-            t-as="module_info"
-            t-key="module_info_index"
-            title="module_info['name']"
-            moduleId="module_info['id']"
-            motivational="module_info['motivational']"
-            onClickInstallModuleIcon.bind="this.onClickInstallModuleIcon"
-        />
     </t>
 
     <t t-name="website_slides.SlideCategoryIcon" owl="1">
@@ -37,15 +27,6 @@
         >
             <i t-attf-class="#{this.props.categoryData.icon} mb-2 fa-3x"/>
             <t t-out="this.props.categoryData.label"/>
-        </a>
-    </t>
-
-    <t t-name="website_slides.ModuleToInstallIcon" owl="1">
-        <a class="w-100 text-center mb-4 btn rounded border text-600 p-3"
-            href="#" t-on-click="() => this.props.onClickInstallModuleIcon(this.props.moduleId)"
-            t-att-title="this.props.title"
-            t-att-data-module-id="this.props.moduleId">
-            <i class="fa-solid fa-trophy"/> <t t-out="this.props.motivational"/><span class="text-primary"> Install the <t t-out="this.props.title"/> app.</span>
         </a>
     </t>
 </templates>

@@ -4,7 +4,7 @@ from urllib.parse import parse_qs
 from dateutil.relativedelta import relativedelta
 
 from odoo import fields
-from odoo.tests import HttpCase, tagged
+from odoo.tests import HttpCase, new_test_user, tagged
 
 from odoo.addons.base.models.access_link import hash_token
 
@@ -87,3 +87,16 @@ class TestInvitationLinks(HttpCase):
         self.assertEqual(
             self._visit(self.invited, token).get("invite_error"), ["hash_fail"]
         )
+
+    def test_a_member_with_an_account_is_sent_to_log_in_under_their_exact_login(self):
+        user = new_test_user(
+            self.env, login="learner+courses@example.com", groups="base.group_portal"
+        )
+        member = self.channel.sudo()._action_add_members(user.partner_id)
+        member._issue_invitation_links()
+        token = parse_qs(member.invitation_link.split("?", 1)[1])["invite_hash"][0]
+
+        query = self._visit(member, token)
+
+        self.assertEqual(query["auth_login"], ["learner+courses@example.com"])
+        self.assertEqual(query["redirect"], [f"/slides/{self.channel.id}"])

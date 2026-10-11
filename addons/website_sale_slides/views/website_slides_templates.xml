@@ -61,7 +61,9 @@
             id="course_slides_list_slide"
             name="Slide template for a training channel (Sale)"
             inherit_id="website_slides.course_slides_list_slide">
-            <xpath expr="//a[@t-if='channel.can_upload']/span/span" position="replace">
+            <xpath
+                expr="//a[@name='o_wslides_slide_toggle_is_preview']/span/span"
+                position="replace">
                 <span t-if="channel.enroll == 'payment'">Free Preview</span>
                 <span t-else="">Preview</span>
             </xpath>

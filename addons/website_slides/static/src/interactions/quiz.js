@@ -1,5 +1,6 @@
 /** @odoo-module native */
 import { markup } from "@odoo/owl";
+import { makeLogger } from "@web/core/debug/debug_logger";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
@@ -11,6 +12,34 @@ import { attachCourseJoin } from "@website_slides/interactions/course_join";
 import { CoursePage } from "@website_slides/interactions/course_page";
 import { QuestionFormBehavior } from "@website_slides/interactions/quiz_question_form";
 import { SlideQuizFinishDialog } from "@website_slides/js/public/components/slide_quiz_finish_dialog/slide_quiz_finish_dialog";
+import { parseSlideBoolean } from "@website_slides/js/public/slides_course_utils";
+
+const log = makeLogger("website_slides.quiz");
+
+/**
+ * @param {Object} reply
+ * @returns {{quiz: Object, sessionAnswers: number[]|null}|null}
+ */
+export function parseQuizReply(reply) {
+    if (!reply || reply.error) {
+        return null;
+    }
+    const questions = reply.slide_questions || [];
+    return {
+        quiz: {
+            description_safe: reply.slide_description
+                ? markup(reply.slide_description)
+                : "",
+            questions,
+            questionsCount: questions.length,
+            quizAttemptsCount: reply.quiz_attempts_count || 0,
+            quizKarmaGain: reply.quiz_karma_gain || 0,
+            quizKarmaWon: reply.quiz_karma_won || 0,
+            slideResources: reply.slide_resource_ids || [],
+        },
+        sessionAnswers: reply.session_answers || null,
+    };
+}
 
 export class QuizBehavior {
     /**
@@ -21,26 +50,32 @@ export class QuizBehavior {
      * @param {Object} params.slideData
      * @param {Object} params.channelData
      * @param {Object} [params.quizData]
-     * @returns {Promise<QuizBehavior>}
+     * @param {() => boolean} [params.isCurrent]
+     * @returns {Promise<QuizBehavior|null>}
      */
     static async create(host, params) {
         let quizData = params.quizData;
         let sessionAnswers;
         if (!quizData) {
-            const fetched = await host.waitFor(
-                rpc("/slides/slide/quiz/get", { slide_id: params.slideData.id }),
+            const slideId = params.slideData.id;
+            const reply = await host.waitFor(
+                rpc("/slides/slide/quiz/get", { slide_id: slideId }),
             );
-            sessionAnswers = fetched.session_answers;
-            quizData = {
-                description_safe: fetched.slide_description
-                    ? markup(fetched.slide_description)
-                    : "",
-                questions: fetched.slide_questions || [],
-                quizAttemptsCount: fetched.quiz_attempts_count || 0,
-                quizKarmaGain: fetched.quiz_karma_gain || 0,
-                quizKarmaWon: fetched.quiz_karma_won || 0,
-                slideResources: fetched.slide_resource_ids || [],
-            };
+            if (params.isCurrent && !params.isCurrent()) {
+                log.logic("create: superseded by a newer render, dropped", () => ({
+                    slideId,
+                }));
+                return null;
+            }
+            const parsed = parseQuizReply(reply);
+            if (!parsed) {
+                log.logic("create: quiz/get refused", () => ({
+                    slideId,
+                    error: reply?.error,
+                }));
+                return null;
+            }
+            ({ quiz: quizData, sessionAnswers } = parsed);
         }
         const quiz = new this(host, params, quizData);
         if (sessionAnswers !== undefined) {
@@ -73,6 +108,7 @@ export class QuizBehavior {
         this.channel = params.channelData;
 
         this.eventRemovers = [];
+        host.registerCleanup(() => this.bindedSortable?.cleanup());
         if (params.el) {
             this.el = params.el;
         } else {
@@ -91,7 +127,11 @@ export class QuizBehavior {
         this._checkLocationHref();
         if (!this.isMember) {
             this._renderJoinWidget();
-        } else if (this.slide.sessionAnswers) {
+        } else if (this.slide.sessionAnswers?.length) {
+            log.logic("start: re-applying answers saved before joining", () => ({
+                slideId: this.slide.id,
+                answers: this.slide.sessionAnswers,
+            }));
             this._applySessionAnswers();
             this._submitQuiz();
         }
@@ -139,6 +179,8 @@ export class QuizBehavior {
             message = _t("This quiz is already done. Retaking it is not possible.");
         } else if (errorCode === "public_user") {
             message = _t("You must be logged to submit the quiz.");
+        } else if (errorCode === "slide_quiz_not_member") {
+            message = _t("Join the course to take the quiz and verify your answers!");
         }
 
         const errorEl = this.el.querySelector(".o_wslides_js_quiz_submit_error");
@@ -177,7 +219,6 @@ export class QuizBehavior {
                 applyChangeOnDrop: true,
             })
             .enable();
-        this.host.registerCleanup(() => this.bindedSortable?.cleanup());
     }
 
     /**
@@ -208,23 +249,24 @@ export class QuizBehavior {
             .then(this._modifyQuestionsSequence.bind(this));
     }
 
-    _fetchQuiz() {
-        return this.host
-            .waitFor(rpc("/slides/slide/quiz/get", { slide_id: this.slide.id }))
-            .then((quiz_data) => {
-                this.slide.sessionAnswers = quiz_data.session_answers;
-                this.quiz = {
-                    description_safe: quiz_data.slide_description
-                        ? markup(quiz_data.slide_description)
-                        : "",
-                    questions: quiz_data.slide_questions || [],
-                    questionsCount: quiz_data.slide_questions.length,
-                    quizAttemptsCount: quiz_data.quiz_attempts_count || 0,
-                    quizKarmaGain: quiz_data.quiz_karma_gain || 0,
-                    quizKarmaWon: quiz_data.quiz_karma_won || 0,
-                    slideResources: quiz_data.slide_resource_ids || [],
-                };
-            });
+    /**
+     * @returns {Promise<boolean>}
+     */
+    async _fetchQuiz() {
+        const reply = await this.host.waitFor(
+            rpc("/slides/slide/quiz/get", { slide_id: this.slide.id }),
+        );
+        const parsed = parseQuizReply(reply);
+        if (!parsed) {
+            log.logic("fetch: quiz/get refused, keeping current quiz", () => ({
+                slideId: this.slide.id,
+                error: reply?.error,
+            }));
+            return false;
+        }
+        this.slide.sessionAnswers = parsed.sessionAnswers;
+        this.quiz = parsed.quiz;
+        return true;
     }
 
     _hideEditOptions() {
@@ -373,8 +415,13 @@ export class QuizBehavior {
             if (
                 !this.publicUser &&
                 joinBehavior.channel.channelEnroll === "public" &&
-                this.slide.sessionAnswers
+                this.slide.sessionAnswers?.length
             ) {
+                log.logic("join: auto-joining with answers saved before login", () => ({
+                    slideId: this.slide.id,
+                    answers: this.slide.sessionAnswers,
+                }));
+                this._applySessionAnswers();
                 joinBehavior.joinChannel(this.channel.channelId);
             }
         }
@@ -394,6 +441,10 @@ export class QuizBehavior {
             }),
         );
         if (data.error) {
+            log.logic("submit: refused", () => ({
+                slideId: this.slide.id,
+                error: data.error,
+            }));
             this._showErrorMessage(data.error);
             return;
         } else {
@@ -490,12 +541,19 @@ export class QuizBehavior {
         }
     }
 
-    _onClickReset() {
-        rpc("/slides/slide/quiz/reset", {
-            slide_id: this.slide.id,
-        }).then(function () {
-            window.location.reload();
-        });
+    async _onClickReset() {
+        const result = await this.host.waitFor(
+            rpc("/slides/slide/quiz/reset", { slide_id: this.slide.id }),
+        );
+        if (result?.error) {
+            log.logic("reset: refused", () => ({
+                slideId: this.slide.id,
+                error: result.error,
+            }));
+            this._showErrorMessage(result.error);
+            return;
+        }
+        window.location.reload();
     }
 
     _saveQuizAnswersToSession() {
@@ -681,24 +739,18 @@ export class QuizNoFullscreen extends CoursePage {
         const parsedSlideData = {
             id: parseInt(slideData.id),
             name: slideData.name || "",
-            hasNext: slideData.hasNext === "true" || slideData.hasNext === "1",
-            completed: slideData.completed === "true" || slideData.completed === "1",
-            isMember: slideData.isMember === "true" || slideData.isMember === "1",
-            isMemberOrInvited:
-                slideData.isMemberOrInvited === "true" ||
-                slideData.isMemberOrInvited === "1",
-            canSelfMarkCompleted:
-                slideData.canSelfMarkCompleted === "true" ||
-                slideData.canSelfMarkCompleted === "1",
-            canSelfMarkUncompleted:
-                slideData.canSelfMarkUncompleted === "true" ||
-                slideData.canSelfMarkUncompleted === "1",
+            hasNext: parseSlideBoolean(slideData.hasNext),
+            completed: parseSlideBoolean(slideData.completed),
+            isMember: parseSlideBoolean(slideData.isMember),
+            isMemberOrInvited: parseSlideBoolean(slideData.isMemberOrInvited),
+            canSelfMarkCompleted: parseSlideBoolean(slideData.canSelfMarkCompleted),
+            canSelfMarkUncompleted: parseSlideBoolean(slideData.canSelfMarkUncompleted),
+            sessionAnswers: slideData.sessionAnswers
+                ? JSON.parse(slideData.sessionAnswers)
+                : null,
         };
         const quizData = {
             questions: this._extractQuestionsAndAnswers(),
-            sessionAnswers: slideData.sessionAnswers
-                ? JSON.parse(slideData.sessionAnswers)
-                : [],
             quizKarmaMax: parseInt(slideData.quizKarmaMax) || 0,
             quizKarmaWon: parseInt(slideData.quizKarmaWon) || 0,
             quizKarmaGain: parseInt(slideData.quizKarmaGain) || 0,
@@ -741,47 +793,58 @@ export class QuizNoFullscreen extends CoursePage {
     toggleCompletionButton(slideData, completed = true) {
         super.toggleCompletionButton(...arguments);
 
-        if (
-            this.quiz &&
-            this.quiz.slide.id === slideData.id &&
-            !completed &&
-            this.quiz.quiz.questionsCount
-        ) {
+        if (!this.quiz || this.quiz.slide.id !== Number(slideData.id)) {
+            return;
+        }
+        if (!completed && this.quiz.quiz.questionsCount) {
             this.quiz.quiz.answers = null;
             this.quiz.slide.sessionAnswers = null;
             this.quiz.slide.completed = false;
-            this.quiz._fetchQuiz().then(() => {
-                this.quiz.rerender();
-                this.quiz._renderValidationInfo();
+            this.quiz._fetchQuiz().then((fetched) => {
+                if (fetched) {
+                    this.quiz.rerender();
+                    this.quiz._renderValidationInfo();
+                }
             });
         }
 
-        const doneButton = document.querySelector(".o_wslides_done_button");
+        const doneButton = document.querySelector("a.o_wslides_done_button");
         if (doneButton && completed) {
-            doneButton.classList.remove(
-                "o_wslides_done_button",
-                "disabled",
-                "btn-primary",
-                "text-white",
-            );
-            doneButton.classList.add("o_wslides_undone_button", "btn-light");
-            doneButton.textContent = _t("Mark To Do");
-            doneButton.removeAttribute("title");
-            doneButton.removeAttribute("aria-disabled");
-            doneButton.setAttribute(
-                "href",
-                `/slides/slide/${encodeURIComponent(slideData.id)}/set_uncompleted`,
-            );
+            if (parseSlideBoolean(slideData.canSelfMarkUncompleted)) {
+                doneButton.replaceWith(this._renderMarkToDoForm(slideData.id));
+            } else {
+                doneButton.remove();
+            }
         }
+    }
+
+    /**
+     * @param {number|string} slideId
+     * @returns {HTMLFormElement}
+     */
+    _renderMarkToDoForm(slideId) {
+        const formEl = document.createElement("form");
+        formEl.className = "d-inline";
+        formEl.method = "post";
+        formEl.action = `/slides/slide/${encodeURIComponent(slideId)}/set_uncompleted`;
+        const csrfEl = document.createElement("input");
+        csrfEl.type = "hidden";
+        csrfEl.name = "csrf_token";
+        csrfEl.value = odoo.csrf_token;
+        const buttonEl = document.createElement("button");
+        buttonEl.type = "submit";
+        buttonEl.className = "o_wslides_undone_button btn btn-light border me-2";
+        buttonEl.textContent = _t("Mark To Do");
+        formEl.append(csrfEl, buttonEl);
+        return formEl;
     }
 
     _extractChannelData(slideData) {
         return {
             channelId: parseInt(slideData.channelId) || slideData.channelId,
             channelEnroll: slideData.channelEnroll,
-            channelRequestedAccess: slideData.channelRequestedAccess || false,
-            signupAllowed:
-                slideData.signupAllowed === "true" || slideData.signupAllowed === "1",
+            channelRequestedAccess: parseSlideBoolean(slideData.channelRequestedAccess),
+            signupAllowed: parseSlideBoolean(slideData.signupAllowed),
         };
     }
 

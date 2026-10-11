@@ -4,9 +4,12 @@ from dateutil.relativedelta import relativedelta
 
 from odoo import Command, api, fields, models
 from odoo.fields import Domain
+from odoo.libs.debug_log import DebugLog
 from odoo.tools import frozendict
 
 INVITATION_VALIDITY_MONTHS = 3
+
+_debug = DebugLog(__name__)
 
 
 class SlideChannelPartner(models.Model):
@@ -48,6 +51,11 @@ class SlideChannelPartner(models.Model):
     completed_slides_count = fields.Integer(
         string="# Completed Contents",
         default=0,
+    )
+    date_completed = fields.Datetime(
+        string="Completed On",
+        readonly=True,
+        copy=False,
     )
     partner_id = fields.Many2one(
         comodel_name="res.partner",
@@ -204,12 +212,10 @@ class SlideChannelPartner(models.Model):
         }
 
         completed_records = self.env["slide.channel.partner"]
-        uncompleted_records = self.env["slide.channel.partner"]
         for record in self:
             if record.member_status in ("completed", "invited"):
                 continue
             total_slides = record.channel_id.total_slides
-            was_finished = record._is_finished()
             record.completed_slides_count = mapped_data.get(
                 (record.channel_id.id, record.partner_id.id), 0
             )
@@ -218,34 +224,36 @@ class SlideChannelPartner(models.Model):
                 if total_slides
                 else 0
             )
-            is_finished = record._is_finished()
-
             if not record.channel_id.active:
                 continue
-            if not was_finished and is_finished:
-                completed_records += record
-            elif was_finished and not is_finished:
-                uncompleted_records += record
-
-            if is_finished:
+            if record._is_finished():
                 record.member_status = "completed"
+                if record.date_completed:
+                    _debug.logic(
+                        "member_recompleted_without_reward", membership=record.id
+                    )
+                else:
+                    record.date_completed = fields.Datetime.now()
+                    completed_records += record
             elif not record.completed_slides_count:
                 record.member_status = "joined"
             else:
                 record.member_status = "ongoing"
 
         if completed_records:
+            _debug.lifecycle(
+                "members_completed",
+                channels=completed_records.channel_id,
+                members=len(completed_records),
+            )
             completed_records._post_completion_update_hook(completed=True)
             completed_records._send_completed_mail()
 
-        if uncompleted_records:
-            uncompleted_records._post_completion_update_hook(completed=False)
-
     def unlink(self):
         if self:
-            self.filtered(
-                lambda membership: membership.member_status == "completed"
-            )._post_completion_update_hook(completed=False)
+            self.filtered("date_completed")._post_completion_update_hook(
+                completed=False
+            )
             removed_slide_partner_domain = Domain.OR(
                 Domain("channel_id", "=", channel.id)
                 & Domain("partner_id", "in", channel_partners.partner_id.ids)

@@ -1,7 +1,7 @@
 /** @odoo-module native */
 import { registry } from "@web/core/registry";
-import { _t } from "@web/core/translation";
 import { CoursePage } from "@website_slides/interactions/course_page";
+import { syncEmptySectionFlags } from "@website_slides/js/public/slides_course_utils";
 
 export class CourseSlidesList extends CoursePage {
     static selector = ".o_wslides_slides_list";
@@ -53,31 +53,6 @@ export class CourseSlidesList extends CoursePage {
         this.registerCleanup(() => slideSortable.cleanup());
     }
 
-    checkForEmptySections() {
-        for (const categoryEl of this.el.querySelectorAll(
-            ".o_wslides_slide_list_category",
-        )) {
-            const headerEl = categoryEl.querySelector(
-                ".o_wslides_slide_list_category_header",
-            );
-            const slideCount = categoryEl.querySelectorAll(
-                ".o_wslides_slides_list_slide:not(.o_not_editable)",
-            ).length;
-            const flagContainerEl = headerEl.querySelector(
-                ".o_wslides_slides_list_drag",
-            );
-            const emptyFlagEl = flagContainerEl?.querySelector("small");
-            if (slideCount === 0 && !emptyFlagEl) {
-                const smallEl = document.createElement("small");
-                smallEl.className = "ms-1 text-muted fw-bold";
-                smallEl.textContent = _t("(empty)");
-                flagContainerEl.appendChild(smallEl);
-            } else if (slideCount > 0 && emptyFlagEl) {
-                emptyFlagEl.remove();
-            }
-        }
-    }
-
     /**
      * @returns {number[]}
      */
@@ -93,7 +68,7 @@ export class CourseSlidesList extends CoursePage {
         await this.waitFor(
             this.services.orm.webResequence("slide.slide", this.getSlides()),
         );
-        this.checkForEmptySections();
+        syncEmptySectionFlags(this.el);
     }
 
     updateHref() {

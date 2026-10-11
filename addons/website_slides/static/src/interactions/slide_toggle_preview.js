@@ -18,7 +18,7 @@ export class SlideTogglePreview extends Interaction {
     };
 
     setup() {
-        this.isPreview = false;
+        this.isPreview = this.el.classList.contains("text-bg-success");
     }
 
     async toggleSlidePreview() {
@@ -27,7 +27,10 @@ export class SlideTogglePreview extends Interaction {
                 slide_id: this.el.dataset.slideId,
             }),
         );
-        this.isPreview = !!isPreview;
+        if (isPreview?.error) {
+            return;
+        }
+        this.isPreview = isPreview === true;
     }
 }
 

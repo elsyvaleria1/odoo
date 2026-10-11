@@ -170,7 +170,7 @@ class TestSurveyScoping(common.SlidesCase):
                 }
             )
         )
-        cls.other_quiz._check_quiz_survey()
+        cls.other_quiz._ensure_quiz_survey()
         cls.other_question = (
             cls.env["survey.question"]
             .sudo()

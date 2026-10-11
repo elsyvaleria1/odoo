@@ -1,7 +1,9 @@
 import base64
 import io
+from unittest.mock import patch
 
 import psycopg
+import requests
 from reportlab.pdfgen import canvas
 
 from odoo.tests import Form
@@ -282,3 +284,73 @@ class TestSlideFormContent(slides_common.SlidesCase):
         form.image_binary_content = self.PNG
         slide = form.save()
         self.assertEqual(slide.binary_content, self.PNG)
+
+
+class TestSlideStructureAndSources(slides_common.SlidesCase):
+    def test_a_section_heads_a_lesson_of_the_same_sequence_everywhere(self):
+        channel = self.env["slide.channel"].create({"name": "Ties"})
+        first, second = self.env["slide.slide"].create(
+            [
+                {
+                    "name": "First",
+                    "channel_id": channel.id,
+                    "is_category": True,
+                    "sequence": 1,
+                },
+                {
+                    "name": "Second",
+                    "channel_id": channel.id,
+                    "is_category": True,
+                    "sequence": 5,
+                },
+            ]
+        )
+        lesson = self.env["slide.slide"].create(
+            {
+                "name": "Tied lesson",
+                "channel_id": channel.id,
+                "slide_category": "article",
+                "sequence": 5,
+            }
+        )
+        channel.invalidate_recordset(["slide_ids"])
+
+        self.assertEqual(lesson.category_id, second)
+        self.assertEqual(list(channel.slide_ids), [first, second, lesson])
+
+    def test_a_refused_metadata_fetch_reports_what_the_provider_said(self):
+        response = requests.models.Response()
+        response.status_code = 403
+        response._content = b"daily quota exceeded"
+        refusal = requests.exceptions.HTTPError("403 Client Error", response=response)
+
+        def request(*args, **kwargs):
+            class Refused:
+                def raise_for_status(self):
+                    raise refusal
+
+            return Refused()
+
+        with (
+            patch.object(type(self.env["ir.egress"]), "request", request),
+            mute_logger("odoo.addons.website_slides.models.slide_slide"),
+        ):
+            _payload, error = self.env["slide.slide"]._get_external_json(
+                "https://example.com/metadata"
+            )
+
+        self.assertEqual(error, "daily quota exceeded")
+
+    def test_a_draft_lesson_reads_its_drive_file_from_whichever_link_field_was_filled(
+        self,
+    ):
+        url = "https://drive.google.com/file/d/DRIVEFILE01/view"
+        Slide = self.env["slide.slide"].with_context(
+            website_slides_skip_fetch_metadata=True
+        )
+        for alias in ("video_url", "document_google_url", "image_google_url"):
+            with self.subTest(alias=alias):
+                draft = Slide.new(
+                    {"name": "draft", "channel_id": self.channel.id, alias: url}
+                )
+                self.assertEqual(draft.google_drive_id, "DRIVEFILE01")

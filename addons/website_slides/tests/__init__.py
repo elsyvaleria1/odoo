@@ -25,3 +25,8 @@ from . import test_course_access_request
 from . import test_invitation_links
 from . import test_message_post_hooks
 from . import test_course_join_form
+from . import test_course_page_access
+from . import test_lesson_quiz
+from . import test_rpc_rights
+from . import test_slide_search
+from . import test_quiz_submit

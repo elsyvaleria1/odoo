@@ -142,7 +142,7 @@ class SlidesCase(MailCase):
                 }
             )
         )
-        cls.slide_3._check_quiz_survey()
+        cls.slide_3._ensure_quiz_survey()
         cls.quiz_survey = cls.slide_3.survey_id
         cls.question_1 = (
             cls.env["survey.question"]

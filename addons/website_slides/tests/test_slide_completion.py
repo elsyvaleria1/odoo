@@ -105,3 +105,47 @@ class TestCompletionThreshold(common.SlidesCase):
             self._membership(channel).completion,
         )
         self.assertLess(channel.with_user(self.learner).completion, 100)
+
+    def test_unpublishing_the_last_open_content_completes_with_its_reward(self):
+        channel, slides = self._build_course(2)
+        slides[:1].with_user(self.learner)._action_mark_completed()
+
+        slides[1:].is_published = False
+
+        membership = self._membership(channel)
+        self.assertEqual(membership.member_status, "completed")
+        self.assertEqual(self.learner.karma, self.KARMA_FINISH)
+
+    def test_unpublishing_finished_content_takes_back_nothing_never_given(self):
+        channel, slides = self._build_course(3)
+        slides[:2].with_user(self.learner)._action_mark_completed()
+
+        slides[:1].is_published = False
+
+        membership = self._membership(channel)
+        self.assertEqual(membership.member_status, "ongoing")
+        self.assertEqual(self.learner.karma, 0)
+
+    def test_a_reinvited_finisher_who_accepts_is_not_paid_twice(self):
+        channel, slides = self._build_course(1)
+        slides.with_user(self.learner)._action_mark_completed()
+        membership = self._membership(channel)
+        paid_on = membership.date_completed
+        membership.action_archive()
+
+        channel._action_add_members(self.learner.partner_id, member_status="invited")
+        self.assertEqual(membership.member_status, "invited")
+        channel._action_add_members(self.learner.partner_id)
+
+        self.assertEqual(membership.member_status, "completed")
+        self.assertEqual(membership.date_completed, paid_on)
+        self.assertEqual(self.learner.karma, self.KARMA_FINISH)
+
+    def test_removing_a_paid_membership_takes_the_reward_back(self):
+        channel, slides = self._build_course(1)
+        slides.with_user(self.learner)._action_mark_completed()
+        self.assertEqual(self.learner.karma, self.KARMA_FINISH)
+
+        self._membership(channel).unlink()
+
+        self.assertEqual(self.learner.karma, 0)

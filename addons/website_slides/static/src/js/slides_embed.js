@@ -316,30 +316,43 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const shareBtn = document.querySelector(".oe_slide_js_share_email button");
         if (shareBtn) {
+            const widget = shareBtn.closest(".oe_slide_js_share_email");
+            const input = widget.querySelector("input");
+            const setInvalid = (invalid) => {
+                widget.classList.toggle("o_has_error", invalid);
+                widget
+                    .querySelector(".alert-warning")
+                    .classList.toggle("d-none", !invalid);
+                for (const ctrl of widget.querySelectorAll(
+                    ".form-control, .form-select",
+                )) {
+                    ctrl.classList.toggle("is-invalid", invalid);
+                }
+                if (invalid) {
+                    input.focus();
+                }
+            };
             shareBtn.addEventListener("click", function () {
-                const widget = document.querySelector(".oe_slide_js_share_email");
-                const input = widget.querySelector("input");
-                const slideID = widget.querySelector("button").dataset.slideId;
-                if (input.value) {
-                    widget.classList.remove("o_has_error");
-                    for (const ctrl of widget.querySelectorAll(
-                        ".form-control, .form-select",
-                    )) {
-                        ctrl.classList.remove("is-invalid");
-                    }
-                    fetch("/slides/slide/send_share_email", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json; charset=utf-8" },
-                        body: JSON.stringify({
-                            jsonrpc: "2.0",
-                            method: "call",
-                            params: { slide_id: slideID, emails: input.value },
-                        }),
-                    })
-                        .then(function (response) {
-                            return response.json();
-                        })
-                        .then(function (action) {
+                if (!input.value) {
+                    setInvalid(true);
+                    return;
+                }
+                setInvalid(false);
+                fetch("/slides/slide/send_share_email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json; charset=utf-8" },
+                    body: JSON.stringify({
+                        jsonrpc: "2.0",
+                        method: "call",
+                        params: {
+                            slide_id: shareBtn.dataset.slideId,
+                            emails: input.value,
+                        },
+                    }),
+                })
+                    .then((response) => response.json())
+                    .then(
+                        (action) => {
                             if (action.result) {
                                 widget
                                     .querySelector(".alert-info")
@@ -348,32 +361,11 @@ document.addEventListener("DOMContentLoaded", function () {
                                     .querySelector(".input-group")
                                     .classList.add("d-none");
                             } else {
-                                widget
-                                    .querySelector(".alert-warning")
-                                    .classList.remove("d-none");
-                                widget
-                                    .querySelector(".input-group")
-                                    .classList.add("d-none");
-                                widget.classList.add("o_has_error");
-                                for (const ctrl of widget.querySelectorAll(
-                                    ".form-control, .form-select",
-                                )) {
-                                    ctrl.classList.add("is-invalid");
-                                }
-                                input.focus();
+                                setInvalid(true);
                             }
-                        });
-                } else {
-                    widget.querySelector(".alert-warning").classList.remove("d-none");
-                    widget.querySelector(".input-group").classList.add("d-none");
-                    widget.classList.add("o_has_error");
-                    for (const ctrl of widget.querySelectorAll(
-                        ".form-control, .form-select",
-                    )) {
-                        ctrl.classList.add("is-invalid");
-                    }
-                    input.focus();
-                }
+                        },
+                        () => setInvalid(true),
+                    );
             });
         }
     }

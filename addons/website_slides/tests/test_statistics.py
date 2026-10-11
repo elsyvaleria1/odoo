@@ -217,6 +217,7 @@ class TestChannelStatistics(common.SlidesCase):
 class TestSlideStatistics(common.SlidesCase):
     def test_slide_user_statistics(self):
         channel_publisher = self.channel.with_user(self.user_officer)
+        channel_publisher.write({"allow_comment": True, "karma_slide_vote": 0})
         channel_publisher._action_add_members(self.user_emp.partner_id)
         channel_publisher.invalidate_recordset(["partner_ids"])
 

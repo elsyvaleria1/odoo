@@ -3,7 +3,7 @@ import logging
 
 from dateutil.relativedelta import relativedelta
 
-from odoo import tests
+from odoo import http, tests
 from odoo.fields import Command, Datetime
 from odoo.tools import mute_logger
 from odoo.tools.misc import file_open
@@ -211,10 +211,16 @@ class TestUi(TestUICommon):
             f"/slides/slide/aaa-{self.channel.slide_ids[0].id}/set_completed",
             f"/slides/slide/{self.channel.slide_ids[0].id}/set_completed",
         )
+        self.authenticate(None, None)
         for url in urls:
-            response = self.url_open(url, allow_redirects=False)
+            response = self.url_open(
+                url,
+                data={"csrf_token": http.Request.csrf_token(self)},
+                allow_redirects=False,
+            )
             location = self.parse_http_location(response.headers.get("Location"))
             self.assertEqual(location.path, "/web/login")
+            self.assertEqual(self.url_open(url, allow_redirects=False).status_code, 405)
 
     def test_course_member_employee(self):
         user_demo = self.user_demo

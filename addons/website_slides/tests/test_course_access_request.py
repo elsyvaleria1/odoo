@@ -6,7 +6,6 @@ from odoo.addons.website_slides.tests.common import SlidesCase
 
 @tagged("post_install", "-at_install")
 class TestCourseAccessRequest(SlidesCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

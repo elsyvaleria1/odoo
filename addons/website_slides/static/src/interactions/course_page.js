@@ -1,10 +1,16 @@
 /** @odoo-module native */
+import { makeLogger } from "@web/core/debug/debug_logger";
 import { rpc } from "@web/core/network";
 import { renderToElement } from "@web/core/utils/render";
 import { Interaction } from "@web/public/interaction";
 import { session } from "@web/session";
+import { parseSlideBoolean } from "@website_slides/js/public/slides_course_utils";
+
+const log = makeLogger("website_slides.course_page");
 
 export class CoursePage extends Interaction {
+    pendingCompletion = new Set();
+
     dynamicContent = {
         "button.o_wslides_button_complete": {
             "t-on-click.stop.prevent": this.onClickComplete,
@@ -47,9 +53,9 @@ export class CoursePage extends Interaction {
             slideId: slideData.id,
             uncompletedIcon: buttonEl.dataset.uncompletedIcon ?? "fa-regular fa-circle",
             slideCompleted: completed ? 1 : 0,
-            canSelfMarkUncompleted: slideData.canSelfMarkUncompleted,
-            canSelfMarkCompleted: slideData.canSelfMarkCompleted,
-            isMember: slideData.isMember,
+            canSelfMarkUncompleted: parseSlideBoolean(slideData.canSelfMarkUncompleted),
+            canSelfMarkCompleted: parseSlideBoolean(slideData.canSelfMarkCompleted),
+            isMember: parseSlideBoolean(slideData.isMember),
         });
         buttonEl.replaceWith(newButtonEl);
     }
@@ -85,25 +91,62 @@ export class CoursePage extends Interaction {
     /**
      * @param {Object} slideData
      * @param {Boolean} completed
+     * @returns {Promise<boolean>}
      */
     async toggleSlideCompleted(slideData, completed = true) {
-        if (
-            !!slideData.completed === !!completed ||
-            !slideData.isMember ||
-            !slideData.canSelfMarkCompleted
-        ) {
-            return;
+        if (this.pendingCompletion.has(Number(slideData.id))) {
+            log.logic("toggle: already in flight, dropped", () => ({
+                slideId: slideData.id,
+                completed,
+            }));
+            return false;
         }
-        const data = await this.waitFor(
-            rpc(`/slides/slide/${completed ? "set_completed" : "set_uncompleted"}`, {
-                slide_id: slideData.id,
-            }),
-        );
+        const canToggle = completed
+            ? slideData.canSelfMarkCompleted
+            : slideData.canSelfMarkUncompleted;
+        if (
+            parseSlideBoolean(slideData.completed) === !!completed ||
+            !parseSlideBoolean(slideData.isMember) ||
+            !parseSlideBoolean(canToggle)
+        ) {
+            log.logic("toggle: refused", () => ({
+                slideId: slideData.id,
+                completed,
+                isCompleted: slideData.completed,
+                isMember: slideData.isMember,
+                canToggle,
+            }));
+            return false;
+        }
+        const slideId = Number(slideData.id);
+        this.pendingCompletion.add(slideId);
+        let data;
+        try {
+            data = await this.waitFor(
+                rpc(
+                    `/slides/slide/${completed ? "set_completed" : "set_uncompleted"}`,
+                    {
+                        slide_id: slideData.id,
+                    },
+                ),
+            );
+        } finally {
+            this.pendingCompletion.delete(slideId);
+        }
+        if (data.error) {
+            log.logic("toggle: server refused", () => ({
+                slideId: slideData.id,
+                completed,
+                error: data.error,
+            }));
+            return false;
+        }
         this.toggleCompletionButton(slideData, completed);
         this.updateProgressbar(data.channel_completion);
         if (data.next_category_id) {
             this.collapseNextCategory(data.next_category_id);
         }
+        return true;
     }
 
     /**
@@ -123,7 +166,7 @@ export class CoursePage extends Interaction {
     onClickComplete(ev) {
         const buttonEl = ev.currentTarget.closest(".o_wslides_sidebar_done_button");
         const slideData = buttonEl.dataset;
-        const isCompleted = Boolean(parseInt(slideData.completed));
+        const isCompleted = parseSlideBoolean(slideData.completed);
         this.toggleSlideCompleted(slideData, !isCompleted);
     }
 
@@ -146,9 +189,16 @@ export class CoursePage extends Interaction {
      * @param {Integer} detail.id
      */
     onSlideMarkCompleted(detail) {
-        if (!session.is_website_user) {
-            const slideData = this.getSlide(detail.id);
-            this.toggleSlideCompleted(slideData, true);
+        if (session.is_website_user) {
+            return;
         }
+        const slideData = this.getSlide(detail.id);
+        if (!slideData) {
+            log.logic("markCompleted: no done button for slide, dropped", () => ({
+                slideId: detail.id,
+            }));
+            return;
+        }
+        this.toggleSlideCompleted(slideData, true);
     }
 }

@@ -91,6 +91,7 @@ class TestKarmaGain(common.SlidesCase):
         computed_karma += self.channel_2.karma_gen_channel_finish
         self.assertEqual(user.karma, computed_karma)
 
+        self.channel.allow_comment = True
         slide_user = self.slide.with_user(user)
         slide_user.action_like()
         self.assertEqual(user.karma, computed_karma)

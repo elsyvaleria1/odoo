@@ -101,12 +101,17 @@ class SlideChannel(models.Model):
     _inherit = "slide.channel"
 
     def _action_add_members(
-        self, target_partners, member_status="joined", raise_on_access=False
+        self,
+        target_partners,
+        member_status="joined",
+        raise_on_access=False,
+        enforce_access=True,
     ):
         res = super()._action_add_members(
             target_partners,
             member_status=member_status,
             raise_on_access=raise_on_access,
+            enforce_access=enforce_access,
         )
         if member_status == "joined":
             for channel in self:

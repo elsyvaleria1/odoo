@@ -2,6 +2,7 @@
 
 import { markup } from "@odoo/owl";
 import { loadJS } from "@web/core/assets";
+import { makeLogger } from "@web/core/debug/debug_logger";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { renderToElement } from "@web/core/utils/render";
@@ -18,21 +19,64 @@ import {
 
 import { SlideShareDialog } from "../js/public/components/slide_share_dialog/slide_share_dialog.js";
 
-export class VideoPlayerYouTube {
-    youtubeUrl = "https://www.youtube.com/iframe_api";
+const log = makeLogger("website_slides.fullscreen");
+
+class SlideVideoPlayer {
+    static template = "";
 
     constructor(host, slide, targetEl) {
         this.host = host;
         this.slide = slide;
+        this.completionRequested = false;
         [this.el] = host.renderAt(
-            "website.slides.fullscreen.video.youtube",
+            this.constructor.template,
             { widget: this },
             targetEl,
         );
     }
 
+    _requestCompletion() {
+        if (
+            this.completionRequested ||
+            !this.slide.isMember ||
+            this.slide.hasQuestion ||
+            this.slide.completed
+        ) {
+            return;
+        }
+        this.completionRequested = true;
+        log.logic("video: near the end, requesting completion", () => ({
+            slideId: this.slide.id,
+        }));
+        this.el.dispatchEvent(
+            new CustomEvent("slide_mark_completed", {
+                bubbles: true,
+                detail: this.slide,
+            }),
+        );
+    }
+
+    _goNext() {
+        if (this.slide.hasNext) {
+            this.el.dispatchEvent(
+                new CustomEvent("slide_go_next", { bubbles: true, detail: {} }),
+            );
+        }
+    }
+}
+
+export class VideoPlayerYouTube extends SlideVideoPlayer {
+    static template = "website.slides.fullscreen.video.youtube";
+    youtubeUrl = "https://www.youtube.com/iframe_api";
+
     async start() {
         await this.host.waitFor(this._loadYoutubeAPI());
+        if (!this.el.isConnected) {
+            log.lifecycle("youtube: slide left before the API loaded", () => ({
+                slideId: this.slide.id,
+            }));
+            return;
+        }
         this._setupYoutubePlayer();
     }
 
@@ -93,18 +137,7 @@ export class VideoPlayerYouTube {
                     this.currentVideoTime > this.totalVideoTime - 30
                 ) {
                     clearInterval(this.tid);
-                    if (
-                        this.slide.isMember &&
-                        !this.slide.hasQuestion &&
-                        !this.slide.completed
-                    ) {
-                        this.el.dispatchEvent(
-                            new CustomEvent("slide_mark_completed", {
-                                bubbles: true,
-                                detail: this.slide,
-                            }),
-                        );
-                    }
+                    this._requestCompletion();
                 }
             }, 1000);
         } else {
@@ -112,31 +145,24 @@ export class VideoPlayerYouTube {
                 clearInterval(this.tid);
             }
             this.player = undefined;
-            if (this.slide.hasNext) {
-                this.el.dispatchEvent(
-                    new CustomEvent("slide_go_next", { bubbles: true, detail: {} }),
-                );
-            }
+            this._goNext();
         }
     }
 }
 
-export class VideoPlayerVimeo {
+export class VideoPlayerVimeo extends SlideVideoPlayer {
+    static template = "website.slides.fullscreen.video.vimeo";
     vimeoScriptUrl = "https://player.vimeo.com/api/player.js";
-
-    constructor(host, slide, targetEl) {
-        this.host = host;
-        this.slide = slide;
-        [this.el] = host.renderAt(
-            "website.slides.fullscreen.video.vimeo",
-            { widget: this },
-            targetEl,
-        );
-    }
 
     async start() {
         if (!document.querySelector(`script[src="${this.vimeoScriptUrl}"]`)) {
             await this.host.waitFor(loadJS(this.vimeoScriptUrl));
+        }
+        if (!this.el.isConnected) {
+            log.lifecycle("vimeo: slide left before the API loaded", () => ({
+                slideId: this.slide.id,
+            }));
+            return;
         }
         await this._setupVideoPlayer();
     }
@@ -149,11 +175,7 @@ export class VideoPlayerVimeo {
     }
 
     _onVideoEnded() {
-        if (this.slide.hasNext) {
-            this.el.dispatchEvent(
-                new CustomEvent("slide_go_next", { bubbles: true, detail: {} }),
-            );
-        }
+        this._goNext();
     }
 
     /**
@@ -161,18 +183,7 @@ export class VideoPlayerVimeo {
      */
     _onVideoTimeUpdate(eventData) {
         if (eventData.seconds > this.videoDuration - 30) {
-            if (
-                this.slide.isMember &&
-                !this.slide.hasQuestion &&
-                !this.slide.completed
-            ) {
-                this.el.dispatchEvent(
-                    new CustomEvent("slide_mark_completed", {
-                        bubbles: true,
-                        detail: this.slide,
-                    }),
-                );
-            }
+            this._requestCompletion();
         }
     }
 }
@@ -319,7 +330,13 @@ export class FullscreenPlayer extends CoursePage {
     }
 
     _extractChannelData() {
-        return this.el.dataset;
+        const dataset = this.el.dataset;
+        return {
+            ...dataset,
+            channelId: Number(dataset.channelId),
+            channelRequestedAccess: parseSlideBoolean(dataset.channelRequestedAccess),
+            signupAllowed: parseSlideBoolean(dataset.signupAllowed),
+        };
     }
 
     _getCurrentSlideID() {
@@ -343,10 +360,15 @@ export class FullscreenPlayer extends CoursePage {
         const currentSlide = this._slideValue;
         return this.waitFor(
             rpc("/slides/slide/get_html_content", { slide_id: currentSlide.id }),
-        ).then(function (data) {
-            if (data.html_content) {
-                currentSlide.htmlContent = data.html_content;
+        ).then((data) => {
+            if (data.error) {
+                log.logic("article: get_html_content refused", () => ({
+                    slideId: currentSlide.id,
+                    error: data.error,
+                }));
+                return;
             }
+            currentSlide.htmlContent = data.html_content || "";
         });
     }
 
@@ -438,67 +460,62 @@ export class FullscreenPlayer extends CoursePage {
      * @returns {Promise}
      */
     async _renderSlide() {
-        if (this._renderSlideRunning) {
-            return;
-        }
-        this._renderSlideRunning = true;
-        try {
-            const slide = this._slideValue;
-            const content = this.el.querySelector(".o_wslides_fs_content");
-            this.services["public.interactions"].stopInteractions(content);
-            content.replaceChildren();
+        const renderId = (this._renderId = (this._renderId || 0) + 1);
+        const isCurrent = () => renderId === this._renderId;
+        const slide = this._slideValue;
+        const content = this.el.querySelector(".o_wslides_fs_content");
+        this.services["public.interactions"].stopInteractions(content);
+        content.replaceChildren();
 
-            if (slide.category === "quiz" || slide.isQuiz) {
-                content.classList.add("bg-white");
-                const { QuizBehavior } = await this.waitFor(
-                    import("@website_slides/interactions/quiz"),
-                );
-                return await QuizBehavior.create(this, {
-                    targetEl: content,
-                    slideData: slide,
-                    channelData: this.channel,
-                });
+        if (slide.category === "quiz" || slide.isQuiz) {
+            content.classList.add("bg-white");
+            const { QuizBehavior } = await this.waitFor(
+                import("@website_slides/interactions/quiz"),
+            );
+            if (!isCurrent()) {
+                log.logic("render: superseded while loading the quiz, dropped", () => ({
+                    slideId: slide.id,
+                }));
+                return null;
             }
-
-            if (["document", "infographic"].includes(slide.category)) {
-                content.replaceChildren(
-                    renderToElement("website.slides.fullscreen.content", {
-                        widget: this,
-                    }),
-                );
-            } else if (
-                slide.category === "video" &&
-                slide.videoSourceType === "youtube"
-            ) {
-                this.videoPlayer = new VideoPlayerYouTube(this, slide, content);
-                return await this.videoPlayer.start();
-            } else if (
-                slide.category === "video" &&
-                slide.videoSourceType === "vimeo"
-            ) {
-                this.videoPlayer = new VideoPlayerVimeo(this, slide, content);
-                return await this.videoPlayer.start();
-            } else if (
-                slide.category === "video" &&
-                slide.videoSourceType === "google_drive"
-            ) {
-                content.replaceChildren(
-                    renderToElement("website.slides.fullscreen.video.google_drive", {
-                        widget: this,
-                    }),
-                );
-            } else if (slide.category === "article") {
-                const wpContainer = document.createElement("div");
-                wpContainer.className =
-                    "o_wslide_fs_article_content bg-white block w-100 overflow-auto p-3";
-                wpContainer.innerHTML = slide.htmlContent;
-                content.appendChild(wpContainer);
-                this.services["public.interactions"].startInteractions(content);
-            }
-            unhideConditionalElements();
-        } finally {
-            this._renderSlideRunning = false;
+            return await QuizBehavior.create(this, {
+                targetEl: content,
+                slideData: slide,
+                channelData: this.channel,
+                isCurrent,
+            });
         }
+
+        if (["document", "infographic"].includes(slide.category)) {
+            content.replaceChildren(
+                renderToElement("website.slides.fullscreen.content", {
+                    widget: this,
+                }),
+            );
+        } else if (slide.category === "video" && slide.videoSourceType === "youtube") {
+            this.videoPlayer = new VideoPlayerYouTube(this, slide, content);
+            return await this.videoPlayer.start();
+        } else if (slide.category === "video" && slide.videoSourceType === "vimeo") {
+            this.videoPlayer = new VideoPlayerVimeo(this, slide, content);
+            return await this.videoPlayer.start();
+        } else if (
+            slide.category === "video" &&
+            slide.videoSourceType === "google_drive"
+        ) {
+            content.replaceChildren(
+                renderToElement("website.slides.fullscreen.video.google_drive", {
+                    widget: this,
+                }),
+            );
+        } else if (slide.category === "article") {
+            const wpContainer = document.createElement("div");
+            wpContainer.className =
+                "o_wslide_fs_article_content bg-white block w-100 overflow-auto p-3";
+            wpContainer.innerHTML = slide.htmlContent ?? "";
+            content.appendChild(wpContainer);
+            this.services["public.interactions"].startInteractions(content);
+        }
+        unhideConditionalElements();
     }
 
     _updateSlideValue(slide) {
@@ -511,9 +528,19 @@ export class FullscreenPlayer extends CoursePage {
 
     _onChangeSlide() {
         const slide = this._slideValue;
+        const isCurrent = () => slide === this._slideValue;
         this._pushUrlState();
         return this._fetchSlideContent()
             .then(() => {
+                if (!isCurrent()) {
+                    log.logic(
+                        "change: superseded while fetching content, dropped",
+                        () => ({
+                            slideId: slide.id,
+                        }),
+                    );
+                    return false;
+                }
                 const websiteName = document.title.split(" | ").at(-1);
                 document.title = websiteName
                     ? slide.name + " | " + websiteName
@@ -521,21 +548,47 @@ export class FullscreenPlayer extends CoursePage {
                 if (uiUtils.getSize() < SIZES.MD) {
                     this._toggleSidebar();
                 }
-                return this._renderSlide();
+                return this._renderSlide().then(() => true);
             })
-            .then(() => {
+            .then((rendered) => {
+                if (!rendered || !isCurrent()) {
+                    return;
+                }
                 if (slide._autoSetDone && !session.is_website_user) {
                     if (slide.category === "document") {
-                        this.el
-                            .querySelector("iframe.o_wslides_iframe_viewer")
-                            .addEventListener("load", () =>
-                                this.toggleSlideCompleted(slide),
-                            );
+                        this._completeOnDocumentLoad(slide);
                     } else {
                         return this.toggleSlideCompleted(slide);
                     }
                 }
             });
+    }
+
+    /**
+     * @param {Object} slide
+     */
+    _completeOnDocumentLoad(slide) {
+        const iframe = this.el.querySelector("iframe.o_wslides_iframe_viewer");
+        if (!iframe) {
+            log.logic("document: no viewer to wait for, not completing", () => ({
+                slideId: slide.id,
+            }));
+            return;
+        }
+        const loadedDoc = iframe.contentDocument;
+        if (
+            loadedDoc?.readyState === "complete" &&
+            loadedDoc.location.href !== "about:blank"
+        ) {
+            this.toggleSlideCompleted(slide);
+            return;
+        }
+        const removeListener = this.addListener(iframe, "load", () => {
+            removeListener();
+            if (slide === this._slideValue) {
+                this.toggleSlideCompleted(slide);
+            }
+        });
     }
 
     /**
@@ -553,19 +606,39 @@ export class FullscreenPlayer extends CoursePage {
      * @override
      */
     async toggleSlideCompleted(slideData, completed = true) {
-        await super.toggleSlideCompleted(...arguments);
-
-        const fsSlides = this.slides.filter((_slide) => _slide.id === slideData.id);
-        fsSlides.forEach((slide) => (slide.completed = completed));
-
+        const toggled = await super.toggleSlideCompleted(...arguments);
+        if (!toggled) {
+            return false;
+        }
+        const slideId = Number(slideData.id);
+        this._setSlideCompleted(slideId, completed);
         const currentSlide = this._slideValue;
-        if (currentSlide.id === slideData.id) {
-            currentSlide.completed = completed;
-            if (
-                (currentSlide.hasQuestion || currentSlide.type === "quiz") &&
-                !completed
-            ) {
-                await this._renderSlide();
+        if (
+            currentSlide.id === slideId &&
+            (currentSlide.hasQuestion || currentSlide.category === "quiz") &&
+            !completed
+        ) {
+            await this._renderSlide();
+        }
+        return true;
+    }
+
+    /**
+     * @override
+     */
+    onSlideCompleted({ slideId, completed }) {
+        super.onSlideCompleted(...arguments);
+        this._setSlideCompleted(Number(slideId), completed);
+    }
+
+    /**
+     * @param {number} slideId
+     * @param {boolean} completed
+     */
+    _setSlideCompleted(slideId, completed) {
+        for (const slide of this.slides) {
+            if (slide.id === slideId) {
+                slide.completed = completed;
             }
         }
     }

@@ -4,25 +4,18 @@ import { DropdownItem } from "@web/components/dropdown";
 import { SelectMenu } from "@web/components/select_menu";
 import { rpc } from "@web/core/network";
 import { _t } from "@web/core/translation";
-import { useService } from "@web/core/utils/hooks";
 import { redirect } from "@web/core/utils/urls";
 import { Dialog } from "@web/ui/dialog";
 
-import { SlideInstallModule } from "./slide_install_module.js";
 import { SlideUploadCategory } from "./slide_upload_category.js";
-import {
-    ModuleToInstallIcon,
-    SlideCategoryIcon,
-} from "./slide_upload_dialog_select.js";
+import { SlideCategoryIcon } from "./slide_upload_dialog_select.js";
 
 export class SlideUploadDialog extends Component {
     static baseSettings = {
-        modulesToInstallMsg: "",
         page: "select",
         size: "md",
         alertMsg: "",
         title: _t("Add Content"),
-        installModuleData: null,
     };
     static categoryData = {
         document: { icon: "fa-regular fa-file-pdf", label: _t("Presentation / Doc") },
@@ -34,18 +27,15 @@ export class SlideUploadDialog extends Component {
     static components = {
         Dialog,
         DropdownItem,
-        ModuleToInstallIcon,
         SelectMenu,
         SlideCategoryIcon,
         SlideUploadCategory,
-        SlideInstallModule,
     };
     static pagesTemplates = {
         article: "website_slides.SlideCategoryTutorial.Article",
         document: "website_slides.SlideCategoryTutorial.Document",
         infographic: "website_slides.SlideCategoryTutorial.Infographic",
         select: "website_slides.SlideUploadDialogSelect",
-        install_module: "website_slides.UploadDialogInstallModule",
         upload: "website_slides.UploadInProgressDialog",
         video: "website_slides.SlideCategoryTutorial.Video",
         quiz: "website_slides.SlideCategoryTutorial.Quiz",
@@ -56,17 +46,12 @@ export class SlideUploadDialog extends Component {
         categoryId: t.number().optional(),
         channelId: t.number(),
         close: t.function(),
-        modulesToInstall: t.array().optional(),
         openModal: t.string().optional(),
     };
     static template = "website_slides.SlideUploadDialog";
     props = useProps(this.constructor.props);
 
     setup() {
-        this.defaultCategoryID = this.props.categoryId;
-        this.modulesToInstallStatus = null;
-        this.dialog = useService("dialog");
-        this.orm = useService("orm");
         this.pagesTemplates = this.constructor.pagesTemplates;
         this.slideCategoryData = this.constructor.categoryData;
         this.state = proxy({ ...this.constructor.baseSettings });
@@ -83,14 +68,6 @@ export class SlideUploadDialog extends Component {
     onClickSlideCategoryIcon(slideCategory) {
         this.state.page = slideCategory;
         this.state.size = "lg";
-    }
-
-    onClickInstallModuleIcon(moduleId) {
-        this.state.page = "install_module";
-        this.state.installModuleData = this.props.modulesToInstall.find(
-            (m) => m.id === moduleId,
-        );
-        this.state.size = "md";
     }
 
     onClickGoBack() {
