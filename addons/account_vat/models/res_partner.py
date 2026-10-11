@@ -247,7 +247,7 @@ class ResPartner(models.Model):
     @api.depends("vat")
     def _compute_vies_valid(self) -> None:
         """Check the VAT number with VIES, if enabled."""
-        if (
+        if not any(self.mapped("vat")) or (
             not self.env["res.company"]
             .sudo()
             .search_count([("account_config_id.vat_check_vies", "=", True)], limit=1)

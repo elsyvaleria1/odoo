@@ -531,11 +531,18 @@ class CrmLead(models.Model):
             query.order = SQL(
                 "%(table)s.team_id asc, %(table)s.id desc", table=SQL.identifier(table)
             )
-            sql_fields = [SQL.identifier(field) for field in pls_fields]
+            sql_fields = [
+                SQL(
+                    "%s AS %s",
+                    self._field_to_sql(table, field, query),
+                    SQL.identifier(field),
+                )
+                for field in pls_fields
+            ]
             self.env.cr.execute(
                 query.select(
-                    SQL("id"),
-                    SQL("probability"),
+                    SQL("%s AS id", SQL.identifier(table, "id")),
+                    SQL("%s AS probability", SQL.identifier(table, "probability")),
                     *sql_fields,
                 )
             )

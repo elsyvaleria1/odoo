@@ -150,6 +150,13 @@ class TestConfig(CrmPlsCommon):
             "Correct fields are updated in config",
         )
 
+    def test_a_related_field_is_scored_from_the_lead_query(self):
+        self.env["ir.config_parameter"].sudo().set_param("crm.pls_fields", "lang_code")
+        lang = self.env["res.lang"]._activate_lang("en_US")
+        lead = self.env["crm.lead"].create({"name": "Related", "lang_id": lang.id})
+        values = lead._pls_get_lead_pls_values(domain=[("id", "=", lead.id)])
+        self.assertIn(("lang_code", "en_US"), values[lead.id]["values"])
+
     def test_settings_pls_start_date(self):
         str_date_8_days_ago = Date.to_string(Date.today() - timedelta(days=8))
 

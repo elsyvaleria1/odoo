@@ -30,3 +30,15 @@ class TestLeadTier(TransactionCase):
         self.assertEqual((field.model, field.name), ("crm.lead", "tier_id"))
         self.env["ir.config_parameter"].sudo().set_param("crm.pls_fields", "tier_id")
         self.assertIn("tier_id", self.env["crm.lead"]._pls_get_safe_fields())
+
+    def test_the_tier_is_scored_from_the_lead_table(self):
+        self.env["ir.config_parameter"].sudo().set_param("crm.pls_fields", "tier_id")
+        lead = self.env["crm.lead"].create(
+            {"name": "Scored Lead", "partner_id": self.customer.id}
+        )
+        values = lead._pls_get_lead_pls_values(domain=[("id", "=", lead.id)])
+        self.assertIn(("tier_id", self.low.id), values[lead.id]["values"])
+
+    def test_the_tier_history_stays_on_the_customer(self):
+        self.assertNotIn("tier_id", self.env["crm.lead"]._track_get_fields())
+        self.assertIn("tier_id", self.env["res.partner"]._track_get_fields())

@@ -8,6 +8,7 @@ class CrmLead(models.Model):
         comodel_name="partner.tier",
         related="partner_id.commercial_partner_id.tier_id",
         string="Commercial Tier",
+        tracking=False,
         help="The commercial tier of the customer this lead names; the pipeline "
         "groups by it and predictive lead scoring can read it.",
     )
