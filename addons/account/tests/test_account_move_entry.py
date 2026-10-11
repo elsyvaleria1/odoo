@@ -116,6 +116,16 @@ class TestAccountMove(AccountTestInvoicingCommon):
     def default_env_context(cls):
         return {}
 
+    def test_commercial_partner_follows_the_partner_hierarchy(self):
+        company = self.env["res.partner"].create({"name": "Holding"})
+        contact = self.env["res.partner"].create({"name": "Branch"})
+        self.test_move.partner_id = contact
+        self.assertEqual(self.test_move.commercial_partner_id, contact)
+
+        contact.parent_id = company
+
+        self.assertEqual(self.test_move.commercial_partner_id, company)
+
     def test_out_invoice_auto_post_at_date(self):
         nb_invoices = self.env["account.move"].search_count(domain=[])
         self.test_move.auto_post = "at_date"

@@ -13,6 +13,12 @@ from odoo.tools import SQL, Query
 ACCOUNT_REGEX = re.compile(r"(?:(\S*\d+\S*))?(.*)")
 ACCOUNT_CODE_REGEX = re.compile(r"^[A-Za-z0-9.\-/]+$")
 ACCOUNT_CODE_NUMBER_REGEX = re.compile(r"(.*?)(\d*)(\D*?)$")
+RECONCILABLE_WITHOUT_FLAG_TYPES = ("asset_cash", "liability_credit_card")
+
+
+def allows_reconciliation(account_type: str, reconcile: bool) -> bool:
+    return bool(reconcile) or account_type in RECONCILABLE_WITHOUT_FLAG_TYPES
+
 
 _debug = DebugLog(__name__)
 
@@ -130,6 +136,11 @@ class AccountAccount(models.Model):
         tracking=True,
         help="Check this box if this account allows invoices & payments "
         "matching of journal items.",
+    )
+    is_reconcilable = fields.Boolean(
+        compute="_compute_is_reconcilable",
+        default=False,
+        store=True,
     )
     note = fields.Text(
         string="Internal Notes",
@@ -813,6 +824,7 @@ class AccountAccount(models.Model):
                     ),
                 ),
             ).create(vals_list_for_company)
+            new_accounts._sync_is_reconcilable()
             new_accounts._check_account_code()
 
             records_list.append(new_accounts)
@@ -952,16 +964,6 @@ class AccountAccount(models.Model):
             currency_check=bool(vals.get("currency_id")),
             deprecate_check=vals.get("active") is False,
         )
-        if "reconcile" in vals:
-            if vals["reconcile"]:
-                self.filtered(
-                    lambda r: not r.reconcile,
-                )._toggle_reconcile_to_true()
-            else:
-                self.filtered(
-                    lambda r: r.reconcile,
-                )._toggle_reconcile_to_false()
-
         if vals.get("currency_id") and self.env["account.move.line"].search_count(
             [
                 ("account_id", "in", self.ids),
@@ -999,6 +1001,8 @@ class AccountAccount(models.Model):
                 ),
             ),
         ).write(vals)
+        if {"account_type", "reconcile"} & vals.keys():
+            self._sync_is_reconcilable()
 
         if (
             not self.env.context.get("defer_account_code_checks")
@@ -1555,32 +1559,28 @@ class AccountAccount(models.Model):
 
         self.env.flush_all()
 
-    def _toggle_reconcile_to_true(self) -> None:
-        if not self.ids:
-            return
-        self.env["account.move.line"].invalidate_model(
-            [
-                "amount_residual",
-                "amount_residual_currency",
-                "reconciled",
-            ]
+    def _compute_is_reconcilable(self) -> None:
+        for account in self:
+            account.is_reconcilable = allows_reconciliation(
+                account.account_type, account.reconcile
+            )
+
+    def _sync_is_reconcilable(self) -> None:
+        flipped = self.filtered(
+            lambda account: (
+                account.is_reconcilable
+                != allows_reconciliation(account.account_type, account.reconcile)
+            )
         )
-        query = """
-            UPDATE account_move_line SET
-                reconciled = CASE WHEN debit = 0 AND credit = 0
-                    AND amount_currency = 0
-                    THEN true ELSE false END,
-                amount_residual = (debit-credit),
-                amount_residual_currency = amount_currency
-            WHERE full_reconcile_id IS NULL and account_id = ANY(%s)
-        """
-        self.env.cr.execute(query, [list(self.ids)])
-        _debug.lifecycle(
-            "reconcile_true_reset", account=self, rowcount=self.env.cr.rowcount
-        )
+        _debug.logic("reconcilability_flipped", accounts=self, flipped=flipped)
+        flipped.filtered("is_reconcilable")._check_no_pending_partials()
+        for was_reconcilable, accounts in flipped.grouped("is_reconcilable").items():
+            super(AccountAccount, accounts).write(
+                {"is_reconcilable": not was_reconcilable}
+            )
 
     @_debug.perf.timed
-    def _toggle_reconcile_to_false(self) -> None:
+    def _check_no_pending_partials(self) -> None:
         if not self.ids:
             return
         partial_lines_count = self.env["account.move.line"].search_count(
@@ -1605,22 +1605,6 @@ class AccountAccount(models.Model):
                     "if some partial reconciliations are still pending.",
                 )
             )
-
-        self.env["account.move.line"].invalidate_model(
-            [
-                "amount_residual",
-                "amount_residual_currency",
-            ]
-        )
-        query = """
-            UPDATE account_move_line
-                SET amount_residual = 0, amount_residual_currency = 0
-            WHERE full_reconcile_id IS NULL AND account_id = ANY(%s)
-        """
-        self.env.cr.execute(query, [list(self.ids)])
-        _debug.lifecycle(
-            "reconcile_false_zeroed", account=self, rowcount=self.env.cr.rowcount
-        )
 
     def _get_used_account_ids(self, account_ids=None) -> list:
         rows = self.env.execute_query(

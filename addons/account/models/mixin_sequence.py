@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import date
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, TransactionMemo, date_utils, frozendict
@@ -367,6 +367,97 @@ class MixinSequence(models.AbstractModel):
             result = last[self._sequence_field] or None
         memo[key] = result
         return result
+
+    @api.model
+    def _get_highest_sequence_number(self, index_ids, affixes) -> int:
+        if not affixes:
+            return 0
+        prefixes, suffixes = zip(*affixes, strict=True)
+        name = SQL.identifier("record", self._sequence_field)
+        number = SQL(
+            "substr(%(name)s, length(affix.prefix) + 1,"
+            " length(%(name)s) - length(affix.prefix) - length(affix.suffix))",
+            name=name,
+        )
+        index_filter = (
+            SQL(
+                "AND %s = ANY(%s)",
+                SQL.identifier("record", self._sequence_index),
+                list(index_ids),
+            )
+            if self._sequence_index
+            else SQL.EMPTY
+        )
+        [(highest,)] = self.env.execute_query(
+            SQL(
+                """
+                SELECT COALESCE(MAX(%(number)s::bigint), 0)
+                  FROM %(table)s record
+                  JOIN unnest(%(prefixes)s::text[], %(suffixes)s::text[])
+                       AS affix(prefix, suffix)
+                    ON starts_with(%(name)s, affix.prefix)
+                   AND right(%(name)s, length(affix.suffix)) = affix.suffix
+                 WHERE %(number)s ~ '^[0-9]{1,18}$' %(index_filter)s
+                """,
+                number=number,
+                table=SQL.identifier(self._table),
+                prefixes=list(prefixes),
+                suffixes=list(suffixes),
+                name=name,
+                index_filter=index_filter,
+            )
+        )
+        _debug.logic(
+            "highest_sequence_number",
+            seq_model=self._name,
+            affixes=len(affixes),
+            highest=highest,
+        )
+        return highest
+
+    def _check_sequence_unused(self) -> None:
+        named = self.filtered(
+            lambda record: record[record._sequence_field] not in (False, "", "/")
+        )
+        if not named:
+            return
+        index = self._sequence_index
+        rows = self.env.execute_query(
+            SQL(
+                """
+                SELECT drawn.name
+                  FROM unnest(%(names)s::text[], %(index_ids)s::int[])
+                       AS drawn(name, index_id)
+                  JOIN %(table)s record
+                    ON %(name)s = drawn.name
+                   %(index_join)s
+                 WHERE record.id != ALL(%(ids)s)
+                 LIMIT 1
+                """,
+                names=[record[record._sequence_field] for record in named],
+                index_ids=[(index and record[index].id) or 0 for record in named],
+                table=SQL.identifier(self._table),
+                name=SQL.identifier("record", self._sequence_field),
+                index_join=SQL(
+                    "AND %s = drawn.index_id", SQL.identifier("record", index)
+                )
+                if index
+                else SQL.EMPTY,
+                ids=[record_id for record_id in named._ids if record_id],
+            )
+        )
+        if not rows:
+            return
+        [(name,)] = rows
+        _debug.logic("sequence_already_used", seq_model=self._name, name=name)
+        raise UserError(
+            self.env._(
+                "The number %(name)s is already used. The numbering sequence is "
+                "behind the numbers already issued: set its next number past the "
+                "highest one in use, then try again.",
+                name=name,
+            )
+        )
 
     @_debug.perf.timed
     def _get_sequence_format_param(self, previous) -> tuple:

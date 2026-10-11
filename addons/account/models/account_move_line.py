@@ -1031,7 +1031,7 @@ class AccountMoveLine(models.Model):
         "debit",
         "credit",
         "amount_currency",
-        "account_id",
+        "account_id.is_reconcilable",
         "currency_id",
         "company_id",
         "matched_debit_ids",
@@ -1040,10 +1040,7 @@ class AccountMoveLine(models.Model):
     @_debug.perf.timed
     def _compute_reconciliation(self) -> None:
         need_residual_lines = self.filtered(
-            lambda x: (
-                x.account_id.reconcile
-                or x.account_id.account_type in ("asset_cash", "liability_credit_card")
-            )
+            lambda line: line.account_id.is_reconcilable
         )
         stored_lines = need_residual_lines._origin
         _debug.logic(
@@ -3393,10 +3390,7 @@ class AccountMoveLine(models.Model):
                     ", ".join(amls.company_id.mapped("display_name")),
                 )
             )
-        if not accounts.reconcile and accounts.account_type not in (
-            "asset_cash",
-            "liability_credit_card",
-        ):
+        if not accounts.is_reconcilable:
             _debug.logic(
                 "account_not_reconcilable",
                 reconcile=amls,

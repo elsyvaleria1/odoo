@@ -521,6 +521,9 @@ class IrSequence(models.Model):
             limit=1,
         )
 
+    def _get_date_range_number_next(self, date_from: Any, date_to: Any) -> int:
+        return 1
+
     def _create_date_range_seq(self, date: Any) -> Any:
         date = fields.Date.to_date(date)
         date_from, date_to = self._get_date_range_bounds(date)
@@ -572,7 +575,12 @@ class IrSequence(models.Model):
                     date_to=date_to,
                 )
             )
-        vals = {"date_from": date_from, "date_to": date_to, "sequence_id": self.id}
+        vals = {
+            "date_from": date_from,
+            "date_to": date_to,
+            "sequence_id": self.id,
+            "number_next": self._get_date_range_number_next(date_from, date_to),
+        }
 
         def find_covering() -> Any:
             DateRange.invalidate_model()
@@ -691,13 +699,13 @@ class IrSequence(models.Model):
             found=bool(date_range),
             range=date_range.id if date_range else None,
         )
-        number_next = date_range.number_next_actual if date_range else 1
+        if date_range:
+            number_next = date_range.number_next_actual
+            range_date = date_range.date_from
+        else:
+            range_date, range_end = self._get_date_range_bounds(fields.Date.to_date(dt))
+            number_next = self._get_date_range_number_next(range_date, range_end)
         ir_sequence_date = dt.replace(tzinfo=None) if isinstance(dt, datetime) else dt
-        range_date = (
-            date_range.date_from
-            if date_range
-            else self._get_date_range_bounds(fields.Date.to_date(dt))[0]
-        )
         return self.with_context(
             ir_sequence_date_range=range_date,
             ir_sequence_date=ir_sequence_date,

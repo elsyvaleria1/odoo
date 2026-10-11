@@ -1553,7 +1553,7 @@ class AccountMove(models.Model):
                 and not record._collect_tax_cash_basis_values()
             )
 
-    @api.depends("partner_id")
+    @api.depends("partner_id.commercial_partner_id")
     def _compute_commercial_partner_id(self) -> None:
         for move in self:
             move.commercial_partner_id = move.partner_id.commercial_partner_id

@@ -572,6 +572,150 @@ class TestAccountAccount(TestAccountMergeCommon):
         with self.assertRaises(UserError):
             account.reconcile = False
 
+    def _post_entry_on(self, account, amounts):
+        counterpart = self.company_data["default_account_expense"]
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2019-01-01",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": acc.id,
+                            "debit": max(amount, 0.0),
+                            "credit": max(-amount, 0.0),
+                        }
+                    )
+                    for amount in amounts
+                    for acc, amount in (
+                        (account, amount),
+                        (counterpart, -amount),
+                    )
+                ],
+            }
+        )
+        move.action_post()
+        return move.line_ids.filtered(lambda line: line.account_id == account)
+
+    def test_enabling_reconcile_keeps_existing_partials(self):
+        account = self.env["account.account"].create(
+            {"code": "101999", "name": "Cash", "account_type": "asset_cash"}
+        )
+        lines = self._post_entry_on(account, [100.0, -40.0])
+        lines.reconcile()
+        self.assertRecordValues(
+            lines,
+            [
+                {"amount_residual": 60.0, "reconciled": False},
+                {"amount_residual": 0.0, "reconciled": True},
+            ],
+        )
+
+        account.write({"account_type": "asset_current", "reconcile": True})
+
+        self.assertRecordValues(
+            lines,
+            [
+                {"amount_residual": 60.0, "reconciled": False},
+                {"amount_residual": 0.0, "reconciled": True},
+            ],
+        )
+
+    def test_account_type_change_recomputes_residuals(self):
+        account = self.env["account.account"].create(
+            {"code": "101998", "name": "Petty", "account_type": "asset_current"}
+        )
+        line = self._post_entry_on(account, [75.0])
+        self.assertRecordValues(line, [{"amount_residual": 0.0}])
+
+        account.account_type = "asset_cash"
+        self.assertRecordValues(
+            line, [{"amount_residual": 75.0, "amount_residual_currency": 75.0}]
+        )
+
+        account.account_type = "asset_current"
+        self.assertRecordValues(
+            line, [{"amount_residual": 0.0, "amount_residual_currency": 0.0}]
+        )
+
+    def test_only_a_change_of_reconcilability_recomputes_residuals(self):
+        account = self.env["account.account"].create(
+            {"code": "601999", "name": "Freight", "account_type": "expense"}
+        )
+        line = self._post_entry_on(account, [30.0])
+        residual = line._fields["amount_residual"]
+        self.env.flush_all()
+
+        account.account_type = "expense_direct_cost"
+        self.assertFalse(self.env.is_to_compute(residual, line))
+
+        account.account_type = "asset_cash"
+        self.assertTrue(self.env.is_to_compute(residual, line))
+
+    def test_an_account_for_a_branch_outside_the_current_companies_is_created(self):
+        branch = self.env["res.company"].create(
+            {"name": "Reconcilability branch", "parent_id": self.env.company.id}
+        )
+        user = new_test_user(
+            self.env,
+            login="branch_account_creator",
+            groups="account.group_account_manager",
+            company_id=self.env.company.id,
+            company_ids=[Command.set((self.env.company | branch).ids)],
+        )
+
+        account = (
+            self.env["account.account"]
+            .with_user(user)
+            .with_context(allowed_company_ids=self.env.company.ids)
+            .create(
+                {
+                    "code": "101996",
+                    "name": "Branch till",
+                    "account_type": "asset_cash",
+                    "company_ids": [Command.set(branch.ids)],
+                }
+            )
+        )
+
+        self.assertTrue(account.sudo().is_reconcilable)
+
+    def test_a_new_account_stores_its_reconcilability_explicitly(self):
+        accounts = self.env["account.account"].create(
+            [
+                {"code": "601998", "name": "Fuel", "account_type": "expense"},
+                {"code": "101997", "name": "Till", "account_type": "asset_cash"},
+            ]
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            "SELECT is_reconcilable FROM account_account WHERE id = ANY(%s) ORDER BY id",
+            [accounts.ids],
+        )
+        self.assertEqual(self.env.cr.fetchall(), [(False,), (True,)])
+
+    def test_disabling_reconcile_clears_reconciled(self):
+        account = self.env["account.account"].create(
+            {"code": "201999", "name": "Clearing", "account_type": "liability_current"}
+        )
+        account.reconcile = True
+        line = self._post_entry_on(account, [0.0])
+        self.assertRecordValues(line, [{"reconciled": True}])
+
+        account.reconcile = False
+
+        self.assertRecordValues(line, [{"reconciled": False, "amount_residual": 0.0}])
+
+    def test_account_type_dropping_reconcile_refuses_pending_partials(self):
+        account = self.env["account.account"].create(
+            {"code": "201998", "name": "Clearing", "account_type": "liability_current"}
+        )
+        account.reconcile = True
+        self._post_entry_on(account, [100.0, -40.0]).reconcile()
+
+        with self.assertRaisesRegex(UserError, "partial reconciliations"):
+            account.account_type = "expense"
+
     def test_remove_account_from_account_group(self):
         group = self.env["account.group"].create(
             {
