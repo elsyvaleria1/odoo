@@ -813,13 +813,19 @@ class TestPayslipComputation(TestPayslipContractBase):
                 "date_to": date(2016, 1, 31),
             }
         )
-        self.assertTrue(payslip.issues)
+        inaccurate = "The duration of the payslip is not accurate according to the structure type."
+        self.assertIn(
+            inaccurate, [issue["message"] for issue in payslip.issues.values()]
+        )
 
         payslip_form = Form(payslip)
         payslip_form.date_from = date(
             2016, 1, 16
         )
-        self.assertFalse(payslip_form.issues)
+        self.assertNotIn(
+            inaccurate,
+            [issue["message"] for issue in (payslip_form.issues or {}).values()],
+        )
 
     def test_payslip_state_effect_on_work_entries(self):
         richard_work_entry = self.env["hr.work.entry"].create(

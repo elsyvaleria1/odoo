@@ -135,12 +135,13 @@ class TestMultiCompany(TestHrCommon):
         )
 
     def test_an_employee_is_read_under_its_version_rule(self):
+        wage_groups = self.env["hr.version"]._fields["wage"].groups
         hr_manager_a = mail_new_test_user(
             self.env,
             login="hr_manager_a",
             company_id=self.company_a.id,
             company_ids=self.company_a.ids,
-            groups="base.group_user,hr.group_hr_manager",
+            groups=f"base.group_user,hr.group_hr_manager,{wage_groups}",
         )
         other = self.employee_other_a
         other.version_id.write({"wage": 4321.0, "company_id": self.company_b.id})

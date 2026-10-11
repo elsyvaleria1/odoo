@@ -226,13 +226,13 @@ class HrVersion(models.Model):
         string="Contract Start Date",
         tracking=True,
         classification="hr.compensation",
-        groups="hr.group_hr_manager",
+        groups="hr.group_hr_manager,hr.privilege_end_departed_contract",
     )
     contract_date_end = fields.Date(
         string="Contract End Date",
         tracking=True,
         classification="hr.compensation",
-        groups="hr.group_hr_manager",
+        groups="hr.group_hr_manager,hr.privilege_end_departed_contract",
         help="End date of the contract (if it's a fixed-term contract).",
     )
     trial_date_end = fields.Date(

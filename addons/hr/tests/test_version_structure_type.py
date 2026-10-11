@@ -6,24 +6,26 @@ class TestVersionStructureType(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.env.company.country_id = cls.env.ref("base.us")
-        StructureType = cls.env["hr.payroll.structure.type"]
+        cls.company_ar = cls.env["res.company"].create(
+            {"name": "Argentina branch", "country_id": cls.env.ref("base.ar").id}
+        )
+        cls.env.user.company_ids |= cls.company_ar
+        both = cls.env(
+            context=dict(
+                cls.env.context,
+                allowed_company_ids=[cls.env.company.id, cls.company_ar.id],
+            )
+        )
+        StructureType = both["hr.payroll.structure.type"]
         cls.us_type = StructureType.create(
             {"name": "US salaried", "country_id": cls.env.ref("base.us").id}
         )
         cls.ar_type = StructureType.create(
             {"name": "AR mensual", "country_id": cls.env.ref("base.ar").id}
         )
-        cls.company_ar = cls.env["res.company"].create(
-            {"name": "Argentina branch", "country_id": cls.env.ref("base.ar").id}
-        )
-        cls.env.user.company_ids |= cls.company_ar
-        cls.versions = cls.env["hr.version"].with_context(
-            allowed_company_ids=[cls.env.company.id, cls.company_ar.id]
-        )
-        cls.employee_ar = (
-            cls.env["hr.employee"]
-            .with_context(allowed_company_ids=[cls.env.company.id, cls.company_ar.id])
-            .create({"name": "Lucía", "company_id": cls.company_ar.id})
+        cls.versions = both["hr.version"]
+        cls.employee_ar = both["hr.employee"].create(
+            {"name": "Lucía", "company_id": cls.company_ar.id}
         )
 
     def test_a_version_for_another_countrys_company_takes_that_countrys_structure(self):

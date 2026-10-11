@@ -28,6 +28,13 @@
             eval="[Command.link(ref('base.user_root')), Command.link(ref('base.user_admin'))]" />
     </record>
 
+    <record id="privilege_end_departed_contract" model="res.groups">
+        <field name="name">End a Departed Employee's Contract</field>
+        <field
+            name="comment">Registering a departure ends the employee's running contract on the departure date, whoever may read contract dates otherwise.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
     <record id="privilege_apply_employee_change" model="res.groups">
         <field name="name">Apply an Approved Employee Change</field>
         <field

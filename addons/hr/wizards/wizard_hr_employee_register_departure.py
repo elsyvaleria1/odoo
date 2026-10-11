@@ -177,7 +177,11 @@ class WizardHrEmployeeRegisterDeparture(models.TransientModel):
         employee_ids._dispose_departed_resources()
 
         if self.set_date_end:
-            contracts = active_versions.filtered(lambda v: v.contract_date_start)
+            active_versions.check_access("write")
+            contracts = active_versions.with_privilege(
+                "hr.privilege_end_departed_contract",
+                reason="a departure ends its employee's running contract",
+            ).filtered(lambda v: v.contract_date_start)
             _debug.pipeline(
                 "contract_ended",
                 departure=self.id,

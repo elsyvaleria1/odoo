@@ -1,7 +1,7 @@
 from datetime import date
 
 from odoo.exceptions import RedirectWarning
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 
 from odoo.addons.hr_payroll.tests.common import TestPayslipBase
 
@@ -85,3 +85,22 @@ class TestContractDates(TestPayslipBase):
         self.richard_contract.contract_date_end = date(2025, 2, 28)
         self.richard_contract.flush_recordset()
         self.assertEqual(self.richard_contract.contract_date_end, date(2025, 2, 28))
+
+    def test_an_hr_manager_outside_payroll_ends_a_departed_contract(self):
+        manager = new_test_user(
+            self.env,
+            login="hr_manager_outside_payroll",
+            groups="base.group_user,hr.group_hr_manager",
+        )
+        self.assertFalse(manager.has_group("hr_payroll.group_hr_payroll_user"))
+        wizard = (
+            self.env["wizard.hr.employee.register.departure"]
+            .with_user(manager)
+            .with_context(active_ids=self.richard_emp.ids, employee_termination=True)
+            .create({"departure_reason_id": self.env.ref("hr.departure_resigned").id})
+        )
+        self.assertTrue(wizard.set_date_end)
+        wizard.action_register_departure()
+        self.assertEqual(
+            self.richard_contract.sudo().contract_date_end, wizard.departure_date
+        )

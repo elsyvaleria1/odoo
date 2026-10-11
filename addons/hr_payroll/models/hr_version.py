@@ -39,11 +39,11 @@ class HrVersion(models.Model):
     )
     contract_date_start = fields.Date(
         classification="hr.compensation",
-        groups="hr_payroll.group_hr_payroll_user",
+        groups="hr_payroll.group_hr_payroll_user,hr.privilege_end_departed_contract",
     )
     contract_date_end = fields.Date(
         classification="hr.compensation",
-        groups="hr_payroll.group_hr_payroll_user",
+        groups="hr_payroll.group_hr_payroll_user,hr.privilege_end_departed_contract",
     )
     trial_date_end = fields.Date(
         classification="hr.compensation",
