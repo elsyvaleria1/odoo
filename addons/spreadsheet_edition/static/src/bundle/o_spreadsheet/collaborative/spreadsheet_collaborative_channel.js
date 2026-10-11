@@ -30,6 +30,7 @@ export class SpreadsheetCollaborativeChannel {
     constructor(env, resModel, resId, accessToken, revisionSequence = 0) {
         this.env = env;
         this.orm = env.services.orm.silent;
+        this.busService = env.services.bus_service;
         this.resId = resId;
         this.resModel = resModel;
         this.accessToken = accessToken;
@@ -37,7 +38,7 @@ export class SpreadsheetCollaborativeChannel {
         /**
          * A callback function called to handle messages when they are received.
          */
-        this._listener;
+        this._listener = undefined;
         /**
          * Messages are queued while there is no listener. They are forwarded
          * once it registers.
@@ -49,8 +50,7 @@ export class SpreadsheetCollaborativeChannel {
             resId,
             viaToken: Boolean(accessToken),
         }));
-        this.env.services.bus_service.addChannel(this._channel);
-        this.env.services.bus_service.subscribe("spreadsheet", (payload) => {
+        this._onBusNotification = (payload) => {
             // Every tab of the browser receives what any of them subscribed
             // to, and spreadsheets of two models share ids.
             if (payload.id !== this.resId || payload.model !== this.resModel) {
@@ -62,7 +62,9 @@ export class SpreadsheetCollaborativeChannel {
                 return;
             }
             this._handleNotification(payload);
-        });
+        };
+        this.busService.addChannel(this._channel);
+        this.busService.subscribe("spreadsheet", this._onBusNotification);
     }
 
     /**
@@ -132,6 +134,24 @@ export class SpreadsheetCollaborativeChannel {
     leave() {
         log.lifecycle("listener:leave", () => ({ resId: this.resId }));
         this._listener = undefined;
+    }
+
+    /**
+     * Stop listening for good: nothing can rejoin through this channel any more.
+     */
+    release() {
+        if (!this._onBusNotification) {
+            return;
+        }
+        log.lifecycle("channel:release", () => ({
+            resId: this.resId,
+            droppedQueue: this._queue.length,
+        }));
+        this.busService.unsubscribe("spreadsheet", this._onBusNotification);
+        this.busService.deleteChannel(this._channel);
+        this._onBusNotification = undefined;
+        this._listener = undefined;
+        this._queue = [];
     }
 
     /**

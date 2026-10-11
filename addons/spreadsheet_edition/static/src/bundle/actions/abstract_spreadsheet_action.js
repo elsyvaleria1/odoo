@@ -19,7 +19,7 @@ import { waitForDataLoaded } from "@spreadsheet/helpers/model";
 import { provideSpreadsheetEnv, useSpreadsheetPrint } from "@spreadsheet/hooks";
 import { initCallbackRegistry } from "@spreadsheet/o_spreadsheet/init_callbacks";
 import { SpreadsheetNavbar } from "@spreadsheet_edition/bundle/components/spreadsheet_navbar/spreadsheet_navbar";
-import { useSetupAction } from "@web/core/action_hook";
+import { releaseSymbol, useSetupAction } from "@web/core/action_hook";
 import { useAppContext } from "@web/core/app_context";
 import { browser } from "@web/core/browser/browser";
 import { useDebugMode } from "@web/core/debug/debug_context";
@@ -115,12 +115,17 @@ export class AbstractSpreadsheetAction extends Component {
         useSetupAction({
             beforeLeave: this._leaveSpreadsheet.bind(this),
             beforeUnload: this._leaveSpreadsheet.bind(this),
-            getLocalState: () => ({
-                resId: this.resId,
-                accessToken: this.accessToken,
-                data: this.data,
-                model: this.model,
-            }),
+            getLocalState: () => {
+                const channel = this.collaborativeChannel;
+                return {
+                    resId: this.resId,
+                    accessToken: this.accessToken,
+                    data: this.data,
+                    model: this.model,
+                    collaborativeChannel: channel,
+                    [releaseSymbol]: () => channel?.release(),
+                };
+            },
         });
 
         const print = useSpreadsheetPrint(() => this.model);
@@ -150,6 +155,7 @@ export class AbstractSpreadsheetAction extends Component {
                 this.dataFetched = true;
                 this._initializeWith(this.props.state.data);
                 this.model = this.props.state.model;
+                this.collaborativeChannel = this.props.state.collaborativeChannel;
                 this.model.joinSession();
                 this.stores.inject(ModelStore, this.model);
             } else {
@@ -253,7 +259,7 @@ export class AbstractSpreadsheetAction extends Component {
         if (!this.dataFetched) {
             return {};
         }
-        const transportService = this.spreadsheetService.makeCollaborativeChannel(
+        this.collaborativeChannel = this.spreadsheetService.makeCollaborativeChannel(
             this.resModel,
             this.resId,
             this.accessToken,
@@ -272,7 +278,7 @@ export class AbstractSpreadsheetAction extends Component {
                 geoJsonService: this.geoJsonService,
             },
             defaultCurrency: createDefaultCurrency(this.data.default_currency),
-            transportService,
+            transportService: this.collaborativeChannel,
             client: {
                 id: uuidGenerator.smallUuid(),
                 name: user.name,

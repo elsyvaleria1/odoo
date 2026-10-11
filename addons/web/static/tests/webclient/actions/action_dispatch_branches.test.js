@@ -3,6 +3,7 @@
 import { describe, expect, test } from "@odoo/hoot";
 import { EventBus } from "@odoo/owl";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
+import { releaseSymbol } from "@web/core/action_hook";
 import { browser } from "@web/core/browser/browser";
 import { AppEvent } from "@web/core/events";
 import { SupersededError } from "@web/core/utils/concurrency";
@@ -97,6 +98,46 @@ test("commit (inline) wires the component's state exporters onto the controller"
     dispatch.commit(EXPORTERS);
     expect(dispatch.controller.getGlobalState()).toEqual({ g: 1 });
     expect(dispatch.controller.getLocalState()).toEqual({ l: 1 });
+});
+
+/**
+ * @param {string} name
+ * @param {any} action
+ */
+function makeStatefulController(name, action) {
+    return {
+        jsId: name,
+        action,
+        exportedState: { [releaseSymbol]: () => expect.step(`release ${name}`) },
+    };
+}
+
+test("commit releases the state of a controller whose action left the stack", async () => {
+    const am = makeFakeAm();
+    const dropped = makeStatefulController("dropped", {});
+    const kept = makeStatefulController("kept", {});
+    am.controllerStack = [dropped, kept];
+    const dispatch = makeDispatch(am, {
+        controller: { action: {} },
+        nextStack: [kept],
+    });
+    dispatch.nextStack.push(dispatch.controller);
+    dispatch.commit(EXPORTERS);
+    expect.verifySteps(["release dropped"]);
+});
+
+test("commit keeps the state of a view its action can switch back to", async () => {
+    const am = makeFakeAm();
+    const action = { controllers: {} };
+    const list = makeStatefulController("list", action);
+    const form = makeStatefulController("form", action);
+    action.controllers = { list, form };
+    am.controllerStack = [list];
+    makeDispatch(am, { controller: form, nextStack: [form] }).commit(EXPORTERS);
+    expect.verifySteps([]);
+
+    makeDispatch(am, { controller: { action: {} } }).commit(EXPORTERS);
+    expect.verifySteps(["release form", "release list"]);
 });
 
 test("commit (inline) records the action and lang in the restore cache", async () => {

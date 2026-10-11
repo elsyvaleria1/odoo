@@ -1,6 +1,7 @@
 // @ts-check
 /** @odoo-module native */
 
+import { releaseSymbol } from "@web/core/action_hook";
 import { reportUncaught } from "@web/core/errors/error_utils";
 import { AppEvent } from "@web/core/events";
 import { registry } from "@web/core/registry";
@@ -14,6 +15,28 @@ import { BlankComponent } from "./blank_component.js";
 const actionRegistry = registry.category("actions");
 
 /** @import { Action, ActionManager, Controller } from "./action_service.js" */
+
+/**
+ * A controller off the stack still comes back while its action is on it:
+ * switchView reuses the action's controllers.
+ * @param {Controller[]} stack
+ * @param {Controller[]} nextStack
+ */
+function releaseDroppedStates(stack, nextStack) {
+    const keptActions = new Set(nextStack.map((ct) => ct.action));
+    const dropped = new Set();
+    for (const ct of stack) {
+        if (!keptActions.has(ct.action)) {
+            dropped.add(ct);
+            for (const viewController of Object.values(ct.action.controllers ?? {})) {
+                dropped.add(viewController);
+            }
+        }
+    }
+    for (const ct of dropped) {
+        ct.exportedState?.[releaseSymbol]?.();
+    }
+}
 export class ActionDispatch {
     /**
      * @param {ActionManager} am
@@ -52,6 +75,7 @@ export class ActionDispatch {
         } else {
             controller.getGlobalState = getGlobalState;
             controller.getLocalState = getLocalState;
+            releaseDroppedStates(am.controllerStack, nextStack);
             am.controllerStack = nextStack;
             am.settlePendingDispatch(this);
             am.pushState();

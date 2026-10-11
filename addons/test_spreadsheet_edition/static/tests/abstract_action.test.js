@@ -152,6 +152,67 @@ test("receives collaborative messages when action is restored", async function (
     expect('.o-menu-item-button[title="Bold (Ctrl+B)"]').toHaveClass("active");
 });
 
+test("the bus channel is released once nothing can bring the spreadsheet back", async function () {
+    const spreadsheetStep = (step, name) => {
+        if (name.startsWith("spreadsheet")) {
+            expect.step(`${step} ${name}`);
+        }
+    };
+    mockService("bus_service", {
+        addChannel(channel) {
+            spreadsheetStep("add", channel);
+            return super.addChannel(channel);
+        },
+        deleteChannel(channel) {
+            spreadsheetStep("delete", channel);
+            return super.deleteChannel(channel);
+        },
+        subscribe(type, callback) {
+            spreadsheetStep("subscribe", type);
+            return super.subscribe(type, callback);
+        },
+        unsubscribe(type, callback) {
+            spreadsheetStep("unsubscribe", type);
+            return super.unsubscribe(type, callback);
+        },
+    });
+    SpreadsheetTest._records = [
+        { id: 1, name: "a spreadsheet", spreadsheet_data: "{}" },
+    ];
+    await mountWithCleanup(WebClient);
+    await getService("action").doAction({
+        type: "ir.actions.client",
+        tag: "spreadsheet_test_action",
+        params: { spreadsheet_id: 1, res_model: "spreadsheet.test" },
+    });
+    await animationFrame();
+    expect.verifySteps([
+        "add spreadsheet_collaborative_session:spreadsheet.test:1",
+        "subscribe spreadsheet",
+    ]);
+
+    await getService("action").doAction({
+        type: "ir.actions.act_window",
+        res_model: "partner",
+        views: [[false, "list"]],
+    });
+    await contains(".o_back_button").click();
+    expect.verifySteps([]);
+
+    await getService("action").doAction(
+        {
+            type: "ir.actions.act_window",
+            res_model: "partner",
+            views: [[false, "list"]],
+        },
+        { clearBreadcrumbs: true },
+    );
+    expect.verifySteps([
+        "unsubscribe spreadsheet",
+        "delete spreadsheet_collaborative_session:spreadsheet.test:1",
+    ]);
+});
+
 test("The geoJson service is given to the model for geo charts", async function () {
     const mockGeoJson = {
         type: "FeatureCollection",

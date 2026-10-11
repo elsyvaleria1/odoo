@@ -9,6 +9,11 @@ import { useLayoutEffect } from "@web/core/utils/layout_effect";
 const envScope = defineScope("web/core/action_hook");
 
 export const scrollSymbol = Symbol("scroll");
+/**
+ * Key of a function in an exported local state that frees what the state
+ * holds open, called once nothing can restore the state any more.
+ */
+export const releaseSymbol = Symbol("release");
 
 const CONTENT_SELECTOR =
     ".o_component_with_search_panel > .o_renderer_with_searchpanel," +

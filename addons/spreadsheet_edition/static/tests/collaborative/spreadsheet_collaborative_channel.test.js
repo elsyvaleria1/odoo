@@ -10,19 +10,29 @@ describe.current.tags("headless");
 defineSpreadsheetModels();
 
 async function setupEnvWithMockBus({ mockRPC } = {}) {
-    const channels = [];
     const _bus = new EventBus();
+    const listeners = new Map();
 
     const busService = {
-        addChannel: (name) => {
-            channels.push(name);
+        channels: [],
+        addChannel(name) {
+            this.channels.push(name);
+        },
+        deleteChannel(name) {
+            this.channels.splice(this.channels.indexOf(name), 1);
         },
         subscribe: (eventName, handler) => {
-            _bus.addEventListener("notif", ({ detail }) => {
+            const listener = ({ detail }) => {
                 if (detail.type === eventName) {
                     handler(detail.payload, { id: detail.id });
                 }
-            });
+            };
+            listeners.set(handler, listener);
+            _bus.addEventListener("notif", listener);
+        },
+        unsubscribe: (eventName, handler) => {
+            _bus.removeEventListener("notif", listeners.get(handler));
+            listeners.delete(handler);
         },
         notify: (message) => {
             _bus.trigger("notif", message);
@@ -146,6 +156,25 @@ test("a revision the loaded data already holds is not delivered again", async fu
     });
     await animationFrame();
     expect.verifySteps(["REVISION_8", "CLIENT_MOVED"]);
+});
+
+test("a released channel gives its bus claim back and hears nothing more", async function () {
+    const env = await setupEnvWithMockBus();
+    const kept = new SpreadsheetCollaborativeChannel(env, "my.model", 5);
+    const released = new SpreadsheetCollaborativeChannel(env, "my.model", 5);
+    kept.onNewMessage("anId", () => expect.step("kept"));
+    released.onNewMessage("anId", () => expect.step("released"));
+    released.release();
+    released.release();
+    expect(env.services.bus_service.channels).toEqual([
+        "spreadsheet_collaborative_session:my.model:5",
+    ]);
+    env.services.bus_service.notify({
+        type: "spreadsheet",
+        payload: { id: 5, model: "my.model", type: "CLIENT_MOVED" },
+    });
+    await animationFrame();
+    expect.verifySteps(["kept"]);
 });
 
 test("Message accepted by the server is immediately handled", async function () {

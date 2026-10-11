@@ -15,6 +15,10 @@ export class MockSpreadsheetCollaborativeChannel {
         this.listeners = this.listeners.filter((listener) => listener.id !== id);
     }
 
+    release() {
+        this.listeners = [];
+    }
+
     sendMessage(message) {
         const msg = JSON.parse(JSON.stringify(message));
         switch (msg.type) {
