@@ -108,3 +108,26 @@ class TestProductPublicCategory(TransactionCase):
             1,
             "a category's descendants are one grouped read, not one per level",
         )
+
+    def test_an_archived_product_publishes_no_category(self):
+        self.published_product.active = False
+        published_categs = set(
+            self.env["product.public.category"]
+            .search([("has_published_products", "=", True)])
+            .mapped("name")
+        )
+        self.assertSetEqual(published_categs, set())
+
+    def test_search_has_published_products_is_one_query(self):
+        public = self.env.ref("base.public_user")
+        Category = self.env["product.public.category"].with_user(public)
+        domain = [("has_published_products", "=", True)]
+        Category.search_fetch(domain, ["name"])
+        with self.capturedQueries() as queries:
+            names = set(Category.search_fetch(domain, ["name"]).mapped("name"))
+        self.assertSetEqual(names, {"1", "1.2", "2", "2.1", "2.1.1"})
+        self.assertEqual(
+            len(queries),
+            1,
+            "the condition and the public users' rule are subqueries of the search",
+        )

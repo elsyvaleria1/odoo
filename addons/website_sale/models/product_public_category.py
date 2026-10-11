@@ -1,5 +1,6 @@
 from odoo import _lt, api, fields, models
 from odoo.fields import Domain
+from odoo.tools import SQL
 from odoo.tools.translate import html_translate
 
 
@@ -128,20 +129,26 @@ class ProductPublicCategory(models.Model):
     def _search_has_published_products(self, operator, value):
         if operator != "in":
             return NotImplemented
-        published_categ_ids = self._search(
-            [
-                (
-                    "product_tmpl_ids",
-                    "any",
-                    [("is_published", "=", True), ("active", "=", True)],
-                )
-            ]
-        ).get_result_ids()
-        return [
-            "|",
-            ("id", "in", published_categ_ids),
-            ("id", "parent_of", published_categ_ids),
-        ]
+        relation = self._fields["product_tmpl_ids"]
+
+        def has_published_descendant(model, alias, query):
+            published_templates = model.env["product.template"]._search(
+                [("is_published", "=", True), ("active", "=", True)]
+            )
+            return SQL(
+                "EXISTS (SELECT 1 FROM %s AS published_rel"
+                " JOIN %s AS published ON published.id = published_rel.%s"
+                " WHERE published_rel.%s IN %s"
+                " AND published.parent_path LIKE %s || '%%')",
+                SQL.identifier(relation.relation),
+                SQL.identifier(self._table),
+                SQL.identifier(relation.column1),
+                SQL.identifier(relation.column2),
+                published_templates.subselect(),
+                SQL.identifier(alias, "parent_path"),
+            )
+
+        return Domain.custom(to_sql=has_published_descendant)
 
     @api.model
     def _search_get_detail(self, website, order, options):

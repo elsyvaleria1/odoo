@@ -394,7 +394,7 @@ class TestWebsiteAllPerformance(
             f'<img src="/web/image/product.image/{self.product_images.ids[1]}/', html
         )
 
-        query_count = 52  # To increase this number you must ask the permission to al
+        query_count = 49  # To increase this number you must ask the permission to al
         queries = {
             "orm_signaling_registry": 1,
             "website": 2,
@@ -402,7 +402,7 @@ class TestWebsiteAllPerformance(
             "product_pricelist": 3,
             "product_template": 4,
             "product_tag": 1,
-            "product_public_category": 5,
+            "product_public_category": 2,
             "product_product": 1,
             # the comparison's button reads the cards' specification lines too,
             # in one read for the page: a product with specifications compares
