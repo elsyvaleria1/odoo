@@ -394,7 +394,7 @@ class TestWebsiteAllPerformance(
             f'<img src="/web/image/product.image/{self.product_images.ids[1]}/', html
         )
 
-        query_count = 51  # To increase this number you must ask the permission to al
+        query_count = 52  # To increase this number you must ask the permission to al
         queries = {
             "orm_signaling_registry": 1,
             "website": 2,
@@ -404,7 +404,10 @@ class TestWebsiteAllPerformance(
             "product_tag": 1,
             "product_public_category": 5,
             "product_product": 1,
-            "product_template_attribute_line": 3,
+            # the comparison's button reads the cards' specification lines too,
+            # in one read for the page: a product with specifications compares
+            # (0a811a1b1878)
+            "product_template_attribute_line": 4,
             "res_users": 1,
             "res_partner": 2,
             "product_category": 1,
@@ -455,6 +458,10 @@ class TestWebsiteAllPerformance(
             queries["product_product"] += 2
             queries["ir_attachment"] += 1
             queries["product_variant_combination"] = 1
+            # demo's public categories nest three levels below the root, and
+            # the sidebar reads children one level per query
+            query_count += 3
+            queries["product_public_category"] += 3
 
         # To increase the query count you must ask the permission to al
         return query_count, queries
