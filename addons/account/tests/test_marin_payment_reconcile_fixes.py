@@ -64,18 +64,18 @@ class TestMarinPaymentReconcileFixes(TestBankRecWidgetCommon):
         waiting = self._moveless_payment(self._invoice_line(100.0))
         invoice_line = self._invoice_line(200.0)
         st_line = self._create_st_line(200.0, date="2019-01-05")
-        self.env.add_to_compute(waiting._fields["outstanding_account_id"], waiting)
+        self.env.add_to_compute(waiting._fields["liquidity_account_id"], waiting)
 
         forced = st_line._create_payment_with_move_from_invoice(invoice_line.move_id)
 
         self.assertTrue(forced.is_entry_required)
-        self.assertTrue(forced.outstanding_account_id)
+        self.assertTrue(forced.liquidity_account_id)
         self.assertTrue(forced.move_id)
         self.assertRecordValues(
-            waiting, [{"is_entry_required": False, "outstanding_account_id": False}]
+            waiting, [{"is_entry_required": False, "liquidity_account_id": False}]
         )
         forced.payment_channel_id = forced.payment_channel_id
-        self.assertTrue(forced.outstanding_account_id)
+        self.assertTrue(forced.liquidity_account_id)
 
     def test_statement_counterparts_follow_the_payments_chronologically(self):
         created_first = self._moveless_payment(self._invoice_line(100.0), "2019-01-02")

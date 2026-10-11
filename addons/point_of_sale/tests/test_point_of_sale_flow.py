@@ -2051,7 +2051,7 @@ class TestPointOfSaleFlow(CommonPosTest):
                 },
                 {
                     "balance": 90.0,
-                    "account_id": self.bank_payment_move.payment_ids.outstanding_account_id.id,
+                    "account_id": self.bank_payment_move.payment_ids.liquidity_account_id.id,
                 },
             ],
         )

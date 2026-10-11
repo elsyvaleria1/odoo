@@ -72,8 +72,8 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
     def _compute_accounts(self) -> None:
         for wizard in self:
             payment = wizard.payment_id
-            wizard.counterpart_account_id = payment.destination_account_id
-            wizard.liquidity_account_id = payment.outstanding_account_id
+            wizard.counterpart_account_id = payment.counterpart_account_id
+            wizard.liquidity_account_id = payment.liquidity_account_id
 
     @api.depends("payment_id")
     def _compute_is_locked(self) -> None:
@@ -101,14 +101,14 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
         self.check_singleton()
         payment = self.payment_id
         changes = {}
-        if self.counterpart_account_id != payment.destination_account_id:
-            changes["destination_account_id"] = (
-                payment.destination_account_id,
+        if self.counterpart_account_id != payment.counterpart_account_id:
+            changes["counterpart_account_id"] = (
+                payment.counterpart_account_id,
                 self.counterpart_account_id,
             )
-        if self.liquidity_account_id != payment.outstanding_account_id:
-            changes["outstanding_account_id"] = (
-                payment.outstanding_account_id,
+        if self.liquidity_account_id != payment.liquidity_account_id:
+            changes["liquidity_account_id"] = (
+                payment.liquidity_account_id,
                 self.liquidity_account_id,
             )
         return changes
@@ -127,7 +127,7 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
                 self.env._("Choose an account different from the current one.")
             )
         if (
-            "destination_account_id" in changes
+            "counterpart_account_id" in changes
             and self.counterpart_account_id.account_type
             not in payment._get_valid_payment_account_types()
         ):
@@ -154,8 +154,8 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
 
     def _get_note(self, changes, entry):
         labels = {
-            "destination_account_id": self.env._("Counterpart account"),
-            "outstanding_account_id": self.env._("Liquidity account"),
+            "counterpart_account_id": self.env._("Counterpart account"),
+            "liquidity_account_id": self.env._("Liquidity account"),
         }
         items = Markup("").join(
             Markup("<li>%s: %s &rarr; %s</li>")
@@ -181,8 +181,8 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
             )
         liquidity, counterpart, _other = payment._seek_for_lines()
         lines_per_field = {
-            "destination_account_id": counterpart,
-            "outstanding_account_id": liquidity,
+            "counterpart_account_id": counterpart,
+            "liquidity_account_id": liquidity,
         }
         line_vals = []
         to_match = []

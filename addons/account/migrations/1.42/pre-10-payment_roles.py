@@ -7,7 +7,7 @@ _logger = logging.getLogger(__name__)
 _CLASSIFY_PAYMENT_LINES = SQL("""
     CREATE TEMP TABLE payarch_payment_line_role ON COMMIT DROP AS
     WITH pay AS (
-        SELECT p.id, p.move_id, p.journal_id, p.payment_channel_id, p.outstanding_account_id
+        SELECT p.id, p.move_id, p.journal_id, p.payment_channel_id, p.liquidity_account_id
           FROM account_payment p
          WHERE p.move_id IS NOT NULL
     ),
@@ -23,7 +23,7 @@ _CLASSIFY_PAYMENT_LINES = SQL("""
                  UNION SELECT ch.payment_account_id
                          FROM account_payment_channel ch
                         WHERE ch.journal_id = pay.journal_id
-                 UNION SELECT pay.outstanding_account_id
+                 UNION SELECT pay.liquidity_account_id
                ) x(account_id)
          WHERE x.account_id IS NOT NULL
     ),

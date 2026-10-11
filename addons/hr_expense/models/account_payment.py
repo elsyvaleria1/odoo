@@ -10,17 +10,17 @@ class AccountPayment(models.Model):
 
     expense_ids = fields.One2many(related="move_id.expense_ids")
 
-    def _compute_outstanding_account_id(self) -> None:
+    def _compute_liquidity_account_id(self) -> None:
         expense_company_payments = self.filtered(
             lambda payment: payment.expense_ids.payment_mode == "company_account"
         )
         for payment in expense_company_payments:
-            payment.outstanding_account_id = (
+            payment.liquidity_account_id = (
                 payment.expense_ids._get_expense_account_destination()
             )
         super(
             AccountPayment, self - expense_company_payments
-        )._compute_outstanding_account_id()
+        )._compute_liquidity_account_id()
 
     def _compute_show_require_partner_bank(self) -> None:
         expense_payments = self.filtered(lambda pay: pay.move_id.expense_ids)
@@ -36,7 +36,7 @@ class AccountPayment(models.Model):
             "payment_reference",
             "currency_id",
             "partner_id",
-            "destination_account_id",
+            "counterpart_account_id",
             "bank_account_id",
             "journal_id",
             "ref",

@@ -226,7 +226,7 @@ class TestMarinBankRecFixes(AccountTestInvoicingCommon):
         self.assertEqual(
             [
                 payment.move_id.line_ids.filtered(
-                    lambda line, p=payment: line.account_id == p.outstanding_account_id
+                    lambda line, p=payment: line.account_id == p.liquidity_account_id
                 ).reconciled
                 for payment in payments
             ],

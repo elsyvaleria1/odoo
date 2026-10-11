@@ -362,7 +362,7 @@ class AccountCollectionRemittance(models.Model):
             Command.create(
                 {
                     "name": payment.name,
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "partner_id": payment.collector_id.partner_id.id,
                     "balance": -payment.amount_company_currency_signed,
                 }
@@ -414,14 +414,14 @@ class AccountCollectionRemittance(models.Model):
         for payment in self.payment_ids:
             custody_lines = payment.move_id.line_ids.filtered(
                 lambda line, payment=payment: (
-                    line.account_id == payment.outstanding_account_id
+                    line.account_id == payment.liquidity_account_id
                     and not line.reconciled
                 )
             )
             hand_in_line = move.line_ids.filtered(
                 lambda line, payment=payment: (
                     line.name == payment.name
-                    and line.account_id == payment.outstanding_account_id
+                    and line.account_id == payment.liquidity_account_id
                     and not line.reconciled
                 )
             )[:1]

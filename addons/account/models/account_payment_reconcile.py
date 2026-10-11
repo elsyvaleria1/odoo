@@ -108,7 +108,7 @@ class AccountPayment(models.Model):
                     line_to_create = {
                         "name": payment.name,
                         "partner_id": payment.partner_id.id,
-                        "account_id": payment.destination_account_id.id,
+                        "account_id": payment.counterpart_account_id.id,
                         "currency_id": payment.currency_id.id,
                         "amount_currency": amount,
                         "balance": balance,
@@ -299,7 +299,7 @@ class AccountPayment(models.Model):
                 leftover_vals = {
                     "name": payment.name,
                     "partner_id": payment.partner_id.id,
-                    "account_id": payment.destination_account_id.id,
+                    "account_id": payment.counterpart_account_id.id,
                     "currency_id": payment.currency_id.id,
                     "amount_currency": -remaining,
                     "balance": payment.currency_id._convert(

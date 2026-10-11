@@ -8800,7 +8800,6 @@ msgstr ""
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
-#: model:ir.model.fields,field_description:account.field_account_payment__destination_account_id
 #, python-format
 msgid "Destination Account"
 msgstr ""
@@ -16768,11 +16767,6 @@ msgstr ""
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Outgoing Payments"
-msgstr ""
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_account_payment__outstanding_account_id
-msgid "Outstanding Account"
 msgstr ""
 
 #. module: account
@@ -27291,6 +27285,16 @@ msgstr ""
 #~ msgstr ""
 #~ "Changing GST number is not allowed once invoices have been issued for your "
 #~ "account. Please contact us directly for this operation."
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__counterpart_account_id
+msgid "Counterpart Account"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__liquidity_account_id
+msgid "Liquidity Account"
+msgstr ""
 
 #~ msgid ""
 #~ "Check this box to negate the absolute value of the balance of the lines "

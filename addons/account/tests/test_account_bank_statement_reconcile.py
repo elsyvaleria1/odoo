@@ -345,7 +345,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "amount_currency": -100.0,
                     "currency_id": self.company_data["currency"].id,
                     "balance": -100.0,
@@ -371,7 +371,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.destination_account_id.id,
+                    "account_id": payment.counterpart_account_id.id,
                     "amount_currency": 100.0,
                     "currency_id": self.company_data["currency"].id,
                     "balance": 100.0,
@@ -401,7 +401,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "amount_currency": -200.0,
                     "currency_id": self.other_currency.id,
                     "balance": -100.0,
@@ -435,7 +435,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "amount_currency": -200.0,
                     "currency_id": self.other_currency.id,
                     "balance": -100.0,
@@ -459,7 +459,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -100.0,
                     "reconciled": True,
                 },
@@ -479,7 +479,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -100.0,
                     "reconciled": True,
                 },
@@ -504,7 +504,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -200.0,
                     "reconciled": True,
                 },
@@ -4157,7 +4157,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
         )
         st_line.set_line_bank_statement_line(
             payment.move_id.line_ids.filtered(
-                lambda l: l.account_id == payment.outstanding_account_id
+                lambda l: l.account_id == payment.liquidity_account_id
             ).ids
         )
         self.assertRecordValues(
@@ -4171,7 +4171,7 @@ class TestAccountBankStatement(TestBankRecWidgetCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "amount_currency": -100.0,
                     "currency_id": self.company_data["currency"].id,
                     "balance": -100.0,

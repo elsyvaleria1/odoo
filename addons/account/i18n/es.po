@@ -9441,7 +9441,6 @@ msgstr "Descripción"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
-#: model:ir.model.fields,field_description:account.field_account_payment__destination_account_id
 msgid "Destination Account"
 msgstr "Cuenta de destino"
 
@@ -17588,11 +17587,6 @@ msgstr "Saliente"
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Outgoing Payments"
 msgstr "Pagos salientes"
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_account_payment__outstanding_account_id
-msgid "Outstanding Account"
-msgstr "Cuenta pendiente"
 
 #. module: account
 #. odoo-python
@@ -28751,6 +28745,16 @@ msgstr ""
 " transacción con ella a la siguiente: la etiqueta con sus números en blanco,"
 " salvo que el formato del extracto conozca un identificador mejor. Una "
 "transacción nueva toma el socio de las anteriores que llevan la misma clave."
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__counterpart_account_id
+msgid "Counterpart Account"
+msgstr "Cuenta de contrapartida"
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__liquidity_account_id
+msgid "Liquidity Account"
+msgstr "Cuenta de liquidez"
 
 #~ msgid ""
 #~ "\n"

@@ -1066,7 +1066,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -100.0,
                     "reconciled": True,
                 },
@@ -1109,7 +1109,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -100.0,
                     "reconciled": True,
                 },
@@ -1157,7 +1157,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -100.0,
                     "reconciled": True,
                 },
@@ -2507,7 +2507,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment_2.outstanding_account_id.id,
+                    "account_id": payment_2.liquidity_account_id.id,
                     "balance": -100.0,
                     "reconciled": True,
                 },
@@ -2562,7 +2562,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -200.0,
                     "reconciled": True,
                 },
@@ -2595,7 +2595,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                     "account_name": "Bank",
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -500.0,
                     "reconciled": True,
                     "account_name": "Outstanding Receipts",
@@ -3070,7 +3070,7 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "balance": -100.0,
                     "reconciled": True,
                 },

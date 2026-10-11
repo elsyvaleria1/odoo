@@ -240,7 +240,7 @@ class TestJournalReport(TestAccountReportsCommon):
                 "partner_id": cls.partner_a.id,
                 "payment_reference": "PBNK1/2017/00000001",
                 "payment_type": "inbound",
-                "destination_account_id": cls.company_data[
+                "counterpart_account_id": cls.company_data[
                     "default_account_revenue"
                 ].id,
                 "date": "2017-01-01",
@@ -431,7 +431,7 @@ class TestJournalReport(TestAccountReportsCommon):
         )
         outstanding_account_code = (
             self.env["account.payment"]
-            ._get_outstanding_account(payment_type="inbound")
+            ._get_default_liquidity_account(payment_type="inbound")
             .code
         )
 

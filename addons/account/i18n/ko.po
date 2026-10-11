@@ -9132,7 +9132,6 @@ msgstr "설명"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
-#: model:ir.model.fields,field_description:account.field_account_payment__destination_account_id
 msgid "Destination Account"
 msgstr "대상 계정"
 
@@ -17035,11 +17034,6 @@ msgstr "출고"
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Outgoing Payments"
 msgstr "출금"
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_account_payment__outstanding_account_id
-msgid "Outstanding Account"
-msgstr "미결제 계정"
 
 #. module: account
 #. odoo-python
@@ -27474,6 +27468,16 @@ msgstr ""
 #: code:addons/account/static/src/components/multicurrency_revaluation_report/warnings.xml:0
 msgid "⇒ Reset to Odoo’s Rate"
 msgstr "⇒ Odoo 요율로 재설정"
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__counterpart_account_id
+msgid "Counterpart Account"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__liquidity_account_id
+msgid "Liquidity Account"
+msgstr ""
 
 #~ msgid ""
 #~ "\n"

@@ -97,7 +97,7 @@ class TestBatchPayment(TestAccountBankStatement):
                     "reconciled": False,
                 },
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "amount_currency": -100.0,
                     "currency_id": self.other_currency.id,
                     "balance": -100.0,
@@ -110,7 +110,7 @@ class TestBatchPayment(TestAccountBankStatement):
             exchange_move.line_ids,
             [
                 {
-                    "account_id": payment.outstanding_account_id.id,
+                    "account_id": payment.liquidity_account_id.id,
                     "currency_id": self.other_currency.id,
                     "balance": 50.0,
                 },
@@ -135,9 +135,9 @@ class TestBatchPayment(TestAccountBankStatement):
                 self.partner_b.property_account_payable_id,
             ),
         ]:
-            outstanding_account = self.env["account.payment"]._get_outstanding_account(
-                payment_type
-            )
+            outstanding_account = self.env[
+                "account.payment"
+            ]._get_default_liquidity_account(payment_type)
             self.batch_deposit.payment_account_id = outstanding_account
             payment_1 = self.env["account.payment"].create(
                 {
@@ -1206,9 +1206,9 @@ class TestBatchPaymentAccountingOnly(TestBatchPayment):
             )
             ._create_payments()
         )
-        outstanding_account = self.env["account.payment"]._get_outstanding_account(
-            payment.payment_type
-        )
+        outstanding_account = self.env[
+            "account.payment"
+        ]._get_default_liquidity_account(payment.payment_type)
 
         batch = self.env["account.batch.payment"].create(
             {

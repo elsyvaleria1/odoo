@@ -10311,7 +10311,6 @@ msgstr "Tavsif"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
-#: model:ir.model.fields,field_description:account.field_account_payment__destination_account_id
 #, fuzzy
 msgid "Destination Account"
 msgstr "Belgilangan hisob"
@@ -19548,12 +19547,6 @@ msgstr "Chiquvchi"
 #, fuzzy
 msgid "Outgoing Payments"
 msgstr "Chiquvchi to‘lovlar"
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_account_payment__outstanding_account_id
-#, fuzzy
-msgid "Outstanding Account"
-msgstr "To‘lanmagan hisob"
 
 #. module: account
 #. odoo-python
@@ -33944,3 +33937,13 @@ msgstr ""
 #~ "davrga mos kelmaydi.\"/> <span invisible=\"not "
 #~ "show_warning_existing_return\" class=\"fa fa-exclamation-triangle text-"
 #~ "danger pb-2\" title=\"Tanlangan davr uchun hisobot allaqachon mavjud.\"/>"
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__counterpart_account_id
+msgid "Counterpart Account"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__liquidity_account_id
+msgid "Liquidity Account"
+msgstr ""

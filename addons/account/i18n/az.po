@@ -8779,7 +8779,6 @@ msgstr "Təsvir"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
-#: model:ir.model.fields,field_description:account.field_account_payment__destination_account_id
 msgid "Destination Account"
 msgstr "Yekun hesab"
 
@@ -16681,11 +16680,6 @@ msgstr "Gedən"
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Outgoing Payments"
 msgstr "Gedən Ödənişlər"
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_account_payment__outstanding_account_id
-msgid "Outstanding Account"
-msgstr "Gözləmə Hesabı"
 
 #. module: account
 #. odoo-python
@@ -27059,6 +27053,16 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/account/static/src/components/multicurrency_revaluation_report/warnings.xml:0
 msgid "⇒ Reset to Odoo’s Rate"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__counterpart_account_id
+msgid "Counterpart Account"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__liquidity_account_id
+msgid "Liquidity Account"
 msgstr ""
 
 #~ msgid "- The document's sequence becomes editable on all documents."

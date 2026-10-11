@@ -3025,7 +3025,7 @@ class TestAccountPaymentRegister(AccountTestInvoicingCommon, PaymentCommon):
 
         def tracked_create_journal_entry(payments, *args, **kwargs):
             if need_move := payments.filtered(
-                lambda p: not p.move_id and p.outstanding_account_id
+                lambda p: not p.move_id and p.liquidity_account_id
             ):
                 entry_batches.append(len(need_move))
             return create_journal_entry(payments, *args, **kwargs)

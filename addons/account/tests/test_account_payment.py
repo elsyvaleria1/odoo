@@ -84,7 +84,7 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
                 "amount": 50.0,
                 "payment_type": "inbound",
                 "partner_type": "customer",
-                "destination_account_id": copy_receivable.id,
+                "counterpart_account_id": copy_receivable.id,
             }
         )
         payment.action_post()
@@ -97,7 +97,7 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
             "is_invoice_reconciled": False,
             "currency_id": self.company_data["currency"].id,
             "partner_id": False,
-            "destination_account_id": copy_receivable.id,
+            "counterpart_account_id": copy_receivable.id,
             "payment_channel_id": self.inbound_payment_channel.id,
         }
         expected_move_values = {
@@ -218,7 +218,7 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
             "is_invoice_reconciled": False,
             "currency_id": self.company_data["currency"].id,
             "partner_id": self.partner_a.id,
-            "destination_account_id": self.partner_a.property_account_receivable_id.id,
+            "counterpart_account_id": self.partner_a.property_account_receivable_id.id,
             "payment_channel_id": self.inbound_payment_channel.id,
         }
         expected_move_values = {
@@ -263,7 +263,7 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
                     **expected_payment_values,
                     "partner_type": "supplier",
                     "date": fields.Date.from_string("2024-01-01"),
-                    "destination_account_id": self.partner_a.property_account_payable_id.id,
+                    "counterpart_account_id": self.partner_a.property_account_payable_id.id,
                     "currency_id": self.other_currency.id,
                     "partner_id": self.partner_a.id,
                 }
@@ -328,7 +328,7 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
                     "is_invoice_reconciled": False,
                     "currency_id": self.company_data["currency"].id,
                     "partner_id": self.partner_a.id,
-                    "destination_account_id": self.partner_a.property_account_receivable_id.id,
+                    "counterpart_account_id": self.partner_a.property_account_receivable_id.id,
                     "payment_channel_id": self.inbound_payment_channel.id,
                     "journal_id": self.company_data["default_journal_bank"].id,
                 }
@@ -429,7 +429,7 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
                 "amount": 50.0,
                 "payment_type": "inbound",
                 "partner_type": "customer",
-                "destination_account_id": self.company_data[
+                "counterpart_account_id": self.company_data[
                     "default_account_receivable"
                 ].id,
             }
@@ -962,12 +962,12 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
             with self.subTest(label):
                 payment = payment_model.create(dict(vals))
                 self.assertTrue(
-                    payment.outstanding_account_id,
+                    payment.liquidity_account_id,
                     "the compute owes a mandatory entry an outstanding account",
                 )
                 payment.write(edit)
                 self.assertTrue(
-                    payment.outstanding_account_id,
+                    payment.liquidity_account_id,
                     f"{label} cleared the outstanding account",
                 )
                 payment.action_post()
@@ -997,11 +997,11 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
                 }
             )
         )
-        inbound_account = payment.outstanding_account_id
+        inbound_account = payment.liquidity_account_id
         payment.write({"payment_type": "outbound"})
-        self.assertTrue(payment.outstanding_account_id)
+        self.assertTrue(payment.liquidity_account_id)
         self.assertNotEqual(
-            payment.outstanding_account_id,
+            payment.liquidity_account_id,
             inbound_account,
             "an outbound payment settles through the credit account",
         )
@@ -1043,7 +1043,7 @@ class TestAccountPayment(AccountTestInvoicingCommon, MailCommon):
                 write_off_line_vals=[
                     {
                         "name": "write-off",
-                        "account_id": payment.destination_account_id.id,
+                        "account_id": payment.counterpart_account_id.id,
                         "partner_id": self.partner_a.id,
                         "currency_id": payment.currency_id.id,
                         "amount_currency": -10.0,

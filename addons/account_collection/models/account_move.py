@@ -76,7 +76,7 @@ class AccountMove(models.Model):
                 "amount": amount,
                 "date": date,
                 "memo": memo or ", ".join(invoices.mapped("name")),
-                "destination_account_id": receivables.account_id[:1].id,
+                "counterpart_account_id": receivables.account_id[:1].id,
                 "collector_id": collector.id,
                 "collection_method": collection_method,
                 "collection_check_date": check_date

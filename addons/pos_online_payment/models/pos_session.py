@@ -53,7 +53,7 @@ class PosSession(models.Model):
             payment: split_receivable_line
             | payment.online_account_payment_id.move_id.line_ids.filtered(
                 lambda line, account_payment=payment.online_account_payment_id: (
-                    line.account_id == account_payment.destination_account_id
+                    line.account_id == account_payment.counterpart_account_id
                 )
             )
             for payment, split_receivable_line in zip(

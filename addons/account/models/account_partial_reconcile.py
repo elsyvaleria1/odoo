@@ -338,7 +338,7 @@ class AccountPartialReconcile(models.Model):
         matched_payments.fetch(
             [
                 "move_id",
-                "outstanding_account_id",
+                "liquidity_account_id",
                 "state",
                 "payment_type",
                 "currency_id",
@@ -363,7 +363,7 @@ class AccountPartialReconcile(models.Model):
         self = self.union()
         candidate_payments = self._prefetch_payment_state_fields().filtered(
             lambda payment: (
-                not payment.outstanding_account_id and payment.state == from_state
+                not payment.liquidity_account_id and payment.state == from_state
             )
         )
         _debug.pipeline(

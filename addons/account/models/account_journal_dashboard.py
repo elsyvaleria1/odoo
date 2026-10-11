@@ -1243,7 +1243,7 @@ class AccountJournal(models.Model):
                AND move.state = 'posted'
                AND payment.journal_id = ANY(%(journal_ids)s)
                AND payment.company_id = ANY(%(company_ids)s)
-               AND payment.outstanding_account_id = journal.default_account_id
+               AND payment.liquidity_account_id = journal.default_account_id
                AND %(condition)s
           GROUP BY move.company_id, move.journal_id, move.currency_id, 2
             """,

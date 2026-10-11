@@ -463,10 +463,10 @@ class TestAccountPayment(AccountPaymentCommon):
         )._create_payment()
 
         self.assertNotEqual(
-            self.partner.property_account_receivable_id, payment.destination_account_id
+            self.partner.property_account_receivable_id, payment.counterpart_account_id
         )
         self.assertEqual(
-            payment.destination_account_id, invoice.line_ids[-1].account_id
+            payment.counterpart_account_id, invoice.line_ids[-1].account_id
         )
 
     def test_vendor_payment_name_remains_same_after_repost(self):
@@ -635,9 +635,9 @@ class TestAccountPayment(AccountPaymentCommon):
         )
         payment = tx._create_payment()
         self.assertEqual(
-            payment.destination_account_id,
+            payment.counterpart_account_id,
             invoice_1.partner_id.property_account_receivable_id,
-            "With diverging invoice accounts, destination_account_id should fall back to "
+            "With diverging invoice accounts, counterpart_account_id should fall back to "
             "the partner's own receivable account (account.payment's default compute), "
             "not be forced to whichever invoice happened to be first.",
         )

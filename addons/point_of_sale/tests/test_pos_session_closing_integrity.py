@@ -728,7 +728,7 @@ class TestPosSessionCountedBankDifference(TestPoSCommon):
         for sign in (1, -1):
             with self.subTest(sign=sign), self.env.cr.savepoint():
                 captured = self._close_bank_sales([100 * sign], 20 * sign)
-                expected_account = captured.bank_payment_ids.outstanding_account_id
+                expected_account = captured.bank_payment_ids.liquidity_account_id
                 self.assertTrue(expected_account)
                 _logger.debug(
                     "Captured bank payment sign=%s resolved default account=%s",

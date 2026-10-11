@@ -94,7 +94,7 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
                     "payment_type": "outbound",
                     "partner_type": "supplier",
                     "partner_id": self.partner_a.id,
-                    "destination_account_id": self.partner_a.property_account_payable_id.id,
+                    "counterpart_account_id": self.partner_a.property_account_payable_id.id,
                     "currency_id": self.other_currency.id,
                     "bank_account_id": self.partner_bank_account.id,
                 }
@@ -116,7 +116,7 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
                     "payment_type": "inbound",
                     "partner_type": "supplier",
                     "partner_id": self.partner_a.id,
-                    "destination_account_id": self.partner_a.property_account_payable_id.id,
+                    "counterpart_account_id": self.partner_a.property_account_payable_id.id,
                     "bank_account_id": self.partner_bank_account.id,
                 }
             )
@@ -212,7 +212,7 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
                     "payment_type": "inbound",
                     "partner_type": "supplier",
                     "partner_id": self.partner_a.id,
-                    "destination_account_id": self.partner_a.property_account_payable_id.id,
+                    "counterpart_account_id": self.partner_a.property_account_payable_id.id,
                     "bank_account_id": self.partner_bank_account.id,
                 }
             )
@@ -503,7 +503,7 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
                 "payment_type": "outbound",
                 "partner_type": "supplier",
                 "partner_id": self.partner_a.id,
-                "destination_account_id": self.partner_a.property_account_payable_id.id,
+                "counterpart_account_id": self.partner_a.property_account_payable_id.id,
                 "currency_id": self.other_currency.id,
                 "bank_account_id": self.partner_bank_account.id,
             }
@@ -527,7 +527,7 @@ class TestAccountBatchPayment(AccountTestInvoicingCommon):
                     "payment_type": "inbound",
                     "partner_type": "supplier",
                     "partner_id": self.partner_a.id,
-                    "destination_account_id": self.partner_a.property_account_payable_id.id,
+                    "counterpart_account_id": self.partner_a.property_account_payable_id.id,
                     "bank_account_id": self.partner_bank_account.id,
                 }
             )

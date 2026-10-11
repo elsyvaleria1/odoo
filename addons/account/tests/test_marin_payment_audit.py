@@ -56,7 +56,7 @@ class TestPaymentAudit(AccountTestInvoicingCommon):
             payment.move_id, "fixture: the payment must carry a journal entry"
         )
         self.assertTrue(
-            payment.outstanding_account_id, "fixture: and an outstanding account"
+            payment.liquidity_account_id, "fixture: and an outstanding account"
         )
         self.assertNotIn(payment.state, ("draft", "canceled"), "fixture: and be posted")
         payment.unlink()

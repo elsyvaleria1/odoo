@@ -20,7 +20,7 @@ class TestAccountPaymentDuplicateMoves(AccountTestInvoicingCommon):
                 "amount": 50.0,
                 "payment_type": "inbound",
                 "partner_id": cls.partner_a.id,
-                "destination_account_id": cls.receivable.id,
+                "counterpart_account_id": cls.receivable.id,
             }
         )
         cls.payment_out = cls.env["account.payment"].create(
@@ -28,7 +28,7 @@ class TestAccountPaymentDuplicateMoves(AccountTestInvoicingCommon):
                 "amount": 50.0,
                 "payment_type": "outbound",
                 "partner_id": cls.partner_a.id,
-                "destination_account_id": cls.payable.id,
+                "counterpart_account_id": cls.payable.id,
             }
         )
 
@@ -123,7 +123,7 @@ class TestAccountPaymentDuplicateMoves(AccountTestInvoicingCommon):
                 "amount": 60.0,
                 "payment_type": "outbound",
                 "partner_id": self.partner_a.id,
-                "destination_account_id": self.payable.id,
+                "counterpart_account_id": self.payable.id,
             }
         )
         self.assertRecordValues(payment_out_4, [{"duplicate_payment_ids": []}])
@@ -133,7 +133,7 @@ class TestAccountPaymentDuplicateMoves(AccountTestInvoicingCommon):
                 "amount": 50.0,
                 "payment_type": "outbound",
                 "partner_id": self.partner_b.id,
-                "destination_account_id": self.payable.id,
+                "counterpart_account_id": self.payable.id,
             }
         )
         self.assertRecordValues(payment_out_5, [{"duplicate_payment_ids": []}])

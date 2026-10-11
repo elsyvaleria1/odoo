@@ -1172,14 +1172,14 @@ class PosSession(models.Model):
                         "currency_id": self.currency_id.id,
                         "journal_id": payment_method.journal_id.id,
                         "company_id": self.company_id.id,
-                        "destination_account_id": self._get_receivable_account(
+                        "counterpart_account_id": self._get_receivable_account(
                             payment_method
                         ).id,
                     }
                 )
             )
             self._update_payment_outstanding_account(payment, diff_amount)
-            outstanding_account = payment.outstanding_account_id
+            outstanding_account = payment.liquidity_account_id
         diff_line_vals = self._prepare_diff_line_vals(
             payment_method.id, diff_amount, outstanding_account
         )
@@ -1932,14 +1932,14 @@ class PosSession(models.Model):
             payment.write(
                 {
                     "payment_type": payment_type,
-                    "destination_account_id": payment.destination_account_id.id,
+                    "counterpart_account_id": payment.counterpart_account_id.id,
                 }
             )
         if (
-            not payment.outstanding_account_id
+            not payment.liquidity_account_id
             and self.env["account.move"]._get_invoice_in_payment_state() == "in_payment"
         ):
-            payment.outstanding_account_id = payment._get_outstanding_account(
+            payment.liquidity_account_id = payment._get_default_liquidity_account(
                 payment.payment_type
             )
 
@@ -1948,8 +1948,8 @@ class PosSession(models.Model):
             session=self,
             payment=payment,
             direction=payment.payment_type,
-            outstanding=payment.outstanding_account_id,
-            destination=payment.destination_account_id,
+            outstanding=payment.liquidity_account_id,
+            destination=payment.counterpart_account_id,
         )
 
     def _prepare_pos_account_payment_vals(
@@ -1965,7 +1965,7 @@ class PosSession(models.Model):
             "currency_id": self.currency_id.id,
             "journal_id": payment_method.journal_id.id,
             "force_outstanding_account_id": payment_method.outstanding_account_id.id,
-            "destination_account_id": destination_account.id,
+            "counterpart_account_id": destination_account.id,
             "memo": memo,
             "pos_payment_method_id": payment_method.id,
             "pos_session_id": self.id,
@@ -2035,7 +2035,7 @@ class PosSession(models.Model):
         self, account_payment, payment_method, diff_amount
     ) -> None:
         diff_vals = self._prepare_diff_line_vals(
-            payment_method.id, diff_amount, account_payment.outstanding_account_id
+            payment_method.id, diff_amount, account_payment.liquidity_account_id
         )
         if not diff_vals:
             return
@@ -2088,7 +2088,7 @@ class PosSession(models.Model):
                 "payment_type": "outbound" if new_amount_currency < 0 else "inbound",
                 "journal_id": account_payment.journal_id.id,
                 "currency_id": account_payment.currency_id.id,
-                "destination_account_id": account_payment.destination_account_id.id,
+                "counterpart_account_id": account_payment.counterpart_account_id.id,
             }
         )
         account_payment.move_id.action_post()

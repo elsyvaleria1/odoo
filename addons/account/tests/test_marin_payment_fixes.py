@@ -45,7 +45,7 @@ class TestMarinPaymentFixes(AccountTestInvoicingCommon):
         )
         payment = self._payment(journal_id=self.cash_journal.id)
         self.assertEqual(
-            payment.outstanding_account_id.account_type,
+            payment.liquidity_account_id.account_type,
             "asset_cash",
             "the premise: a cash payment goes straight to paid on confirm",
         )
@@ -63,12 +63,12 @@ class TestMarinPaymentFixes(AccountTestInvoicingCommon):
         self.assertTrue(with_move.move_id)
         with patch.object(
             type(self.env["account.payment"]),
-            "_outstanding_account_is_mandatory",
+            "_liquidity_account_is_mandatory",
             lambda self: False,
         ):
             self.bank_journal.inbound_payment_channel_ids.payment_account_id = False
             without_move = self._payment()
-            self.assertFalse(without_move.outstanding_account_id)
+            self.assertFalse(without_move.liquidity_account_id)
             self.assertFalse(without_move.move_id)
 
             (with_move + without_move).write({"memo": "edited"})
@@ -143,7 +143,7 @@ class TestMarinPaymentFixes(AccountTestInvoicingCommon):
         payment = self._payment(
             amount=150.0,
             invoice_ids=[Command.set(invoice.ids)],
-            destination_account_id=other_receivable.id,
+            counterpart_account_id=other_receivable.id,
         )
 
         vals_list = payment._get_amls_for_payment_without_move()

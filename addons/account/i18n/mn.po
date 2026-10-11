@@ -8922,7 +8922,6 @@ msgstr "Тайлбар"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
-#: model:ir.model.fields,field_description:account.field_account_payment__destination_account_id
 msgid "Destination Account"
 msgstr "Очих данс"
 
@@ -16893,11 +16892,6 @@ msgstr "Гарч буй"
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Outgoing Payments"
 msgstr "Гарч буй төлбөр"
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_account_payment__outstanding_account_id
-msgid "Outstanding Account"
-msgstr "Хүлээлгийн түр данс"
 
 #. module: account
 #. odoo-python
@@ -27588,6 +27582,16 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/account/static/src/components/multicurrency_revaluation_report/warnings.xml:0
 msgid "⇒ Reset to Odoo’s Rate"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__counterpart_account_id
+msgid "Counterpart Account"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__liquidity_account_id
+msgid "Liquidity Account"
 msgstr ""
 
 #~ msgid ""

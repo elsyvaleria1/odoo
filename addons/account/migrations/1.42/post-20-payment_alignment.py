@@ -9,20 +9,20 @@ from odoo import SUPERUSER_ID, api
 _logger = logging.getLogger(__name__)
 
 _LIQUIDITY_DRIFT = """
-    SELECT payment.id, payment.outstanding_account_id, line.account_id
+    SELECT payment.id, payment.liquidity_account_id, line.account_id
       FROM account_payment payment
       JOIN account_move_line line
         ON line.move_id = payment.move_id AND line.payment_role = 'liquidity'
-     WHERE payment.outstanding_account_id IS DISTINCT FROM line.account_id
+     WHERE payment.liquidity_account_id IS DISTINCT FROM line.account_id
      ORDER BY payment.id
 """
 
 _COUNTERPART_DRIFT = """
-    SELECT payment.id, payment.destination_account_id, line.account_id
+    SELECT payment.id, payment.counterpart_account_id, line.account_id
       FROM account_payment payment
       JOIN account_move_line line
         ON line.move_id = payment.move_id AND line.payment_role = 'counterpart'
-     WHERE payment.destination_account_id IS DISTINCT FROM line.account_id
+     WHERE payment.counterpart_account_id IS DISTINCT FROM line.account_id
      ORDER BY payment.id
 """
 
@@ -36,8 +36,8 @@ _F6_ALIGNED = """
        AND counterpart.payment_role = 'counterpart'
      WHERE payment.counterpart_review_required IS NOT TRUE
        AND (
-            payment.outstanding_account_id IS DISTINCT FROM liquidity.account_id
-            OR payment.destination_account_id IS DISTINCT FROM counterpart.account_id
+            payment.liquidity_account_id IS DISTINCT FROM liquidity.account_id
+            OR payment.counterpart_account_id IS DISTINCT FROM counterpart.account_id
        )
      ORDER BY payment.id
 """
@@ -70,11 +70,11 @@ def _align_liquidity(env):
     cr.execute(
         """
         UPDATE account_payment payment
-           SET outstanding_account_id = line.account_id
+           SET liquidity_account_id = line.account_id
           FROM account_move_line line
          WHERE line.move_id = payment.move_id
            AND line.payment_role = 'liquidity'
-           AND payment.outstanding_account_id IS DISTINCT FROM line.account_id
+           AND payment.liquidity_account_id IS DISTINCT FROM line.account_id
         """
     )
     env.invalidate_all()

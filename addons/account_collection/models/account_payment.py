@@ -219,14 +219,14 @@ class AccountPayment(models.Model):
     @api.depends(
         "is_collection_custody",
         "state",
-        "outstanding_account_id",
+        "liquidity_account_id",
         "move_id.line_ids.reconciled",
     )
     def _compute_is_in_custody(self) -> None:
         for payment in self:
             custody_lines = payment.move_id.line_ids.filtered(
                 lambda line, payment=payment: (
-                    line.account_id == payment.outstanding_account_id
+                    line.account_id == payment.liquidity_account_id
                 )
             )
             payment.is_in_custody = (
@@ -261,7 +261,7 @@ class AccountPayment(models.Model):
         for payment in self.filtered("is_collection_custody"):
             custody_lines = payment.move_id.line_ids.filtered(
                 lambda line, payment=payment: (
-                    line.account_id == payment.outstanding_account_id
+                    line.account_id == payment.liquidity_account_id
                 )
             )
             payment.is_bank_matched = bool(custody_lines) and all(
@@ -344,13 +344,13 @@ class AccountPayment(models.Model):
         )
         move.action_post()
         receivables = self.move_id.line_ids.filtered(
-            lambda line: line.account_id == self.destination_account_id
+            lambda line: line.account_id == self.counterpart_account_id
         )
         invoices = self.reconciled_invoice_ids
         receivables.remove_move_reconcile()
         charge_back = move.line_ids.filtered(
             lambda line: (
-                line.account_id == self.destination_account_id and line.name == move.ref
+                line.account_id == self.counterpart_account_id and line.name == move.ref
             )
         )
         (charge_back + receivables).reconcile()
@@ -406,7 +406,7 @@ class AccountPayment(models.Model):
             Command.create(
                 {
                     "name": label,
-                    "account_id": self.destination_account_id.id,
+                    "account_id": self.counterpart_account_id.id,
                     "partner_id": self.partner_id.id,
                     "balance": amount,
                 }
@@ -428,7 +428,7 @@ class AccountPayment(models.Model):
                 Command.create(
                     {
                         "name": fee_label,
-                        "account_id": self.destination_account_id.id,
+                        "account_id": self.counterpart_account_id.id,
                         "partner_id": self.partner_id.id,
                         "balance": fee,
                     }

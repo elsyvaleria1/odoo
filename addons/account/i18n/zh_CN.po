@@ -8988,7 +8988,6 @@ msgstr "描述"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
-#: model:ir.model.fields,field_description:account.field_account_payment__destination_account_id
 msgid "Destination Account"
 msgstr "目标科目"
 
@@ -16865,11 +16864,6 @@ msgstr "发信"
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Outgoing Payments"
 msgstr "外向付款"
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_account_payment__outstanding_account_id
-msgid "Outstanding Account"
-msgstr "未结科目"
 
 #. module: account
 #. odoo-python
@@ -27240,6 +27234,16 @@ msgstr "{{ object.company_id.name }} 自助开票发票（参考号 {{ object.na
 #: code:addons/account/static/src/components/multicurrency_revaluation_report/warnings.xml:0
 msgid "⇒ Reset to Odoo’s Rate"
 msgstr "⇒重置为Odoo汇率"
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__counterpart_account_id
+msgid "Counterpart Account"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_payment__liquidity_account_id
+msgid "Liquidity Account"
+msgstr ""
 
 #~ msgid ""
 #~ "\n"

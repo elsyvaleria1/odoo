@@ -7514,13 +7514,13 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         self.env.flush_all()
         self.env.cr.execute(
             SQL(
-                "UPDATE account_payment SET outstanding_account_id = NULL WHERE id = %s",
+                "UPDATE account_payment SET liquidity_account_id = NULL WHERE id = %s",
                 payment.id,
             )
         )
-        payment.invalidate_recordset(["outstanding_account_id"])
+        payment.invalidate_recordset(["liquidity_account_id"])
         payment.state = "paid"
-        self.assertFalse(payment.outstanding_account_id)
+        self.assertFalse(payment.liquidity_account_id)
         self.assertTrue(payment.move_id)
         return payment
 
@@ -9744,7 +9744,7 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         )
         self.assertEqual(len(partials), 2)
 
-        payment.outstanding_account_id = False
+        payment.liquidity_account_id = False
         payment.state = "paid"
         self.env.invalidate_all()
         with self.assertQueryCount(default=10, flush=False):
@@ -9782,7 +9782,7 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         partials = payment_lines.matched_debit_ids | payment_lines.matched_credit_ids
         self.assertEqual(len(partials), 2)
 
-        payment.outstanding_account_id = False
+        payment.liquidity_account_id = False
         payment.state = "paid"
         self.assertEqual(partials._get_to_update_payments(from_state="paid"), payment)
 
@@ -9805,7 +9805,7 @@ class TestAccountMoveReconcile(AccountTestInvoicingCommon):
         partials = payment_lines.matched_debit_ids | payment_lines.matched_credit_ids
         self.assertEqual(len(partials), 2)
 
-        payment.outstanding_account_id = False
+        payment.liquidity_account_id = False
         payment.state = "paid"
         self.assertEqual(partials._get_to_update_payments(from_state="paid"), payment)
 

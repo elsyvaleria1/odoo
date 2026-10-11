@@ -23,8 +23,8 @@ class AccountPayment(models.Model):
     )
 
     @api.depends("force_outstanding_account_id")
-    def _compute_outstanding_account_id(self) -> None:
-        super()._compute_outstanding_account_id()
+    def _compute_liquidity_account_id(self) -> None:
+        super()._compute_liquidity_account_id()
         for payment in self:
             if payment.force_outstanding_account_id:
                 _debug.logic(
@@ -32,7 +32,7 @@ class AccountPayment(models.Model):
                     payment=payment.id,
                     account=payment.force_outstanding_account_id,
                 )
-                payment.outstanding_account_id = payment.force_outstanding_account_id
+                payment.liquidity_account_id = payment.force_outstanding_account_id
 
     def _get_payment_method_codes_to_exclude(self):
         res = super()._get_payment_method_codes_to_exclude()

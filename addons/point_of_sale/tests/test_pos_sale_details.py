@@ -1841,7 +1841,7 @@ class TestPosSaleDetailsCurrencies(PosLazySessionCommon):
         self.assertEqual(payment.currency_id, eur_order.currency_id)
         self.assertEqual(payment.amount, 90)
         outstanding = payment.move_id.line_ids.filtered(
-            lambda line: line.account_id == payment.outstanding_account_id
+            lambda line: line.account_id == payment.liquidity_account_id
         )
         self.assertEqual(outstanding.amount_currency, 90)
         self.assertEqual(outstanding.balance, 180)

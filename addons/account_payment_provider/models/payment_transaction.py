@@ -158,7 +158,7 @@ class PaymentTransaction(models.Model):
             lambda line: line.display_type == "payment_term"
         )
         if payment_term_lines and len(payment_term_lines.account_id) == 1:
-            payment_values["destination_account_id"] = payment_term_lines[
+            payment_values["counterpart_account_id"] = payment_term_lines[
                 0
             ].account_id.id
 
@@ -216,7 +216,7 @@ class PaymentTransaction(models.Model):
             drafts.action_post()
         (payment.move_id.line_ids + invoices.line_ids).filtered(
             lambda line: (
-                line.account_id == payment.destination_account_id
+                line.account_id == payment.counterpart_account_id
                 and not line.reconciled
             )
         ).reconcile()

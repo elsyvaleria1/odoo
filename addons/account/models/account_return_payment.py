@@ -153,11 +153,11 @@ class AccountReturnPayment(models.Model):
             "memo": self.reference or self.return_id.name,
         }
         if not self._is_per_concept():
-            return {**vals, "destination_account_id": self._get_settlement_account().id}
+            return {**vals, "counterpart_account_id": self._get_settlement_account().id}
         first, *others = self._get_open_settlement_lines().sorted("id")
         return {
             **vals,
-            "destination_account_id": first.account_id.id,
+            "counterpart_account_id": first.account_id.id,
             "write_off_line_vals": [
                 {
                     "name": line.name,

@@ -44,7 +44,7 @@ class TestPaymentLineRoles(AccountTestInvoicingCommon):
             self._roles(payment),
             [
                 ("counterpart", self.receivable.id, -100.0),
-                ("liquidity", payment.outstanding_account_id.id, 100.0),
+                ("liquidity", payment.liquidity_account_id.id, 100.0),
             ],
         )
         liquidity, counterpart, other = payment._seek_for_lines()
@@ -84,7 +84,7 @@ class TestPaymentLineRoles(AccountTestInvoicingCommon):
             sorted(
                 [
                     (self.receivable.id, -100.0),
-                    (payment.outstanding_account_id.id, 90.0),
+                    (payment.liquidity_account_id.id, 90.0),
                     (second_receivable.id, 10.0),
                 ]
             ),
@@ -149,7 +149,7 @@ class TestPaymentCounterpartAccount(AccountTestInvoicingCommon):
     def test_settled_account_survives_contact_and_date_edits(self):
         bill = self._bill_on(self.payable_ff)
         payment = self._register_payment(bill, payment_date="2026-07-17")
-        self.assertEqual(payment.destination_account_id, self.payable_ff)
+        self.assertEqual(payment.counterpart_account_id, self.payable_ff)
         self.assertEqual(
             bill.payment_state, self.env["account.move"]._get_invoice_in_payment_state()
         )
@@ -163,7 +163,7 @@ class TestPaymentCounterpartAccount(AccountTestInvoicingCommon):
         payment.action_post()
 
         counterpart = payment._seek_for_lines()[1]
-        self.assertEqual(payment.destination_account_id, self.payable_ff)
+        self.assertEqual(payment.counterpart_account_id, self.payable_ff)
         self.assertEqual(counterpart.account_id, self.payable_ff)
         self.assertEqual(
             bill.payment_state, self.env["account.move"]._get_invoice_in_payment_state()
@@ -182,7 +182,7 @@ class TestPaymentCounterpartAccount(AccountTestInvoicingCommon):
             payment,
             [
                 {
-                    "destination_account_id": self.payable_nf.id,
+                    "counterpart_account_id": self.payable_nf.id,
                     "counterpart_account_source": "default",
                 }
             ],
@@ -191,33 +191,33 @@ class TestPaymentCounterpartAccount(AccountTestInvoicingCommon):
     def test_unambiguous_partner_property_is_the_default(self):
         payment = self._vendor_payment()
 
-        self.assertEqual(payment.destination_account_id, self.payable_nf)
+        self.assertEqual(payment.counterpart_account_id, self.payable_nf)
         self.assertEqual(payment.counterpart_account_source, "default")
         self.assertFalse(payment.is_counterpart_account_ambiguous)
 
     def test_ambiguous_advance_requires_an_explicit_choice(self):
         with self._ambiguous_candidates():
             payment = self._vendor_payment()
-            self.assertFalse(payment.destination_account_id)
+            self.assertFalse(payment.counterpart_account_id)
             self.assertTrue(payment.is_counterpart_account_ambiguous)
             with self.assertRaisesRegex(UserError, "Choose the counterpart account"):
                 payment.action_post()
 
-            payment.destination_account_id = self.payable_ff
+            payment.counterpart_account_id = self.payable_ff
             self.assertEqual(payment.counterpart_account_source, "explicit")
             payment.partner_id = self.partner_b
             payment.action_post()
 
-        self.assertEqual(payment.destination_account_id, self.payable_ff)
+        self.assertEqual(payment.counterpart_account_id, self.payable_ff)
         self.assertEqual(payment._seek_for_lines()[1].account_id, self.payable_ff)
 
     def test_explicit_choice_survives_a_partner_change(self):
-        payment = self._vendor_payment(destination_account_id=self.payable_ff.id)
+        payment = self._vendor_payment(counterpart_account_id=self.payable_ff.id)
         self.assertEqual(payment.counterpart_account_source, "explicit")
 
         payment.partner_id = self.partner_b
 
-        self.assertEqual(payment.destination_account_id, self.payable_ff)
+        self.assertEqual(payment.counterpart_account_id, self.payable_ff)
 
 
 @tagged("post_install", "-at_install")
@@ -343,7 +343,7 @@ class TestPaymentEntryOwnership(AccountTestInvoicingCommon):
     def test_correct_accounts_rebuilds_the_entry_through_the_payment(self):
         invoice = self._invoice()
         payment = self._register_payment(invoice, payment_date="2026-08-01")
-        new_liquidity = self.copy_account(payment.outstanding_account_id)
+        new_liquidity = self.copy_account(payment.liquidity_account_id)
 
         wizard = (
             self.env["wizard.account.payment.correct.accounts"]
@@ -354,7 +354,7 @@ class TestPaymentEntryOwnership(AccountTestInvoicingCommon):
         wizard.liquidity_account_id = new_liquidity
         wizard.action_correct()
 
-        self.assertEqual(payment.outstanding_account_id, new_liquidity)
+        self.assertEqual(payment.liquidity_account_id, new_liquidity)
         self.assertEqual(payment._seek_for_lines()[0].account_id, new_liquidity)
         self.assertEqual(payment.move_id.state, "posted")
         self.assertEqual(
@@ -369,12 +369,12 @@ class TestPaymentEntryOwnership(AccountTestInvoicingCommon):
             .create({"counterpart_account_id": self.other_receivable.id})
         )
         wizard.action_correct()
-        self.assertEqual(payment.destination_account_id, self.other_receivable)
+        self.assertEqual(payment.counterpart_account_id, self.other_receivable)
         self.assertEqual(payment.counterpart_account_source, "explicit")
         self.assertEqual(payment._seek_for_lines()[1].account_id, self.other_receivable)
 
     def test_correct_accounts_in_a_locked_period_reclassifies(self):
-        payment = self._payment(destination_account_id=self.other_receivable.id)
+        payment = self._payment(counterpart_account_id=self.other_receivable.id)
         self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
         entry_lines = payment.move_id.line_ids
         before = sorted(
@@ -409,7 +409,7 @@ class TestPaymentEntryOwnership(AccountTestInvoicingCommon):
             before,
         )
         self.assertTrue(payment._seek_for_lines()[1].reconciled)
-        self.assertEqual(payment.destination_account_id, self.other_receivable)
+        self.assertEqual(payment.counterpart_account_id, self.other_receivable)
 
 
 @tagged("post_install", "-at_install")
@@ -687,7 +687,7 @@ class TestPaymentEntryReview(AccountTestInvoicingCommon):
         payment.action_align_counterpart_to_entry()
 
         self.assertFalse(payment.counterpart_review_required)
-        self.assertEqual(payment.destination_account_id, self.other_receivable)
+        self.assertEqual(payment.counterpart_account_id, self.other_receivable)
         self.assertEqual(payment.counterpart_account_source, "explicit")
         with self.assertRaisesRegex(UserError, "can only change through it"):
             counterpart.account_id = self.receivable

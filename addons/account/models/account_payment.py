@@ -54,7 +54,7 @@ _SQL_RECONCILED_STATEMENT_LINES_PER_PAYMENT = """
         OR
         part.credit_move_id = counterpart_line.id
     JOIN account_move counterpart_move ON counterpart_move.id = counterpart_line.move_id
-    WHERE account.id = payment.outstanding_account_id
+    WHERE account.id = payment.liquidity_account_id
         AND payment.id = ANY(%(payment_ids)s)
         AND line.id != counterpart_line.id
         AND counterpart_move.statement_line_id IS NOT NULL
@@ -92,6 +92,8 @@ class AccountPayment(models.Model):
             "is_reconciled": "is_invoice_reconciled",
             "is_matched": "is_bank_matched",
             "payment_method_line_id": "payment_channel_id",
+            "destination_account_id": "counterpart_account_id",
+            "outstanding_account_id": "liquidity_account_id",
         }
     )
     _check_company_auto = True
@@ -267,10 +269,10 @@ class AccountPayment(models.Model):
         check_company=True,
         tracking=True,
     )
-    outstanding_account_id = fields.Many2one(
+    liquidity_account_id = fields.Many2one(
         comodel_name="account.account",
         string="Liquidity Account",
-        compute="_compute_outstanding_account_id",
+        compute="_compute_liquidity_account_id",
         store=True,
         index="btree_not_null",
         readonly=False,
@@ -281,10 +283,10 @@ class AccountPayment(models.Model):
         copy=False,
         readonly=True,
     )
-    destination_account_id = fields.Many2one(
+    counterpart_account_id = fields.Many2one(
         comodel_name="account.account",
         string="Counterpart Account",
-        compute="_compute_destination_account_id",
+        compute="_compute_counterpart_account_id",
         store=True,
         readonly=False,
         domain="[('account_type', 'in', ('asset_receivable', 'liability_payable'))]",
@@ -300,7 +302,7 @@ class AccountPayment(models.Model):
             ("explicit", "Chosen"),
             ("default", "Partner or journal default"),
         ],
-        compute="_compute_destination_account_id",
+        compute="_compute_counterpart_account_id",
         store=True,
         copy=False,
         readonly=False,
@@ -457,7 +459,7 @@ class AccountPayment(models.Model):
                 "name": default_values["name"],
                 "date_maturity": self.date,
                 "partner_id": self.partner_id.id,
-                "account_id": self.outstanding_account_id.id,
+                "account_id": self.liquidity_account_id.id,
                 "currency_id": self.currency_id.id,
                 "balance": default_values["balance"],
                 "amount_currency": default_values["amount_currency"],
@@ -473,7 +475,7 @@ class AccountPayment(models.Model):
                 "name": default_values["name"],
                 "date_maturity": self.date,
                 "partner_id": self.partner_id.id,
-                "account_id": self.destination_account_id.id,
+                "account_id": self.counterpart_account_id.id,
                 "currency_id": self.currency_id.id,
                 "balance": default_values["balance"],
                 "amount_currency": default_values["amount_currency"],
@@ -493,7 +495,7 @@ class AccountPayment(models.Model):
                 "combined with write_off_line_vals, which derive it."
             )
 
-        if not self.outstanding_account_id:
+        if not self.liquidity_account_id:
             raise UserError(
                 self.env._(
                     "You can't create a new payment without an outstanding payments/receipts account set either on the company or the %(payment_method)s payment method in the %(journal)s journal.",
@@ -715,7 +717,7 @@ class AccountPayment(models.Model):
         for pay in self:
             liquidity_lines, counterpart_lines, writeoff_lines = pay._seek_for_lines()
 
-            if not pay.outstanding_account_id:
+            if not pay.liquidity_account_id:
                 pay.is_invoice_reconciled = False
                 pay.is_bank_matched = pay.state == "paid"
             elif not pay.currency_id or not pay.id or not pay.move_id:
@@ -916,7 +918,7 @@ class AccountPayment(models.Model):
         for pay in self:
             pay.currency_id = pay.journal_id.currency_id or pay.company_id.currency_id
 
-    def _outstanding_account_is_mandatory(self):
+    def _liquidity_account_is_mandatory(self):
         return (
             self.is_entry_required
             or not self.env["account.move"]._has_full_accounting()
@@ -925,15 +927,15 @@ class AccountPayment(models.Model):
     @api.depends(
         "payment_channel_id", "payment_type", "company_id", "is_entry_required"
     )
-    def _compute_outstanding_account_id(self) -> None:
+    def _compute_liquidity_account_id(self) -> None:
         fallback = {}
         for pay in self:
-            mandatory = pay._outstanding_account_is_mandatory()
+            mandatory = pay._liquidity_account_is_mandatory()
             account = pay.payment_channel_id.payment_account_id
             if not account and mandatory:
                 key = (pay.company_id, pay.payment_type)
                 if key not in fallback:
-                    fallback[key] = pay._get_outstanding_account(pay.payment_type)
+                    fallback[key] = pay._get_default_liquidity_account(pay.payment_type)
                 account = fallback[key]
             if not account and pay.move_id:
                 _debug.logic("outstanding_account_kept_no_channel", payment=pay)
@@ -945,13 +947,13 @@ class AccountPayment(models.Model):
                 channel=pay.payment_channel_id,
                 mandatory=mandatory,
             )
-            pay.outstanding_account_id = account
+            pay.liquidity_account_id = account
 
     @api.depends(
         "journal_id", "partner_id", "partner_type", "company_id", "invoice_ids"
     )
     @_debug.perf.timed
-    def _compute_destination_account_id(self) -> None:
+    def _compute_counterpart_account_id(self) -> None:
         for pay in self:
             settled_account = pay._get_counterpart_account_from_settled_lines(
                 pay._get_settled_counterpart_lines()
@@ -960,13 +962,13 @@ class AccountPayment(models.Model):
                 source = "settled"
                 account = settled_account
             elif (
-                pay.destination_account_id
+                pay.counterpart_account_id
                 and pay.counterpart_account_source == "explicit"
             ):
                 _debug.logic(
                     "counterpart_account_kept",
                     payment=pay,
-                    account=pay.destination_account_id,
+                    account=pay.counterpart_account_id,
                     source=pay.counterpart_account_source,
                 )
                 continue
@@ -980,7 +982,7 @@ class AccountPayment(models.Model):
                 account=account,
                 source=source,
             )
-            pay.destination_account_id = account
+            pay.counterpart_account_id = account
             pay.counterpart_account_source = source
 
     @api.depends(
@@ -1052,7 +1054,7 @@ class AccountPayment(models.Model):
 
     def _classify_counterpart_account_source(self) -> None:
         for pay in self:
-            account = pay.destination_account_id
+            account = pay.counterpart_account_id
             if not account:
                 source = False
             elif account == pay._get_counterpart_account_from_settled_lines(
@@ -1199,10 +1201,10 @@ class AccountPayment(models.Model):
                         payment=pay.display_name,
                     )
                 )
-            old_account = pay.destination_account_id
+            old_account = pay.counterpart_account_id
             pay.write(
                 {
-                    "destination_account_id": counterpart.account_id.id,
+                    "counterpart_account_id": counterpart.account_id.id,
                     "counterpart_account_source": "settled"
                     if counterpart.matched_debit_ids or counterpart.matched_credit_ids
                     else "explicit",
@@ -1284,7 +1286,7 @@ class AccountPayment(models.Model):
     def _check_liquidity_account(self) -> None:
         liquidity_types = self._get_liquidity_account_types()
         for pay in self:
-            account = pay.outstanding_account_id
+            account = pay.liquidity_account_id
             if account.account_type in liquidity_types:
                 continue
             _debug.logic("liquidity_account_refused", payment=pay, account=account)
@@ -1301,7 +1303,7 @@ class AccountPayment(models.Model):
 
     def _check_counterpart_account(self) -> None:
         for pay in self:
-            if pay.destination_account_id:
+            if pay.counterpart_account_id:
                 continue
             candidates = pay._get_counterpart_account_candidates()
             raise UserError(
@@ -1384,7 +1386,7 @@ class AccountPayment(models.Model):
             return
 
         self.env["account.payment"].flush_model(
-            fnames=["move_id", "outstanding_account_id"]
+            fnames=["move_id", "liquidity_account_id"]
         )
         self.env["account.move"].flush_model(fnames=["move_type", "statement_line_id"])
         self.env["account.move.line"].flush_model(
@@ -1596,11 +1598,11 @@ class AccountPayment(models.Model):
     def _is_counterpart_account_type_enforced(self) -> bool:
         return False
 
-    @api.constrains("destination_account_id")
+    @api.constrains("counterpart_account_id")
     def _check_counterpart_account_type(self) -> None:
         valid_types = self._get_valid_payment_account_types()
         for pay in self:
-            account = pay.destination_account_id
+            account = pay.counterpart_account_id
             if (
                 account
                 and account.account_type not in valid_types
@@ -1622,8 +1624,8 @@ class AccountPayment(models.Model):
             if payment.state in ("draft", "canceled") or payment.move_id:
                 continue
             if (
-                payment.outstanding_account_id
-                or payment._outstanding_account_is_mandatory()
+                payment.liquidity_account_id
+                or payment._liquidity_account_is_mandatory()
             ):
                 raise ValidationError(
                     self.env._(
@@ -1658,7 +1660,7 @@ class AccountPayment(models.Model):
             [
                 pay.id
                 for pay, vals in zip(payments, vals_list, strict=True)
-                if vals.get("destination_account_id")
+                if vals.get("counterpart_account_id")
                 and vals.get("counterpart_account_source") != "settled"
             ]
         )._classify_counterpart_account_source()
@@ -1714,7 +1716,7 @@ class AccountPayment(models.Model):
             if (self._fields[fname].related or "").split(".")[0] == "move_id"
         }
 
-    def _get_outstanding_account(self, payment_type):
+    def _get_default_liquidity_account(self, payment_type):
         account_ref = (
             "account_journal_payment_debit_account_id"
             if payment_type == "inbound"
@@ -1755,7 +1757,7 @@ class AccountPayment(models.Model):
 
         res = super().write(vals)
         if (
-            "destination_account_id" in vals
+            "counterpart_account_id" in vals
             and vals.get("counterpart_account_source") != "settled"
         ):
             self._classify_counterpart_account_source()
@@ -1901,8 +1903,8 @@ class AccountPayment(models.Model):
             "payment_channel_id",
             "currency_id",
             "partner_id",
-            "destination_account_id",
-            "outstanding_account_id",
+            "counterpart_account_id",
+            "liquidity_account_id",
             "bank_account_id",
             "journal_id",
         )
@@ -1916,7 +1918,7 @@ class AccountPayment(models.Model):
                 "write_off_line_vals, force_balance and line_ids describe one "
                 "entry and cannot be applied to a recordset."
             )
-        need_move = self.filtered(lambda p: not p.move_id and p.outstanding_account_id)
+        need_move = self.filtered(lambda p: not p.move_id and p.liquidity_account_id)
 
         move_vals = [
             pay._generate_move_vals(write_off_line_vals, force_balance, line_ids)
@@ -2003,7 +2005,7 @@ class AccountPayment(models.Model):
         )
         postable._check_counterpart_account()
         cash_payments = postable.filtered(
-            lambda pay: pay.outstanding_account_id.account_type == "asset_cash"
+            lambda pay: pay.liquidity_account_id.account_type == "asset_cash"
         )
         _debug.logic(
             "action_post_cash_payments_straight_paid",
