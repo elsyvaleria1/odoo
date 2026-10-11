@@ -2,6 +2,8 @@ from odoo.fields import Command
 from odoo.tests import Form, new_test_user, tagged
 from odoo.tests.common import TransactionCase
 
+from odoo.addons.project.tests.test_project_sharing import TestProjectSharingCommon
+
 
 @tagged("post_install", "-at_install")
 class TestTaskAssigneesWrittenAsUsers(TransactionCase):
@@ -538,3 +540,28 @@ class TestAssigneesStayInTheTaskCompany(TransactionCase):
         employee_b.with_company(self.company_b).write({"user_id": newcomer.id})
         self.assertEqual(task.employee_ids, employee_b)
         self.assertFalse(task.direct_user_ids)
+
+
+@tagged("post_install", "-at_install")
+class TestPortalCollaboratorAssignsNobody(TestProjectSharingCommon):
+    def test_a_portal_collaborator_creates_a_task_and_a_subtask_assigned_to_nobody(
+        self,
+    ):
+        self.project_portal.collaborator_ids = [
+            Command.create(
+                {"partner_id": self.user_portal.partner_id.id, "access_mode": "edit"}
+            )
+        ]
+        tasks = self.env["project.task"].with_context(
+            default_project_id=self.project_portal.id,
+            default_user_ids=[Command.link(self.user_portal.id)],
+        )
+        with self.get_project_sharing_form_view(tasks, self.user_portal) as form:
+            form.name = "Task"
+            with form.child_ids.new() as subtask:
+                subtask.name = "Subtask"
+            task = form.save()
+        tasks = (task | task.child_ids).sudo()
+        self.assertEqual(len(tasks), 2)
+        self.assertFalse(tasks.employee_ids)
+        self.assertFalse(tasks.direct_user_ids)

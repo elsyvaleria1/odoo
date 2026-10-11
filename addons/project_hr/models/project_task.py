@@ -241,10 +241,13 @@ class ProjectTask(models.Model):
     def create(self, vals_list):
         vals_list = [dict(vals) for vals in vals_list]
         context = self.env.context
+        default_users = "default_user_ids" in context and self._has_field_access(
+            self._fields["user_ids"], "write"
+        )
         for vals in vals_list:
             if "user_ids" in vals:
                 user_value = vals.pop("user_ids")
-            elif "default_user_ids" in context:
+            elif default_users:
                 user_value = context["default_user_ids"]
             else:
                 continue
@@ -269,7 +272,7 @@ class ProjectTask(models.Model):
         )
         tasks = super(ProjectTask, without_default).create(vals_list).with_env(self.env)
         now = fields.Datetime.now()
-        for task in tasks:
+        for task in tasks.sudo():
             if task.employee_ids and not task.date_assign:
                 _debug.lifecycle(
                     "task_date_assign_set",
@@ -277,7 +280,7 @@ class ProjectTask(models.Model):
                     task=task,
                     employees=task.employee_ids,
                 )
-                task.sudo().date_assign = now
+                task.date_assign = now
         return tasks
 
     def _prepare_reservation_vals_list(self):
