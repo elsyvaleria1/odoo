@@ -36,6 +36,10 @@ class MixinWorkLocationAssignment(models.AbstractModel):
         ondelete="cascade",
     )
     employee_name = fields.Char(related="employee_id.name")
+    company_id = fields.Many2one(
+        comodel_name="res.company",
+        related="employee_id.company_id",
+    )
     date = fields.Date()
     day_week_string = fields.Char(compute="_compute_day_week_string")
 
@@ -59,10 +63,6 @@ class HrEmployeeLocation(models.Model):
         }
     )
 
-    company_id = fields.Many2one(
-        comodel_name="res.company",
-        related="employee_id.company_id",
-    )
     date = fields.Date(required=True)
 
     _uniq_exceptional_per_day = models.UniqueIndex(

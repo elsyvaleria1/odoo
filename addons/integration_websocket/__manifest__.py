@@ -10,7 +10,7 @@
     ],
     "external_dependencies": {
         "python": [
-            "websocket",
+            "websocket-client",
         ],
     },
     "auto_install": True,

@@ -166,6 +166,30 @@ class TestSealedDatabaseSecret(TransactionCase):
                         self.ICP.get_param("database.secret"), "clear-secret"
                     )
 
+    def test_a_server_that_never_held_a_key_reports_the_clear_secret_as_info(self):
+        self._store_in_clear("clear-secret")
+        logger = "odoo.addons.base.models.ir_config_parameter"
+        with (
+            patch.dict(os.environ, {sealing.ENV_KEY: ""}),
+            self.assertLogs(logger, "INFO") as logged,
+        ):
+            self.ICP._seal_sealed_parameters()
+        self.assertEqual(
+            [(r.levelname, r.args) for r in logged.records],
+            [("INFO", ("database.secret",))],
+        )
+
+    def test_a_server_that_lost_its_key_reports_the_sealed_secret_as_an_error(self):
+        with patch.dict(os.environ, self.real_key):
+            self.ICP.set_param("database.secret", "the-database-secret")
+        logger = "odoo.addons.base.models.ir_config_parameter"
+        with (
+            patch.dict(os.environ, {sealing.ENV_KEY: ""}),
+            self.assertLogs(logger, "INFO") as logged,
+        ):
+            self.ICP._seal_sealed_parameters()
+        self.assertEqual([r.levelname for r in logged.records], ["ERROR"])
+
     def test_a_copy_replaces_a_secret_sealed_under_a_key_it_does_not_hold(self):
         with patch.dict(os.environ, self.real_key):
             self.ICP.set_param("database.secret", "the-source-secret")

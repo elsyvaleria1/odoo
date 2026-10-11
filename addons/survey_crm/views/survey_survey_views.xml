@@ -30,7 +30,6 @@
 
                 <xpath expr="//list//field[@name='title']" position="after">
                     <button
-                        type="button"
                         title="This question generates leads"
                         icon="fa-star"
                         invisible="not (survey_type in ['survey', 'live_session', 'custom'] and generate_lead)" />

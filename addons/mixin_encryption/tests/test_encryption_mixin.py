@@ -208,8 +208,9 @@ class TestEncryptionMixin(TransactionCase):
             config.patch(test_enable=True),
         ):
             env.pop("ODOO_API_ENCRYPTION_KEY", None)
-            with self.assertLogs(mixin_module._logger, "WARNING"):
+            with self.assertLogs(mixin_module._logger, "INFO") as logged:
                 self.assertTrue(mixin_module.provide_test_run_key())
+            self.assertEqual([r.levelname for r in logged.records], ["INFO"])
             self.assertEqual(env["ODOO_API_ENCRYPTION_KEY"], mixin_module.TEST_RUN_KEY)
             Fernet(mixin_module.TEST_RUN_KEY)
 

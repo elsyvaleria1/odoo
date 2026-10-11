@@ -174,7 +174,10 @@ class IrConfig_Parameter(models.Model):
                         param.key,
                     )
             elif not sealing.is_configured():
-                _logger.warning(
+                # A server that never held a key is a supported setup (a module
+                # must install without one); a server that lost its key finds
+                # the parameter sealed and reports the error above instead.
+                _logger.info(
                     "The system parameter %s is stored in clear: set "
                     "ODOO_API_ENCRYPTION_KEY so every backup stops carrying it",
                     param.key,
