@@ -606,9 +606,10 @@ class AccountAnalyticLine(models.Model):
 
     def unlink(self):
         res = super().unlink()
-        self.env["timer.timer"].search(
-            [("res_model", "=", self._name), ("res_id", "in", self.ids)]
-        ).unlink()
+        if self:
+            self.env["timer.timer"].search(
+                [("res_model", "=", self._name), ("res_id", "in", self.ids)]
+            ).unlink()
         return res
 
     def _get_project_and_task_ids(self, domain) -> tuple:

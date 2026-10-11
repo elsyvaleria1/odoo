@@ -1,5 +1,5 @@
 from odoo import http
-from odoo.tests import HttpCase, tagged
+from odoo.tests import HttpCase, new_test_user, tagged
 
 from odoo.addons.web.controllers.utils import FRAGMENTS_HEADER
 
@@ -40,13 +40,16 @@ class TestMailGroupUi(HttpCase):
                 "access_mode": "public",
             }
         )
-        self.start_tour("/groups", "mail_group_subscribe_in_place", login="demo")
-        self.assertTrue(
-            group._find_member(
-                self.env.ref("base.user_demo").email,
-                self.env.ref("base.user_demo").partner_id.id,
-            )
+        user = new_test_user(
+            self.env,
+            login="pn_subscriber",
+            groups="base.group_user",
+            email="pn.subscriber@example.com",
         )
+        self.start_tour(
+            "/groups", "mail_group_subscribe_in_place", login="pn_subscriber"
+        )
+        self.assertTrue(group._find_member(user.email, user.partner_id.id))
 
 
 @tagged("post_install", "-at_install")
