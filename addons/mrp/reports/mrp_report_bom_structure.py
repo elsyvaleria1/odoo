@@ -23,7 +23,7 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
             return self
         return self.with_context(warehouse_id=warehouse.id)
 
-    def _warm_tree_quantities(self, bom, product) -> None:
+    def _bom_tree_products(self, bom, product):
         products = product
         boms, seen = bom, self.env["mrp.bom"]
         while boms:
@@ -31,7 +31,13 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
             lines = boms.bom_line_ids
             products |= lines.product_id
             boms = lines.child_bom_id - seen
-        products.filtered("is_storable").mapped("qty_available_virtual")
+        return products
+
+    def _prepare_tree(self, bom, product, ignore_stock=False) -> Self:
+        if not ignore_stock:
+            products = self._bom_tree_products(bom, product)
+            products.filtered("is_storable").mapped("qty_available_virtual")
+        return self
 
     def _with_bom_company(self, bom) -> Self:
         if not bom.company_id or bom.company_id == self.env.company:
@@ -109,7 +115,7 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                 ).product_variant_ids[:1]
             )
 
-        self._warm_tree_quantities(bom, product)
+        self = self._prepare_tree(bom, product)
 
         with _debug.perf(
             "bom_structure_report",
@@ -815,6 +821,7 @@ class ReportMrpReport_Bom_Structure(models.AbstractModel):
                 ).product_variant_ids[:1]
             )
 
+        self = self._prepare_tree(bom, product, ignore_stock=True)
         data = self._get_bom_data(
             bom, warehouse, product=product, line_qty=qty, level=0, ignore_stock=True
         )
