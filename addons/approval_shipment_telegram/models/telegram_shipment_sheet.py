@@ -5,7 +5,9 @@ import pytz
 from markupsafe import Markup
 
 from odoo import fields, models
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, ValidationError
+
+from odoo.addons.telegram.tools import format as tg
 
 # a sheet's date, at noon where the carrier documents it
 SHEET_TIMEZONE = "America/Mexico_City"
@@ -21,6 +23,32 @@ class TelegramShipmentSheet(models.Model):
         category = self.carrier_id.freight_approval_category_id
         if picking.picking_type_code != "outgoing" or not category:
             return lines
+        # a refused freight request leaves the tracking number and the sheet
+        # on the transfer: only the request is left to whoever may prepare it
+        try:
+            with self.env.cr.savepoint():
+                return [*lines, self._prepare_freight(category, content)]
+        except (AccessError, ValidationError) as error:
+            reason = str(error.args[0] if error.args else error).split("\n", 1)[0]
+            return [
+                *lines,
+                self.env._(
+                    "%(picking)s keeps the tracking number and the sheet, but I "
+                    "could not prepare the freight request %(category)s: %(reason)s",
+                    picking=picking.name,
+                    category=category.name,
+                    reason=tg.escape(reason),
+                ),
+            ]
+
+    def _prepare_freight(self, category, content) -> str:
+        """Put this sheet's transfer on the open freight request of its
+        number, or prepare that request as a draft.
+
+        :return: the line for the chat's reply
+        :rtype: str
+        """
+        picking = self.picking_id
         Request = self.env["approval.request"]
         existing = Request.search(
             [
@@ -32,26 +60,13 @@ class TelegramShipmentSheet(models.Model):
         )
         if existing:
             existing.shipment_picking_ids |= picking
-            return [
-                *lines,
-                self.env._(
-                    "Freight %(request)s already covers %(ref)s; %(picking)s is now on it.",
-                    request=existing.display_name,
-                    ref=self.tracking_ref,
-                    picking=picking.name,
-                ),
-            ]
-        try:
-            request = Request.create(self._freight_request_values(category))
-        except AccessError:
-            return [
-                *lines,
-                self.env._(
-                    "I could not prepare the freight request: you may not create "
-                    "%(category)s requests.",
-                    category=category.name,
-                ),
-            ]
+            return self.env._(
+                "Freight %(request)s already covers %(ref)s; %(picking)s is now on it.",
+                request=existing.display_name,
+                ref=self.tracking_ref,
+                picking=picking.name,
+            )
+        request = Request.create(self._freight_request_values(category))
         self.env["ir.attachment"].create(
             {
                 "name": self._attachment_name(),
@@ -61,21 +76,18 @@ class TelegramShipmentSheet(models.Model):
             }
         )
         total = (self.extracted or {}).get("total")
-        lines.append(
-            self.env._(
+        if total:
+            return self.env._(
                 "Freight request %(category)s prepared as a draft for %(amount)s: "
                 "check it against the sheet and submit it.",
                 category=category.name,
                 amount=f"${total:,.2f}",
             )
-            if total
-            else self.env._(
-                "Freight request %(category)s prepared as a draft without an "
-                "amount: the total could not be read off the sheet.",
-                category=category.name,
-            )
+        return self.env._(
+            "Freight request %(category)s prepared as a draft without an "
+            "amount: the total could not be read off the sheet.",
+            category=category.name,
         )
-        return lines
 
     def _freight_request_values(self, category) -> dict:
         self.check_singleton()

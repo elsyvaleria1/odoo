@@ -145,3 +145,27 @@ class TestFreightRequest(TelegramBotTestCase):
         self.carrier.freight_approval_category_id = False
         self._sheet()._assign(self._picking(self.out_type), b"sheet")
         self.assertFalse(self._freights())
+
+    def test_a_sheet_on_several_deliveries_pays_one_freight(self):
+        first, second = self._picking(self.out_type), self._picking(self.out_type)
+        sheet = self._sheet()
+        sheet._assign(first, b"sheet")
+        sheet._sibling()._assign(second, b"sheet")
+        request = self._freights()
+        self.assertEqual(len(request), 1)
+        self.assertEqual(request.shipment_picking_ids, first | second)
+        self.assertEqual(request.amount, 4731.25, "the sheet's total, once")
+
+    def test_a_sender_the_category_refuses_keeps_the_tracking_number(self):
+        self.category.allowed_user_ids = self.env["res.users"].create(
+            {"name": "Freight Clerk", "login": "tg_freight_clerk"}
+        )
+        picking = self._picking(self.out_type)
+        sheet = self._sheet()
+
+        lines = sheet._assign(picking, b"sheet")
+
+        self.assertFalse(self._freights(), "no request is left half made")
+        self.assertEqual(picking.carrier_tracking_ref, "TOL01584640")
+        self.assertEqual(sheet.state, "done")
+        self.assertIn("could not prepare the freight request", "\n".join(lines))

@@ -16,6 +16,14 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid ""
+"%(picking)s keeps the tracking number and the sheet, but I could not prepare"
+" the freight request %(category)s: %(reason)s"
+msgstr ""
+
+#. module: approval_shipment_telegram
 #: model:ir.model.fields,help:approval_shipment_telegram.field_delivery_carrier__freight_approval_category_id
 msgid ""
 "A shipping order sent with /embarque prepares a draft request of this "
@@ -94,14 +102,6 @@ msgstr ""
 msgid ""
 "Freight request %(category)s prepared as a draft without an amount: the "
 "total could not be read off the sheet."
-msgstr ""
-
-#. module: approval_shipment_telegram
-#. odoo-python
-#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
-msgid ""
-"I could not prepare the freight request: you may not create %(category)s "
-"requests."
 msgstr ""
 
 #. module: approval_shipment_telegram

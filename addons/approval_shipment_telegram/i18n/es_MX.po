@@ -17,6 +17,16 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. module: approval_shipment_telegram
+#. odoo-python
+#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
+msgid ""
+"%(picking)s keeps the tracking number and the sheet, but I could not prepare"
+" the freight request %(category)s: %(reason)s"
+msgstr ""
+"%(picking)s conserva la guía y la hoja, pero no pude preparar la solicitud "
+"de flete %(category)s: %(reason)s"
+
+#. module: approval_shipment_telegram
 #: model:ir.model.fields,help:approval_shipment_telegram.field_delivery_carrier__freight_approval_category_id
 msgid ""
 "A shipping order sent with /embarque prepares a draft request of this "
@@ -105,16 +115,6 @@ msgid ""
 msgstr ""
 "Solicitud de flete %(category)s preparada en borrador sin monto: no "
 "se pudo leer el total de la hoja."
-
-#. module: approval_shipment_telegram
-#. odoo-python
-#: code:addons/approval_shipment_telegram/models/telegram_shipment_sheet.py:0
-msgid ""
-"I could not prepare the freight request: you may not create %(category)s "
-"requests."
-msgstr ""
-"No pude preparar la solicitud de flete: no puedes crear solicitudes "
-"de %(category)s."
 
 #. module: approval_shipment_telegram
 #: model:ir.model.fields,field_description:approval_shipment_telegram.field_approval_request__id
