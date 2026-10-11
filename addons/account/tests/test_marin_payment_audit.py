@@ -166,6 +166,7 @@ class TestPaymentAudit(AccountTestInvoicingCommon):
                             "balance": line.balance / 2,
                             "amount_currency": line.amount_currency / 2,
                             "name": "second counterpart",
+                            "payment_role": "counterpart",
                         }
                     ),
                 ]
@@ -203,6 +204,7 @@ class TestPaymentAudit(AccountTestInvoicingCommon):
                             "balance": line.balance / 2,
                             "amount_currency": line.amount_currency / 2,
                             "name": "second liquidity",
+                            "payment_role": "liquidity",
                         }
                     ),
                 ]

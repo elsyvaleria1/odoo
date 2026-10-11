@@ -238,6 +238,17 @@ class AccountMoveLine(models.Model):
         bypass_search_access=True,
         help="The payment that created this entry",
     )
+    payment_role = fields.Selection(
+        selection=[
+            ("liquidity", "Liquidity"),
+            ("counterpart", "Counterpart"),
+            ("write_off", "Write-off"),
+            ("withholding", "Withholding"),
+        ],
+        copy=False,
+        readonly=True,
+        help="The part this line plays in the entry its payment generated.",
+    )
     statement_line_id = fields.Many2one(
         comodel_name="account.bank.statement.line",
         related="move_id.statement_line_id",

@@ -2294,6 +2294,7 @@ class HrExpense(models.Model):
                 "amount_currency": self.currency_id.round(-self.total_amount_currency),
                 "currency_id": self.currency_id.id,
                 "partner_id": self.vendor_id.id,
+                "payment_role": "liquidity",
             }
         )
         payment_vals = {

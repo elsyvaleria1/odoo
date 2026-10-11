@@ -61,15 +61,7 @@ _SQL_RECONCILED_STATEMENT_LINES_PER_PAYMENT = """
     GROUP BY payment.id
 """
 
-_SEEK_FOR_LINES_DEPENDS = (
-    "move_id.line_ids.account_id",
-    "outstanding_account_id",
-    "payment_channel_id.payment_account_id",
-    "journal_id.default_account_id",
-    "journal_id.inbound_payment_channel_ids.payment_account_id",
-    "journal_id.outbound_payment_channel_ids.payment_account_id",
-    "company_id.account_config_id.transfer_account_id",
-)
+_SEEK_FOR_LINES_DEPENDS = ("move_id.line_ids.payment_role",)
 
 
 def _may_hold_payments(move) -> bool:
@@ -388,46 +380,14 @@ class AccountPayment(models.Model):
 
     def _seek_for_lines(self) -> list | tuple:
         self.check_singleton()
-
         empty = self.env["account.move.line"]
-        liquidity_ids, counterpart_ids, other_ids = [], [], []
-        valid_account_types = self._get_valid_payment_account_types()
-        liquidity_accounts = self._get_valid_liquidity_accounts()
-        for line in self.move_id.line_ids:
-            if line.account_id in liquidity_accounts:
-                liquidity_ids.append(line.id)
-            elif (
-                line.account_id.account_type in valid_account_types
-                or line.account_id
-                == line.company_id.account_config_id.transfer_account_id
-            ):
-                counterpart_ids.append(line.id)
-            else:
-                other_ids.append(line.id)
-
-        liquidity = empty.browse(liquidity_ids)
-        counterpart = empty.browse(counterpart_ids)
-        other = empty.browse(other_ids)
-
-        if len(other) == 1:
-            if not liquidity:
-                _debug.logic("lone_other_line_as_liquidity", payment=self)
-                liquidity, other = other, empty
-            elif not counterpart:
-                _debug.logic("lone_other_line_as_counterpart", payment=self)
-                counterpart, other = other, empty
-
-        return [liquidity, counterpart, other]
-
-    def _get_valid_liquidity_accounts(self):
-        self.check_singleton()
-        return (
-            self.journal_id.default_account_id
-            | self.payment_channel_id.payment_account_id
-            | self.journal_id.inbound_payment_channel_ids.payment_account_id
-            | self.journal_id.outbound_payment_channel_ids.payment_account_id
-            | self.outstanding_account_id
-        )
+        lines_by_role = self.move_id.line_ids.grouped("payment_role")
+        return [
+            lines_by_role.get("liquidity", empty),
+            lines_by_role.get("counterpart", empty),
+            lines_by_role.get("write_off", empty)
+            | lines_by_role.get("withholding", empty),
+        ]
 
     def _valid_payment_states(self):
         if self.env["account.move"]._has_full_accounting():
@@ -469,6 +429,7 @@ class AccountPayment(models.Model):
                 "currency_id": self.currency_id.id,
                 "balance": default_values["balance"],
                 "amount_currency": default_values["amount_currency"],
+                "payment_role": "liquidity",
             }
         ]
 
@@ -484,6 +445,7 @@ class AccountPayment(models.Model):
                 "currency_id": self.currency_id.id,
                 "balance": default_values["balance"],
                 "amount_currency": default_values["amount_currency"],
+                "payment_role": "counterpart",
             }
         ]
 
@@ -512,16 +474,21 @@ class AccountPayment(models.Model):
             x[1] for x in self._get_aml_default_display_name_list() if x[1]
         )
 
-        write_off_lines = write_off_line_vals or []
+        write_off_lines = [
+            {**vals, "payment_role": "write_off"} for vals in write_off_line_vals or []
+        ]
         write_off_amount_currency = sum(x["amount_currency"] for x in write_off_lines)
         write_off_balance = sum(x["balance"] for x in write_off_lines)
 
         sign = -1 if self.payment_type == "outbound" else 1
         liquidity_amount_currency = sign * self.amount
 
-        withholding_lines = self._prepare_move_withholding_lines(
-            {"name": line_name, "amount_currency": liquidity_amount_currency}
-        )
+        withholding_lines = [
+            {**vals, "payment_role": "withholding"}
+            for vals in self._prepare_move_withholding_lines(
+                {"name": line_name, "amount_currency": liquidity_amount_currency}
+            )
+        ]
         withholding_amount_currency = sum(
             x["amount_currency"] for x in withholding_lines
         )
@@ -1452,7 +1419,12 @@ class AccountPayment(models.Model):
             if pay.move_id.state == "posted":
                 _debug.logic("_sync_to_moves_move_posted_not_synced", payment=pay)
                 continue
-            liquidity_lines, counterpart_lines, writeoff_lines = pay._seek_for_lines()
+            lines_by_role = pay.move_id.line_ids.grouped("payment_role")
+            empty = self.env["account.move.line"]
+            liquidity_lines = lines_by_role.get("liquidity", empty)
+            counterpart_lines = lines_by_role.get("counterpart", empty)
+            withholding_lines = lines_by_role.get("withholding", empty)
+            write_off_lines = lines_by_role.get("write_off", empty)
             if _debug.pipeline.enabled:
                 _debug.pipeline(
                     "_sync_to_moves",
@@ -1460,7 +1432,8 @@ class AccountPayment(models.Model):
                     fields=sorted(changed_fields),
                     liquidity=liquidity_lines,
                     counterpart=counterpart_lines,
-                    writeoff=writeoff_lines,
+                    withholding=withholding_lines,
+                    writeoff=write_off_lines,
                 )
 
             if "amount" in changed_fields and len(liquidity_lines) > 1:
@@ -1470,35 +1443,21 @@ class AccountPayment(models.Model):
                     )
                 )
 
-            write_off_line_vals = []
-            if liquidity_lines and counterpart_lines and writeoff_lines:
-                write_off_line_vals.append(
-                    {
-                        "name": writeoff_lines[0].name,
-                        "account_id": writeoff_lines[0].account_id.id,
-                        "partner_id": writeoff_lines[0].partner_id.id,
-                        "currency_id": writeoff_lines[0].currency_id.id,
-                        "amount_currency": sum(
-                            writeoff_lines.mapped("amount_currency")
-                        ),
-                        "balance": sum(writeoff_lines.mapped("balance")),
-                    }
-                )
             line_vals_per_type = pay._prepare_move_lines_per_type(
-                write_off_line_vals=write_off_line_vals
+                write_off_line_vals=[
+                    {"amount_currency": line.amount_currency, "balance": line.balance}
+                    for line in write_off_lines
+                ]
             )
             line_ids_commands = [
                 *self._prepare_line_commands(
-                    liquidity_lines, line_vals_per_type.get("liquidity_lines", [])
+                    liquidity_lines, line_vals_per_type["liquidity_lines"]
                 ),
                 *self._prepare_line_commands(
-                    counterpart_lines, line_vals_per_type.get("counterpart_lines", [])
+                    counterpart_lines, line_vals_per_type["counterpart_lines"]
                 ),
-                *(Command.delete(line.id) for line in writeoff_lines),
-                *(
-                    Command.create(extra_line_vals)
-                    for extra_line_vals in line_vals_per_type.get("write_off_lines", [])
-                    + line_vals_per_type.get("withholding_lines", [])
+                *self._prepare_line_commands(
+                    withholding_lines, line_vals_per_type["withholding_lines"]
                 ),
             ]
             to_write = {
