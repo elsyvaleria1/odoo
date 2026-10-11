@@ -1031,12 +1031,18 @@ class TestCreatePicking(ProductVariantsCommon):
         picking_type_out = self.env.ref("stock.picking_type_out")
         picking_type_in = self.env.ref("stock.picking_type_in")
 
-        self.assertEqual(po.picking_ids[0].picking_type_id, picking_type_in)
-        self.assertEqual(po.picking_ids[0].move_ids.quantity, 5)
-        self.assertEqual(po.picking_ids[1].picking_type_id, picking_type_out)
-        self.assertEqual(po.picking_ids[1].move_ids.quantity, 1)
-        self.assertEqual(po.picking_ids[2].picking_type_id, picking_type_in)
-        self.assertEqual(po.picking_ids[2].move_ids.quantity, 1)
+        receipt = po.picking_ids.filtered(lambda picking: not picking.return_id)
+        returned = po.picking_ids.filtered(lambda picking: picking.return_id == receipt)
+        exchange = po.picking_ids.filtered(
+            lambda picking: picking.return_id == returned
+        )
+        self.assertEqual(receipt, stock_picking)
+        self.assertEqual(receipt.picking_type_id, picking_type_in)
+        self.assertEqual(receipt.move_ids.quantity, 5)
+        self.assertEqual(returned.picking_type_id, picking_type_out)
+        self.assertEqual(returned.move_ids.quantity, 1)
+        self.assertEqual(exchange.picking_type_id, picking_type_in)
+        self.assertEqual(exchange.move_ids.quantity, 1)
 
     def test_move_description(self):
         product_matrix_installed = (
