@@ -1,6 +1,6 @@
 {
     "name": "Asset Ledger Bill Links",
-    "version": "19.0.1.7.0",
+    "version": "19.0.1.7.1",
     "oldest_upgradable_version": "19.0.1.5.0",
     "category": "Accounting/Accounting",
     "summary": "Open asset bill lines from serialized stock lots",

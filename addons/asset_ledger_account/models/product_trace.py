@@ -11,6 +11,8 @@ class ProductTrace(models.Model):
         inverse_name="trace_id",
         string="Bill Lines",
         export_string_translation=False,
+        classification="resource_asset.bill_lines",
+        groups="account.group_account_readonly",
     )
 
     def action_view_bills(self) -> dict[str, Any]:

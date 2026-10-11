@@ -1,4 +1,5 @@
-from odoo.tests import tagged
+from odoo.exceptions import AccessError
+from odoo.tests import new_test_user, tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -255,3 +256,45 @@ class TestProductTrace(AccountTestInvoicingCommon):
         vehicle = self.vehicle.with_user(restricted_user)
         self.assertEqual(vehicle.asset_id.count_bill, 0)
         self.assertFalse(vehicle.asset_id.account_move_ids)
+
+    def test_bill_lines_follow_accounting_access(self):
+        """Inventory readers open the serial without gaining access to its bills."""
+        move = self.AccountMove.create(self._bill_vals(self.fuel_vendor))
+        line = self.AccountMoveLine.create(
+            {
+                "move_id": move.id,
+                "product_id": self.fuel_product.id,
+                "account_id": self.expense_account.id,
+                "asset_id": self.vehicle.asset_id.id,
+                "quantity": 60.0,
+                "price_unit": 1.25,
+            }
+        )
+        inventory_user = new_test_user(
+            self.env,
+            login="trace_bills_inventory",
+            groups="stock.group_stock_readonly",
+            company_id=self.test_company.id,
+            company_ids=[self.test_company.id],
+        )
+        accounting_user = new_test_user(
+            self.env,
+            login="trace_bills_accounting",
+            groups="stock.group_stock_readonly,account.group_account_readonly",
+            company_id=self.test_company.id,
+            company_ids=[self.test_company.id],
+        )
+        inventory_vehicle = self.vehicle.with_user(inventory_user)
+        accounting_vehicle = self.vehicle.with_user(accounting_user)
+
+        self.assertNotIn("account_move_line_ids", inventory_vehicle.fields_get())
+        self.assertNotIn("account_move_line_ids", inventory_vehicle.read()[0])
+        with self.assertRaises(AccessError):
+            inventory_vehicle.read(["account_move_line_ids"])
+        self.assertIn("account_move_line_ids", accounting_vehicle.fields_get())
+        self.assertEqual(
+            accounting_vehicle.read(["account_move_line_ids"])[0][
+                "account_move_line_ids"
+            ],
+            line.ids,
+        )
