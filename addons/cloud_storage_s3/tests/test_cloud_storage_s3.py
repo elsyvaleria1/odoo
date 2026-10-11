@@ -1074,6 +1074,25 @@ class TestCloudStorageS3ReadOnlyCopy(TransactionCase):
         self.mock_s3_client.delete_objects.assert_not_called()
         self.mock_s3_client.delete_object.assert_not_called()
 
+    def test_a_restored_copy_reads_with_the_key_it_carries(self):
+        self._neutralized("true")
+        icp = self.env["ir.config_parameter"]
+        for name, param in s3.READONLY_PARAMS.items():
+            icp.set_param(param, f"carried-{name}")
+        empty = dict.fromkeys(self.ENVIRON, "")
+        with patch.dict("os.environ", empty):
+            source = s3.get_readonly_source(self.env)
+            self.assertEqual(source["access_key_id"], "carried-access_key_id")
+            self.assertEqual(source["endpoint"], "https://carried-endpoint")
+        self.assertEqual(
+            s3.get_readonly_source(self.env)["access_key_id"],
+            "READONLYKEY",
+            "the machine's own variables take precedence",
+        )
+        self._neutralized(False)
+        with patch.dict("os.environ", empty):
+            self.assertFalse(s3.get_readonly_source(self.env))
+
     def test_an_incomplete_environment_is_ignored(self):
         self._neutralized("true")
         with patch.dict("os.environ", {"ODOO_CLOUD_READONLY_SECRET": ""}):

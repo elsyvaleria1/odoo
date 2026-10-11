@@ -20,15 +20,22 @@ AWS_URL_PATTERN = re.compile(
 )
 
 # A neutralized copy has no storage settings (neutralize.sql drops them), so it
-# cannot reach the source's bucket. On a developer machine these variables
-# give it a key that can only read that bucket: its documents show, and
-# nothing it does can write or delete there. The key lives in the machine's
-# environment, never in a database or in the neutralization.
+# cannot reach the source's bucket. A key that can only read that bucket lets
+# it show the source's documents while nothing it does can write or delete
+# there. Production keeps that key in the READONLY_PARAMS parameters, which the
+# neutralization leaves in place, so every restored copy carries it; the
+# READONLY_ENVIRON variables of a machine take precedence over them.
 READONLY_ENVIRON = {
     "endpoint": "ODOO_CLOUD_READONLY_ENDPOINT",
     "region": "ODOO_CLOUD_READONLY_REGION",
     "access_key_id": "ODOO_CLOUD_READONLY_KEY_ID",
     "secret_access_key": "ODOO_CLOUD_READONLY_SECRET",
+}
+READONLY_PARAMS = {
+    "endpoint": "cloud_storage_s3.readonly_endpoint",
+    "region": "cloud_storage_s3.readonly_region",
+    "access_key_id": "cloud_storage_s3.readonly_key_id",
+    "secret_access_key": "cloud_storage_s3.readonly_secret",
 }
 
 _ClientCache = {}
@@ -43,6 +50,12 @@ def get_readonly_source(env) -> dict:
         name: os.environ.get(variable, "").strip()
         for name, variable in READONLY_ENVIRON.items()
     }
+    if not all(values.values()):
+        settings = env.registry.settings
+        values = {
+            name: (settings.get(env, param, False) or "").strip()
+            for name, param in READONLY_PARAMS.items()
+        }
     if not all(values.values()):
         return {}
     values["endpoint"] = normalize_endpoint(values["endpoint"])
