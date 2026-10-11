@@ -149,7 +149,7 @@ test("each font-family option is shown in its own typeface", async () => {
     for (let i = 0; i < items.length; i++) {
         expect(items[i].style.fontFamily).toBe(
             [
-                "", // Default system font: no font-family to preview.
+                "",
                 "Arial, sans-serif",
                 "Verdana, sans-serif",
                 "Tahoma, sans-serif",

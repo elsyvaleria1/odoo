@@ -26,12 +26,10 @@ registry.category("web_tour.tours").add("SplitBillScreenTour", {
             ProductScreen.addOrderline("Coca-Cola", "1", "2", "2.0"),
             ProductScreen.clickControlButton("Split"),
 
-            // Check if the screen contains all the orderlines
             SplitBillScreen.orderlineHas("Water", "5", "0"),
             SplitBillScreen.orderlineHas("Minute Maid", "3", "0"),
             SplitBillScreen.orderlineHas("Coca-Cola", "1", "0"),
 
-            // split 3 water and 1 coca-cola
             SplitBillScreen.clickOrderline("Water"),
             SplitBillScreen.orderlineHas("Water", "5", "1"),
             SplitBillScreen.clickOrderline("Water"),
@@ -42,13 +40,11 @@ registry.category("web_tour.tours").add("SplitBillScreenTour", {
             SplitBillScreen.orderlineHas("Coca-Cola", "1", "1"),
             SplitBillScreen.subtotalIs("8.0"),
 
-            // click pay to split, go back to check the lines
             SplitBillScreen.clickButton("Split"),
             ProductScreen.totalAmountIs("8.0"),
             ProductScreen.clickOrderline("Water", "3"),
             ProductScreen.clickOrderline("Coca-Cola", "1"),
 
-            // go back to the original order and see if the order is changed
             Chrome.clickOrders(),
             TicketScreen.selectOrder("001"),
             TicketScreen.loadSelectedOrder(),
@@ -56,7 +52,6 @@ registry.category("web_tour.tours").add("SplitBillScreenTour", {
             ProductScreen.clickOrderline("Water", "2"),
             ProductScreen.clickOrderline("Minute Maid", "3"),
 
-            // Split the order of table 2 again
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("2"),
             ProductScreen.clickControlButton("Split"),
@@ -71,7 +66,6 @@ registry.category("web_tour.tours").add("SplitBillScreenTour", {
             SplitBillScreen.clickButton("Split"),
             ProductScreen.totalAmountIs("4.0"),
 
-            // go back to the original order and see if the order is changed
             Chrome.clickOrders(),
             TicketScreen.selectOrder("001"),
             TicketScreen.loadSelectedOrder(),
@@ -85,7 +79,6 @@ registry.category("web_tour.tours").add("SplitBillScreenTourPay", {
     steps: () =>
         [
             Chrome.startPoS(),
-            //Split pay by selecting products
             FloorScreen.clickTable("4"),
             ProductScreen.addOrderline("Water"),
             ProductScreen.addOrderline("Minute Maid"),
@@ -147,15 +140,12 @@ registry.category("web_tour.tours").add("SplitBillScreenTour3", {
             ProductScreen.addOrderline("Water", "2", "2", "4.00"),
             ProductScreen.clickControlButton("Split"),
 
-            // Check if the screen contains all the orderlines
             SplitBillScreen.orderlineHas("Water", "2", "0"),
 
-            // split 1 water
             SplitBillScreen.clickOrderline("Water"),
             SplitBillScreen.orderlineHas("Water", "2", "1"),
             SplitBillScreen.subtotalIs("2.0"),
 
-            // click pay to split, and pay
             SplitBillScreen.clickButton("Split"),
             ProductScreen.totalAmountIs("2.0"),
             ProductScreen.clickPayButton(),
@@ -163,13 +153,11 @@ registry.category("web_tour.tours").add("SplitBillScreenTour3", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickContinueOrder(),
 
-            // Check if there is still water in the order
             ProductScreen.isShown(),
             ProductScreen.orderLineHas("Water", "1.0"),
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Bank"),
             PaymentScreen.clickValidate(),
-            // Check if there is no more order to continue
             ReceiptScreen.clickNextOrder(),
         ].flat(),
 });
@@ -191,7 +179,6 @@ registry.category("web_tour.tours").add("SplitBillScreenTour4ProductCombo", {
             combo.select("Combo Product 4"),
             combo.select("Combo Product 7"),
             Dialog.confirm(),
-            // now we set the qty of this combo combination to 2
             ProductScreen.clickOrderline("Combo Product 2"),
             ProductScreen.clickNumpad("2"),
             ProductScreen.selectedOrderlineHas("Combo Product 2", "2"),
@@ -199,15 +186,10 @@ registry.category("web_tour.tours").add("SplitBillScreenTour4ProductCombo", {
             ProductScreen.addOrderline("Water", "1"),
             ProductScreen.addOrderline("Minute Maid", "1"),
 
-            // The water, the first combo, and one out of the two items
-            // of the second combo will go in the new splitted order.
-            // we will then check if the rest of the items from the selected
-            // combos are automatically sent to the new order.
             ProductScreen.clickControlButton("Split"),
             SplitBillScreen.clickOrderline("Water"),
             SplitBillScreen.clickOrderline("Combo Product 3"),
             SplitBillScreen.clickOrderline("Combo Product 2"),
-            // we check that all the lines in the combo are splitted together
             SplitBillScreen.orderlineHas("Water", "1", "1"),
             SplitBillScreen.orderlineHas("Office Combo", "1", "1"),
             SplitBillScreen.orderlineHas("Combo Product 3", "1", "1"),
@@ -226,9 +208,7 @@ registry.category("web_tour.tours").add("SplitBillScreenTour4ProductCombo", {
             ...PaymentScreen.clickValidate(),
             ...ReceiptScreen.clickContinueOrder(),
 
-            // Check if there is still water in the order
             ...ProductScreen.isShown(),
-            // now we check that all the lines that remained in the order are correct
             ...ProductScreen.orderLineHas("Minute Maid", "1"),
             ...ProductScreen.clickOrderline("Office Combo"),
             ...ProductScreen.selectedOrderlineHas("Office Combo", "1", "43.33"),
@@ -254,12 +234,10 @@ registry.category("web_tour.tours").add("SplitBillScreenTour5Actions", {
             SplitBillScreen.clickOrderline("Minute Maid"),
             SplitBillScreen.subtotalIs("5.0"),
 
-            // click transfer button to split and transfer
             SplitBillScreen.clickButton("Transfer"),
             FloorScreen.isShown(),
             FloorScreen.clickTable("5"),
 
-            // check table 5 order and pay
             ProductScreen.orderLineHas("Water", "1"),
             ProductScreen.orderLineHas("Minute Maid", "1"),
             ProductScreen.clickPayButton(),
@@ -267,7 +245,6 @@ registry.category("web_tour.tours").add("SplitBillScreenTour5Actions", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // Add products in order
             FloorScreen.clickTable("2"),
             ProductScreen.orderLineHas("Water", "1"),
             ProductScreen.addOrderline("Minute Maid", "2", "3", "6.00"),
@@ -277,14 +254,12 @@ registry.category("web_tour.tours").add("SplitBillScreenTour5Actions", {
             SplitBillScreen.clickOrderline("water"),
             SplitBillScreen.subtotalIs("5.0"),
 
-            // click pay to split, and pay
             SplitBillScreen.clickButton("Pay"),
             PaymentScreen.isShown(),
             PaymentScreen.clickPaymentMethod("Bank"),
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickContinueOrder(),
 
-            // Check if redirect to split bill screen of original order
             SplitBillScreen.orderlineHas("Minute Maid", "1", "0"),
             SplitBillScreen.clickButton("Pay"),
             PaymentScreen.isShown(),
@@ -308,13 +283,11 @@ registry.category("web_tour.tours").add("SplitBillScreenTourTransfer", {
             ProductScreen.selectedOrderlineHas("discount", 1, "-1.80"),
             ProductScreen.clickControlButton("Split"),
 
-            // Check if the screen contains all the orderlines
             SplitBillScreen.orderlineHas("Water", "5", "0"),
             SplitBillScreen.orderlineHas("Minute Maid", "3", "0"),
             SplitBillScreen.orderlineHas("Coca-Cola", "1", "0"),
             Order.doesNotHaveLine({ productName: "Discount" }),
 
-            // split 3 water and 1 coca-cola
             SplitBillScreen.clickOrderline("Water"),
             SplitBillScreen.orderlineHas("Water", "5", "1"),
             SplitBillScreen.clickOrderline("Water"),
@@ -325,7 +298,6 @@ registry.category("web_tour.tours").add("SplitBillScreenTourTransfer", {
             SplitBillScreen.orderlineHas("Coca-Cola", "1", "1"),
             SplitBillScreen.subtotalIs("8.0"),
 
-            // click pay to split, go back to check the lines
             SplitBillScreen.clickButton("Transfer"),
             FloorScreen.clickTable("5"),
 
@@ -334,7 +306,6 @@ registry.category("web_tour.tours").add("SplitBillScreenTourTransfer", {
             ProductScreen.clickOrderline("Water", "3"),
             ProductScreen.clickOrderline("Coca-Cola", "1"),
 
-            // go back to the original order and see if the order is changed
             Chrome.clickOrders(),
             TicketScreen.selectOrder("001"),
             TicketScreen.loadSelectedOrder(),

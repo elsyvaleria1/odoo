@@ -10,19 +10,6 @@ import { useLayoutEffect } from "@web/core/utils/layout_effect";
 import { patch } from "@web/core/utils/patch";
 import { FormController } from "@web/views/form";
 
-/**
- * Knowledge articles can interact with some records with the help of the
- * @see KnowledgeCommandsService if they have an html field.
- * The algorithm first searches for an html field name in the following list.
- * The list is ordered and the first match found in a record will take
- * precedence. If no match is found, any accessible html field in the view
- * will do, in order of declaration.
- * Once a match is found, it is stored in the
- * KnowledgeCommandsService to be accessed later by an article.
- * If the field is inside a Form notebook page, the page must have a name
- * attribute, or else it won't be considered as Knowledge macros won't be able
- * to access it through a selector.
- */
 const KNOWLEDGE_RECORDED_FIELD_NAMES = [
     "note",
     "memo",
@@ -34,12 +21,6 @@ const KNOWLEDGE_RECORDED_FIELD_NAMES = [
     "notes",
 ];
 
-/**
- * Here are the models whose html fields won't be accessible through Knowledge.
- * A consideration to add a model in this list is how heavily modified their
- * form view is compared to the standard, because then the macro will not be
- * able to navigate them.
- */
 const KNOWLEDGE_EXCLUDED_MODELS = new Set(["knowledge.article", "res.config.settings"]);
 
 const FormControllerPatch = {
@@ -58,16 +39,6 @@ const FormControllerPatch = {
         }
         this.knowledgeContext = useKnowledgeContext();
     },
-    /**
-     * Evaluate the current record and register its relevant information in
-     * @see KnowledgeCommandsService if it can be used in a Knowledge article
-     * through a macro.
-     *
-     * The access rights information for the chatter is only available
-     * asynchronously after it is mounted, therefore populating this
-     * information for the `commandsRecordInfo` is delegated to the chatter
-     * through the __knowledgeUpdateCommandsRecordInfo__ callbackRecorder.
-     */
     _evaluateRecordCandidate() {
         if (
             KNOWLEDGE_EXCLUDED_MODELS.has(this.props.resModel) ||
@@ -80,7 +51,6 @@ const FormControllerPatch = {
         const record = this.model.root;
         const fields = this.props.fields;
         const xmlDoc = this.props.archInfo.xmlDoc;
-        // format stored by the knowledgeCommandsService
         const commandsRecordInfo = {
             resId: this.model.root.resId,
             resModel: this.props.resModel,
@@ -94,7 +64,6 @@ const FormControllerPatch = {
             xmlDoc: this.props.archInfo.xmlDoc,
         };
 
-        // check whether the form view has a chatter
         if (this.props.archInfo.xmlDoc.querySelector("chatter")) {
             for (const callback of this.knowledgeContext
                 .__knowledgeUpdateCommandsRecordInfo__.callbacks) {
@@ -121,7 +90,6 @@ const FormControllerPatch = {
             ),
         );
 
-        // check if there is any html field usable with knowledge
         loopFieldNames: for (const fieldName of fieldNames) {
             if (
                 evaluateBooleanExpr(
@@ -135,12 +103,6 @@ const FormControllerPatch = {
             ) {
                 continue loopFieldNames;
             }
-            // Parse the xmlDoc to find all instances of the field that are
-            // not descendants of another field and whose parents are
-            // visible (relative to the current record's context). Evaluate
-            // the invisible and readonly modifiers attributes for each field
-            // instance in the xmlDoc. Don't consider html fields that are not
-            // using the `html` widget (i.e. mass_mailing_html widget).
             const xmlFields = Array.from(
                 xmlDoc.querySelectorAll(
                     `field[name="${fieldName}"]:is([widget="html"], :not([widget])`,
@@ -178,10 +140,6 @@ const FormControllerPatch = {
                 }
                 const page = xmlField.closest("page");
                 const pageName = page ? page.getAttribute("name") : undefined;
-                // If the field is inside an unnamed notebook page, ignore
-                // it as if it was unavailable, since the macro will not be
-                // able to open it to access the field (the name is used as
-                // a selector).
                 if (!page || pageName) {
                     commandsRecordInfo.fieldInfo = {
                         name: fieldName,

@@ -184,7 +184,6 @@ beforeEach(() => {
 });
 
 onRpc("grid_unavailability", () => ({}));
-// A grid whose column field is a selection reads the labels off the field.
 onRpc(
     "ir.model.fields",
     "get_field_selection",
@@ -479,7 +478,6 @@ describe("grid_view_desktop", () => {
                 ".o_grid_row:not(.o_grid_row_title,.o_grid_row_total,.o_grid_column_total,.o_grid_add_line)",
             ),
         ).toEqual([
-            // row 1
             "0:00",
             "0:00",
             "2:30",
@@ -487,7 +485,6 @@ describe("grid_view_desktop", () => {
             "0:00",
             "0:00",
             "0:00",
-            // row 2
             "0:00",
             "0:00",
             "0:00",
@@ -507,7 +504,6 @@ describe("grid_view_desktop", () => {
         await hover(".o_grid_section.o_grid_highlightable:eq(1)");
         await contains(".o_grid_cell button.o_grid_search_btn").click();
 
-        // Click on next period to have no data
         await contains(".o_grid_navigation_buttons button span.oi-arrow-left").click();
         expect(".o_grid_section").toHaveCount(0);
         expect(
@@ -585,7 +581,6 @@ describe("grid_view_desktop", () => {
             "Another BS task\n|\nWebocalypse Now",
         ]);
 
-        // Remove the group and check the default groupbys defined in the view are correctly used.
         await toggleSearchBarMenu();
         await toggleMenuItem("Task");
         await toggleMenuItem("Project");
@@ -813,10 +808,8 @@ describe("grid_view_desktop", () => {
         await selectFieldDropdownItem("project_id", "P1");
         await selectFieldDropdownItem("task_id", "BS task");
 
-        // input unit_amount
         await contains(".modal .o_field_widget[name=unit_amount] input").edit("4");
 
-        // save
         await contains(".modal .modal-footer button.o_form_button_save").click();
 
         expect(".o_grid_row_title").toHaveCount(1, {
@@ -856,10 +849,8 @@ describe("grid_view_desktop", () => {
         await selectFieldDropdownItem("project_id", "P1");
         await selectFieldDropdownItem("task_id", "BS task");
 
-        // input unit_amount
         await contains(".modal .o_field_widget[name=unit_amount] input").edit("4");
 
-        // save
         await contains(".modal .modal-footer button.o_form_button_save").click();
 
         expect(".o_grid_section_title").toHaveCount(1, {
@@ -1050,7 +1041,6 @@ describe("grid_view_desktop", () => {
         onRpc("grid_update_cell", (args) => {
             const context = args.kwargs.context;
             expect.step("grid_update_cell");
-            // the project in the action context should be replaced by the project linked to the grid cell altered
             expect(context.default_project_id).toBe(31);
             expect(context.default_selection_field).toBe("abc");
         });
@@ -1218,7 +1208,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("grid_anchor stays when navigating", async () => {
-        // create an action manager to test the interactions with the search view
         await mountWithCleanup(WebClient);
         await getService("action").doAction({
             res_model: "analytic.line",
@@ -1230,7 +1219,6 @@ describe("grid_view_desktop", () => {
             },
         });
 
-        // check first column header
         expect(queryAllTexts(".o_grid_column_title")).toEqual([
             "Today\nWeek",
             "Sun,\nJan 29",
@@ -1243,9 +1231,7 @@ describe("grid_view_desktop", () => {
             "Unit Amount",
         ]);
 
-        // move to previous week, and check first column header
         await contains(".oi-arrow-left").click();
-        // check first column header
         expect(queryAllTexts(".o_grid_column_title")).toEqual([
             "Today\nWeek",
             "Sun,\nJan 22",
@@ -1258,7 +1244,6 @@ describe("grid_view_desktop", () => {
             "Unit Amount",
         ]);
 
-        // remove the filter in the searchview
         await contains(".o_facet_remove").click();
         expect(queryAllTexts(".o_grid_column_title")).toEqual([
             "Today\nWeek",
@@ -1273,19 +1258,6 @@ describe("grid_view_desktop", () => {
         ]);
     });
 
-    /**
-     * The column title is `Intl.DateTimeFormat(...).formatToParts()` with a
-     * newline inserted after the weekday (day step) or the month (month step).
-     * Only the option set and that split policy are ours — the glyphs belong to
-     * CLDR, which restyles them between ICU releases (Thai's `weekday: "short"`
-     * went from "อา." to "อาทิตย์", and every hard-coded locale in this table
-     * silently became a snapshot of whichever ICU the CI browser shipped).
-     *
-     * So assert the contract instead of the data: flattening the label must
-     * reproduce exactly what Intl produces for those options, the label may
-     * never exceed two lines, and when it has two the leading part must be
-     * alone on the first one.
-     */
     const LOCALES = [
         "en_US",
         "fr_FR",
@@ -1297,13 +1269,11 @@ describe("grid_view_desktop", () => {
         "th_TH",
         "tr_TR",
         "pl_PL",
-        // CJK locales have no literal after the leading part: single line.
         "ja_JP",
         "zh_CN",
         "ko_KR",
     ];
 
-    /** Whitespace around the inserted newline is trimmed away by the split. */
     const flatten = (text) => text.replace(/\s+/g, " ").trim();
 
     /**
@@ -1390,7 +1360,6 @@ describe("grid_view_desktop", () => {
     }
 
     test("dialog should not close when clicking the link to many2one field", async () => {
-        // create an action manager to test the interactions with the search view
         onRpc("task", "get_formview_id", () => false);
         await mountWithCleanup(WebClient);
         await getService("action").doAction({
@@ -1407,7 +1376,6 @@ describe("grid_view_desktop", () => {
         await contains(
             '.modal .o_field_widget[name="task_id"] button.o_external_button',
         ).click();
-        // Clicking somewhere on the form dialog should not close it
         expect("dialog.modal").toHaveCount(2);
         await contains("dialog.modal").click();
         expect("dialog.modal").toHaveCount(2);
@@ -1427,7 +1395,7 @@ describe("grid_view_desktop", () => {
             res_model: "analytic.line",
             type: "ir.actions.act_window",
             views: [[false, "grid"]],
-            context: { search_default_groupby_task: 1 }, // to avoid creating a new grid view to remove project_id in rows
+            context: { search_default_groupby_task: 1 },
         });
 
         expect(".o_grid_row_title").toHaveCount(2);
@@ -1474,7 +1442,7 @@ describe("grid_view_desktop", () => {
     });
 
     test("The help content is not displayed instead of the grid with `display_empty` is true in the grid tag", async () => {
-        mockDate("2022-01-01 00:00:00"); // to be sure no data is found
+        mockDate("2022-01-01 00:00:00");
         await mountView({
             type: "grid",
             resModel: "analytic.line",
@@ -1719,8 +1687,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("Only relevant grid rows are rendered with larger recordsets", async () => {
-        // Setup: generates 100 new tasks and related analytic lines distributed
-        // in all available projects, deterministically based on their ID.
         const { _fields: alFields, _records: analyticLines } = Line;
         const { _records: tasks } = Task;
         const { _records: projects } = Project;
@@ -1739,14 +1705,14 @@ describe("grid_view_desktop", () => {
                 task_id: id,
                 selection_field: selectionValues[id % selectionValues.length][0],
                 date: today,
-                unit_amount: (id % 10) + 1, // 1 to 10
+                unit_amount: (id % 10) + 1,
             });
         }
 
         await mountView({
             type: "grid",
             resModel: "analytic.line",
-            arch: /* xml */ `
+            arch: `
                 <grid>
                     <field name="project_id" type="row"/>
                     <field name="task_id" type="row"/>
@@ -1771,17 +1737,9 @@ describe("grid_view_desktop", () => {
         const content = queryOne(".o_content");
         const grid = queryOne(".o_grid_grid");
         const firstRow = grid.querySelector(".o_grid_column_title");
-        // `.o_content` is a grow-able flex item, so a bare `height` is only a
-        // basis the flex algorithm then stretches: the used height came from
-        // the fixture, not from here. `flex` pins it for real, which is what
-        // makes the virtual window deterministic.
         const VIEWPORT_HEIGHT = 600;
         content.style = `flex: 0 0 ${VIEWPORT_HEIGHT}px; height: ${VIEWPORT_HEIGHT}px; overflow: scroll;`;
 
-        // The virtual window was computed at mount, against the height the
-        // fixture gave `.o_content` — not the viewport imposed just above. A
-        // round trip forces a recompute against the real span, so the snapshot
-        // below is the steady state for scrollTop 0 rather than a stale window.
         await scroll(content, { top: content.scrollHeight });
         await animationFrame();
         await scroll(content, { top: 0 });
@@ -1796,14 +1754,8 @@ describe("grid_view_desktop", () => {
         expect(content.offsetHeight).toBe(VIEWPORT_HEIGHT, {
             message: "content should have its height fixed",
         });
-        // ! This next assertion is important: it ensures that the grid rows are
-        // ! hard-coded so that the virtual hook can work with it. Adapt this test
-        // ! accordingly should the row height change.
-        expect(
-            grid.clientHeight -
-                firstRow.offsetHeight /* first row is "auto" so we don't count it */,
-        ).toBe(
-            (tasks.length - 1) /* ignore total row */ * 32 /* base grid row height */,
+        expect(grid.clientHeight - firstRow.offsetHeight).toBe(
+            (tasks.length - 1) * 32,
             {
                 message:
                     "grid content should be the height of its row height times the amount of records",
@@ -1813,7 +1765,6 @@ describe("grid_view_desktop", () => {
             message: "not all rows should be displayed",
         });
 
-        // Scroll to the middle of the grid
         await scroll(content, { top: content.scrollHeight / 2 });
         await animationFrame();
         expect(currentRows).not.toEqual(getCurrentRows(), {
@@ -1824,7 +1775,6 @@ describe("grid_view_desktop", () => {
         });
         currentRows = getCurrentRows();
 
-        // Scroll to the end of the grid
         await scroll(content, { top: content.scrollHeight });
         await animationFrame();
 
@@ -1835,7 +1785,6 @@ describe("grid_view_desktop", () => {
             message: "not all rows should be displayed",
         });
 
-        // Scroll back to top
         await scroll(content, { top: 0 });
         await animationFrame();
 
@@ -1881,22 +1830,18 @@ describe("grid_view_desktop", () => {
         await contains(".o_grid_cell").click();
         await animationFrame();
 
-        // Go to the next cell
         await press("tab");
         await animationFrame();
         checkGridCellInRightPlace("2", "3");
 
-        // Go to the previous cell
         await press("shift+tab");
         await animationFrame();
         checkGridCellInRightPlace("2", "2");
 
-        // Go the cell below
         await press("enter");
         await animationFrame();
         checkGridCellInRightPlace("3", "2");
 
-        // Go up since it is the cell in the row
         await press("enter");
         await animationFrame();
         checkGridCellInRightPlace("2", "3");
@@ -1905,31 +1850,24 @@ describe("grid_view_desktop", () => {
         await animationFrame();
         checkGridCellInRightPlace("2", "2");
 
-        // Go to the last editable cell in the grid view since it is the first cell.
         await press("shift+tab");
         await animationFrame();
         checkGridCellInRightPlace("3", "8");
 
-        // Go back to the first cell since it is the last cell in grid view.
         await press("tab");
         await animationFrame();
         checkGridCellInRightPlace("2", "2");
 
-        // Go to the last editable cell in the grid view since it is the first cell.
         await press("shift+tab");
         await animationFrame();
         checkGridCellInRightPlace("3", "8");
 
-        // Go back to the first cell since it is the last cell in grid view.
         await press("enter");
         await animationFrame();
         checkGridCellInRightPlace("2", "2");
     });
 
     test("keyboard navigation scrolls a virtualized grid to reveal the wrapped-to cell", async () => {
-        // Setup: generates 100 new tasks and related analytic lines distributed
-        // in all available projects, deterministically based on their ID -- same
-        // technique as "Only relevant grid rows are rendered with larger recordsets".
         const { _fields: alFields, _records: analyticLines } = Line;
         const { _records: tasks } = Task;
         const { _records: projects } = Project;
@@ -1955,7 +1893,7 @@ describe("grid_view_desktop", () => {
         await mountView({
             type: "grid",
             resModel: "analytic.line",
-            arch: /* xml */ `
+            arch: `
                 <grid editable="1">
                     <field name="project_id" type="row"/>
                     <field name="task_id" type="row"/>
@@ -1972,8 +1910,6 @@ describe("grid_view_desktop", () => {
         const content = queryOne(".o_content");
         const VIEWPORT_HEIGHT = 600;
         content.style = `flex: 0 0 ${VIEWPORT_HEIGHT}px; height: ${VIEWPORT_HEIGHT}px; overflow: scroll;`;
-        // Force a recompute of the virtual window against the real span (see
-        // "Only relevant grid rows are rendered with larger recordsets").
         await scroll(content, { top: content.scrollHeight });
         await animationFrame();
         await scroll(content, { top: 0 });
@@ -1981,7 +1917,6 @@ describe("grid_view_desktop", () => {
 
         expect(content.scrollTop).toBe(0);
 
-        // Focus the first (on-screen) editable cell.
         const firstCell = queryFirst(
             ".o_grid_row.o_grid_highlightable[data-row][data-column]",
         );
@@ -1990,8 +1925,6 @@ describe("grid_view_desktop", () => {
         await contains(".o_grid_cell").click();
         await animationFrame();
 
-        // Shift+tab from the very first cell wraps both row and column to the
-        // very last one, which is scrolled far outside the virtualized window.
         await press("shift+tab");
         await animationFrame();
         await animationFrame();
@@ -2086,11 +2019,9 @@ describe("grid_view_desktop", () => {
             );
         }
 
-        // By default, it's "month"
         let headers = getColumnHeaders();
         expect(hasWeekend(headers)).toBe(false);
 
-        // Switch to "year"
         await contains(".scale_button_selection").click();
         await contains(".o_scale_button_year").click();
         await animationFrame();
@@ -2447,9 +2378,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a grid whose columns are not days ignores the stored weekend preference", async () => {
-        // "grid.isWeekendVisible" is one key for every grid in the database.
-        // A grid with no weekend to hide must not inherit a `false` written by
-        // an unrelated view: filtering on it used to drop every column it had.
         patchWithCleanup(browser.localStorage, {
             getItem(key) {
                 if (key === "grid.isWeekendVisible") {
@@ -2505,16 +2433,11 @@ describe("grid_view_desktop", () => {
                 el.classList.contains("o_grid_highlighted"),
             ).length;
 
-        // The whole row lights up, bar the add-line and the header. `.o_grid_cell`
-        // is excluded too: that is the interactive overlay component, which
-        // copies the hovered cell's grid coordinates but is not part of the
-        // laid-out grid.
         const rowMates = `.o_grid_highlightable[data-grid-row="${gridRow}"]:not(.o_grid_add_line):not(.o_grid_column_title):not(.o_grid_cell)`;
         expect(highlighted(rowMates)).toBe(queryAll(rowMates).length);
         expect(queryAll(rowMates).length).toBeGreaterThan(1);
         expect(cell).toHaveClass("o_grid_cell_highlighted");
 
-        // the column does not, apart from its bar chart
         const columnMates = queryAll(
             `.o_grid_highlightable[data-grid-column="${gridColumn}"]:not([data-grid-row="${gridRow}"]):not(.o_grid_cell)`,
         );
@@ -2583,10 +2506,6 @@ describe("grid_view_desktop", () => {
     }
 
     test("a numeric row field is labelled as a row, not rendered as a measure cell", async () => {
-        // `grid_components` keys cell widgets and row widgets alike, and
-        // `integer`/`float` are registered as the first while also being field
-        // types -- so an integer row resolved to GridCell and died on props it
-        // is never given.
         Line._fields.sequence = fields.Integer({ string: "Sequence" });
         Line._records[0].sequence = 0;
         Line._records[1].sequence = 7;
@@ -2600,7 +2519,6 @@ describe("grid_view_desktop", () => {
                     <field name="unit_amount" type="measure"/>
                 </grid>`,
         });
-        // 0 is a group like any other; labelling it "None" states something else.
         expect(queryAllTexts(".o_grid_row_title")).toEqual(["0", "7"]);
         expect(".o_grid_row_title .o_grid_no_data").toHaveCount(0);
     });
@@ -2622,10 +2540,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a superseded load's unavailability does not overwrite the current one's", async () => {
-        // Every other extension point is handed metaData, which `load`
-        // publishes in one assignment once keepLast has picked a winner; this
-        // one wrote straight to the model, so whichever grid_unavailability
-        // answered last shaded the grid regardless of which load was on screen.
         let model;
         const seen = [];
         patchWithCleanup(GridModel.prototype, {
@@ -2658,8 +2572,8 @@ describe("grid_view_desktop", () => {
         });
         expect(model.unavailabilityDaysPerEmployeeId.tag).toBe("load-1");
 
-        model.reload(); // load 2: blocked on its unavailability, and superseded
-        await model.reload(); // load 3: wins
+        model.reload();
+        await model.reload();
         expect(model.unavailabilityDaysPerEmployeeId.tag).toBe("load-3");
 
         blocked.resolve();
@@ -2674,11 +2588,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("an edit still in flight when the grid reloads is not lost from the display", async () => {
-        // `model.mutex` serialises cell updates against each other but not
-        // against a reload, and a reload replaces `model.data` wholesale -- so
-        // the delta was applied to rows nobody was looking at any more, and the
-        // reload's own fetch had gone out before the write landed. The edit
-        // committed on the server and vanished from the screen.
         let model;
         patchWithCleanup(GridModel.prototype, {
             setup() {
@@ -2713,9 +2622,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("the cell input carries the row and column it edits as its label", async () => {
-        // The grid says which row and column a cell belongs to by where it
-        // sits; position is exactly what a screen reader does not have, so the
-        // input was an unlabelled text box.
         await mountView({
             type: "grid",
             resModel: "analytic.line",
@@ -2732,10 +2638,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a many2one row splits a multi-line display name onto its own lines", async () => {
-        // Odoo spells a task's display name "Project\nTask"; Many2OneGridRow
-        // shows the first line as the label and each later one under it. The
-        // markup for that is shared by the linked and unlinked branches and had
-        // no test at all, in either.
         Task._records.push({
             id: 99,
             name: "Webocalypse Now\nSecond line\nThird line",
@@ -2770,15 +2672,10 @@ describe("grid_view_desktop", () => {
     });
 
     test("a readonly field whose type has no default aggregator is refused", async () => {
-        // `field:undefined` came back from the server as
-        // `Invalid aggregation function "undefined"`, naming neither the view
-        // nor the field.
         await expect(mountWithFlagAs("readonly")).rejects.toThrow(AGGREGATOR_ERROR);
     });
 
     test("a measure field whose type has no default aggregator is refused", async () => {
-        // This one was worse: the bare `flag` spec was accepted, and the crash
-        // came later, reading a value off the group that was never asked for.
         await expect(mountWithFlagAs("measure")).rejects.toThrow(AGGREGATOR_ERROR);
     });
 
@@ -2814,9 +2711,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a date row field with no granularity is refused where it is written", async () => {
-        // read_group refuses a date groupby that states no granularity, and
-        // would report it from the far end of an rpc; the arch is the only
-        // place a row field can say it, so saying nothing is an arch error.
         await expect(
             mountView({
                 type: "grid",
@@ -2848,7 +2742,6 @@ describe("grid_view_desktop", () => {
                     <field name="unit_amount" type="measure"/>
                 </grid>`,
         });
-        // Four day groups rather than the one month group the arch asked for.
         expect(queryAllTexts(".o_grid_row_title")).toEqual([
             "2017-01-24",
             "2017-01-25",
@@ -2858,9 +2751,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("sample data: a many2one column field resolves its columns for real", async () => {
-        // A grid's columns are its axis, not sampled content, and SampleServer
-        // implements neither search_read nor get_field_selection -- asking it
-        // for them threw UnimplementedRouteError out of the first load.
         await mountView({
             type: "grid",
             resModel: "analytic.line",
@@ -2871,8 +2761,6 @@ describe("grid_view_desktop", () => {
                     <field name="unit_amount" type="measure"/>
                 </grid>`,
         });
-        // Assert sample mode really engaged: without this the test would pass
-        // just as well against a grid that never reached the sample reload.
         expect(".o_view_sample_data").toHaveCount(1);
         expect(
             queryAllTexts(
@@ -2925,8 +2813,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("groupby a field whose name merely starts with the column field's", async () => {
-        // `date_deadline` is not `date`; grouping by it used to be dropped
-        // together with a notification about the column field.
         await mountView({
             type: "grid",
             resModel: "analytic.line",
@@ -2971,9 +2857,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("groupby a date field: the grid groups by the period, not by the spec", async () => {
-        // A groupby spec is not a field name: `date:month` is what read_group
-        // is asked for and answers under, `date` is what fieldsInfo, the row
-        // domain and `default_` context keys are about.
         await mountView({
             type: "grid",
             resModel: "analytic.line",
@@ -2995,8 +2878,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a renderer override is told which row or section a cell belongs to", async () => {
-        // getUnavailableClass' second argument had no caller at all, so an
-        // override resolving unavailability per record never saw one.
         patchWithCleanup(GridRenderer.prototype, {
             getUnavailableClass(column, cellData = {}) {
                 if (cellData.row && !cellData.row.isSection) {
@@ -3042,7 +2923,7 @@ describe("grid_view_desktop", () => {
         view = await mountView({
             type: "grid",
             resModel: "analytic.line",
-            arch: /* xml */ `
+            arch: `
             <grid>
                 <field name="project_id" type="row"/>
                 <field name="date" type="col">
@@ -3061,10 +2942,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("stepping back into the period that holds today anchors on today", async () => {
-        // The anchor is the date a record created from the grid defaults to.
-        // Navigating away and back used to leave it on whatever day of the
-        // period it had been on; a condition meant to snap it to today asked
-        // whether the anchor already was today, and so never fired.
         let model;
         patchWithCleanup(GridModel.prototype, {
             setup() {
@@ -3091,9 +2968,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a record no column can show is not among the records a button acts on", async () => {
-        // Record 1 has a project and no task. Grouped by task in the columns,
-        // it used to create the P1 row and then fall into no cell of it, so the
-        // row's total left it out while the arch's buttons still acted on it.
         let model;
         patchWithCleanup(GridModel.prototype, {
             setup() {
@@ -3137,9 +3011,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a lone None section takes no header row and no grid track", async () => {
-        // A single section with no value renders no header, and the grid's
-        // row template used to count one for it anyway, leaving an empty
-        // track below the totals.
         mockDate("2017-01-25 00:00:00");
         await mountView({
             type: "grid",
@@ -3182,18 +3053,12 @@ describe("grid_view_desktop", () => {
                 <field name="unit_amount" type="measure"/>
             </grid>`,
         });
-        // 2017 starts on a Sunday and April, July and October on a Saturday
-        // or a Sunday: a month is not a weekend because its first day is one.
         expect(model.columnsArray.every((column) => column.isWeekDay)).toBe(true);
         const row = model.rowsArray.find((r) => !r.isSection);
         expect(row.getGrandTotal(false)).toBe(row.getGrandTotal(true));
     });
 
     test("a load allocates row ids of its own, whatever a superseded load does", async () => {
-        // `keepLast` does not cancel a superseded load, so one still building
-        // rows and the load that replaced it used to allocate from a single
-        // model-wide counter. The winner then started wherever the loser
-        // stopped, and `data-row` no longer said which row was which.
         let model;
         patchWithCleanup(GridModel.prototype, {
             setup() {
@@ -3217,7 +3082,7 @@ describe("grid_view_desktop", () => {
             resModel: "analytic.line",
             arch: Line._views["grid"],
         });
-        model.reload(); // superseded, and the first to build its rows
+        model.reload();
         const winner = model.reload();
         await animationFrame();
         expect(gates).toHaveLength(2);
@@ -3247,9 +3112,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("the columns and the groups are fetched together, not one after the other", async () => {
-        // A many2one column resolved its records, then asked for the groups
-        // only once they had answered: two round trips in series for two
-        // independent questions.
         const columns = new Deferred();
         onRpc("task", "search_read", async ({ parent }) => {
             expect.step("columns asked");
@@ -3275,11 +3137,6 @@ describe("grid_view_desktop", () => {
     });
 
     test("a row built during a load knows that load's fields, not the model's", async () => {
-        // A section's value, title and domain read the section field off the
-        // model, which publishes a load's fields only once it has won. An
-        // override reading its sections mid-load -- timesheet_grid's
-        // _postFetchAdditionalData does -- got the previous grid's field, or
-        // crashed on the first load's `undefined.name`.
         const seen = [];
         let model;
         patchWithCleanup(GridModel.prototype, {
@@ -3421,10 +3278,6 @@ describe("grid_view_mobile", () => {
     });
 
     test("virtual scroll loads next records on mobile", async () => {
-        // Inspired by the test `Only relevant grid rows are rendered with larger recordsets`
-
-        // Setup: generates 100 new tasks and related analytic lines distributed
-        // in all available projects, deterministically based on their ID.
         const { _fields: alFields, _records: analyticLines } = Line;
         const { _records: tasks } = Task;
         const { _records: projects } = Project;
@@ -3443,7 +3296,7 @@ describe("grid_view_mobile", () => {
                 task_id: id,
                 selection_field: selectionValues[id % selectionValues.length][0],
                 date: today,
-                unit_amount: (id % 10) + 1, // 1 to 10
+                unit_amount: (id % 10) + 1,
             });
         }
 
@@ -3465,17 +3318,13 @@ describe("grid_view_mobile", () => {
         const content = queryOne(".o_content");
         content.style = "height: 600px; overflow: scroll;";
 
-        // This is to ensure that the virtual rows will not be impacted by
-        // sub-pixel calculations.
         await scroll(content, { top: 0 });
         await animationFrame();
 
-        // Scroll to the middle of the grid
         await scroll(content, { top: content.scrollHeight / 2 });
         await animationFrame();
         expect(`a[href="/odoo/m-task/101"]`).toHaveCount(1);
 
-        // Scroll to the end of the grid
         await scroll(content, { top: content.scrollHeight });
         await animationFrame();
         expect(`a[href="/odoo/m-task/199"]`).toHaveCount(1);

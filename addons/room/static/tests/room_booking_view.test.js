@@ -53,7 +53,6 @@ function assertRoomStatus(remainingTime, nbBookings) {
         ]
             .map((part) => String(part).padStart(2, "0"))
             .join(":");
-        // Ignore second digits as it will be affected by mocked time being advanced
         expect(".o_room_remaining_time").toHaveText(
             new RegExp(`^${time.slice(0, -2)}\\d\\d$`),
         );
@@ -131,7 +130,6 @@ test("Room Booking View - Quick Booking", async () => {
     await contains("input[placeholder='Booking Name']").edit("Meeting");
     expect(buttonsSelector).toHaveCount(3);
 
-    // Last button should book the room for 1 hour, and name should have been reset to default
     expectedCreateArgs = {
         name: "Meeting",
         start_datetime: "2023-06-17 09:59:00",
@@ -144,7 +142,6 @@ test("Room Booking View - Quick Booking", async () => {
     await contains(".modal-footer button:contains('Delete')").click();
     await runAllTimers();
     await waitForSteps(["delete_booking"]);
-    // the confirmation closes once the deletion returns: until then the view is inert
     await waitForNone(".modal");
 
     mockDate("2023-06-17 10:25:00", 0);
@@ -162,7 +159,6 @@ test("Room Booking View - Quick Booking", async () => {
     ).click();
     await contains(".modal-footer button:contains('Delete')").click();
     await waitForSteps(["delete_booking"]);
-    // the confirmation closes once the deletion returns: until then the view is inert
     await waitForNone(".modal");
 
     mockDate("2023-06-17 10:43:00", 0);
@@ -180,7 +176,6 @@ test("Room Booking View - Quick Booking", async () => {
     ).click();
     await contains(".modal-footer button:contains('Delete')").click();
     await waitForSteps(["delete_booking"]);
-    // the confirmation closes once the deletion returns: until then the view is inert
     await waitForNone(".modal");
 
     mockDate("2023-06-17 10:59:00", 0);
@@ -206,7 +201,6 @@ test("Room Booking View - Booking Started", async () => {
     mockDate("2023-06-17 11:00:00", 0);
     await advanceTime(REFRESH_INTERVAL);
     assertRoomStatus({ minutes: 59, seconds: 59 }, 1);
-    // Make sure there is no error with the following intervals
     await runAllTimers();
 });
 
@@ -226,7 +220,6 @@ test("Room Booking View - Booking Ended", async () => {
     mockDate("2023-06-17 11:00:00", 0);
     await advanceTime(REFRESH_INTERVAL);
     assertRoomStatus(false, 0);
-    // Make sure there is no error with the following intervals
     await runAllTimers();
 });
 
@@ -262,17 +255,14 @@ test("Room Booking View - Inactivity reset", async () => {
     await advanceTime(INACTIVITY_TIMEOUT);
     await contains(QUICK_BOOK_SEL).click();
     await advanceTime(INACTIVITY_TIMEOUT - 1);
-    // Writing the title should reset the timeout
     await press("s");
     await advanceTime(INACTIVITY_TIMEOUT - 1);
     expect(".fa-check-circle.fa-3x").toHaveCount(0);
 
-    // Clicking anywhere should reset the timeout
     await contains(".o_room_booking_main").click();
     await advanceTime(INACTIVITY_TIMEOUT - 1);
     expect(".fa-check-circle.fa-3x").toHaveCount(0);
 
-    // Make sure timeout still occurs
     await advanceTime(1);
     expect(".fa-check-circle.fa-3x").toHaveCount(1);
 });
@@ -302,7 +292,6 @@ test("Room Booking View - Consecutive Bookings", async () => {
     await advanceTime(REFRESH_INTERVAL);
     assertRoomStatus({ minutes: 59, seconds: 59 }, 1);
 
-    // Make sure next interval does not remove current booking
     await advanceTime(REFRESH_INTERVAL);
     assertRoomStatus({ minutes: 59, seconds: 58 }, 1);
 });

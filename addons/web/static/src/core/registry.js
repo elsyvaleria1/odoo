@@ -278,9 +278,6 @@ export const registry = /** @type {any} */ (
  */
 export function useRegistry(registry) {
     const state = proxy({ entries: [...registry.getEntries()] });
-    // each update assigns a new list: an entry removed while its component is
-    // being rendered (a crash handled in setup) must not shift the list that
-    // render is iterating
     const listener = (
         /** @type {{ detail: { key: string, operation: string } }} */ { detail },
     ) => {

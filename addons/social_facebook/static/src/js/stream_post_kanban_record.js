@@ -71,9 +71,6 @@ patch(StreamPostKanbanRecord.prototype, {
         await this._updateLikesCount("facebook_user_likes", "facebook_likes_count");
     },
 
-    /**
-     * Prepare `additionnalValues` to update the reactions count.
-     */
     _prepareLikeAdditionnalValues(likesCount, userLikes) {
         const additionnalValues = super._prepareLikeAdditionnalValues(
             likesCount,

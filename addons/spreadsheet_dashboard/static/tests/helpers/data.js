@@ -31,12 +31,6 @@ export class SpreadsheetDashboard extends models.Model {
         compute: "_compute_is_user_favorite",
         string: "Is Favorite",
     });
-    // Present on the deployed model whenever spreadsheet_dashboard_edition is
-    // installed (which adds it and unconditionally patches the dashboard loader
-    // to read it into the groups fetch spec). The unit-test bundle always loads
-    // that patch, so the community mock must expose the field or web_read of the
-    // groups spec fails ("no field is_from_data"). Overridden by the enterprise
-    // mock (test_data.js) with the same definition.
     is_from_data = fields.Boolean({ string: "Is from Data", default: false });
 
     _compute_is_user_favorite() {

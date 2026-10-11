@@ -1,26 +1,11 @@
 /** @odoo-module native */
-/**
- * This file is meant to load the different subparts of the module
- * to guarantee their plugins are loaded in the right order
- *
- * dependency:
- *             other plugins
- *                   |
- *                  ...
- *                   |
- *                filters
- *                /\    \
- *               /  \    \
- *           pivot  list  Odoo chart
- */
 
-/** TODO: Introduce a position parameter to the plugin registry in order to load them in a specific order */
 import * as spreadsheet from "@odoo/o-spreadsheet";
 import {
     ChartOdooMenuPlugin,
     OdooChartCorePlugin,
     OdooChartCoreViewPlugin,
-} from "@spreadsheet/chart/index"; // Odoochart depends on filter for its getters
+} from "@spreadsheet/chart/index";
 import {
     GlobalFiltersCorePlugin,
     GlobalFiltersCoreViewPlugin,
@@ -30,12 +15,12 @@ import {
     ListCorePlugin,
     ListCoreViewPlugin,
     ListUIPlugin,
-} from "@spreadsheet/list/index"; // pivot depends on filter for its getters
+} from "@spreadsheet/list/index";
 import {
     PivotCoreViewGlobalFilterPlugin,
     PivotOdooCorePlugin,
     PivotUIGlobalFilterPlugin,
-} from "@spreadsheet/pivot/index"; // list depends on filter for its getters
+} from "@spreadsheet/pivot/index";
 import { _t } from "@web/core/translation";
 
 import { OdooChartFeaturePlugin } from "./chart/plugins/odoo_chart_feature_plugin.js";

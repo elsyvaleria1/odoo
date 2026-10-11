@@ -6,11 +6,6 @@ import {
     stateSelectionField,
 } from "@web/fields/selection/state_selection/state_selection_field";
 
-/**
- * This widget is used to enhance the Event State Selection field UI.
- * It extends `StateSelectionField` to provide visual feedback using icons
- * and color classes for different states: `normal`, `done`, `blocked`, `cancel`.
- */
 export class EventStateSelection extends StateSelectionField {
     static template = "event.EventStateSelection";
 

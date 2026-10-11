@@ -19,9 +19,6 @@ export class MailComposerChatGPT extends Component {
             currentDialog = document.querySelector(".o-overlay-item:has(.o_dialog");
             if (currentDialog) {
                 previousZIndex = currentDialog.style.zIndex;
-                // 1020 is $zindex-sticky, the z-index of `.o-mail-ChatWindow` (see
-                // addons/mail/static/src/core/common/chat_window.scss): matching it keeps the
-                // dialog hosting this component below the chat windows.
                 currentDialog.style.zIndex = "1020";
             }
         });
@@ -52,7 +49,6 @@ export class MailComposerChatGPT extends Component {
                     const root = document.createElement("div");
                     root.appendChild(content);
                     const { body } = this.props.record.data;
-                    // markup: innerHTML is safe, `root` is built from an already sanitized body
                     this.props.record.update({
                         body: htmlJoin([markup(root.innerHTML), body]),
                     });

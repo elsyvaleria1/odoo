@@ -85,7 +85,6 @@ patch(ControlButtons.prototype, {
                     {},
                 );
                 if (result !== true) {
-                    // Returned an error
                     this.dialog.add(AlertDialog, {
                         title: _t("Error"),
                         body: result,
@@ -113,8 +112,6 @@ patch(ControlButtons.prototype, {
 
     getPotentialRewards() {
         const order = this.pos.getOrder();
-        // Claimable rewards excluding those from eWallet programs.
-        // eWallet rewards are handled in the eWalletButton.
         let rewards = [];
         if (order) {
             const claimableRewards = order.getClaimableRewards();
@@ -133,7 +130,7 @@ patch(ControlButtons.prototype, {
         const avaiRewards = [
             ...potentialFreeProductRewards,
             ...discountRewards,
-            ...freeProductRewards, // Free product rewards at the end of array to prioritize them
+            ...freeProductRewards,
         ];
 
         for (const reward of avaiRewards) {
@@ -187,7 +184,6 @@ patch(ControlButtons.prototype, {
         } else {
             const result = order._applyReward(reward, coupon_id, args);
             if (result !== true) {
-                // Returned an error
                 this.notification.add(result);
             }
             this.pos.updateRewards();

@@ -40,7 +40,7 @@ export class EmsignerDialog extends Component {
                     if (Object.hasOwn(params, key)) {
                         const hiddenField = document.createElement("input");
                         hiddenField.type = "hidden";
-                        hiddenField.name = "Parameter" + index; // Naming as Parameter1, Parameter2, etc.
+                        hiddenField.name = "Parameter" + index;
                         hiddenField.value = params[key];
                         form.appendChild(hiddenField);
                         index++;

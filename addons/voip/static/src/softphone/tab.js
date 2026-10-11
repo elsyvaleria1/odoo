@@ -1,9 +1,6 @@
 /** @odoo-module native */
 import { useVisible } from "@mail/utils/common/hooks";
 import { Component, t, useProps } from "@odoo/owl";
-/**
- * Generic component that defines the general structure of a softphone tab.
- */
 import { ActionButton } from "@voip/softphone/action_button";
 import { NoSearchResults } from "@voip/softphone/no_search_results";
 import { SearchBar } from "@voip/softphone/search_bar";

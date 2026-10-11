@@ -29,9 +29,6 @@ const getServerData = () => {
         },
     ]);
 
-    // the messaging menu lists needaction messages under its notification
-    // tab, which it shows to a signed-in user whose notifications go to the
-    // inbox: mail's start() signs this one in
     Object.assign(
         serverData["res.users"].find((user) => user.id === serverState.userId),
         { login: "admin", password: "admin", notification_type: "inbox" },

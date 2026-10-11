@@ -1,12 +1,7 @@
 /** @odoo-module native */
 
-/**
- * The presence words mail itself sets on `im_status`, before any module
- * decorates them.
- */
 export const BASE_IM_STATUSES = ["online", "away", "busy", "offline"];
 
-/** Base words that mean the person is reachable. */
 export const REACHABLE_IM_STATUSES = ["online", "away", "busy"];
 
 /** @type {Map<string, string>} decorated word -> the base word behind it */
@@ -53,14 +48,12 @@ export function baseImStatus(imStatus) {
     return decorations.get(imStatus) ?? imStatus;
 }
 
-/** Every registered decoration whose base word means reachable. */
 export function reachableDecoratedImStatuses() {
     return [...decorations]
         .filter(([, base]) => REACHABLE_IM_STATUSES.includes(base))
         .map(([decorated]) => decorated);
 }
 
-/** Test seam: the registry is module-level state. */
 export function registeredImStatusDecorations() {
     return new Map(decorations);
 }

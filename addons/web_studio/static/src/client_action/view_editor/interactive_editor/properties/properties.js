@@ -23,7 +23,6 @@ export class Properties extends Component {
     }
 
     get iconClass() {
-        // first check if the structure has a dedicated icon
         let icon =
             this.viewEditorModel.editorInfo.editor.Sidebar.viewStructures?.[
                 this.nodeType

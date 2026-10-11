@@ -512,8 +512,6 @@ export class StaticList extends EditableListDataPoint {
                 canAddOverLimit: true,
             });
             if (urgent) {
-                // the commands are committed; loading the linked rows is display
-                // work the urgent save must not wait for
                 this._trackCommandsPromise(applied);
             } else {
                 await applied;

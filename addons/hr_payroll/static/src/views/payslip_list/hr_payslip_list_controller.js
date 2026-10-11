@@ -61,20 +61,10 @@ export class PayslipListController extends ListController {
             };
         });
 
-        // What each header transition tolerates, read off the method it calls.
-        // A button is offered when the selection satisfies its own rule, not
-        // when every payslip happens to share one state: that hid Validate on
-        // selections it would have handled correctly.
         this.headerButtonRules = {
-            // action_validate filters to state == "draft" (hr_payslip.py:957-961),
-            // so one draft is enough and the rest are left alone.
             action_validate: (states) => states.includes("draft"),
-            // action_payslip_paid refuses unless every payslip is confirmed
-            // (hr_payslip.py:971-973). This is that guard, moved to the client.
             action_payslip_paid: (states) =>
                 states.every((state) => ["validated", "paid"].includes(state)),
-            // action_payslip_draft resets whatever it is given
-            // (hr_payslip.py:802-816), so it has nothing to refuse.
             action_payslip_draft: () => true,
         };
     }
@@ -103,8 +93,6 @@ export class PayslipListController extends ListController {
         }
         const tolerates = this.headerButtonRules[button.clickParams.name];
         if (!tolerates) {
-            // Not a state transition -- Compute Sheet, Confirm -- so there is
-            // no state for it to be wrong about.
             return true;
         }
         const states = this.state.selectionStates?.map((s) => s.state) ?? [];

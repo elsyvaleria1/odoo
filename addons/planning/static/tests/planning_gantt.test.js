@@ -67,14 +67,14 @@ const getProgressBars = () => ({
             is_flexible: false,
             avg_hours: 8,
             work_intervals: [
-                ["2022-10-10 06:00:00", "2022-10-10 10:00:00"], //Monday    4h
-                ["2022-10-11 06:00:00", "2022-10-11 10:00:00"], //Tuesday   5h
+                ["2022-10-10 06:00:00", "2022-10-10 10:00:00"],
+                ["2022-10-11 06:00:00", "2022-10-11 10:00:00"],
                 ["2022-10-11 11:00:00", "2022-10-11 12:00:00"],
-                ["2022-10-12 06:00:00", "2022-10-12 10:00:00"], //Wednesday 6h
+                ["2022-10-12 06:00:00", "2022-10-12 10:00:00"],
                 ["2022-10-12 11:00:00", "2022-10-12 13:00:00"],
-                ["2022-10-13 06:00:00", "2022-10-13 10:00:00"], //Thursday  7h
+                ["2022-10-13 06:00:00", "2022-10-13 10:00:00"],
                 ["2022-10-13 11:00:00", "2022-10-13 14:00:00"],
-                ["2022-10-14 06:00:00", "2022-10-14 10:00:00"], //Friday    8h
+                ["2022-10-14 06:00:00", "2022-10-14 10:00:00"],
                 ["2022-10-14 11:00:00", "2022-10-14 15:00:00"],
             ],
         },
@@ -132,10 +132,6 @@ async function recurrenceDeletionTemplate(mode) {
 function _getCreateViewArgsForGanttViewTotalsTests() {
     mockDate("2022-10-13 00:00:00", +1);
     ResourceResource._records = [{ id: 1, name: "Resource 1" }];
-    // Assigned, not pushed: `_records` is a class property that outlives the
-    // test, so pushing a hardcoded `id: 1` here worked for the first of this
-    // helper's nine callers and gave the other eight
-    // `MockServerError: Duplicate ID 1 in model "planning.slot"`.
     PlanningSlot._records = [
         {
             id: 1,
@@ -350,7 +346,6 @@ test("gantt view collapse and expand empty rows in multi groupby", async functio
 test("gantt view totals height is taking unavailability into account instead of pills count", async function () {
     await mountGanttView(_getCreateViewArgsForGanttViewTotalsTests());
 
-    // 2022-10-09 and 2022-10-15 are days off => no pill has to be found in first and last columns
     expect(
         queryAll(".o_gantt_row_total .o_gantt_pill_wrapper").map(
             (el) => el.style.gridColumn.split(" / ")[0],
@@ -360,16 +355,9 @@ test("gantt view totals height is taking unavailability into account instead of 
             "2022-10-09 and 2022-10-15 are days off => no pill has to be found in first and last columns",
     });
 
-    // Max of allocated hours = 4:00 (50% * 8:00)
     expect(
         queryAll(".o_gantt_row_total .o_gantt_pill").map((el) => el.style.height),
-    ).toEqual([
-        "45%", // => 2:00 = 50% of 4:00 => 0.5 * 90% = 45%
-        "56.25%", // => 2:30 = 62.5% of 4:00 => 0.625 * 90% = 56.25%
-        "67.5%", // => 3:00 = 75% of 4:00 => 0.75 * 90% = 67.5%
-        "78.75%", // => 3:30 = 87.5% of 4:00 => 0.85 * 90% = 78.75%
-        "90%", // => 4:00 = 100% of 4:00 => 1 * 90% = 90%
-    ]);
+    ).toEqual(["45%", "56.25%", "67.5%", "78.75%", "90%"]);
 });
 
 test("gantt view totals are taking unavailability into account for the total display", async function () {
@@ -416,9 +404,9 @@ test("reload data after having unlink a record in planning_form", async function
     expect(".o_gantt_cells .o_gantt_pill").toHaveCount(1);
 
     await editPill("test");
-    await click(".modal footer button[name=unlink]"); // click on trash icon
+    await click(".modal footer button[name=unlink]");
     await animationFrame();
-    await click(".o-overlay-item:nth-child(2) .modal footer button:nth-child(1)"); // click on "Ok" in confirmation dialog
+    await click(".o-overlay-item:nth-child(2) .modal footer button:nth-child(1)");
     await animationFrame();
 
     expect(".o_gantt_cells .o_gantt_pill").toHaveCount(0);
@@ -449,9 +437,6 @@ test("progress bar has the correct unit", async () => {
 });
 
 test("total computes correctly for open shifts", async () => {
-    // For open shifts and shifts with flexible resource, the total should be computed
-    // based on the shifts' duration, each maxed to the calendar's hours per day.
-    // Not based on the intersection of the shifts and the calendar.
     const createViewArgs = _getCreateViewArgsForGanttViewTotalsTests();
     PlanningSlot._records[0] = {
         id: 1,
@@ -531,7 +516,6 @@ test("the grouped gantt view is coloured correctly and the occupancy percentage 
 
     const groupPillHeaders = queryAll(".o_gantt_group_pill");
     expect(groupPillHeaders.length).toBe(3);
-    // Tuesday
     expect(groupPillHeaders[0].firstChild).toHaveClass("bg-warning border-warning", {
         message:
             "The grouped pill should be orange because the resource is under planned",
@@ -540,7 +524,6 @@ test("the grouped gantt view is coloured correctly and the occupancy percentage 
         message:
             "The grouped pill occupancy percentage should be 40% because a shift of 2 hours was allocated and we expect 5 working hours on Tuesday",
     });
-    // Wednesday
     expect(groupPillHeaders[1].firstChild).toHaveClass("bg-success border-success", {
         message:
             "The grouped pill should be green because the resource is perfectly planned",
@@ -549,7 +532,6 @@ test("the grouped gantt view is coloured correctly and the occupancy percentage 
         message:
             "The grouped pill occupancy percentage should be 100% because a shift of 6 hours was allocated and we expect 6 working hours on Wednesday",
     });
-    // Thursday
     expect(groupPillHeaders[2].firstChild).toHaveClass("bg-danger border-danger", {
         message: "The grouped pill should be red because the resource is over planned",
     });
@@ -566,7 +548,7 @@ test("Gantt Planning : pill name should not display allocated hours if allocated
             id: 1,
             name: "Shift 1",
             start_datetime: "2022-10-09 08:30:00",
-            end_datetime: "2022-10-09 17:30:00", // span only one day
+            end_datetime: "2022-10-09 17:30:00",
             allocated_hours: 4,
             allocated_percentage: 50,
         },
@@ -574,7 +556,7 @@ test("Gantt Planning : pill name should not display allocated hours if allocated
             id: 2,
             name: "Shift 2",
             start_datetime: "2022-10-09 08:30:00",
-            end_datetime: "2022-10-09 17:30:00", // span only one day
+            end_datetime: "2022-10-09 17:30:00",
             allocated_hours: 8,
             allocated_percentage: 100,
         },
@@ -639,10 +621,8 @@ test("Resize or Drag-Drop should open recurrence update wizard", async () => {
         title: "Shift With Repeat",
     });
 
-    // move a pill in the next cell (+1 day)
     const { drop } = await dragPill("Shift With Repeat");
     await drop({ row: "Resource 1", columnHeader: "12", groupHeader: "October 2022" });
-    // click on the confirm button
     await click(".modal .btn-primary");
     await animationFrame();
     expect(getGridContent().rows[3]).toEqual({
@@ -656,9 +636,7 @@ test("Resize or Drag-Drop should open recurrence update wizard", async () => {
         title: "Shift With Repeat",
     });
 
-    // resize a pill in the next cell (+1 day)
     await resizePill(getPillWrapper("Shift With Repeat"), "end", 1);
-    // click on the confirm button
     await click(".modal .btn-primary");
     await animationFrame();
     expect(getGridContent().rows[3]).toEqual({
@@ -700,7 +678,7 @@ test("Test split tool in gantt view", async function () {
             end_datetime: "2022-10-10 23:59:59",
         });
         expect.step("split_pill");
-        return 3; // copiedShiftId
+        return 3;
     });
 
     await mountGanttView({
@@ -846,7 +824,7 @@ test("Test highlight shifts added by executed action", async function () {
 
     await click(".o_control_panel_main_buttons button > i.fa-caret-down");
     await animationFrame();
-    await click(".o_popover.dropdown-menu .o_gantt_button_auto_plan"); // click on copy button in desktop view
+    await click(".o_popover.dropdown-menu .o_gantt_button_auto_plan");
     await animationFrame();
     expect(".o_notification").toHaveCount(2, {
         message: "2 notifications should be displayed.",
@@ -1116,7 +1094,6 @@ test("publish on gantt view: default end_datetime should cover full range", asyn
 
     mockTimeZone(0);
     mockDate("2018-11-20 18:00:00");
-    // Expect env localization with {weekStart: 7}
     const ranges = [
         ["Day", "2018-11-20 23:59:59"],
         ["Week", "2018-11-24 23:59:59"],
@@ -1192,7 +1169,6 @@ test("allocated percentage according to user work schedule ", async () => {
         { id: 3, name: "Tanjiro", type: "human" },
     ];
     PlanningSlot._records = [
-        // Normal Resource
         {
             id: 1,
             name: "Normal Shift",
@@ -1201,7 +1177,6 @@ test("allocated percentage according to user work schedule ", async () => {
             resource_id: 1,
             allocated_percentage: 100,
         },
-        // Flexible Resource
         {
             id: 2,
             name: "Flexible Shift",
@@ -1211,7 +1186,6 @@ test("allocated percentage according to user work schedule ", async () => {
             allocated_hours: 4,
             allocated_percentage: 100,
         },
-        // Fully Flexible Resource
         {
             id: 3,
             name: "Fully Flexible Shift",

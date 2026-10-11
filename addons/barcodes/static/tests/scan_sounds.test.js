@@ -24,7 +24,6 @@ class FakeAudio {
 
     play() {
         expect.step(`play ${this.src} from ${this.currentTime}`);
-        // it plays on: a replay must rewind it
         this.currentTime = 1.5;
         return FakeAudio.refuse
             ? Promise.reject(new DOMException("", "NotAllowedError"))
@@ -42,8 +41,6 @@ test("scan sounds preload once, restart on play, and report a refusal", async ()
     expect(await sounds.play("error")).toBe(true);
     expect.verifySteps([`play ${src} from 0`]);
 
-    // A browser that refuses to play (autoplay policy) must not surface as an
-    // uncaught promise error: the refusal is the caller's to act on.
     patchWithCleanup(FakeAudio, { refuse: true });
     expect(await sounds.play("error")).toBe(false);
     expect.verifySteps([`play ${src} from 0`]);

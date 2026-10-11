@@ -25,11 +25,6 @@ export const MacrosFileMixin = (T, template) =>
                 this.knowledgeCommandsService.getCommandsRecordInfo();
         }
 
-        /**
-         * Callback function called when the user clicks on the "Send as Message" button.
-         * The function will execute a macro that will open the last opened form view,
-         * compose a new message and attach the associated file to it.
-         */
         async onClickAttachToMessage() {
             const dataTransfer = new DataTransfer();
             try {
@@ -38,11 +33,6 @@ export const MacrosFileMixin = (T, template) =>
                 const file = new File([blob], this.fileModel.name, {
                     type: blob.type,
                 });
-                /**
-                 * dataTransfer will be used to mimic a drag and drop of
-                 * the file in the target record chatter.
-                 * @see AbstractMacro
-                 */
                 dataTransfer.items.add(file);
             } catch {
                 return;
@@ -58,11 +48,6 @@ export const MacrosFileMixin = (T, template) =>
             macro.start();
         }
 
-        /**
-         * Callback function called when the user clicks on the "Use As Attachment" button.
-         * The function will execute a macro that will open the last opened form view
-         * and add the associated file to the attachments of the chatter.
-         */
         async onClickUseAsAttachment() {
             let attachment;
             try {

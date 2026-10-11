@@ -17,6 +17,4 @@ function gridUpdateCell({ args, kwargs, model }) {
     return false;
 }
 
-// Register inside a global `beforeEach` (not module top-level) so the route is
-// applied before every test under native ESM.
 beforeEach(() => onRpc("grid_update_cell", gridUpdateCell), { global: true });

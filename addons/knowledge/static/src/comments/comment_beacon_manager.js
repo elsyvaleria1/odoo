@@ -25,10 +25,8 @@ function binarySearch(comparator, needle, array) {
 export function compareDOMPosition(a, b) {
     const compare = a.compareDocumentPosition(b);
     if (compare & 2) {
-        // b before a
         return 1;
     } else if (compare & 4) {
-        // a before b
         return -1;
     } else {
         return 0;
@@ -113,10 +111,8 @@ export class CommentBeaconManager {
         const starts = {};
         const beaconPairs = {};
         this.bogusBeacons = new Set();
-        // loop validates that start is before end for beaconPairs
         for (const beacon of [...this.beacons]) {
             if (beacon.dataset.oeType === "threadBeaconStart") {
-                // Don't consider other peers "undefined" beacons
                 if (
                     beacon.dataset.id !== "undefined" ||
                     beacon.dataset.peerId === this.peerId
@@ -144,7 +140,6 @@ export class CommentBeaconManager {
             }
         }
         for (const beacon of [...this.bogusBeacons]) {
-            // preserve peer "undefined" beacons
             if (
                 beacon.dataset.id === "undefined" &&
                 beacon.dataset.peerId !== this.peerId
@@ -153,7 +148,6 @@ export class CommentBeaconManager {
             }
         }
         for (const beacon of this.pendingBeacons) {
-            // preserve pending beacons
             this.bogusBeacons.delete(beacon);
         }
         const threadIds = new Set(Object.keys(beaconPairs));
@@ -305,8 +299,6 @@ export class CommentBeaconManager {
                 ) {
                     return;
                 }
-                // Faster than elementsFromPoint, but some rects will be omitted
-                // if they are under another element like the editor toolbar.
                 const target = this.document.elementFromPoint(
                     big.x + big.width / 2,
                     big.y + big.height / 2,
@@ -497,15 +489,12 @@ export class CommentBeaconManager {
     }
 
     validate(beaconPair) {
-        // is in DOM
         if (!beaconPair.start.isConnected || !beaconPair.end.isConnected) {
             return false;
         }
-        // start is before end
         if (compareDOMPosition(beaconPair.start, beaconPair.end) !== -1) {
             return false;
         }
-        // is related to the correct article
         if (
             parseInt(beaconPair.start.dataset.res_id) !==
                 this.commentsState.articleId ||
@@ -513,7 +502,6 @@ export class CommentBeaconManager {
         ) {
             return false;
         }
-        // is deleted
         if (this.commentsState.deletedThreadIds.has(beaconPair.start.dataset.id)) {
             return false;
         }
@@ -525,7 +513,6 @@ export class CommentBeaconManager {
         ) {
             return false;
         }
-        // contains no visible text
         if (this.computeTextMap(beaconPair).join("").trim() === "") {
             return false;
         }
@@ -533,7 +520,6 @@ export class CommentBeaconManager {
     }
 
     removeDuplicate(beacon) {
-        // while element at position search compared
         let index = this.searchBeaconIndexByThreadId(beacon, this.beaconsByThreadId);
         let currentBeacon = this.beaconsByThreadId.at(index);
         while (currentBeacon && !compareBeaconsThreadIds(beacon, currentBeacon)) {
@@ -548,8 +534,6 @@ export class CommentBeaconManager {
     }
 
     preserveExistingBeaconPair(beaconPair) {
-        // issue: should remove duplicates even if there is no concurrentBeaconPair
-        // already exists and is valid elsewhere => keep existing
         const concurrentBeaconPair = this.beaconPairs[beaconPair.start.dataset.id];
         if (
             concurrentBeaconPair &&
@@ -607,7 +591,6 @@ export class CommentBeaconManager {
 
     removeBogusBeacons() {
         for (const beacon of this.bogusBeacons) {
-            // TODO ABD: evaluate cleanupThread ?
             this.cleanupBeaconPair(beacon.dataset.id);
             this.removeBeacon(beacon);
         }

@@ -2,7 +2,6 @@
 import { captchaProviders } from "@captcha/captcha";
 import { loadJS } from "@web/core/assets";
 
-/** reCAPTCHA v3: invisible, a token asked for at each submission. */
 export const recaptcha = {
     label: "reCAPTCHA",
     legalTemplate: "captcha_recaptcha.legal_terms",

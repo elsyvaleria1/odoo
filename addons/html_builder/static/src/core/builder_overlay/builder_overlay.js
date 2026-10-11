@@ -8,7 +8,6 @@ import {
 } from "@html_builder/utils/grid_layout_utils";
 import { renderToElement } from "@web/core/utils/render";
 
-// TODO move them elsewhere.
 export const sizingY = {
     selector: "section, .row > div, .parallax, .s_hr, .carousel-item, .s_rating",
     exclude:
@@ -47,7 +46,6 @@ export class BuilderOverlay {
         this.hasSizingHandles = this.hasSizingHandles();
         this.handlesWrapperEl = this.overlayElement.querySelector(".o_handles");
         this.handleEls = this.overlayElement.querySelectorAll(".o_handle");
-        // Avoid "querySelectoring" the handles every time.
         this.yHandles = this.handlesWrapperEl.querySelectorAll(
             `.n:not(.o_grid_handle), .s:not(.o_grid_handle)`,
         );
@@ -71,15 +69,7 @@ export class BuilderOverlay {
         return this.isResizableY() || this.isResizableX() || this.isResizableGrid();
     }
 
-    // displayOverlayOptions(el) {
-    //     // TODO when options will be more clear:
-    //     // - moving
-    //     // - timeline
-    //     // (maybe other where `displayOverlayOptions: true`)
-    // }
-
     isActive() {
-        // TODO active still necessary ? (check when we have preview mode)
         return this.overlayElement.matches(".oe_active, .o_we_overlay_preview");
     }
 
@@ -90,7 +80,6 @@ export class BuilderOverlay {
 
         const openModalEl = this.overlayTarget.querySelector(".modal.show");
         const overlayTarget = openModalEl ? openModalEl : this.overlayTarget;
-        // TODO transform
         const iframeRect = this.iframe.getBoundingClientRect();
         const overlayContainerRect = this.overlayContainer.getBoundingClientRect();
         const targetRect = overlayTarget.getBoundingClientRect();
@@ -128,12 +117,9 @@ export class BuilderOverlay {
             const isMobile = this.isMobileView(this.overlayTarget);
             const isGridOn = this.overlayTarget.classList.contains("o_grid_item");
             const isGrid = !isMobile && isGridOn;
-            // Hiding/showing the correct resize handles if we are in grid mode
-            // or not.
             this.handleEls.forEach((handleEl) => {
                 const isGridHandle = handleEl.classList.contains("o_grid_handle");
                 handleEl.classList.toggle("d-none", isGrid ^ isGridHandle);
-                // Disabling the vertical resize if we are in mobile view.
                 const isVerticalSizing = handleEl.matches(".n, .s");
                 handleEl.classList.toggle(
                     "readonly",
@@ -173,10 +159,6 @@ export class BuilderOverlay {
             handleEl.removeEventListener("pointerdown", this._onSizingStart),
         );
     }
-
-    //--------------------------------------------------------------------------
-    // Sizing
-    //--------------------------------------------------------------------------
 
     isResizableY() {
         return (
@@ -272,7 +254,7 @@ export class BuilderOverlay {
             const padding = window.getComputedStyle(this.overlayTarget)[
                 `padding-${topOrBottom}`
             ];
-            handleEl.style.height = padding; // TODO outerHeight (deduce borders ?)
+            handleEl.style.height = padding;
         });
     }
 
@@ -299,7 +281,6 @@ export class BuilderOverlay {
 
     onResizeX(compass, initialClasses, currentIndex) {
         const resolutionModifier = this.isMobile ? "" : `${this.mobileBreakpoint}-`;
-        // (?!\S): following char cannot be a non-space character
         const offsetRegex = new RegExp(
             `(?:^|\\s+)offset-${resolutionModifier}(\\d{1,2})(?!\\S)`,
         );
@@ -310,8 +291,6 @@ export class BuilderOverlay {
         const initialOffset = Number(initialClasses.match(offsetRegex)?.[1] || 0);
 
         if (compass === "w") {
-            // Replacing the col class so the right border does not move when we
-            // change the offset.
             const initialCol = Number(initialClasses.match(colRegex)?.[1] || 12);
             let offset = Number(
                 this.overlayTarget.className.match(offsetRegex)?.[1] || 0,
@@ -331,7 +310,6 @@ export class BuilderOverlay {
                 );
             }
 
-            // Add/remove the `offset-lg-0` class when needed.
             if (this.isMobile && offset === 0) {
                 this.overlayTarget.classList.remove(
                     `offset-${this.mobileBreakpoint}-0`,
@@ -355,8 +333,6 @@ export class BuilderOverlay {
             }
         } else if (initialOffset > 0) {
             const col = Number(this.overlayTarget.className.match(colRegex)?.[1] || 0);
-            // Avoid overflowing to the right if the column size + the offset
-            // exceeds 12.
             if (col + initialOffset > 12) {
                 this.replaceSizingClass(
                     colRegex,
@@ -438,7 +414,6 @@ export class BuilderOverlay {
                 style.gridRowEnd = currentIndex + 2;
             }
 
-            // Updating the grid height.
             const rowEl = this.overlayTarget.parentNode;
             const rowCount = parseInt(rowEl.dataset.rowCount);
             const backgroundGridEl = rowEl.querySelector(".o_we_background_grid");
@@ -531,7 +506,6 @@ export class BuilderOverlay {
 
         const directions = [];
         for (const [i, config] of currentConfig.entries()) {
-            // Compute the current index based on the current class/style.
             let currentIndex = 0;
             const cssProperty = config.cssProperty;
             const cssPropertyValue = parseInt(
@@ -571,7 +545,6 @@ export class BuilderOverlay {
         ev.preventDefault();
         const pointerDownTime = ev.timeStamp;
 
-        // Lock the mutex.
         let sizingResolve;
         const sizingProm = new Promise((resolve) => (sizingResolve = () => resolve()));
         this.next(async () => await sizingProm, {
@@ -584,8 +557,6 @@ export class BuilderOverlay {
         const isGridHandle = handleEl.classList.contains("o_grid_handle");
         this.isMobile = this.isMobileView(this.overlayTarget);
 
-        // If we are in grid mode, add a background grid and place it in front
-        // of the other elements.
         let rowEl, backgroundGridEl;
         if (isGridHandle) {
             rowEl = this.overlayTarget.parentNode;
@@ -607,10 +578,8 @@ export class BuilderOverlay {
 
         const directions = this.getDirections(ev, handleEl, sizingConfig);
 
-        // Set the cursor.
         const cursorClass = `${window.getComputedStyle(handleEl)["cursor"]}-important`;
         window.document.body.classList.add(cursorClass);
-        // Prevent the iframe from absorbing the pointer events.
         const iframeEl = this.overlayTarget.ownerDocument.defaultView.frameElement;
         iframeEl.classList.add("o_resizing");
 
@@ -622,17 +591,12 @@ export class BuilderOverlay {
                 const currentIndex = dir.currentIndex;
                 const currentValue = configValues[currentIndex];
 
-                // Get the number of pixels by which the pointer moved, compared
-                // to the initial position of the handle.
                 let deltaRaw = ev[`page${dir.XY}`] - dir.initialPageXY;
-                // In RTL mode, reverse only horizontal movement (X axis).
                 if (dir.XY === "X" && this.isRtl) {
                     deltaRaw = -deltaRaw;
                 }
                 const delta = deltaRaw + configValues[dir.initialIndex];
 
-                // Compute the indexes of the next step and the step before it,
-                // based on the delta.
                 let nextIndex, beforeIndex;
                 if (delta > currentValue) {
                     const nextValue = configValues.find((v) => v > delta);
@@ -651,8 +615,6 @@ export class BuilderOverlay {
 
                 let change = false;
                 if (delta !== currentValue) {
-                    // First, catch up with the pointer (in the case we moved
-                    // really fast).
                     if (beforeIndex !== currentIndex) {
                         this.replaceSizingClass(
                             dir.classRegex,
@@ -661,10 +623,6 @@ export class BuilderOverlay {
                         dir.currentIndex = beforeIndex;
                         change = true;
                     }
-                    // If the pointer moved by at least 2/3 of the space between
-                    // the current and the next step, the handle is snapped to
-                    // the next step and the class is replaced by the one
-                    // matching this step.
                     const threshold =
                         (2 * configValues[nextIndex] + configValues[dir.currentIndex]) /
                         3;
@@ -683,7 +641,6 @@ export class BuilderOverlay {
 
                 if (change) {
                     onResize(dir.compass, dir.initialClasses, dir.currentIndex);
-                    // TODO notify other options (e.g. steps)
                 }
             }
         };
@@ -696,9 +653,6 @@ export class BuilderOverlay {
             iframeEl.classList.remove("o_resizing");
             this.overlayElement.classList.add("o_handlers_idle");
 
-            // If we are in grid mode, removes the background grid.
-            // Also sync the col-* class with the g-col-* class so the
-            // toggle to normal mode and the mobile view are well done.
             if (isGridHandle) {
                 backgroundGridEl.remove();
                 resizeGrid(rowEl);
@@ -713,8 +667,6 @@ export class BuilderOverlay {
                 this.overlayTarget.classList.add(gColClass.substring(2));
             }
 
-            // Cancel the sizing if the element was not resized (to not have
-            // mutations).
             const wasResized = !directions.every(
                 (dir) => dir.initialIndex === dir.currentIndex,
             );
@@ -724,23 +676,17 @@ export class BuilderOverlay {
                 cancelSizing();
             }
 
-            // Free the mutex.
             sizingResolve();
 
-            // If no resizing happened and if the pointer was down less than
-            // 500 ms, we assume that the user wanted to click on the element
-            // behind the handle.
             if (!wasResized) {
                 const pointerUpTime = ev.timeStamp;
                 const pointerDownDuration = pointerUpTime - pointerDownTime;
                 if (pointerDownDuration < 500) {
-                    // Find the first element behind the overlay.
                     const sameCoordinatesEls =
                         this.overlayTarget.ownerDocument.elementsFromPoint(
                             ev.pageX,
                             ev.pageY,
                         );
-                    // Check if it has native JS `click` function
                     const toBeClickedEl = sameCoordinatesEls.find(
                         (el) =>
                             !this.overlayContainer.contains(el) &&

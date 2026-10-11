@@ -14,7 +14,6 @@ export function makeAwaitable(dialog, comp, props, options) {
     }).finally(() => endDialog({ component: comp.name }));
 }
 
-// Return cleanup failures to the dialog service as well as the pending caller.
 function closeWithCleanup(options, resolve, reject) {
     return async (...args) => {
         try {

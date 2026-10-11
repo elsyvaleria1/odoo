@@ -30,7 +30,6 @@ const CALENDAR_ARCH = `
         <field name="is_striked" invisible="1"/>
     </calendar>`;
 
-/** The pending request an approver sees: they may approve it and refuse it. */
 function setupApprovableLeave() {
     mockDate("2024-01-03 12:00:00", 0);
     patchWithCleanup(user, { userId: 100 });

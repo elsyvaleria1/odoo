@@ -140,8 +140,6 @@ test("hr.timesheet (grid)(timer): basics", async () => {
     expect("button.btn_timer_line").toHaveCount(5, {
         message: "A 'start' button should be rendered before each line",
     });
-    // Can't do `queryAllTexts` because it retrieves innerText, which is lowercase
-    // because of a Bootstrap class on the buttons
     expect(
         queryAllProperties("button.btn_timer_line", "textContent").every(
             (text) => text === text.toUpperCase(),
@@ -214,14 +212,14 @@ test("hr.timesheet (grid)(timer): basics without Add a line button", async () =>
 test("hr.timesheet (grid)(timer): timer already running", async () => {
     HRTimesheet._records.push({
         id: 10,
-        unit_amount: 5740 / 3600, // 01:35:40
+        unit_amount: 5740 / 3600,
         project_id: 1,
         task_id: 1,
         name: "Description",
     });
     onRpc("get_running_timer", () => ({
         id: 10,
-        unit_amount: 5740 / 3600, // 01:35:40
+        unit_amount: 5740 / 3600,
         project_id: [1, "P1"],
         task_id: [1, "BS task"],
         name: "Description",
@@ -258,7 +256,7 @@ test("hr.timesheet (grid)(timer): timer already running", async () => {
 test("hr.timesheet (grid)(timer): stop running timer then restart new one", async () => {
     HRTimesheet._records.push({
         id: 10,
-        unit_amount: 5740 / 3600, // 01:35:40
+        unit_amount: 5740 / 3600,
         project_id: 1,
         task_id: 1,
         name: "Description",
@@ -269,7 +267,7 @@ test("hr.timesheet (grid)(timer): stop running timer then restart new one", asyn
             return {
                 step_timer: 30,
                 id: 10,
-                unit_amount: 5740 / 3600, // 01:35:40
+                unit_amount: 5740 / 3600,
                 project_id: [1, "P1"],
                 task_id: [1, "BS task"],
                 name: "Description",
@@ -300,7 +298,6 @@ test("hr.timesheet (grid)(timer): stop running timer then restart new one", asyn
     expect(".o_grid_row_timer .fa-stop").toHaveCount(0, {
         message: "No row should have a timer running",
     });
-    // When stopping the timer, a reload of the view should not be triggered since there was an active row for the current timesheet
     expect.verifySteps([]);
 
     await clickTimerButton("start");
@@ -330,7 +327,7 @@ test("hr.timesheet (grid)(timer): stop running timer then restart new one", asyn
 test("hr.timesheet (grid)(timer): drop running timer then restart new one", async () => {
     HRTimesheet._records.push({
         id: 10,
-        unit_amount: 5740 / 3600, // 01:35:40
+        unit_amount: 5740 / 3600,
         project_id: 1,
         task_id: 1,
         name: "Description",
@@ -389,9 +386,6 @@ test("hr.timesheet (grid)(timer): drop running timer then restart new one", asyn
 });
 
 test("hr.timesheet (grid)(timer): start buttons with groupBy", async () => {
-    // `arch` and `searchViewArch` args sound overkill, but actually,
-    // if `searchViewArch` is not given, the search view is created.
-    // And if it is given, you need to give `arch` too.
     await mountView({
         type: "grid",
         resModel: "account.analytic.line",
@@ -448,7 +442,6 @@ test("hr.timesheet (grid)(timer): start button with shift", async () => {
         );
 
     checkHeaderText();
-    // activeElement should be the start button
     await keyDown("shift");
     await animationFrame();
     checkHeaderText();
@@ -715,7 +708,7 @@ test("hr.timesheet (grid)(timer): check that individual and total overtime are p
 
     await hover(columnTotalEl);
     await animationFrame();
-    await advanceTime(10); // debounce on mouse over event.
+    await advanceTime(10);
     expect(
         ".o_grid_bar_chart_container.o_grid_highlighted .o_grid_bar_chart_overtime",
     ).toBeVisible({
@@ -880,10 +873,6 @@ test("hr.timesheet (grid)(timer): start and stop timer with GridTimerButton (key
     expect(timerHeaderSelectors.start).toHaveCount(1, {
         message: "The timer should be stopped",
     });
-    // `.btn_timer_line.btn-danger` is the running state, asserted positively a
-    // few lines up. This read `.fa-stop-danger`, a class no markup has ever
-    // carried (the button renders `fa-stop` and `btn-danger` separately), so the
-    // assertion matched nothing and passed whatever the timer was doing.
     expect(".btn_timer_line.btn-danger").toHaveCount(0, {
         message:
             "The running timer in the row with the GridTimerButton with 'a' letter in the grid should be stopped",
@@ -1013,8 +1002,6 @@ test("hr.timesheet (grid)(timer): start timer and create a new project and a new
         name: "",
     }));
     onRpc("action_timer_stop", function ({ args }) {
-        // The newly created timesheet need to be pushed on the mockserver model otherwise it will not be fetched
-        // on the reload of the view. The new line will then not be created either, failing the assert on row count.
         const [line] = this.env["account.analytic.line"].browse(args[0]);
         this.env["account.analytic.line"].create({
             project_id: line.project_id,
@@ -1042,7 +1029,6 @@ test("hr.timesheet (grid)(timer): start timer and create a new project and a new
         groupBy: ["project_id", "task_id"],
     });
 
-    // Create a new timesheet with a new project.
     expect(".o_grid_row_title").toHaveCount(5, {
         message: "The view should have 5 rows rendered",
     });
@@ -1055,10 +1041,8 @@ test("hr.timesheet (grid)(timer): start timer and create a new project and a new
     expect(".o_grid_row_title").toHaveCount(6, {
         message: "The view should have 6 rows rendered",
     });
-    // When stopping the timer, a reload of the view should be triggered since there were no active row for the current project
     expect.verifySteps(["Reload"]);
 
-    // Create a new timesheet with a new task in an existing project.
     await clickTimerButton("start");
     await selectFieldDropdownItem("project_id", "P1");
     await clickFieldDropdown("task_id");
@@ -1069,7 +1053,6 @@ test("hr.timesheet (grid)(timer): start timer and create a new project and a new
     expect(".o_grid_row_title").toHaveCount(7, {
         message: "The view should have 7 rows rendered",
     });
-    // When stopping the timer, a reload of the view should be triggered since there were no active row for the tuple project > task
     expect.verifySteps(["Reload"]);
 });
 
@@ -1131,7 +1114,7 @@ test("hr.timesheet (grid)(timer): display sample data and then data + fetch last
     await removeFacet("Nothing");
     expect(".o_grid_sample_data").toHaveCount(0);
     expect(".o_grid_row_title").toHaveCount(6);
-    expect.verifySteps(["get_last_validated_timesheet_date"]); // the rpc should be called only once
+    expect.verifySteps(["get_last_validated_timesheet_date"]);
 });
 
 test("hr.timesheet (grid)(timer): start button is always in focus", async () => {
@@ -1149,21 +1132,15 @@ test("hr.timesheet (grid)(timer): start button is always in focus", async () => 
         resModel: "account.analytic.line",
     });
 
-    // At each mount and patch Start Button should be in focus
     expect(timerHeaderSelectors.start).toHaveCount(1);
     expect(timerHeaderSelectors.start).toBeFocused();
 
-    // Click on a clickable button/action should be accessible and should not be disturbed
-    // Force focus must not disturb other clicks
     await click(".o_grid_row:not(.o_grid_row_title, .o_grid_row_timer)");
     await expect(waitFor(".o_grid_component div input")).resolves.toBeFocused();
 
-    // Click on body which doesn't have any fields/actions must make Start button to come in focus
     await click(document.body);
     expect(timerHeaderSelectors.start).toBeFocused();
 
-    // Check click on select in search popover doesn't focus Start button to avoid unintended effects (e.g. closing an
-    // opened dropdown)
     await click("button.o_searchview_dropdown_toggler");
     await animationFrame();
     await click("button.o_menu_item");
@@ -1187,24 +1164,17 @@ test("hr.timesheet (grid)(timer): stop button is always in focus", async () => {
     });
 
     await clickTimerButton("start");
-    // At each mount and patch Stop Button should be in focus
     expect(timerHeaderSelectors.stop).toHaveCount(1);
     expect(timerHeaderSelectors.stop).toBeFocused();
 
-    // Click on a clickable button/input should be accessible and should not be disturbed
-    // Force focus must not disturb other clicks/inputs
     await click('.o_field_many2one[name="project_id"] input');
     expect('.o_field_many2one[name="project_id"] input').toBeFocused();
 
-    // Click on body which doesn't have any fields/actions must make Stop button to come in focus
     await click(document.body);
     expect(timerHeaderSelectors.stop).toBeFocused();
 });
 
 test("hr.timesheet (grid)(timer): the running timer's row is found under a section", async () => {
-    // `_searchRowWithTimer` used to spell the row key by hand and put the raw
-    // section value where web_grid puts `/|\\<id>`, so a sectioned grid never
-    // found the running timer's row.
     let model;
     patchWithCleanup(TimerTimesheetGridModel.prototype, {
         setup() {
@@ -1242,11 +1212,6 @@ test("hr.timesheet (grid)(timer): the running timer's row is found under a secti
 });
 
 test("hr.timesheet (grid)(timer): sectioned by employee, the inline add-a-line row renders", async () => {
-    // The timer renderer replaced the parent's last-validated-date fetch
-    // without calling it, so the per-employee dates were never read and
-    // `displayAddLine` died on `employeeId in undefined`.
-    // The file-level stub answers the user's date; the per-employee call
-    // answers a dict, which the parent reads through `Object.entries`.
     onRpc("hr.employee", "get_last_validated_timesheet_date", () => ({}));
     await mountView({
         type: "grid",

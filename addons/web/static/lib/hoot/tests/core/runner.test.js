@@ -258,7 +258,6 @@ describe(parseUrl(import.meta.url), () => {
         const reported = [];
         runner._reportFailedTest = (test, reasons) =>
             reported.push([test.fullName, reasons.join("\n")]);
-        // the nested run's own verdict lines would read as this page's
         runner.stop = async () => false;
 
         await runner.start();

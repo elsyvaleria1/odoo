@@ -7,7 +7,6 @@ import { registry } from "@web/core/registry";
 
 export class ColorPickerOption extends BaseOptionComponent {
     static template = "mass_mailing.ColorPickerOption";
-    // This selector targets all direct children of .oe_structure except nested structures
     static selector = `.note-editable .oe_structure > div:not(:has(> .o_mail_snippet_general)),
         .note-editable .oe_structure > .o_mail_snippet_general,
         .note-editable .oe_structure > .o_mail_snippet_general .o_cc,

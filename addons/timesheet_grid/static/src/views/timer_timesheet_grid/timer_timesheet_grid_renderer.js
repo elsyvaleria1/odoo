@@ -8,8 +8,6 @@ import { GridTimerButtonCell } from "../../components/grid_timer_button_cell/gri
 import { GridTimesheetTimerHeader } from "../../components/grid_timesheet_timer_header/grid_timesheet_timer_header.js";
 import { TimesheetGridRenderer } from "../timesheet_grid/timesheet_grid_renderer.js";
 
-// An answer that is no server date stays set but compares to nothing, as the
-// invalid date it used to become did: the add line stays hidden.
 const UNREADABLE_DATE = Symbol("unreadable date");
 
 function deserializeLastValidated(value) {
@@ -364,8 +362,6 @@ export class TimerTimesheetGridRenderer extends TimesheetGridRenderer {
     }
 
     async _getLastValidatedTimesheetDate(props = this.props) {
-        // The parent reads it per employee for a grid sectioned by employee;
-        // this one reads the current user's on top, not instead.
         await super._getLastValidatedTimesheetDate(props);
         const res = await props.model.orm.call(
             "res.users",

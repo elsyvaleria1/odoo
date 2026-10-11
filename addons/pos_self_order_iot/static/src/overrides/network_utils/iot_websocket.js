@@ -32,7 +32,7 @@ patch(IotWebsocket.prototype, {
             access_token,
             message: {
                 iot_identifiers: [iotBoxIdentifier],
-                iot_identifier: iotBoxIdentifier, // compatibility with v19.1+ IoT Boxes
+                iot_identifier: iotBoxIdentifier,
                 session_id: messageId,
                 ...message,
             },

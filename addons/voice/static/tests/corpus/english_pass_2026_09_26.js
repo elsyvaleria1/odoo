@@ -1,8 +1,5 @@
 // @ts-check
 
-// The LMMG recordings decoded once more with language=en, as the second pass
-// would with the command model (sherpa-onnx whisper small-int8, voice
-// detection first), 2026-09-26.
 /** @type {Record<string, { small: string }>} */
 export const HEARD_IN_ENGLISH = {
     "c001.wav": { small: "Open Vintas." },

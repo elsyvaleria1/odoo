@@ -222,7 +222,7 @@ describe("Pivot custom groups", () => {
                 GroupedProducts: {
                     parentField: "product_id",
                     name: "GroupedProducts",
-                    groups: [{ name: "Group1", values: [37, 41, 200, false] }], // Add false to the group
+                    groups: [{ name: "Group1", values: [37, 41, 200, false] }],
                 },
             },
         });
@@ -377,7 +377,7 @@ describe("Pivot custom groups menu items", () => {
         });
         await waitForDataLoaded(model);
 
-        setSelection(model, "C1:E1"); // "xpad", "chair", "table" column headers
+        setSelection(model, "C1:E1");
         await doMenuAction(cellMenuRegistry, ["pivot_headers_group"], env);
         const definition = model.getters.getPivotCoreDefinition(pivotId);
         expect(definition.customFields).toEqual({
@@ -411,7 +411,7 @@ describe("Pivot custom groups menu items", () => {
         });
         await waitForDataLoaded(model);
 
-        setSelection(model, "B1:C1"); // "xphone", "xpad" column headers
+        setSelection(model, "B1:C1");
         await doMenuAction(cellMenuRegistry, ["pivot_headers_group"], env);
         const definition = model.getters.getPivotCoreDefinition(pivotId);
         expect(definition.customFields).toEqual({
@@ -445,7 +445,7 @@ describe("Pivot custom groups menu items", () => {
         });
         await waitForDataLoaded(model);
 
-        setSelection(model, "B1:C1"); // "aaGroup", "xPad" column headers
+        setSelection(model, "B1:C1");
         await doMenuAction(cellMenuRegistry, ["pivot_headers_group"], env);
         const definition = model.getters.getPivotCoreDefinition(pivotId);
         expect(definition.customFields).toEqual({
@@ -481,7 +481,7 @@ describe("Pivot custom groups menu items", () => {
         });
         await waitForDataLoaded(model);
 
-        setSelection(model, "B1"); // "MyGroup" column headers
+        setSelection(model, "B1");
         await doMenuAction(cellMenuRegistry, ["pivot_headers_ungroup"], env);
         await waitForDataLoaded(model);
         let definition = model.getters.getPivotCoreDefinition(pivotId);
@@ -493,7 +493,7 @@ describe("Pivot custom groups menu items", () => {
             },
         });
 
-        setSelection(model, "C2"); // "xpad" column headers
+        setSelection(model, "C2");
         await doMenuAction(cellMenuRegistry, ["pivot_headers_ungroup"], env);
         await waitForDataLoaded(model);
         definition = model.getters.getPivotCoreDefinition(pivotId);

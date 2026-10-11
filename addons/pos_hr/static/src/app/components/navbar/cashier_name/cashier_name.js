@@ -9,7 +9,6 @@ patch(CashierName.prototype, {
             this.cashierSelector = useCashierSelector();
         }
     },
-    //@Override
     get avatar() {
         if (this.pos.config.module_pos_hr) {
             const cashier = this.pos.getCashier();
@@ -20,7 +19,6 @@ patch(CashierName.prototype, {
         }
         return super.avatar;
     },
-    //@Override
     get cssClass() {
         if (this.pos.config.module_pos_hr) {
             return { oe_status: true };

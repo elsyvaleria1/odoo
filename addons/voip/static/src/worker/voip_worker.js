@@ -21,9 +21,6 @@ export class VoipWorker {
         }
     }
 
-    /**
-     * Clears callById from old calls, enabling their garbage collection.
-     */
     freeOldRefs() {
         const now = Date.now();
         for (const [id, call] of this.callById) {

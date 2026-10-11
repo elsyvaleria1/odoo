@@ -6,7 +6,6 @@ import { _t } from "@web/core/translation";
 export class InstrastReportFilters extends AccountReportFilters {
     get selectedIntrastatOptions() {
         const selectedIntrastatOptions = [];
-        // display selected options if any is selected and not all are selected
         const selected = this.controller.cachedFilterOptions["intrastat_type"]
             .filter((optType) => optType.selected)
             .map((optType) => optType.name);

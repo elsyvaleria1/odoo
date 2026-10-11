@@ -11,10 +11,6 @@ export class AppointmentInviteCopyClose extends Component {
     static props = { ...standardWidgetProps };
     static template = "calendar.booking.AppointmentInviteCopyClose";
     props = useProps(this.constructor.props);
-    /**
-     * We want to disable the "Save & Copy" button if there is a warning that could
-     * result to have an incorrect/empty link.
-     */
     setup() {
         this.dialogContext = useDialogContext();
         this.notification = useService("notification");
@@ -44,7 +40,6 @@ export class AppointmentInviteCopyClose extends Component {
             if (
                 this.action.currentController?.props?.resModel === "appointment.invite"
             ) {
-                // coming from an appointment.invite action, refresh the model state to show the changes
                 this.action.loadState();
             }
         });

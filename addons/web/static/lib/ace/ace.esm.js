@@ -62,15 +62,10 @@ var __copyProps = (to, from, except, desc) => {
   return to;
 };
 var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
   isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
   mod
 ));
 
-// node_modules/ace-code/src/lib/useragent.js
 var require_useragent = __commonJS({
   "node_modules/ace-code/src/lib/useragent.js"(exports) {
     "use strict";
@@ -112,7 +107,6 @@ var require_useragent = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/dom.js
 var require_dom = __commonJS({
   "node_modules/ace-code/src/lib/dom.js"(exports) {
     "use strict";
@@ -386,7 +380,6 @@ var require_dom = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/range.js
 var require_range = __commonJS({
   "node_modules/ace-code/src/range.js"(exports) {
     "use strict";
@@ -788,7 +781,6 @@ var require_range = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/oop.js
 var require_oop = __commonJS({
   "node_modules/ace-code/src/lib/oop.js"(exports) {
     "use strict";
@@ -815,7 +807,6 @@ var require_oop = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/deep_copy.js
 var require_deep_copy = __commonJS({
   "node_modules/ace-code/src/lib/deep_copy.js"(exports) {
     exports.deepCopy = function deepCopy(obj) {
@@ -839,7 +830,6 @@ var require_deep_copy = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/lang.js
 var require_lang = __commonJS({
   "node_modules/ace-code/src/lib/lang.js"(exports) {
     "use strict";
@@ -996,7 +986,6 @@ var require_lang = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/keys.js
 var require_keys = __commonJS({
   "node_modules/ace-code/src/lib/keys.js"(exports) {
     "use strict";
@@ -1084,7 +1073,6 @@ var require_keys = __commonJS({
       ArrowUp: 38,
       ArrowRight: 39,
       ArrowDown: 40,
-      // special keys
       Backquote: 192,
       Minus: 189,
       Equal: 187,
@@ -1173,7 +1161,6 @@ var require_keys = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/event.js
 var require_event = __commonJS({
   "node_modules/ace-code/src/lib/event.js"(exports) {
     "use strict";
@@ -1445,7 +1432,6 @@ var require_event = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/net.js
 var require_net = __commonJS({
   "node_modules/ace-code/src/lib/net.js"(exports) {
     "use strict";
@@ -1488,7 +1474,6 @@ var require_net = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/event_emitter.js
 var require_event_emitter = __commonJS({
   "node_modules/ace-code/src/lib/event_emitter.js"(exports) {
     "use strict";
@@ -1600,7 +1585,6 @@ var require_event_emitter = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/report_error.js
 var require_report_error = __commonJS({
   "node_modules/ace-code/src/lib/report_error.js"(exports) {
     exports.reportError = function reportError(msg, data) {
@@ -1615,7 +1599,6 @@ var require_report_error = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/default_english_messages.js
 var require_default_english_messages = __commonJS({
   "node_modules/ace-code/src/lib/default_english_messages.js"(exports) {
     var defaultEnglishMessages = {
@@ -1671,7 +1654,6 @@ var require_default_english_messages = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/app_config.js
 var require_app_config = __commonJS({
   "node_modules/ace-code/src/lib/app_config.js"(exports) {
     "no use strict";
@@ -1843,7 +1825,6 @@ var require_app_config = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/theme/textmate-css.js
 var require_textmate_css = __commonJS({
   "node_modules/ace-code/src/theme/textmate-css.js"(exports, module) {
     module.exports = `.ace-tm .ace_gutter {
@@ -2008,7 +1989,6 @@ var require_textmate_css = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/theme/textmate.js
 var require_textmate = __commonJS({
   "node_modules/ace-code/src/theme/textmate.js"(exports) {
     "use strict";
@@ -2021,7 +2001,6 @@ var require_textmate = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/config.js
 var require_config = __commonJS({
   "node_modules/ace-code/src/config.js"(exports, module) {
     "no use strict";
@@ -2167,7 +2146,6 @@ var require_config = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/clipboard.js
 var require_clipboard = __commonJS({
   "node_modules/ace-code/src/clipboard.js"(exports, module) {
     "use strict";
@@ -2187,7 +2165,6 @@ var require_clipboard = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/keyboard/textinput.js
 var require_textinput = __commonJS({
   "node_modules/ace-code/src/keyboard/textinput.js"(exports) {
     "use strict";
@@ -2413,7 +2390,6 @@ var require_textinput = __commonJS({
         }
         this.syncComposition();
       }
-      // COMPOSITION
       /**
        * @internal
        */
@@ -2910,7 +2886,6 @@ var require_textinput = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/default_handlers.js
 var require_default_handlers = __commonJS({
   "node_modules/ace-code/src/mouse/default_handlers.js"(exports) {
     "use strict";
@@ -3190,7 +3165,6 @@ var require_default_handlers = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/mouse_event.js
 var require_mouse_event = __commonJS({
   "node_modules/ace-code/src/mouse/mouse_event.js"(exports) {
     "use strict";
@@ -3284,7 +3258,6 @@ var require_mouse_event = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/scroll.js
 var require_scroll = __commonJS({
   "node_modules/ace-code/src/lib/scroll.js"(exports) {
     exports.preventParentScroll = function preventParentScroll(event) {
@@ -3298,7 +3271,6 @@ var require_scroll = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/tooltip.js
 var require_tooltip = __commonJS({
   "node_modules/ace-code/src/tooltip.js"(exports) {
     "use strict";
@@ -3688,7 +3660,6 @@ var require_tooltip = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/default_gutter_handler.js
 var require_default_gutter_handler = __commonJS({
   "node_modules/ace-code/src/mouse/default_gutter_handler.js"(exports) {
     "use strict";
@@ -3937,7 +3908,6 @@ var require_default_gutter_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/dragdrop_handler.js
 var require_dragdrop_handler = __commonJS({
   "node_modules/ace-code/src/mouse/dragdrop_handler.js"(exports) {
     "use strict";
@@ -4273,7 +4243,6 @@ var require_dragdrop_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/touch_handler.js
 var require_touch_handler = __commonJS({
   "node_modules/ace-code/src/mouse/touch_handler.js"(exports) {
     "use strict";
@@ -4578,7 +4547,6 @@ var require_touch_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/mouse_handler.js
 var require_mouse_handler = __commonJS({
   "node_modules/ace-code/src/mouse/mouse_handler.js"(exports) {
     "use strict";
@@ -4772,7 +4740,6 @@ var require_mouse_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/fold_handler.js
 var require_fold_handler = __commonJS({
   "node_modules/ace-code/src/mouse/fold_handler.js"(exports) {
     "use strict";
@@ -4836,7 +4803,6 @@ var require_fold_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/keyboard/keybinding.js
 var require_keybinding = __commonJS({
   "node_modules/ace-code/src/keyboard/keybinding.js"(exports) {
     "use strict";
@@ -4973,7 +4939,6 @@ var require_keybinding = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/lib/bidiutil.js
 var require_bidiutil = __commonJS({
   "node_modules/ace-code/src/lib/bidiutil.js"(exports) {
     "use strict";
@@ -4984,29 +4949,17 @@ var require_bidiutil = __commonJS({
     var hasUBAT_B = false;
     var hasUBAT_S = false;
     var impTab_LTR = [
-      /*		L,		R,		EN,		AN,		N,		IL,		Cond */
-      /* 0 LTR text	*/
       [0, 3, 0, 1, 0, 0, 0],
-      /* 1 LTR+AN		*/
       [0, 3, 0, 1, 2, 2, 0],
-      /* 2 LTR+AN+N	*/
       [0, 3, 0, 17, 2, 0, 1],
-      /* 3 RTL text	*/
       [0, 3, 5, 5, 4, 1, 0],
-      /* 4 RTL cont	*/
       [0, 3, 21, 21, 4, 0, 1],
-      /* 5 RTL+EN/AN	*/
       [0, 3, 5, 5, 4, 2, 0]
     ];
     var impTab_RTL = [
-      /*		L,		R,		EN,		AN,		N,		IL,		Cond */
-      /* 0 RTL text	*/
       [2, 0, 1, 1, 0, 1, 0],
-      /* 1 RTL+EN/AN	*/
       [2, 0, 1, 1, 0, 2, 0],
-      /* 2 LTR text	*/
       [2, 0, 2, 1, 3, 2, 0],
-      /* 3 LTR+cont	*/
       [2, 0, 2, 33, 3, 1, 1]
     ];
     var LTR = 0;
@@ -5570,7 +5523,6 @@ var require_bidiutil = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/bidihandler.js
 var require_bidihandler = __commonJS({
   "node_modules/ace-code/src/bidihandler.js"(exports) {
     "use strict";
@@ -5710,9 +5662,6 @@ var require_bidihandler = __commonJS({
           this.bidiMap = {};
         }
       }
-      /**
-       * Resets stored info related to current screen row
-      **/
       markAsDirty() {
         this.currentRow = null;
       }
@@ -5858,7 +5807,6 @@ var require_bidihandler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/selection.js
 var require_selection = __commonJS({
   "node_modules/ace-code/src/selection.js"(exports) {
     "use strict";
@@ -5964,18 +5912,12 @@ var require_selection = __commonJS({
           return Range2.fromPoints(lead, lead);
         return this.isBackwards() ? Range2.fromPoints(lead, anchor) : Range2.fromPoints(anchor, lead);
       }
-      /**
-       * [Empties the selection (by de-selecting it). This function also emits the `'changeSelection'` event.]{: #Selection.clearSelection}
-       **/
       clearSelection() {
         if (!this.$isEmpty) {
           this.$isEmpty = true;
           this._emit("changeSelection");
         }
       }
-      /**
-       * Selects all the text in the document.
-       **/
       selectAll() {
         this.$setSelection(0, 0, Number.MAX_VALUE, Number.MAX_VALUE);
       }
@@ -6053,70 +5995,36 @@ var require_selection = __commonJS({
         this.clearSelection();
         this.moveCursorToPosition(pos);
       }
-      /**
-       * Moves the selection up one row.
-       **/
       selectUp() {
         this.$moveSelection(this.moveCursorUp);
       }
-      /**
-       * Moves the selection down one row.
-       **/
       selectDown() {
         this.$moveSelection(this.moveCursorDown);
       }
-      /**
-       * Moves the selection right one column.
-       **/
       selectRight() {
         this.$moveSelection(this.moveCursorRight);
       }
-      /**
-       * Moves the selection left one column.
-       **/
       selectLeft() {
         this.$moveSelection(this.moveCursorLeft);
       }
-      /**
-       * Moves the selection to the beginning of the current line.
-       **/
       selectLineStart() {
         this.$moveSelection(this.moveCursorLineStart);
       }
-      /**
-       * Moves the selection to the end of the current line.
-       **/
       selectLineEnd() {
         this.$moveSelection(this.moveCursorLineEnd);
       }
-      /**
-       * Moves the selection to the end of the file.
-       **/
       selectFileEnd() {
         this.$moveSelection(this.moveCursorFileEnd);
       }
-      /**
-       * Moves the selection to the start of the file.
-       **/
       selectFileStart() {
         this.$moveSelection(this.moveCursorFileStart);
       }
-      /**
-       * Moves the selection to the first word on the right.
-       **/
       selectWordRight() {
         this.$moveSelection(this.moveCursorWordRight);
       }
-      /**
-       * Moves the selection to the first word on the left.
-       **/
       selectWordLeft() {
         this.$moveSelection(this.moveCursorWordLeft);
       }
-      /**
-       * Moves the selection to highlight the entire word.
-       * @related EditSession.getWordRange
-       **/
       getWordRange(row, column) {
         if (typeof column == "undefined") {
           var cursor = row || this.lead;
@@ -6125,16 +6033,9 @@ var require_selection = __commonJS({
         }
         return this.session.getWordRange(row, column);
       }
-      /**
-       * Selects an entire word boundary.
-       **/
       selectWord() {
         this.setSelectionRange(this.getWordRange());
       }
-      /**
-       * Selects a word, including its right whitespace.
-       * @related EditSession.getAWordRange
-       **/
       selectAWord() {
         var cursor = this.getCursor();
         var range = this.session.getAWordRange(cursor.row, cursor.column);
@@ -6155,21 +6056,12 @@ var require_selection = __commonJS({
         else
           return new Range2(rowStart, 0, rowEnd + 1, 0);
       }
-      /**
-       * Selects the entire line.
-       **/
       selectLine() {
         this.setSelectionRange(this.getLineRange());
       }
-      /**
-       * Moves the cursor up one row.
-       **/
       moveCursorUp() {
         this.moveCursorBy(-1, 0);
       }
-      /**
-       * Moves the cursor down one row.
-       **/
       moveCursorDown() {
         this.moveCursorBy(1, 0);
       }
@@ -6189,9 +6081,6 @@ var require_selection = __commonJS({
         }
         return this.session.isTabStop(cursor) && this.doc.getLine(cursor.row).slice(start, end).split(" ").length - 1 == tabSize;
       }
-      /**
-       * Moves the cursor left one column.
-       **/
       moveCursorLeft() {
         var cursor = this.lead.getPosition(), fold;
         if (fold = this.session.getFoldAt(cursor.row, cursor.column, -1)) {
@@ -6209,9 +6098,6 @@ var require_selection = __commonJS({
           }
         }
       }
-      /**
-       * Moves the cursor right one column.
-       **/
       moveCursorRight() {
         var cursor = this.lead.getPosition(), fold;
         if (fold = this.session.getFoldAt(cursor.row, cursor.column, 1)) {
@@ -6230,9 +6116,6 @@ var require_selection = __commonJS({
           }
         }
       }
-      /**
-       * Moves the cursor to the start of the line.
-       **/
       moveCursorLineStart() {
         var row = this.lead.row;
         var column = this.lead.column;
@@ -6249,9 +6132,6 @@ var require_selection = __commonJS({
           firstColumnPosition.column += leadingSpace[0].length;
         this.moveCursorToPosition(firstColumnPosition);
       }
-      /**
-       * Moves the cursor to the end of the line.
-       **/
       moveCursorLineEnd() {
         var lead = this.lead;
         var lineEnd = this.session.getDocumentLastRowColumnPosition(lead.row, lead.column);
@@ -6265,23 +6145,14 @@ var require_selection = __commonJS({
         }
         this.moveCursorTo(lineEnd.row, lineEnd.column);
       }
-      /**
-       * Moves the cursor to the end of the file.
-       **/
       moveCursorFileEnd() {
         var row = this.doc.getLength() - 1;
         var column = this.doc.getLine(row).length;
         this.moveCursorTo(row, column);
       }
-      /**
-       * Moves the cursor to the start of the file.
-       **/
       moveCursorFileStart() {
         this.moveCursorTo(0, 0);
       }
-      /**
-       * Moves the cursor to the word on the right.
-       **/
       moveCursorLongWordRight() {
         var row = this.lead.row;
         var column = this.lead.column;
@@ -6312,10 +6183,6 @@ var require_selection = __commonJS({
         }
         this.moveCursorTo(row, column);
       }
-      /**
-      *
-      * Moves the cursor to the word on the left.
-      **/
       moveCursorLongWordLeft() {
         var row = this.lead.row;
         var column = this.lead.column;
@@ -6515,7 +6382,6 @@ var require_selection = __commonJS({
         var pos = this.session.screenToDocumentPosition(row, column);
         this.moveCursorTo(pos.row, pos.column, keepDesiredColumn);
       }
-      // remove listeners from document
       detach() {
         this.lead.detach();
         this.anchor.detach();
@@ -6628,7 +6494,6 @@ var require_selection = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/tokenizer.js
 var require_tokenizer = __commonJS({
   "node_modules/ace-code/src/tokenizer.js"(exports) {
     "use strict";
@@ -6941,7 +6806,6 @@ var require_tokenizer = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/text_highlight_rules.js
 var require_text_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/text_highlight_rules.js"(exports) {
     "use strict";
@@ -7134,7 +6998,6 @@ var require_text_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/behaviour.js
 var require_behaviour = __commonJS({
   "node_modules/ace-code/src/mode/behaviour.js"(exports) {
     "use strict";
@@ -7190,7 +7053,6 @@ var require_behaviour = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/token_iterator.js
 var require_token_iterator = __commonJS({
   "node_modules/ace-code/src/token_iterator.js"(exports) {
     "use strict";
@@ -7301,7 +7163,6 @@ var require_token_iterator = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/behaviour/cstyle.js
 var require_cstyle = __commonJS({
   "node_modules/ace-code/src/mode/behaviour/cstyle.js"(exports) {
     "use strict";
@@ -7711,7 +7572,6 @@ var require_cstyle = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/unicode.js
 var require_unicode = __commonJS({
   "node_modules/ace-code/src/unicode.js"(exports) {
     "use strict";
@@ -7728,7 +7588,6 @@ var require_unicode = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/text.js
 var require_text = __commonJS({
   "node_modules/ace-code/src/mode/text.js"(exports) {
     "use strict";
@@ -8053,7 +7912,6 @@ var require_text = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/line_widgets.js
 var require_line_widgets = __commonJS({
   "node_modules/ace-code/src/line_widgets.js"(exports) {
     "use strict";
@@ -8433,7 +8291,6 @@ var require_line_widgets = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/apply_delta.js
 var require_apply_delta = __commonJS({
   "node_modules/ace-code/src/apply_delta.js"(exports) {
     "use strict";
@@ -8471,7 +8328,6 @@ var require_apply_delta = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/anchor.js
 var require_anchor = __commonJS({
   "node_modules/ace-code/src/anchor.js"(exports) {
     "use strict";
@@ -8550,10 +8406,6 @@ var require_anchor = __commonJS({
           value: pos
         });
       }
-      /**
-       * When called, the `"change"` event listener is removed.
-       *
-       **/
       detach() {
         this.document.off("change", this.$onChange);
       }
@@ -8623,7 +8475,6 @@ var require_anchor = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/document.js
 var require_document = __commonJS({
   "node_modules/ace-code/src/document.js"(exports) {
     "use strict";
@@ -8784,7 +8635,6 @@ var require_document = __commonJS({
         }
         return lines;
       }
-      // Deprecated methods retained for backwards compatibility.
       /**
        * @param row
        * @param lines
@@ -9204,7 +9054,6 @@ var require_document = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/background_tokenizer.js
 var require_background_tokenizer = __commonJS({
   "node_modules/ace-code/src/background_tokenizer.js"(exports) {
     "use strict";
@@ -9299,9 +9148,6 @@ var require_background_tokenizer = __commonJS({
         this.stop();
         this.running = setTimeout(this.$worker, 700);
       }
-      /**
-       * Sets pretty long delay to prevent the tokenizer from interfering with the user
-       */
       scheduleStart() {
         if (!this.running)
           this.running = setTimeout(this.$worker, 700);
@@ -9326,9 +9172,6 @@ var require_background_tokenizer = __commonJS({
         this.currentLine = Math.min(startRow, this.currentLine, this.doc.getLength());
         this.stop();
       }
-      /**
-       * Stops tokenizing.
-       **/
       stop() {
         if (this.running)
           clearTimeout(this.running);
@@ -9382,7 +9225,6 @@ var require_background_tokenizer = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/search_highlight.js
 var require_search_highlight = __commonJS({
   "node_modules/ace-code/src/search_highlight.js"(exports) {
     "use strict";
@@ -9465,14 +9307,10 @@ var require_search_highlight = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/undomanager.js
 var require_undomanager = __commonJS({
   "node_modules/ace-code/src/undomanager.js"(exports) {
     "use strict";
     var UndoManager2 = class {
-      /**
-       * Resets the current undo state and creates a new `UndoManager`.
-       **/
       constructor() {
         this.$keepRedoStack;
         this.$maxRev = 0;
@@ -9667,9 +9505,6 @@ var require_undomanager = __commonJS({
         this.$redoStackBaseRev = id;
         this.$rev = id;
       }
-      /**
-       * Destroys the stack of undo and redo redo operations.
-       **/
       reset() {
         this.lastDeltas = null;
         this.$lastDelta = null;
@@ -9720,7 +9555,6 @@ var require_undomanager = __commonJS({
           $undoStack: this.$undoStack
         };
       }
-      // NOTE: The above and below function require you to JSON.stringify and JSON.parse externally.
       /**
        * Takes in an object which was returned from the toJSON method above,
        * and resets the current undoManager instance to use the previously exported
@@ -9971,7 +9805,6 @@ var require_undomanager = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/edit_session/fold_line.js
 var require_fold_line = __commonJS({
   "node_modules/ace-code/src/edit_session/fold_line.js"(exports) {
     "use strict";
@@ -10204,7 +10037,6 @@ var require_fold_line = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/range_list.js
 var require_range_list = __commonJS({
   "node_modules/ace-code/src/range_list.js"(exports) {
     "use strict";
@@ -10270,7 +10102,6 @@ var require_range_list = __commonJS({
         if (i >= 0)
           return this.ranges.splice(i, 1);
       }
-      // merge overlapping ranges
       merge() {
         var removed = [];
         var list = this.ranges;
@@ -10453,7 +10284,6 @@ var require_range_list = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/edit_session/fold.js
 var require_fold = __commonJS({
   "node_modules/ace-code/src/edit_session/fold.js"(exports) {
     "use strict";
@@ -10559,7 +10389,6 @@ var require_fold = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/edit_session/folding.js
 var require_folding = __commonJS({
   "node_modules/ace-code/src/edit_session/folding.js"(exports) {
     "use strict";
@@ -11246,7 +11075,6 @@ var require_folding = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/edit_session/bracket_match.js
 var require_bracket_match = __commonJS({
   "node_modules/ace-code/src/edit_session/bracket_match.js"(exports) {
     "use strict";
@@ -11669,7 +11497,6 @@ var require_bracket_match = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/edit_session.js
 var require_edit_session = __commonJS({
   "node_modules/ace-code/src/edit_session.js"(exports) {
     "use strict";
@@ -12060,9 +11887,6 @@ var require_edit_session = __commonJS({
           };
         }
       }
-      /**
-       * starts a new group in undo history
-       **/
       markUndoGroup() {
         if (this.$syncInformUndoManager)
           this.$syncInformUndoManager();
@@ -12145,15 +11969,9 @@ var require_edit_session = __commonJS({
       setOverwrite(overwrite) {
         this.setOption("overwrite", overwrite);
       }
-      /**
-       * Returns `true` if overwrites are enabled; `false` otherwise.
-       **/
       getOverwrite() {
         return this.$overwrite;
       }
-      /**
-       * Sets the value of overwrite to the opposite of whatever it currently is.
-       **/
       toggleOverwrite() {
         this.setOverwrite(!this.$overwrite);
       }
@@ -12221,9 +12039,6 @@ var require_edit_session = __commonJS({
         }
         this._signal("changeBreakpoint", {});
       }
-      /**
-       * Removes all breakpoints on the rows. This function also emits the `'changeBreakpoint'` event.
-       **/
       clearBreakpoints() {
         this.$breakpoints = [];
         this._signal("changeBreakpoint", {});
@@ -12350,15 +12165,6 @@ var require_edit_session = __commonJS({
         range.id = this.addMarker(range, clazz, "fullLine", inFront);
         return range;
       }
-      /*
-       * Error:
-       *  {
-       *    row: 12,
-       *    column: 2, //can be undefined
-       *    text: "Missing argument",
-       *    type: "error" // or "warning" or "info"
-       *  }
-       */
       /**
        * Sets annotations for the `EditSession`. This functions emits the `'changeAnnotation'` event.
        * @param {import("../ace-internal").Ace.Annotation[]} annotations A list of annotations
@@ -12374,9 +12180,6 @@ var require_edit_session = __commonJS({
       getAnnotations() {
         return this.$annotations || [];
       }
-      /**
-       * Clears all the annotations for this session. This function also triggers the `'changeAnnotation'` event.
-       **/
       clearAnnotations() {
         this.setAnnotations([]);
       }
@@ -12467,9 +12270,6 @@ var require_edit_session = __commonJS({
       setUseWorker(useWorker) {
         this.setOption("useWorker", useWorker);
       }
-      /**
-       * Returns `true` if workers are being used.
-       **/
       getUseWorker() {
         return this.$useWorker;
       }
@@ -13081,10 +12881,6 @@ var require_edit_session = __commonJS({
       getUseWrapMode() {
         return this.$useWrapMode;
       }
-      // Allow the wrap limit to move freely between min and max. Either
-      // parameter can be null to allow the wrap limit to be unconstrained
-      // in that direction. Or set both parameters to the same number to pin
-      // the limit to that value.
       /**
        * Sets the boundaries of wrap. Either value can be `null` to have an unconstrained wrap, or, they can be the same number to pin the limit. If the wrap limits for `min` or `max` are different, this method also emits the `'changeWrapMode'` event.
        * @param {Number} min The minimum wrap value (the left side wrap)
@@ -14061,7 +13857,6 @@ var require_edit_session = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/search.js
 var require_search = __commonJS({
   "node_modules/ace-code/src/search.js"(exports) {
     "use strict";
@@ -14574,7 +14369,6 @@ var require_search = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/keyboard/hash_handler.js
 var require_hash_handler = __commonJS({
   "node_modules/ace-code/src/keyboard/hash_handler.js"(exports) {
     "use strict";
@@ -14838,7 +14632,6 @@ var require_hash_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/commands/command_manager.js
 var require_command_manager = __commonJS({
   "node_modules/ace-code/src/commands/command_manager.js"(exports) {
     "use strict";
@@ -14963,7 +14756,6 @@ var require_command_manager = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/commands/default_commands.js
 var require_default_commands = __commonJS({
   "node_modules/ace-code/src/commands/default_commands.js"(exports) {
     "use strict";
@@ -15573,7 +15365,6 @@ var require_default_commands = __commonJS({
         },
         readOnly: true
       },
-      // commands disabled in readOnly mode
       {
         name: "cut",
         description: "Cut",
@@ -16096,7 +15887,6 @@ var require_default_commands = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/keyboard/gutter_handler.js
 var require_gutter_handler = __commonJS({
   "node_modules/ace-code/src/keyboard/gutter_handler.js"(exports) {
     "use strict";
@@ -16298,7 +16088,6 @@ var require_gutter_handler = __commonJS({
         var element = cell.element;
         return element.childNodes[2];
       }
-      // Given an index, find the nearest index with a widget in fold lane
       $findNearestFoldLaneWidget(index) {
         if (this.$isCustomWidgetVisible(index))
           return index;
@@ -16318,7 +16107,6 @@ var require_gutter_handler = __commonJS({
         }
         return null;
       }
-      // Given an index, find the nearest index with an annotation.
       $findNearestAnnotation(index) {
         if (this.$isAnnotationVisible(index))
           return index;
@@ -16475,14 +16263,12 @@ var require_gutter_handler = __commonJS({
         }
         return;
       }
-      // Convert row index (viewport space) to row (document space).
       $rowIndexToRow(index) {
         var cell = this.lines.get(index);
         if (cell)
           return cell.row;
         return null;
       }
-      // Convert row (document space) to row index (viewport space).
       $rowToRowIndex(row) {
         for (var i = 0; i < this.lines.getLength(); i++) {
           var cell = this.lines.get(i);
@@ -16535,7 +16321,6 @@ var require_gutter_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/editor.js
 var require_editor = __commonJS({
   "node_modules/ace-code/src/editor.js"(exports) {
     "use strict";
@@ -16976,10 +16761,6 @@ var require_editor = __commonJS({
           if (self.getHighlightIndentGuides()) self.renderer.$textLayer.$highlightIndentGuide();
         }, 50);
       }
-      /**
-       *
-       * Brings the current `textInput` into focus.
-       **/
       focus() {
         this.textInput.focus();
       }
@@ -16990,10 +16771,6 @@ var require_editor = __commonJS({
       isFocused() {
         return this.textInput.isFocused();
       }
-      /**
-       *
-       * Blurs the current `textInput`.
-       **/
       blur() {
         this.textInput.blur();
       }
@@ -17021,8 +16798,6 @@ var require_editor = __commonJS({
         this.renderer.visualizeBlur();
         this._emit("blur", e);
       }
-      /**
-       */
       $cursorChange() {
         this.renderer.updateCursor();
         this.$highlightBrackets();
@@ -17067,8 +16842,6 @@ var require_editor = __commonJS({
         this.$cursorChange();
         this._signal("changeSelection");
       }
-      /**
-       */
       $updateHighlightActiveLine() {
         var session = this.getSession();
         var highlight;
@@ -17458,10 +17231,6 @@ var require_editor = __commonJS({
       getOverwrite() {
         return this.session.getOverwrite();
       }
-      /**
-       * Sets the value of overwrite to the opposite of whatever it currently is.
-       * @related EditSession.toggleOverwrite
-       **/
       toggleOverwrite() {
         this.session.toggleOverwrite();
       }
@@ -17727,27 +17496,18 @@ var require_editor = __commonJS({
         this.session.remove(range);
         this.clearSelection();
       }
-      /**
-       * Removes the word directly to the right of the current selection.
-       **/
       removeWordRight() {
         if (this.selection.isEmpty())
           this.selection.selectWordRight();
         this.session.remove(this.getSelectionRange());
         this.clearSelection();
       }
-      /**
-       * Removes the word directly to the left of the current selection.
-       **/
       removeWordLeft() {
         if (this.selection.isEmpty())
           this.selection.selectWordLeft();
         this.session.remove(this.getSelectionRange());
         this.clearSelection();
       }
-      /**
-       * Removes all the words to the left of the current selection, until the start of the line.
-       **/
       removeToLineStart() {
         if (this.selection.isEmpty())
           this.selection.selectLineStart();
@@ -17756,9 +17516,6 @@ var require_editor = __commonJS({
         this.session.remove(this.getSelectionRange());
         this.clearSelection();
       }
-      /**
-       * Removes all the words to the right of the current selection, until the end of the line.
-       **/
       removeToLineEnd() {
         if (this.selection.isEmpty())
           this.selection.selectLineEnd();
@@ -17770,9 +17527,6 @@ var require_editor = __commonJS({
         this.session.remove(range);
         this.clearSelection();
       }
-      /**
-       * Splits the line at the current selection (by inserting an `'\n'`).
-       **/
       splitLine() {
         if (!this.selection.isEmpty()) {
           this.session.remove(this.getSelectionRange());
@@ -17793,15 +17547,9 @@ var require_editor = __commonJS({
       setGhostText(text, position) {
         this.renderer.setGhostText(text, position);
       }
-      /**
-       * Removes "ghost" text currently displayed in the editor.
-       */
       removeGhostText() {
         this.renderer.removeGhostText();
       }
-      /**
-       * Transposes current line.
-       **/
       transposeLetters() {
         if (!this.selection.isEmpty()) {
           return;
@@ -17822,9 +17570,6 @@ var require_editor = __commonJS({
         this.session.replace(range, swap);
         this.session.selection.moveToPosition(range.end);
       }
-      /**
-       * Converts the current selection entirely into lowercase.
-       **/
       toLowerCase() {
         var originalRange = this.getSelectionRange();
         if (this.selection.isEmpty()) {
@@ -17835,9 +17580,6 @@ var require_editor = __commonJS({
         this.session.replace(range, text.toLowerCase());
         this.selection.setSelectionRange(originalRange);
       }
-      /**
-       * Converts the current selection entirely into uppercase.
-       **/
       toUpperCase() {
         var originalRange = this.getSelectionRange();
         if (this.selection.isEmpty()) {
@@ -17848,11 +17590,6 @@ var require_editor = __commonJS({
         this.session.replace(range, text.toUpperCase());
         this.selection.setSelectionRange(originalRange);
       }
-      /**
-       * Inserts an indentation into the current cursor position or indents the selected lines.
-       *
-       * @related EditSession.indentRows
-       **/
       indent() {
         var session = this.session;
         var range = this.getSelectionRange();
@@ -17886,23 +17623,14 @@ var require_editor = __commonJS({
         }
         return this.insert(indentString);
       }
-      /**
-       * Indents the current line.
-       * @related EditSession.indentRows
-       **/
       blockIndent() {
         var rows = this.$getSelectedRows();
         this.session.indentRows(rows.first, rows.last, "	");
       }
-      /**
-       * Outdents the current line.
-       * @related EditSession.outdentRows
-       **/
       blockOutdent() {
         var selection = this.session.getSelection();
         this.session.outdentRows(selection.getRange());
       }
-      // TODO: move out of core when we have good mechanism for managing extensions
       sortLines() {
         var rows = this.$getSelectedRows();
         var session = this.session;
@@ -17923,9 +17651,6 @@ var require_editor = __commonJS({
           session.replace(deleteRange, lines[i - rows.first]);
         }
       }
-      /**
-       * Given the currently selected range, this function either comments all the lines, or uncomments all of them.
-       **/
       toggleCommentLines() {
         var state = this.session.getState(this.getCursorPosition().row);
         var rows = this.$getSelectedRows();
@@ -17990,8 +17715,6 @@ var require_editor = __commonJS({
           this.toggleWord();
         }
       }
-      /**
-       */
       toggleWord() {
         var row = this.selection.getCursor().row;
         var column = this.selection.getCursor().column;
@@ -18074,10 +17797,6 @@ var require_editor = __commonJS({
           window.open(url, "_blank");
         return url != null;
       }
-      /**
-       * Removes all the lines in the current selection
-       * @related EditSession.remove
-       **/
       removeLines() {
         var rows = this.$getSelectedRows();
         this.session.removeFullLines(rows.first, rows.last);
@@ -18099,18 +17818,9 @@ var require_editor = __commonJS({
           sel.setSelectionRange(range, reverse);
         }
       }
-      /**
-       * Shifts all the selected lines down one row.
-       *
-       * @related EditSession.moveLinesUp
-       **/
       moveLinesDown() {
         this.$moveLines(1, false);
       }
-      /**
-       * Shifts all the selected lines up one row.
-       * @related EditSession.moveLinesDown
-       **/
       moveLinesUp() {
         this.$moveLines(-1, false);
       }
@@ -18129,26 +17839,12 @@ var require_editor = __commonJS({
       moveText(range, toPosition, copy) {
         return this.session.moveText(range, toPosition, copy);
       }
-      /**
-       * Copies all the selected lines up one row.
-       *
-       **/
       copyLinesUp() {
         this.$moveLines(-1, true);
       }
-      /**
-       * Copies all the selected lines down one row.
-       * @related EditSession.duplicateLines
-       *
-       **/
       copyLinesDown() {
         this.$moveLines(1, true);
       }
-      /**
-       * for internal use
-       * @ignore
-       *
-       **/
       $moveLines(dir, copy) {
         var rows, moved;
         var selection = this.selection;
@@ -18292,39 +17988,21 @@ var require_editor = __commonJS({
           renderer.scrollCursorIntoView(null, 0.5);
         renderer.animateScrolling(scrollTop);
       }
-      /**
-       * Selects the text from the current position of the document until where a "page down" finishes.
-       **/
       selectPageDown() {
         this.$moveByPage(1, true);
       }
-      /**
-       * Selects the text from the current position of the document until where a "page up" finishes.
-       **/
       selectPageUp() {
         this.$moveByPage(-1, true);
       }
-      /**
-       * Shifts the document to wherever "page down" is, as well as moving the cursor position.
-       **/
       gotoPageDown() {
         this.$moveByPage(1, false);
       }
-      /**
-       * Shifts the document to wherever "page up" is, as well as moving the cursor position.
-       **/
       gotoPageUp() {
         this.$moveByPage(-1, false);
       }
-      /**
-       * Scrolls the document to wherever "page down" is, without changing the cursor position.
-       **/
       scrollPageDown() {
         this.$moveByPage(1);
       }
-      /**
-       * Scrolls the document to wherever "page up" is, without changing the cursor position.
-       **/
       scrollPageUp() {
         this.$moveByPage(-1);
       }
@@ -18348,9 +18026,6 @@ var require_editor = __commonJS({
       scrollToLine(line, center, animate, callback) {
         this.renderer.scrollToLine(line, center, animate, callback);
       }
-      /**
-       * Attempts to center the current selection on the screen.
-       **/
       centerSelection() {
         var range = this.getSelectionRange();
         var pos = {
@@ -18388,17 +18063,9 @@ var require_editor = __commonJS({
       getSelectionRange() {
         return this.selection.getRange();
       }
-      /**
-       * Selects all the text in editor.
-       * @related Selection.selectAll
-       **/
       selectAll() {
         this.selection.selectAll();
       }
-      /**
-       * {:Selection.clearSelection}
-       * @related Selection.clearSelection
-       **/
       clearSelection() {
         this.selection.clearSelection();
       }
@@ -18631,50 +18298,26 @@ var require_editor = __commonJS({
         }
         this.clearSelection();
       }
-      /**
-       *
-       * Moves the cursor to the start of the current line. Note that this does de-select the current selection.
-       **/
       navigateLineStart() {
         this.selection.moveCursorLineStart();
         this.clearSelection();
       }
-      /**
-       *
-       * Moves the cursor to the end of the current line. Note that this does de-select the current selection.
-       **/
       navigateLineEnd() {
         this.selection.moveCursorLineEnd();
         this.clearSelection();
       }
-      /**
-       *
-       * Moves the cursor to the end of the current file. Note that this does de-select the current selection.
-       **/
       navigateFileEnd() {
         this.selection.moveCursorFileEnd();
         this.clearSelection();
       }
-      /**
-       *
-       * Moves the cursor to the start of the current file. Note that this does de-select the current selection.
-       **/
       navigateFileStart() {
         this.selection.moveCursorFileStart();
         this.clearSelection();
       }
-      /**
-       *
-       * Moves the cursor to the word immediately to the right of the current position. Note that this does de-select the current selection.
-       **/
       navigateWordRight() {
         this.selection.moveCursorWordRight();
         this.clearSelection();
       }
-      /**
-       *
-       * Moves the cursor to the word immediately to the left of the current position. Note that this does de-select the current selection.
-       **/
       navigateWordLeft() {
         this.selection.moveCursorWordLeft();
         this.clearSelection();
@@ -18817,26 +18460,14 @@ var require_editor = __commonJS({
         if (animate !== false)
           this.renderer.animateScrolling(scrollTop);
       }
-      /**
-       * {:UndoManager.undo}
-       * @related UndoManager.undo
-       **/
       undo() {
         this.session.getUndoManager().undo(this.session);
         this.renderer.scrollCursorIntoView(null, 0.5);
       }
-      /**
-       * {:UndoManager.redo}
-       * @related UndoManager.redo
-       **/
       redo() {
         this.session.getUndoManager().redo(this.session);
         this.renderer.scrollCursorIntoView(null, 0.5);
       }
-      /**
-       *
-       * Cleans up the entire editor.
-       **/
       destroy() {
         this.destroyed = true;
         if (this.$toDestroy) {
@@ -18917,9 +18548,6 @@ var require_editor = __commonJS({
         cursorLayer.isBlinking = !this.$readOnly && style != "wide";
         dom.setCssClass(cursorLayer.element, "ace_slim-cursors", /slim/.test(style));
       }
-      /**
-       * opens a prompt displaying message
-       **/
       prompt(message, options, callback) {
         var editor = this;
         config2.loadModule("ace/ext/prompt", function(module2) {
@@ -19293,7 +18921,6 @@ var require_editor = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/lines.js
 var require_lines = __commonJS({
   "node_modules/ace-code/src/layer/lines.js"(exports) {
     "use strict";
@@ -19420,7 +19047,6 @@ var require_lines = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/gutter.js
 var require_gutter = __commonJS({
   "node_modules/ace-code/src/layer/gutter.js"(exports) {
     "use strict";
@@ -19537,7 +19163,6 @@ var require_gutter = __commonJS({
         var firstRow = config2.firstRow;
         var lastRow = Math.min(
           config2.lastRow + config2.gutterOffset,
-          // needed to compensate for hor scollbar
           session.getLength() - 1
         );
         this.oldLastRow = lastRow;
@@ -19663,7 +19288,6 @@ var require_gutter = __commonJS({
         this.$lines.moveContainer(config2);
         var lastRow = Math.min(
           config2.lastRow + config2.gutterOffset,
-          // needed to compensate for hor scollbar
           this.session.getLength() - 1
         );
         var oldLastRow = this.oldLastRow;
@@ -20103,7 +19727,6 @@ var require_gutter = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/marker.js
 var require_marker = __commonJS({
   "node_modules/ace-code/src/layer/marker.js"(exports) {
     "use strict";
@@ -20198,7 +19821,6 @@ var require_marker = __commonJS({
       $getTop(row, layerConfig) {
         return (row - layerConfig.firstRowScreen) * layerConfig.lineHeight;
       }
-      // Draws a marker, which spans a range of text on multiple lines 
       /**
        * @param {undefined} stringBuilder
        * @param {Range} range
@@ -20232,7 +19854,6 @@ var require_marker = __commonJS({
           );
         }
       }
-      // Draws a multi line marker, where lines span the full width
       /**
        * @param {undefined} stringBuilder
        * @param {Range} range
@@ -20280,7 +19901,6 @@ var require_marker = __commonJS({
           "height:" + height + "px;right:" + padding + "px;top:" + top + "px;left:" + padding + "px;" + (extraStyle || "")
         );
       }
-      // Draws a marker which covers part or whole width of a single screen line
       /**
        * @param {undefined} stringBuilder
        * @param {Range} range
@@ -20301,7 +19921,6 @@ var require_marker = __commonJS({
           "height:" + height + "px;width:" + width + "px;top:" + top + "px;left:" + left + "px;" + (extraStyle || "")
         );
       }
-      // Draws Bidi marker which covers part or whole width of a single screen line
       /**
        * @param {undefined} stringBuilder
        * @param {Range} range
@@ -20361,7 +19980,6 @@ var require_marker = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/text_util.js
 var require_text_util = __commonJS({
   "node_modules/ace-code/src/layer/text_util.js"(exports) {
     var textTokens = /* @__PURE__ */ new Set(["text", "rparen", "lparen"]);
@@ -20371,7 +19989,6 @@ var require_text_util = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/text.js
 var require_text2 = __commonJS({
   "node_modules/ace-code/src/layer/text.js"(exports) {
     "use strict";
@@ -20940,7 +20557,6 @@ var require_text2 = __commonJS({
         overflowEl.textContent = hide ? "<hide>" : "<click to see more...>";
         parent.appendChild(overflowEl);
       }
-      // row is either first row of foldline or not in fold
       $renderLine(parent, row, foldLine) {
         if (!foldLine && foldLine != false)
           foldLine = this.session.getFoldLine(row);
@@ -21057,7 +20673,6 @@ var require_text2 = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/cursor.js
 var require_cursor = __commonJS({
   "node_modules/ace-code/src/layer/cursor.js"(exports) {
     "use strict";
@@ -21281,7 +20896,6 @@ var require_cursor = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/scrollbar.js
 var require_scrollbar = __commonJS({
   "node_modules/ace-code/src/scrollbar.js"(exports) {
     "use strict";
@@ -21460,7 +21074,6 @@ var require_scrollbar = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/scrollbar_custom.js
 var require_scrollbar_custom = __commonJS({
   "node_modules/ace-code/src/scrollbar_custom.js"(exports) {
     "use strict";
@@ -21763,7 +21376,6 @@ var require_scrollbar_custom = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/renderloop.js
 var require_renderloop = __commonJS({
   "node_modules/ace-code/src/renderloop.js"(exports) {
     "use strict";
@@ -21809,7 +21421,6 @@ var require_renderloop = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/font_metrics.js
 var require_font_metrics = __commonJS({
   "node_modules/ace-code/src/layer/font_metrics.js"(exports) {
     var oop2 = require_oop();
@@ -21941,12 +21552,6 @@ var require_font_metrics = __commonJS({
         };
         this.els = dom.buildDom([t(0, 0), t(L, 0), t(0, L), t(L, L)], this.el);
       }
-      // general transforms from element coordinates x to screen coordinates u have the form
-      // | m1[0] m2[0] t[0] |   | x |       | u |
-      // | m1[1] m2[1] t[1] | . | y |  == k | v |
-      // | h[0]  h[1]  1    |   | 1 |       | 1 |
-      // this function finds the coeeficients of the matrix using positions of four points
-      //  
       transformCoordinates(clientPos, elPos) {
         if (clientPos) {
           var zoom = this.$getZoom(this.el);
@@ -21998,7 +21603,6 @@ var require_font_metrics = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/css/editor-css.js
 var require_editor_css = __commonJS({
   "node_modules/ace-code/src/css/editor-css.js"(exports, module) {
     module.exports = `
@@ -22701,7 +22305,6 @@ var require_editor_css = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/layer/decorators.js
 var require_decorators = __commonJS({
   "node_modules/ace-code/src/layer/decorators.js"(exports) {
     "use strict";
@@ -22833,7 +22436,6 @@ var require_decorators = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/virtual_renderer.js
 var require_virtual_renderer = __commonJS({
   "node_modules/ace-code/src/virtual_renderer.js"(exports) {
     "use strict";
@@ -22963,21 +22565,6 @@ var require_virtual_renderer = __commonJS({
         config2.resetOptions(this);
         config2._signal("renderer", this);
       }
-      // this.$logChanges = function(changes) {
-      //     var a = ""
-      //     if (changes & this.CHANGE_CURSOR) a += " cursor";
-      //     if (changes & this.CHANGE_MARKER) a += " marker";
-      //     if (changes & this.CHANGE_GUTTER) a += " gutter";
-      //     if (changes & this.CHANGE_SCROLL) a += " scroll";
-      //     if (changes & this.CHANGE_LINES) a += " lines";
-      //     if (changes & this.CHANGE_TEXT) a += " text";
-      //     if (changes & this.CHANGE_SIZE) a += " size";
-      //     if (changes & this.CHANGE_MARKER_BACK) a += " marker_back";
-      //     if (changes & this.CHANGE_MARKER_FRONT) a += " marker_front";
-      //     if (changes & this.CHANGE_FULL) a += " full";
-      //     if (changes & this.CHANGE_H_SCROLL) a += " h_scroll";
-      //     console.log(a.trim())
-      // };
       updateCharacterSize() {
         if (this.$textLayer.allowBoldFonts != this.$allowBoldFonts) {
           this.$allowBoldFonts = this.$textLayer.allowBoldFonts;
@@ -23058,9 +22645,6 @@ var require_virtual_renderer = __commonJS({
         this.$loop.schedule(this.CHANGE_TEXT | this.CHANGE_MARKER);
         this.$textLayer.onChangeTabSize();
       }
-      /**
-       * Triggers a full update of the text, for all the rows.
-       **/
       updateText() {
         this.$loop.schedule(this.CHANGE_TEXT);
       }
@@ -23075,9 +22659,6 @@ var require_virtual_renderer = __commonJS({
         else
           this.$loop.schedule(this.CHANGE_FULL);
       }
-      /**
-       * Updates the font size.
-       **/
       updateFontSize() {
         this.$textLayer.checkForSizeChanges();
       }
@@ -23199,10 +22780,6 @@ var require_virtual_renderer = __commonJS({
           this.$computeLayerConfig();
         }
       }
-      /**
-           * Adjusts the wrap limit, which is the number of characters that can fit within the width of the edit area on screen.
-      
-           **/
       adjustWrapLimit() {
         var availableWidth = this.$size.scrollerWidth - this.$padding * 2;
         var limit = Math.floor(availableWidth / this.characterWidth);
@@ -23345,9 +22922,6 @@ var require_virtual_renderer = __commonJS({
       getHighlightGutterLine() {
         return this.getOption("highlightGutterLine");
       }
-      /**
-      
-           */
       $updatePrintMargin() {
         if (!this.$showPrintMargin && !this.$printMarginEl)
           return;
@@ -23389,11 +22963,6 @@ var require_virtual_renderer = __commonJS({
       getTextAreaContainer() {
         return this.container;
       }
-      // move text input over the cursor
-      // this is required for IME
-      /**
-      
-           */
       $moveTextAreaToCursor() {
         if (this.$isMousePressed) return;
         var style = this.textarea.style;
@@ -23556,9 +23125,6 @@ var require_virtual_renderer = __commonJS({
       setVScrollBarAlwaysVisible(alwaysVisible) {
         this.setOption("vScrollBarAlwaysVisible", alwaysVisible);
       }
-      /**
-      
-           */
       $updateScrollBarV() {
         var scrollHeight = this.layerConfig.maxHeight;
         var scrollerHeight = this.$size.scrollerHeight;
@@ -23711,9 +23277,6 @@ var require_virtual_renderer = __commonJS({
         }
         this._signal("afterRender", changes);
       }
-      /**
-      
-           */
       $autosize() {
         var height = this.session.getScreenLength() * this.lineHeight;
         var maxHeight = this.$maxLines * this.lineHeight;
@@ -23864,17 +23427,10 @@ var require_virtual_renderer = __commonJS({
           charCount = this.$textLayer.MAX_LINE_LENGTH + 30;
         return Math.max(this.$size.scrollerWidth - 2 * this.$padding, Math.round(charCount * this.characterWidth));
       }
-      /**
-       * Schedules an update to all the front markers in the document.
-       **/
       updateFrontMarkers() {
         this.$markerFront.setMarkers(this.session.getMarkers(true));
         this.$loop.schedule(this.CHANGE_MARKER_FRONT);
       }
-      /**
-       *
-       * Schedules an update to all the back markers in the document.
-       **/
       updateBackMarkers() {
         this.$markerBack.setMarkers(this.session.getMarkers());
         this.$loop.schedule(this.CHANGE_MARKER_BACK);
@@ -23912,24 +23468,12 @@ var require_virtual_renderer = __commonJS({
         this.$gutterLayer.setAnnotations(annotations);
         this.$loop.schedule(this.CHANGE_GUTTER);
       }
-      /**
-       *
-       * Updates the cursor icon.
-       **/
       updateCursor() {
         this.$loop.schedule(this.CHANGE_CURSOR);
       }
-      /**
-       *
-       * Hides the cursor icon.
-       **/
       hideCursor() {
         this.$cursorLayer.hideCursor();
       }
-      /**
-       *
-       * Shows the cursor icon.
-       **/
       showCursor() {
         this.$cursorLayer.showCursor();
       }
@@ -24247,17 +23791,9 @@ var require_virtual_renderer = __commonJS({
           pageY: canvasPos.top + y - this.scrollTop
         };
       }
-      /**
-       *
-       * Focuses the current container.
-       **/
       visualizeFocus() {
         dom.addCssClass(this.container, "ace_focus");
       }
-      /**
-       *
-       * Blurs the current container.
-       **/
       visualizeBlur() {
         dom.removeCssClass(this.container, "ace_focus");
       }
@@ -24292,11 +23828,6 @@ var require_virtual_renderer = __commonJS({
         this.addToken(text, "composition_placeholder", cursor.row, cursor.column);
         this.$moveTextAreaToCursor();
       }
-      /**
-           *
-           * Hides the current composition.
-      
-           **/
       hideComposition() {
         if (!this.$composition)
           return;
@@ -24437,7 +23968,6 @@ var require_virtual_renderer = __commonJS({
         }
         this.updateLines(row, row);
       }
-      // Hide all non-ghost-text tokens to the right of a given position.
       hideTokensAfterPosition(row, column) {
         var tokens = this.session.getTokens(row);
         var l = 0;
@@ -24527,9 +24057,6 @@ var require_virtual_renderer = __commonJS({
       getTheme() {
         return this.$themeId;
       }
-      // Methods allows to add / remove CSS classnames to the editor element.
-      // This feature can be used by plug-ins to provide a visual indication of
-      // a certain mode that editor is in.
       /**
        * [Adds a new class, `style`, to the editor.]{: #VirtualRenderer.setStyle}
        * @param {String} style A class name
@@ -24561,10 +24088,6 @@ var require_virtual_renderer = __commonJS({
       attachToShadowRoot() {
         dom.importCssString(editorCss, "ace_editor.css", this.container);
       }
-      /**
-           * Destroys the text and cursor layers for this renderer.
-      
-           **/
       destroy() {
         this.freeze();
         this.$fontMetrics.destroy();
@@ -24611,9 +24134,6 @@ var require_virtual_renderer = __commonJS({
           });
         }
       }
-      /**
-      
-           */
       $addResizeObserver() {
         if (!window.ResizeObserver || this.$resizeObserver) return;
         var self = this;
@@ -24853,7 +24373,6 @@ var require_virtual_renderer = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/worker/worker_client.js
 var require_worker_client = __commonJS({
   "node_modules/ace-code/src/worker/worker_client.js"(exports) {
     var WorkerClient2;
@@ -24869,7 +24388,6 @@ var require_worker_client = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/placeholder.js
 var require_placeholder = __commonJS({
   "node_modules/ace-code/src/placeholder.js"(exports) {
     "use strict";
@@ -24906,12 +24424,6 @@ var require_placeholder = __commonJS({
         this.setup();
         session.selection.on("changeCursor", this.$onCursorChange);
       }
-      /**
-       * PlaceHolder.setup()
-       *
-       * TODO
-       *
-       **/
       setup() {
         var _self = this;
         var doc = this.doc;
@@ -24933,12 +24445,6 @@ var require_placeholder = __commonJS({
         });
         session.setUndoSelect(false);
       }
-      /**
-       * PlaceHolder.showOtherMarkers()
-       *
-       * TODO
-       *
-       **/
       showOtherMarkers() {
         if (this.othersActive) return;
         var session = this.session;
@@ -24948,12 +24454,6 @@ var require_placeholder = __commonJS({
           anchor.markerId = session.addMarker(new Range2(anchor.row, anchor.column, anchor.row, anchor.column + _self.length), _self.othersClass, null, false);
         });
       }
-      /**
-       * PlaceHolder.hideOtherMarkers()
-       *
-       * Hides all over markers in the [[EditSession `EditSession`]] that are not the currently selected one.
-       *
-       **/
       hideOtherMarkers() {
         if (!this.othersActive) return;
         this.othersActive = false;
@@ -25039,12 +24539,6 @@ var require_placeholder = __commonJS({
           this._emit("cursorLeave", event);
         }
       }
-      /**
-       * PlaceHolder.detach()
-       *
-       * TODO
-       *
-       **/
       detach() {
         this.session.removeMarker(this.pos && this.pos.markerId);
         this.hideOtherMarkers();
@@ -25053,12 +24547,6 @@ var require_placeholder = __commonJS({
         this.session.setUndoSelect(true);
         this.session = null;
       }
-      /**
-       * PlaceHolder.cancel()
-       *
-       * TODO
-       *
-       **/
       cancel() {
         if (this.$undoStackDepth === -1)
           return;
@@ -25076,7 +24564,6 @@ var require_placeholder = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mouse/multi_select_handler.js
 var require_multi_select_handler = __commonJS({
   "node_modules/ace-code/src/mouse/multi_select_handler.js"(exports) {
     var event = require_event();
@@ -25223,7 +24710,6 @@ var require_multi_select_handler = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/commands/multi_select_commands.js
 var require_multi_select_commands = __commonJS({
   "node_modules/ace-code/src/commands/multi_select_commands.js"(exports) {
     exports.defaultCommands = [{
@@ -25352,7 +24838,6 @@ var require_multi_select_commands = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/multi_select.js
 var require_multi_select = __commonJS({
   "node_modules/ace-code/src/multi_select.js"(exports) {
     var RangeList = require_range_list().RangeList;
@@ -26050,7 +25535,6 @@ var require_multi_select = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/folding/fold_mode.js
 var require_fold_mode = __commonJS({
   "node_modules/ace-code/src/mode/folding/fold_mode.js"(exports) {
     "use strict";
@@ -26124,7 +25608,6 @@ var require_fold_mode = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/ext/error_marker.js
 var require_error_marker = __commonJS({
   "node_modules/ace-code/src/ext/error_marker.js"(exports) {
     "use strict";
@@ -26287,7 +25770,6 @@ var require_error_marker = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/ace.js
 var require_ace = __commonJS({
   "node_modules/ace-code/src/ace.js"(exports) {
     "use strict";
@@ -26354,7 +25836,6 @@ var require_ace = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/xml_highlight_rules.js
 var require_xml_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/xml_highlight_rules.js"(exports) {
     "use strict";
@@ -26456,11 +25937,9 @@ var require_xml_highlight_rules = __commonJS({
         tag_whitespace: [
           { token: "text.tag-whitespace.xml", regex: "\\s+" }
         ],
-        // for doctype and processing instructions
         whitespace: [
           { token: "text.whitespace.xml", regex: "\\s+" }
         ],
-        // for doctype and processing instructions
         string: [{
           token: "string.xml",
           regex: "'",
@@ -26548,7 +26027,6 @@ var require_xml_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/behaviour/xml.js
 var require_xml = __commonJS({
   "node_modules/ace-code/src/mode/behaviour/xml.js"(exports) {
     "use strict";
@@ -26697,7 +26175,6 @@ var require_xml = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/folding/xml.js
 var require_xml2 = __commonJS({
   "node_modules/ace-code/src/mode/folding/xml.js"(exports) {
     "use strict";
@@ -26816,7 +26293,6 @@ var require_xml2 = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/jsdoc_comment_highlight_rules.js
 var require_jsdoc_comment_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/jsdoc_comment_highlight_rules.js"(exports) {
     "use strict";
@@ -26938,7 +26414,6 @@ var require_jsdoc_comment_highlight_rules = __commonJS({
     JsDocCommentHighlightRules.getStartRule = function(start) {
       return {
         token: "comment.doc",
-        // doc comment
         regex: /\/\*\*(?!\/)/,
         next: start
       };
@@ -26946,7 +26421,6 @@ var require_jsdoc_comment_highlight_rules = __commonJS({
     JsDocCommentHighlightRules.getEndRule = function(start) {
       return {
         token: "comment.doc",
-        // closing comment
         regex: "\\*\\/",
         next: start
       };
@@ -26955,7 +26429,6 @@ var require_jsdoc_comment_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/javascript_highlight_rules.js
 var require_javascript_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/javascript_highlight_rules.js"(exports) {
     "use strict";
@@ -26966,7 +26439,6 @@ var require_javascript_highlight_rules = __commonJS({
     var JavaScriptHighlightRules = function(options) {
       var keywords = {
         "variable.language": "Array|Boolean|Date|Function|Iterator|Number|Object|RegExp|String|Proxy|Symbol|Namespace|QName|XML|XMLList|ArrayBuffer|Float32Array|Float64Array|Int16Array|Int32Array|Int8Array|Uint16Array|Uint32Array|Uint8Array|Uint8ClampedArray|Error|EvalError|InternalError|RangeError|ReferenceError|StopIteration|SyntaxError|TypeError|URIError|decodeURI|decodeURIComponent|encodeURI|encodeURIComponent|eval|isFinite|isNaN|parseFloat|parseInt|JSON|Math|this|arguments|prototype|window|document",
-        // Pseudo
         "keyword": "const|yield|import|get|set|async|await|break|case|catch|continue|default|delete|do|else|finally|for|if|in|of|instanceof|new|return|switch|throw|try|typeof|let|var|while|with|debugger|__parent__|__count__|escape|unescape|with|__proto__|class|enum|extends|super|export|implements|private|public|interface|package|protected|static|constructor",
         "storage.type": "const|let|var|function",
         "constant.language": "null|Infinity|NaN|undefined",
@@ -26978,7 +26450,6 @@ var require_javascript_highlight_rules = __commonJS({
       var escapedRe = "\\\\(?:x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|u{[0-9a-fA-F]{1,6}}|[0-2][0-7]{0,2}|3[0-7][0-7]?|[4-7][0-7]?|.)";
       var anonymousFunctionRe = "(function)(\\s*)(\\*?)";
       var functionCallStartRule = {
-        //just simple function call
         token: ["identifier", "text", "paren.lparen"],
         regex: "(\\b(?!" + Object.values(keywords).join("|") + "\\b)" + identifierRe + ")(\\s*)(\\()"
       };
@@ -27001,7 +26472,6 @@ var require_javascript_highlight_rules = __commonJS({
             include: "numeric_constants"
           },
           {
-            // play = function() {  }
             token: [
               "entity.name.function",
               "text",
@@ -27017,7 +26487,6 @@ var require_javascript_highlight_rules = __commonJS({
             next: "function_arguments"
           },
           {
-            // function myFunc(arg) { }
             token: [
               "storage.type",
               "text",
@@ -27032,7 +26501,6 @@ var require_javascript_highlight_rules = __commonJS({
             next: "function_arguments"
           },
           {
-            // foobar: function() { }
             token: [
               "entity.name.function",
               "text",
@@ -27048,7 +26516,6 @@ var require_javascript_highlight_rules = __commonJS({
             next: "function_arguments"
           },
           {
-            // : function() { } (this is for issues with 'foo': function() { })
             token: [
               "text",
               "text",
@@ -27062,7 +26529,6 @@ var require_javascript_highlight_rules = __commonJS({
             next: "function_arguments"
           },
           {
-            // from "module-path" (this is the only case where 'from' should be a keyword)
             token: "keyword",
             regex: `from(?=\\s*('|"))`
           },
@@ -27127,7 +26593,6 @@ var require_javascript_highlight_rules = __commonJS({
             regex: /=/
           },
           {
-            // Sound.play = function() {  }
             token: [
               "storage.type",
               "text",
@@ -27139,7 +26604,6 @@ var require_javascript_highlight_rules = __commonJS({
             next: "function_arguments"
           },
           {
-            // Sound.play = function play() {  }
             token: [
               "storage.type",
               "text",
@@ -27183,8 +26647,6 @@ var require_javascript_highlight_rules = __commonJS({
             next: "no_regex"
           }
         ],
-        // regular expressions are only allowed after certain tokens. This
-        // makes sure we don't mix up regexps with the divison operator
         "start": [
           DocCommentHighlightRules.getStartRule("doc-start"),
           comments("start"),
@@ -27199,8 +26661,6 @@ var require_javascript_highlight_rules = __commonJS({
             next: "start"
           },
           {
-            // immediately return to the start mode without matching
-            // anything
             token: "empty",
             regex: "",
             next: "no_regex"
@@ -27208,23 +26668,19 @@ var require_javascript_highlight_rules = __commonJS({
         ],
         "regex": [
           {
-            // escapes
             token: "regexp.keyword.operator",
             regex: "\\\\(?:u[\\da-fA-F]{4}|x[\\da-fA-F]{2}|.)"
           },
           {
-            // flag
             token: "string.regexp",
             regex: "/[sxngimy]*",
             next: "no_regex"
           },
           {
-            // invalid operators
             token: "invalid",
             regex: /\{\d+\b,?\d*\}[+*]|[+*$^?][+*]|[$^][?]|\?{3,}/
           },
           {
-            // operators
             token: "constant.language.escape",
             regex: /\(\?[:=!]|\)|\{\d+\b,?\d*\}|[+*]\?|[()$^+*?.]/
           },
@@ -27389,12 +26845,10 @@ var require_javascript_highlight_rules = __commonJS({
         "numeric_constants": [
           {
             token: "constant.numeric",
-            // hexadecimal, octal and binary
             regex: /0(?:[xX][0-9a-fA-F_]+|[oO][0-7_]+|[bB][01_]+)\b/
           },
           {
             token: "constant.numeric",
-            // decimal integers and floats
             regex: /(?:\d[\d_]*(?:\.[\d_]*)?|\.\d[\d_]*)(?:[eE][+-]?\d+\b)?/
           }
         ]
@@ -27577,7 +27031,6 @@ var require_javascript_highlight_rules = __commonJS({
       return [
         {
           token: "comment",
-          // multi line comment
           regex: /\/\*/,
           next: [
             DocCommentHighlightRules.getTagRule(),
@@ -27600,7 +27053,6 @@ var require_javascript_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/matching_brace_outdent.js
 var require_matching_brace_outdent = __commonJS({
   "node_modules/ace-code/src/mode/matching_brace_outdent.js"(exports) {
     "use strict";
@@ -27631,7 +27083,6 @@ var require_matching_brace_outdent = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/behaviour/javascript.js
 var require_javascript = __commonJS({
   "node_modules/ace-code/src/mode/behaviour/javascript.js"(exports) {
     "use strict";
@@ -27663,7 +27114,6 @@ var require_javascript = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/folding/cstyle.js
 var require_cstyle2 = __commonJS({
   "node_modules/ace-code/src/mode/folding/cstyle.js"(exports) {
     "use strict";
@@ -27779,7 +27229,6 @@ var require_cstyle2 = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/folding/javascript.js
 var require_javascript2 = __commonJS({
   "node_modules/ace-code/src/mode/folding/javascript.js"(exports) {
     "use strict";
@@ -27815,7 +27264,6 @@ var require_javascript2 = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/javascript.js
 var require_javascript3 = __commonJS({
   "node_modules/ace-code/src/mode/javascript.js"(exports) {
     "use strict";
@@ -27884,7 +27332,6 @@ var require_javascript3 = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/json_highlight_rules.js
 var require_json_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/json_highlight_rules.js"(exports) {
     "use strict";
@@ -27895,23 +27342,19 @@ var require_json_highlight_rules = __commonJS({
         "start": [
           {
             token: "variable",
-            // single line
             regex: '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]\\s*(?=:)'
           },
           {
             token: "string",
-            // single line
             regex: '"',
             next: "string"
           },
           {
             token: "constant.numeric",
-            // hex
             regex: "0[xX][0-9a-fA-F]+\\b"
           },
           {
             token: "constant.numeric",
-            // float
             regex: "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
           },
           {
@@ -27920,17 +27363,14 @@ var require_json_highlight_rules = __commonJS({
           },
           {
             token: "text",
-            // single quoted strings are not allowed
             regex: "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
           },
           {
             token: "comment",
-            // comments are not allowed, but who cares?
             regex: "\\/\\/.*$"
           },
           {
             token: "comment.start",
-            // comments are not allowed, but who cares?
             regex: "\\/\\*",
             next: "comment"
           },
@@ -27968,7 +27408,6 @@ var require_json_highlight_rules = __commonJS({
         "comment": [
           {
             token: "comment.end",
-            // comments are not allowed, but who cares?
             regex: "\\*\\/",
             next: "start"
           },
@@ -27983,7 +27422,6 @@ var require_json_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/json.js
 var require_json = __commonJS({
   "node_modules/ace-code/src/mode/json.js"(exports) {
     "use strict";
@@ -28036,7 +27474,6 @@ var require_json = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/python_highlight_rules.js
 var require_python_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/python_highlight_rules.js"(exports) {
     "use strict";
@@ -28075,22 +27512,18 @@ var require_python_highlight_rules = __commonJS({
           regex: "#.*$"
         }, {
           token: "string",
-          // multi line """ string start
           regex: strPre + '"{3}',
           next: "qqstring3"
         }, {
           token: "string",
-          // " string
           regex: strPre + '"(?=.)',
           next: "qqstring"
         }, {
           token: "string",
-          // multi line ''' string start
           regex: strPre + "'{3}",
           next: "qstring3"
         }, {
           token: "string",
-          // ' string
           regex: strPre + "'(?=.)",
           next: "qstring"
         }, {
@@ -28167,7 +27600,6 @@ var require_python_highlight_rules = __commonJS({
           regex: stringEscape
         }, {
           token: "string",
-          // multi line """ string end
           regex: '"{3}',
           next: "start"
         }, {
@@ -28178,7 +27610,6 @@ var require_python_highlight_rules = __commonJS({
           regex: stringEscape
         }, {
           token: "string",
-          // multi line ''' string end
           regex: "'{3}",
           next: "start"
         }, {
@@ -28214,7 +27645,6 @@ var require_python_highlight_rules = __commonJS({
         }],
         "rawqqstring3": [{
           token: "string",
-          // multi line """ string end
           regex: '"{3}',
           next: "start"
         }, {
@@ -28222,7 +27652,6 @@ var require_python_highlight_rules = __commonJS({
         }],
         "rawqstring3": [{
           token: "string",
-          // multi line ''' string end
           regex: "'{3}",
           next: "start"
         }, {
@@ -28255,7 +27684,6 @@ var require_python_highlight_rules = __commonJS({
           regex: stringEscape
         }, {
           token: "string",
-          // multi line """ string end
           regex: '"{3}',
           next: "start"
         }, {
@@ -28270,7 +27698,6 @@ var require_python_highlight_rules = __commonJS({
           regex: stringEscape
         }, {
           token: "string",
-          // multi line ''' string end
           regex: "'{3}",
           next: "start"
         }, {
@@ -28314,7 +27741,6 @@ var require_python_highlight_rules = __commonJS({
         }],
         "rfqqstring3": [{
           token: "string",
-          // multi line """ string end
           regex: '"{3}',
           next: "start"
         }, {
@@ -28326,7 +27752,6 @@ var require_python_highlight_rules = __commonJS({
         }],
         "rfqstring3": [{
           token: "string",
-          // multi line ''' string end
           regex: "'{3}",
           next: "start"
         }, {
@@ -28363,7 +27788,6 @@ var require_python_highlight_rules = __commonJS({
           defaultToken: "string"
         }],
         "fqstringParRules": [{
-          //TODO: nested {}
           token: "paren.lparen",
           regex: "[\\[\\(]"
         }, {
@@ -28394,23 +27818,18 @@ var require_python_highlight_rules = __commonJS({
         }],
         "constants": [{
           token: "constant.numeric",
-          // imaginary
           regex: "(?:" + floatNumber + "|\\d+)[jJ]\\b"
         }, {
           token: "constant.numeric",
-          // float
           regex: floatNumber
         }, {
           token: "constant.numeric",
-          // long integer
           regex: integer + "[lL]\\b"
         }, {
           token: "constant.numeric",
-          // integer
           regex: integer + "\\b"
         }, {
           token: ["punctuation", "function.support"],
-          // method
           regex: "(\\.)([a-zA-Z_]+)\\b"
         }, {
           token: keywordMapper,
@@ -28424,7 +27843,6 @@ var require_python_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/folding/pythonic.js
 var require_pythonic = __commonJS({
   "node_modules/ace-code/src/mode/folding/pythonic.js"(exports) {
     "use strict";
@@ -28450,7 +27868,6 @@ var require_pythonic = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/python.js
 var require_python = __commonJS({
   "node_modules/ace-code/src/mode/python.js"(exports) {
     "use strict";
@@ -28520,7 +27937,6 @@ var require_python = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/css_highlight_rules.js
 var require_css_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/css_highlight_rules.js"(exports) {
     "use strict";
@@ -28598,7 +28014,6 @@ var require_css_highlight_rules = __commonJS({
         }],
         "comments": [{
           token: "comment",
-          // multi line comment
           regex: "\\/\\*",
           push: [{
             token: "comment",
@@ -28628,11 +28043,9 @@ var require_css_highlight_rules = __commonJS({
           regex: numRe
         }, {
           token: "constant.numeric",
-          // hex6 color
           regex: "#[a-f0-9]{6}"
         }, {
           token: "constant.numeric",
-          // hex3 color
           regex: "#[a-f0-9]{3}"
         }, {
           token: ["punctuation", "entity.other.attribute-name.pseudo-element.css"],
@@ -28707,7 +28120,6 @@ var require_css_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/scss_highlight_rules.js
 var require_scss_highlight_rules = __commonJS({
   "node_modules/ace-code/src/mode/scss_highlight_rules.js"(exports) {
     "use strict";
@@ -28737,29 +28149,24 @@ var require_scss_highlight_rules = __commonJS({
           },
           {
             token: "comment",
-            // multi line comment
             regex: "\\/\\*",
             next: "comment"
           },
           {
             token: "string",
-            // single line
             regex: '["](?:(?:\\\\.)|(?:[^"\\\\]))*?["]'
           },
           {
             token: "string",
-            // multi line string start
             regex: '["].*\\\\$',
             next: "qqstring"
           },
           {
             token: "string",
-            // single line
             regex: "['](?:(?:\\\\.)|(?:[^'\\\\]))*?[']"
           },
           {
             token: "string",
-            // multi line string start
             regex: "['].*\\\\$",
             next: "qstring"
           },
@@ -28769,12 +28176,10 @@ var require_scss_highlight_rules = __commonJS({
           },
           {
             token: "constant.numeric",
-            // hex6 color
             regex: "#[a-f0-9]{6}"
           },
           {
             token: "constant.numeric",
-            // hex3 color
             regex: "#[a-f0-9]{3}"
           },
           {
@@ -28847,7 +28252,6 @@ var require_scss_highlight_rules = __commonJS({
         "comment": [
           {
             token: "comment",
-            // closing comment
             regex: "\\*\\/",
             next: "start"
           },
@@ -28884,7 +28288,6 @@ var require_scss_highlight_rules = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/behaviour/css.js
 var require_css = __commonJS({
   "node_modules/ace-code/src/mode/behaviour/css.js"(exports) {
     "use strict";
@@ -28970,7 +28373,6 @@ var require_css = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/css_completions.js
 var require_css_completions = __commonJS({
   "node_modules/ace-code/src/mode/css_completions.js"(exports) {
     "use strict";
@@ -29036,11 +28438,9 @@ var require_css_completions = __commonJS({
       "white-space": { "nowrap": 1, "normal": 1, "pre": 1, "pre-line": 1, "pre-wrap": 1 },
       "width": { "px": 1, "em": 1, "%": 1 },
       "word-spacing": { "normal": 1 },
-      // opacity
       "filter": { "alpha(opacity=$0100)": 1 },
       "text-shadow": { "$02px 2px 2px #777": 1 },
       "text-overflow": { "ellipsis-word": 1, "clip": 1, "ellipsis": 1 },
-      // border radius
       "-moz-border-radius": 1,
       "-moz-border-radius-topright": 1,
       "-moz-border-radius-bottomright": 1,
@@ -29051,10 +28451,8 @@ var require_css_completions = __commonJS({
       "-webkit-border-top-left-radius": 1,
       "-webkit-border-bottom-right-radius": 1,
       "-webkit-border-bottom-left-radius": 1,
-      // dropshadows
       "-moz-box-shadow": 1,
       "-webkit-box-shadow": 1,
-      // transformations
       "transform": { "rotate($00deg)": 1, "skew($00deg)": 1 },
       "-moz-transform": { "rotate($00deg)": 1, "skew($00deg)": 1 },
       "-webkit-transform": { "rotate($00deg)": 1, "skew($00deg)": 1 }
@@ -29132,7 +28530,6 @@ var require_css_completions = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/scss.js
 var require_scss = __commonJS({
   "node_modules/ace-code/src/mode/scss.js"(exports) {
     "use strict";
@@ -29181,7 +28578,6 @@ var require_scss = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/mode/xml.js
 var require_xml3 = __commonJS({
   "node_modules/ace-code/src/mode/xml.js"(exports) {
     "use strict";
@@ -29218,7 +28614,6 @@ var require_xml3 = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/theme/monokai-css.js
 var require_monokai_css = __commonJS({
   "node_modules/ace-code/src/theme/monokai-css.js"(exports, module) {
     module.exports = `.ace-monokai .ace_gutter {
@@ -29350,7 +28745,6 @@ var require_monokai_css = __commonJS({
   }
 });
 
-// node_modules/ace-code/src/theme/monokai.js
 var require_monokai = __commonJS({
   "node_modules/ace-code/src/theme/monokai.js"(exports) {
     exports.isDark = true;
@@ -29361,7 +28755,6 @@ var require_monokai = __commonJS({
   }
 });
 
-// entry.js
 var import_ace_code = __toESM(require_ace());
 var import_text = __toESM(require_text());
 var import_xml_highlight_rules = __toESM(require_xml_highlight_rules());

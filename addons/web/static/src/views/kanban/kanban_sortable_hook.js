@@ -45,9 +45,6 @@ export function useKanbanSortable(options) {
     let dataGroupId;
     let draggedGroupId;
 
-    // the drag session attaches its listeners (a non-passive touchstart, a
-    // contextmenu guard) to whatever element the ref yields, whatever enable
-    // says: a small screen gets none until it grows
     let lastCanUseSortable;
     const sortableRef = {
         get el() {

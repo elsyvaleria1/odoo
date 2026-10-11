@@ -24,10 +24,6 @@ const {
 
 coreTypes.add("ADD_FIELD_SYNC").add("DELETE_FIELD_SYNCS");
 
-/**
- * Adds the spreadsheet field sync plugins and menus
- * and removes them when the action is left
- */
 export function useSpreadsheetFieldSyncStore() {
     const stores = useStoreProvider();
     onMounted(() => {
@@ -36,7 +32,6 @@ export function useSpreadsheetFieldSyncStore() {
 }
 
 export function addSpreadsheetFieldSyncExtensionWithCleanUp(cleanUpHook = () => {}) {
-    // plugins
     addToRegistryWithCleanup(
         cleanUpHook,
         featurePluginRegistry,
@@ -50,7 +45,6 @@ export function addSpreadsheetFieldSyncExtensionWithCleanUp(cleanUpHook = () => 
         FieldSyncCorePlugin,
     );
 
-    // menus
     const addMenuAction = {
         icon: "spreadsheet_sale_management.OdooLogo",
         name: (env) => {
@@ -144,7 +138,6 @@ export function addSpreadsheetFieldSyncExtensionWithCleanUp(cleanUpHook = () => 
         editAction.children[deleteIndex].children.splice(deleteFieldSyncIndex, 1);
     });
 
-    // side panel
     addToRegistryWithCleanup(cleanUpHook, sidePanelRegistry, "FieldSyncSidePanel", {
         title: _t("Field syncing"),
         Body: FieldSyncSidePanel,
@@ -160,7 +153,6 @@ export function addSpreadsheetFieldSyncExtensionWithCleanUp(cleanUpHook = () => 
         },
     });
 
-    // clipboard
     addToRegistryWithCleanup(
         cleanUpHook,
         clipboardHandlersRegistries.cellHandlers,
@@ -168,7 +160,6 @@ export function addSpreadsheetFieldSyncExtensionWithCleanUp(cleanUpHook = () => 
         FieldSyncClipboardHandler,
     );
 
-    // misc
     const identity = (cmd) => cmd;
     addToRegistryWithCleanup(
         cleanUpHook,

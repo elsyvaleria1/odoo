@@ -524,12 +524,12 @@ records = Model.search(
 **Renderer subsystems** (separate files for maintainability):
 - `geoengine_renderer_layers.js` (265 lines): Vector/raster layer creation, data loading, GeoJSON parsing
 - `geoengine_renderer_styling.js` (430 lines): 6 styling modes (basic, proportional, colored range, color-from-field, heatmap, cluster)
-- `geoengine_renderer_interactions.js` (1,230 lines): Select, draw, modify, snap map interactions
+- `geoengine_renderer_interactions.js` (1,223 lines): Select, draw, modify, snap map interactions
 - `geoengine_renderer_trails.js` (263 lines): Live position trails, stored and drawn per model
-- `geoengine_renderer_utils.js` (207 lines): Coordinate transforms, geometry helpers
-- `geoengine_map_tools.js` (451 lines): Measure, locate, box-select, snap, export PNG
-- `render_strategies.js` (577 lines): WebGL/Canvas strategy selection and conversion
-- `webgl_style_converter.js` (244 lines): OL style -> WebGL flat style conversion
+- `geoengine_renderer_utils.js` (204 lines): Coordinate transforms, geometry helpers
+- `geoengine_map_tools.js` (448 lines): Measure, locate, box-select, snap, export PNG
+- `render_strategies.js` (560 lines): WebGL/Canvas strategy selection and conversion
+- `webgl_style_converter.js` (242 lines): OL style -> WebGL flat style conversion
 
 **UI panels:**
 - `features_list.js` (221 lines): Sidebar listing map features

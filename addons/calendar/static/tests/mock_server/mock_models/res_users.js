@@ -29,10 +29,6 @@ export class ResUsers extends mailModels.ResUsers {
             ["start", ">=", serializeDateTime(startDate)],
             ["stop", ">=", serializeDateTime(startDate)],
             ["start", "<=", serializeDateTime(endDate)],
-            // FIXME: Makes "activity_menu.test.js" fail
-            // "&",
-            // ["allday", "=", true],
-            // ["start_date", "=", serializeDateTime(startDate)],
             ["attendee_ids", "in", [...currentPartnerAttendeeIds]],
         ];
     }
@@ -49,7 +45,7 @@ export class ResUsers extends mailModels.ResUsers {
         );
         if (meetingsLines.length) {
             activities.unshift({
-                id: "calendar.event", // for simplicity
+                id: "calendar.event",
                 meetings: meetingsLines,
                 model: "calendar.event",
                 name: "Today's Meetings",

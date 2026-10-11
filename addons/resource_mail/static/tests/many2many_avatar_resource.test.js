@@ -17,24 +17,8 @@ describe.current.tags("desktop");
 const data = {};
 defineResourceMailModels();
 beforeEach(async () => {
-    /* 1. Create data
-        3 type of resources will be tested in the widget:
-        - material resource (resourceComputer)
-            - fa-wrench should be used instead of avatar
-            - clicking the icon should not open any popover
-        - human resource not linked to a user (resourceMarie)
-            (- avatar of the resource should not be displayed)
-            (Currently not implemented to stay in line with m2o widget)
-            - a card popover should open
-            - No possibility to send a message to this resource as no user exists for it
-        - human resource linked to a user (resourcePierre)
-            - avatar of the user should be displayed
-            - a card popover should open
-            - A button to send a message to this user should be on the card
-    */
     const pyEnv = await startServer();
 
-    // User
     data.partnerPierreId = pyEnv["res.partner"].create({
         name: "Pierre",
         email: "Pierre@odoo.test",
@@ -45,7 +29,6 @@ beforeEach(async () => {
         partner_id: data.partnerPierreId,
     });
 
-    // Resources
     [data.resourceComputerId, data.resourceMarieId, data.resourcePierreId] = pyEnv[
         "resource.resource"
     ].create([
@@ -66,7 +49,6 @@ beforeEach(async () => {
         },
     ]);
 
-    // Tasks linked to those resources
     [data.task1Id, data.task2Id] = pyEnv["resource.task"].create([
         {
             display_name: "Task with three resources",
@@ -110,7 +92,6 @@ test("many2many_avatar_resource widget in form view", async () => {
     });
     await contains("img.o_m2m_avatar", { count: 2 });
     await contains(".fa-wrench", { count: 1 });
-    // Second and third records in widget should display employee avatars
     const avatarImages = queryAll(".many2many_tags_avatar_field_container .o_tag img");
     expect(avatarImages[0]).toHaveAttribute(
         "data-src",
@@ -120,11 +101,9 @@ test("many2many_avatar_resource widget in form view", async () => {
         "data-src",
         `/web/image/resource.resource/${data.resourcePierreId}/avatar_128`,
     );
-    // 1. Clicking on material resource's icon
     await click(".many2many_tags_avatar_field_container .o_tag i.fa-wrench");
     await contains(".o_avatar_card", { count: 0 });
 
-    // 2. Clicking on human resource's avatar with no user associated
     await click(".many2many_tags_avatar_field_container .o_tag img:first");
     await contains(".o_card_user_infos span", { text: "Marie" });
     await contains(
@@ -137,7 +116,6 @@ test("many2many_avatar_resource widget in form view", async () => {
         { text: "Send message", count: 0 },
         'No "Send Message" button should be displayed for this employee as it is linked to no user',
     );
-    // 3. Clicking on human resource's avatar with one user associated
     await click(queryAll(".many2many_tags_avatar_field_container .o_tag img")[1]);
     await contains(".o_card_user_infos span", { text: "Pierre" });
     await contains(
@@ -189,7 +167,6 @@ test("many2many_avatar_resource widget in list view", async () => {
         "The text should be displayed on the avatar",
     );
 
-    // Second and third records in widget should display employee avatars
     const [tagMarie, tagPierre] = document.querySelectorAll(
         ".many2many_tags_avatar_field_container .o_tag img",
     );
@@ -201,10 +178,8 @@ test("many2many_avatar_resource widget in list view", async () => {
         "data-src",
         `/web/image/resource.resource/${data.resourcePierreId}/avatar_128`,
     );
-    // 1. Clicking on material resource's icon
     await click(".many2many_tags_avatar_field_container .o_tag i.fa-wrench");
     await contains(".o_avatar_card", { count: 0 });
-    // 2. Clicking on human resource's avatar with no user associated
     await click(tagMarie);
     await contains(".o_card_user_infos span", { text: "Marie" });
     await contains(
@@ -217,7 +192,6 @@ test("many2many_avatar_resource widget in list view", async () => {
         { text: "Send message", count: 0 },
         'No "Send Message" button should be displayed for this employee as it is linked to no user',
     );
-    // 3. Clicking on human resource's avatar with one user associated
     await click(tagPierre);
     await contains(".o_card_user_infos span", { text: "Pierre" });
     await contains(
@@ -285,7 +259,6 @@ test("many2many_avatar_resource widget in kanban view", async () => {
         "No text should be displayed on the avatar",
     );
 
-    // Second and third records in widget should display employee avatars
     const [tagMarie, tagPierre] = document.querySelectorAll(
         ".many2many_tags_avatar_field_container .o_tag img",
     );
@@ -297,10 +270,8 @@ test("many2many_avatar_resource widget in kanban view", async () => {
         "data-src",
         `/web/image/resource.resource/${data.resourcePierreId}/avatar_128`,
     );
-    // 1. Clicking on material resource's icon
     await click(".many2many_tags_avatar_field_container .o_tag i.fa-wrench");
     await contains(".o_avatar_card", { count: 0 });
-    // 2. Clicking on human resource's avatar with no user associated
     await click(tagMarie);
     await contains(".o_card_user_infos span", { text: "Marie" });
     await contains(
@@ -313,7 +284,6 @@ test("many2many_avatar_resource widget in kanban view", async () => {
         { text: "Send message", count: 0 },
         'No "Send Message" button should be displayed for this employee as it is linked to no user',
     );
-    // 3. Clicking on human resource's avatar with one user associated
     await click(tagPierre);
     await contains(".o_card_user_infos span", { text: "Pierre" });
     await contains(

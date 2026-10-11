@@ -70,9 +70,6 @@ export class KnowledgeCommentsThread extends Component {
         this.state = proxy({
             hasFullAnchorText: false,
         });
-        // We need to unset the chatter inside the env of the child Components
-        // because this Object contains values and methods that are linked to the form view's
-        // main chatter. By doing this we distinguish the main chatter from the comments.
         provideMailContext({ inChatter: false, chatter: false });
         provideKnowledgeContext({
             closeThread: this.updateResolveState.bind(this, true),
@@ -298,7 +295,6 @@ export class KnowledgeCommentsThread extends Component {
         `;
     }
 
-    /**@see EditorThreadInfo */
     get editorThread() {
         return this.commentsState.editorThreads[this.props.threadId];
     }
@@ -344,7 +340,6 @@ export class KnowledgeCommentsThread extends Component {
         return fullAnchorText.length > 0 && anchorText.length !== fullAnchorText.length;
     }
 
-    /**@see Thread */
     get thread() {
         return this.commentsState.threads[this.props.threadId];
     }
@@ -367,9 +362,6 @@ export class KnowledgeCommentsThread extends Component {
         }
     }
 
-    /**
-     * Used for the message actions
-     */
     isResolved() {
         if (this.props.threadId === "undefined") {
             return false;

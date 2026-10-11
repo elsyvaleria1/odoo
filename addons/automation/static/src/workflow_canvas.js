@@ -62,8 +62,6 @@ export class WorkflowCanvas extends Component {
             nodes: [],
             connections: [],
         });
-        // null asks the server to choose (a live run, else the definition);
-        // false pins the definition; an id pins that run.
         this.requestedRuntimeId = null;
         this.payload = null;
         this.listening = null;
@@ -77,8 +75,6 @@ export class WorkflowCanvas extends Component {
                 }
                 return;
             }
-            // Follow the run that just moved, unless the reader has pinned a
-            // different one -- their choice outranks the notification.
             if (this.requestedRuntimeId === null && runtime_id) {
                 this.requestedRuntimeId = runtime_id;
             }
@@ -97,8 +93,6 @@ export class WorkflowCanvas extends Component {
                 await this.load(nextProps.record.resId);
                 this.listen(this.ruleIdOf(nextProps.record));
             } else if (this.isRunMode && version !== this.loadedVersion) {
-                // A run's form reloads its record after every button; the
-                // steps moved with it, and the bus may not be there to say so.
                 this.loadedVersion = version;
                 await this.load(nextProps.record.resId);
             }
@@ -108,10 +102,6 @@ export class WorkflowCanvas extends Component {
         onWillUnmount(() => this.stopListening());
     }
 
-    // The page is mounted when its tab is chosen, and the editor fits the
-    // graph to its box; the box itself is what has to be in sight. On a
-    // notebook page it starts below the fold of a long form; full screen, its
-    // height is the room the window has left.
     frame() {
         if (this.props.fullScreen) {
             this.sizeFullScreen();
@@ -153,8 +143,6 @@ export class WorkflowCanvas extends Component {
         await this.action.doAction(action);
     }
 
-    // Back to the form the button was pressed on, which reopens on the page
-    // it was left on; a full screen reached by its URL has none behind it.
     async closeFullScreen() {
         try {
             await this.action.restore();
@@ -235,9 +223,6 @@ export class WorkflowCanvas extends Component {
         this.state.runtimeState = payload.runtime_state;
         this.state.selectedEdgeId = null;
         this.state.status = payload.nodes.length ? "ready" : "empty";
-        // A graph nobody has placed is laid out here rather than server-side,
-        // and banking it is what keeps the reader's own arrangement from being
-        // recomputed on the next read.
         if (!payload.is_positioned && this.isEditable && this.state.nodes.length) {
             await this.persistPositions(this.state.nodes);
         }
@@ -297,12 +282,6 @@ export class WorkflowCanvas extends Component {
         return edgeLabel(connection.data || {});
     }
 
-    /**
-     * The editor's own rules already refuse a self-connection and a repeat of
-     * the same two ports; this adds the one the model enforces on top of them,
-     * `workflow.edge._edge_uniq`, which is per PAIR of steps whatever
-     * condition each connection carries.
-     */
     canConnect(connection) {
         return canConnect(this.edges, connection.sourceNodeId, connection.targetNodeId);
     }
@@ -509,8 +488,6 @@ registry.category("view_widgets").add("automation_workflow_canvas", {
         mode: attrs.mode === "run" ? "run" : "definition",
         fullScreen: Boolean(attrs.full_screen),
     }),
-    // A run's canvas redraws when its record was written, whether or not the
-    // form shows when that was.
     fieldDependencies: ({ attrs }) =>
         attrs.mode === "run" ? [{ name: "write_date", type: "datetime" }] : [],
 });

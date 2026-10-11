@@ -25,7 +25,6 @@ patch(ReceiptScreen.prototype, {
             registrations,
         ]);
 
-        // Update the status to "attended" if we print the attendee badge
         if (registrations.length > 0) {
             await this.orm.write("event.registration", registrations, {
                 state: "done",

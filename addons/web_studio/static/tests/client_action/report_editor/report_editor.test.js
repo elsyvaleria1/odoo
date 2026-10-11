@@ -80,7 +80,6 @@ test("reports tab disabled when no record", async () => {
     }));
     await mountWithCleanup(WebClient);
     await contains("a.o_app[data-menu-xmlid=app_1]").click();
-    // The systray drops a click while the app is still loading; let it land.
     await animationFrame();
     await contains(".o_web_studio_navbar_item").click();
     expect(".o_web_studio_menu .o_menu_sections button:contains(Reports)").toHaveCount(

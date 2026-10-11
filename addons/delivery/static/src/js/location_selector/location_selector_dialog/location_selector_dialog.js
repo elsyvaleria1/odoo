@@ -31,7 +31,6 @@ export class LocationSelectorDialog extends Component {
             error: false,
             viewMode: "list",
             zipCode: this.props.zipCode,
-            // Some APIs like FedEx use strings to identify locations.
             selectedLocationId: String(this.props.selectedLocationId),
             isSmall: this.ui.isSmall,
         });
@@ -52,7 +51,6 @@ export class LocationSelectorDialog extends Component {
             browser.removeEventListener("resize", this.debouncedOnResize),
         );
 
-        // Fetch new locations when the zip code is updated.
         useLayoutEffect(
             (zipCode) => {
                 this._updateLocations(zipCode);
@@ -63,10 +61,6 @@ export class LocationSelectorDialog extends Component {
             () => [this.state.zipCode],
         );
     }
-
-    //--------------------------------------------------------------------------
-    // Data Exchanges
-    //--------------------------------------------------------------------------
 
     /**
      * Fetch the closest pickup locations based on the zip code.
@@ -81,10 +75,6 @@ export class LocationSelectorDialog extends Component {
             zip_code: zip,
         });
     }
-
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
 
     /**
      * Get the locations based on the zip code.
@@ -156,10 +146,6 @@ export class LocationSelectorDialog extends Component {
         await this.props.save(selectedLocation);
         this.props.close();
     }
-
-    //--------------------------------------------------------------------------
-    // User Interface
-    //--------------------------------------------------------------------------
 
     /**
      * Determines the component to show in mobile view based on the current state.

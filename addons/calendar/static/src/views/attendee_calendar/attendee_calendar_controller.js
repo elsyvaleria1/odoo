@@ -85,8 +85,6 @@ export class AttendeeCalendarController extends CalendarController {
             } else if (record.rawRecord.attendees_count === 1) {
                 super.deleteRecord(...arguments);
             } else {
-                // Non-recurrent by construction (the branch above took the
-                // recurrent case), so no policy to pass.
                 this.orm
                     .call("calendar.event", "action_unlink_event", [record.id])
                     .then((action) => {
@@ -98,7 +96,6 @@ export class AttendeeCalendarController extends CalendarController {
                     });
             }
         } else {
-            // Decline event
             this.orm
                 .call("calendar.attendee", "do_decline", [record.calendarAttendeeId])
                 .then(this.model.load.bind(this.model));

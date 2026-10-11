@@ -5,7 +5,6 @@ import * as ProductPage from "@pos_self_order/../tests/tours/utils/product_page_
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 
-// Patch QFPay to validate the request that would be sent to the terminal
 patch(QFPay.prototype, {
     makeQFPayRequest: async function (endpoint, payload) {
         if (endpoint !== "trade") {

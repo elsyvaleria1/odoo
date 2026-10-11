@@ -7,10 +7,6 @@ import {
 import { _t } from "@web/core/translation";
 
 export class ListAutofillPlugin extends UIPlugin {
-    // ---------------------------------------------------------------------
-    // Getters
-    // ---------------------------------------------------------------------
-
     /**
      * Get the next value to autofill of a list function
      *
@@ -40,14 +36,12 @@ export class ListAutofillPlugin extends UIPlugin {
             const position = parseInt(evaluatedArgs[1], 10);
             const field = evaluatedArgs[2];
             if (isColumn) {
-                /** Change the field */
                 const index = columns.findIndex((col) => col === field) + increment;
                 if (index < 0 || index >= columns.length) {
                     return "";
                 }
                 return this._getListFunction(listId, position, columns[index]);
             } else {
-                /** Change the position */
                 const nextPosition = position + increment;
                 if (nextPosition === 0) {
                     return this._getListHeaderFunction(listId, field);
@@ -61,14 +55,12 @@ export class ListAutofillPlugin extends UIPlugin {
         if (functionName === "ODOO.LIST.HEADER") {
             const field = evaluatedArgs[1];
             if (isColumn) {
-                /** Change the field */
                 const index = columns.findIndex((col) => col === field) + increment;
                 if (index < 0 || index >= columns.length) {
                     return "";
                 }
                 return this._getListHeaderFunction(listId, columns[index]);
             } else {
-                /** If down, set position */
                 if (increment > 0) {
                     return this._getListFunction(listId, increment, field);
                 }

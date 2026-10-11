@@ -95,7 +95,6 @@ export class CalendarYearRenderer extends CalendarRendererBase {
             firstDay: this.model.firstDayOfWeek,
             headerToolbar: { start: false, center: "title", end: false },
             height: "auto",
-            // A 21rem month over six 2rem rows: FullCalendar gives rows width / ratio / 6.
             aspectRatio: 1.75,
             tableHeaderSticky: false,
             locale: dateSettings.locale,

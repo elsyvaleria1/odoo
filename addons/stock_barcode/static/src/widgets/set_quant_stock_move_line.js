@@ -30,7 +30,6 @@ export class StockBarcodeQuantOne2ManyField extends X2ManyField {
         );
     }
 
-    // Read through the props: a product change replaces the quant list the field shows.
     get moveLineData() {
         return this.props.record.data;
     }
@@ -39,8 +38,6 @@ export class StockBarcodeQuantOne2ManyField extends X2ManyField {
         return this.moveLineData.product_stock_quant_ids.records;
     }
 
-    // Derived from the record on every read: the barcode app reloads a line in
-    // place after a save, which hands the field no new props to resync from.
     get selectedQuantId() {
         const { location_id, trace_id, package_id, owner_id } = this.moveLineData;
         const matchedQuantRecord = this.quantRecords.find(

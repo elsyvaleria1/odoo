@@ -108,10 +108,6 @@ test("Click on edit icon button", async () => {
     await animationFrame();
     await contains(".o_web_studio_navbar_item button").click();
 
-    // TODO: Check why hover doesn't work
-    // expect(".o_app[data-menu-xmlid=app_1] + .o_web_studio_edit_icon:visible").toHaveCount(0);
-    // await contains(".o_app[data-menu-xmlid=app_1]").hover();
-    // expect(".o_app[data-menu-xmlid=app_1] + .o_web_studio_edit_icon:visible").toHaveCount(1);
     await contains(".o_app[data-menu-xmlid=app_1] + .o_web_studio_edit_icon", {
         visible: false,
     }).click();

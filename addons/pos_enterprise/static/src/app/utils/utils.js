@@ -28,7 +28,6 @@ export function useDelayedValueChange(getCurrentValue, duration = 5000) {
     );
     return {
         get isActive() {
-            // Empty ORM notes can be false or ""; preserve the hook's coercive comparison.
             // eslint-disable-next-line eqeqeq
             return state.oldValue != getCurrentValue();
         },

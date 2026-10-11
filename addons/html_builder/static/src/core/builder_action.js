@@ -53,23 +53,13 @@ export class BuilderAction {
 
         this.setup();
 
-        // Preview is enabled by default in non-reload actions,
-        // and disabled by default in reload actions.
         this.preview ??= this.reload ? false : true;
         this.withLoadingEffect ??= true;
         this.loadOnClean ??= false;
-        // canTimeout is enabled when no load is used to avoid staying stuck
-        // in the mutex if apply fails silently.
         this.canTimeout ??= !this.has("load");
     }
 
-    /**
-     * Called after dependencies and services are assigned.
-     * Subclasses override this instead of the constructor.
-     */
-    setup() {
-        // Optional override in subclasses
-    }
+    setup() {}
 
     /**
      * Prepare some asynchronous call `onWillStart` and `onWillUpdateProps` of

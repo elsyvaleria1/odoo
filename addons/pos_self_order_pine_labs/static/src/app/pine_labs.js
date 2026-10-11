@@ -67,10 +67,6 @@ export class PineLabs {
                 },
             );
 
-            // "failed" is the only outcome that lets the customer pay again:
-            // the terminal cancelled. Any other answer was settled by the
-            // server (paid, or held for staff), and no answer means the
-            // terminal may still charge, so the kiosk asks again
             if (cancelResponse?.outcome === "failed") {
                 this.errorCallback(
                     new PineLabsError(cancelResponse.notification, "warning"),
@@ -84,13 +80,6 @@ export class PineLabs {
         }
     }
 
-    /**
-     * Polls Pine Labs payment status at regular intervals (5 seconds)
-     * until a payment is approved, a timeout occurs, or the transaction is stopped.
-     *
-     * This ensures that we handle both successful and failed payments gracefully
-     * by continuously checking the status until a final state is reached.
-     */
     async paymentPolling(order) {
         const data = {
             plutusTransactionReferenceID: localStorage.getItem(
@@ -101,7 +90,6 @@ export class PineLabs {
         this.stopInactivePayment().then(() => (this.paymentStopped = true));
         const fetchPaymentStatus = async (resolve, reject) => {
             clearTimeout(this.pollingTimeout);
-            // This transaction will automatically cancel if inactive for more than 90 seconds.
             if (this.paymentStopped) {
                 await this.cancelPayment(order);
                 return resolve(false);
@@ -117,9 +105,7 @@ export class PineLabs {
                         payment_method_id: this.pineLabsPaymentMethod.id,
                     },
                 );
-            } catch {
-                // no answer is no outcome: the terminal may still be charging
-            }
+            } catch {}
             const outcome = statusResponse?.outcome;
             if (outcome === "approved") {
                 return resolve(true);
@@ -127,7 +113,6 @@ export class PineLabs {
             if (outcome === "unverified") {
                 return resolve(false);
             }
-            // pending, unknown or unanswered: the terminal decides, not the kiosk
             this.pollingTimeout = setTimeout(
                 fetchPaymentStatus,
                 REQUEST_TIMEOUT,

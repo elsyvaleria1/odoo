@@ -111,10 +111,6 @@ export function partCount(geometry) {
     }
 }
 
-/**
- * The marker where the server found a drawn shape unstorable: a red ring on
- * the place, on top of every layer.
- */
 export class ProblemMarker {
     /**
      * @param {ol.Map} map

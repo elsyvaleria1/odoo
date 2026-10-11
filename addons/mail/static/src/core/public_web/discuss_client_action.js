@@ -87,7 +87,6 @@ export class DiscussClientAction extends Component {
         }
         const [model, id] = rawActiveId.split("_");
         if (model === "mail.box") {
-            // links from before the mailboxes became tabs
             return id === "starred"
                 ? ["discuss.tab", "bookmark"]
                 : ["discuss.tab", "notification", { showAll: id === "history" }];
@@ -151,7 +150,6 @@ export class DiscussClientAction extends Component {
             return;
         }
         if (this.store.discuss.thread && this.store.discuss.thread.notEq(shownThread)) {
-            // the user opened another conversation while this one loaded
             log.logic("restoreDiscussThread overtaken", () => ({
                 token,
                 thread: this.store.discuss.thread?.localId,
@@ -175,9 +173,6 @@ export class DiscussClientAction extends Component {
                 if (status(this) === "mounted") {
                     activeThread.highlightMessage = message;
                 } else {
-                    // a route change mounts a new action while the previous one's
-                    // thread is still mounted: that thread would consume the
-                    // highlight and be replaced right after
                     this.pendingHighlight = { thread: activeThread, message };
                 }
                 delete props.action?.params?.highlight_message_id;

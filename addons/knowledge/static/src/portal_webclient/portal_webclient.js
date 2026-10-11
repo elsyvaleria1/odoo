@@ -14,7 +14,7 @@ export class KnowledgePortalWebClient extends Component {
 
     setup() {
         this.bus = useEventBus();
-        window.parent.document.body.style.margin = "0"; // remove the margin in the parent body
+        window.parent.document.body.style.margin = "0";
         this.actionService = useService("action");
         provideDebugContext({ categories: ["default"] });
         useBus(routerBus, "ROUTE_CHANGE", this._showView.bind(this));
@@ -23,9 +23,6 @@ export class KnowledgePortalWebClient extends Component {
         });
     }
 
-    /**
-     * Loads the article specified in the URL path (eg. /knowledge/article/42)
-     */
     async _showView() {
         const isOnKnowledgeArticleFormView = () => {
             if (this.actionService.currentController) {
@@ -37,9 +34,6 @@ export class KnowledgePortalWebClient extends Component {
             }
             return false;
         };
-
-        // When the user is already on the Knowledge form view, we can load
-        // another record in the model to avoid reloading the sidebar.
 
         if (isOnKnowledgeArticleFormView() && router.current.resId) {
             this.bus.trigger("KNOWLEDGE:OPEN_ARTICLE", {

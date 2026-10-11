@@ -15,9 +15,6 @@ patch(PosStore.prototype, {
         await this._processSaleOrder(sale_order);
     },
     async _processSaleOrder(sale_order) {
-        // A cart can already mix lines from more than one sale order, so
-        // every distinct origin already linked must be checked against the
-        // newly selected sale order, not just the first one found.
         const currentSaleOriginIds = new Set(
             this.getOrder()
                 .getOrderlines()
@@ -42,15 +39,11 @@ patch(PosStore.prototype, {
             this.getOrder().setPartner(sale_order.partner_id);
         }
 
-        // Fiscal position should be set after the partner is set
-        // to ensure that the fiscal position is correctly computed
-        // based on sale order.
         const orderFiscalPos = sale_order.fiscal_position_id;
         this.getOrder().update({
             fiscal_position_id: orderFiscalPos,
         });
 
-        //Add a down payment for transactions that were already done online
         if (sale_order.amount_paid > 0) {
             await this.addDownPaymentProductOrderlineToOrder(
                 sale_order,
@@ -215,7 +208,6 @@ patch(PosStore.prototype, {
                 }
             }
 
-            // Order line can only hold one lot, so we need to split the line if there are multiple lots
             if (
                 line.product_id.tracking === "lot" &&
                 converted_line.lot_names.length > 0 &&
@@ -373,11 +365,6 @@ patch(PosStore.prototype, {
             grouping_key: { product_id: downPaymentProduct },
             raw_grouping_key: { product_id: downPaymentProduct.id },
         });
-        // Keep the exact "down_payment" token first so account_move.py's
-        // _is_downpayment() ('down_payment' in computation_key.split(','))
-        // still matches, but make the key unique per application on this
-        // sale order so multiple down payments on the same order don't
-        // share one computation_key.
         const existingDownPaymentCount = this.getOrder()
             .getOrderlines()
             .filter(
@@ -396,14 +383,10 @@ patch(PosStore.prototype, {
             },
         );
 
-        // Update the pos order.
         for (const baseLine of downPaymentBaseLines) {
-            // Find the sale order lines that are impacted by this down payment line.
             const taxIds = new Set(baseLine.tax_ids.map((tax) => tax.id));
             const matchedSaleOrderLines = [];
             for (const saleOrderLine of saleOrderLines) {
-                // TODO: use '!saleOrderLine.is_down_payment' instead?
-                // TODO: 'product_id' is always set on a SO line, correct?
                 if (
                     !saleOrderLine.product_id ||
                     saleOrderLine.product_id.id === downPaymentProduct.id

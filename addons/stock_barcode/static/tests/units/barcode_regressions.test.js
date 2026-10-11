@@ -1,9 +1,3 @@
-/**
- * Regression tests for defects found in the audits of this module.
- *
- * Each one drives the real code path (not a local copy of the expression) and asserts the
- * corrected behaviour, so re-introducing the defect fails here rather than in a browser tour.
- */
 import { describe, expect, test } from "@odoo/hoot";
 import { BackorderDialog } from "@stock_barcode/components/backorder_dialog";
 import LineComponent from "@stock_barcode/components/line";
@@ -23,12 +17,10 @@ function makeCache(records = {}) {
         "barcode.nomenclature": [{ id: 1, is_gs1_nomenclature: false, rule_ids: [] }],
         ...records,
     });
-    // No server in a unit test: a cache miss must not attempt an RPC.
     cache._getMissingRecord = async () => false;
     return cache;
 }
 
-// --- getQuants: the lot lookup keeps its product filter ---------------------
 test("getQuants resolves a lot name within the scanned product", async () => {
     const cache = makeCache({
         "product.trace": [
@@ -55,7 +47,6 @@ test("getQuants resolves a lot name within the scanned product", async () => {
     expect(quants[0].id).toBe(1);
 });
 
-// --- getQuants: owner may be given as a record or as an id -----------------
 test("getQuants accepts an owner record as well as an owner id", async () => {
     const cache = makeCache({
         "stock.quant": [
@@ -81,23 +72,17 @@ test("getQuants accepts an owner record as well as an owner id", async () => {
     });
 });
 
-// --- getQuants: a product with no quants at all ----------------------------
 test("getQuants tolerates a product with no quants", async () => {
-    // The product's quants are known (fetched, and there are none): the empty branch runs
-    // without an RPC.
     const cache = makeCache({
         "product.product": [{ id: 100, barcode: "P", uom_id: 1 }],
         "stock.quant": [],
     });
     cache.productsWithAllQuants.add(100);
     expect((await cache.getQuants({ id: 100 }, 5)).length).toBe(0);
-    // …and the per-location entry it creates is a map, keyed by location id, like every other
-    // write to this cache — it used to be an array here and an object everywhere else.
     expect(Array.isArray(cache.dbQuantCache[100])).toBe(false);
     expect((await cache.getQuants({ id: 100 }, 5)).length).toBe(0);
 });
 
-// --- GS1: an unknown location must not blow up the scan handler ------------
 test("an unknown GS1 location yields a result object, not undefined", async () => {
     const cache = makeCache({ "stock.location": [] });
     const ctx = { cache, groups: {}, useExistingLots: true, notification: () => {} };
@@ -108,7 +93,6 @@ test("an unknown GS1 location yields a result object, not undefined", async () =
         { message: "no location found -> empty result, no match" },
     );
 
-    // And the picking override, which reads `result.location` straight away, survives it.
     const pickingCtx = {
         cache,
         groups: {},
@@ -124,7 +108,6 @@ test("an unknown GS1 location yields a result object, not undefined", async () =
     expect(error).toBe(null, { message: `override threw: ${error}` });
 });
 
-// --- line sorting: a consistent comparator ---------------------------------
 test("_sortLine keeps the input order of lines sharing a sortIndex", async () => {
     const lines = [
         { sortIndex: 2, tag: "c" },
@@ -137,7 +120,6 @@ test("_sortLine keeps the input order of lines sharing a sortIndex", async () =>
     });
 });
 
-// --- scan pipeline: cleanup runs after the barcodes it follows -------------
 test("processBarcode finishes the scan before tearing down its own state", async () => {
     const order = [];
     const ctx = {
@@ -189,7 +171,6 @@ test("processBarcode tears down its state when processing throws", async () => {
     expect(triggered.includes("clearBarcodesCountProcessed")).toBe(true);
 });
 
-// --- the quantity mutex holds until the update settles ---------------------
 test("updateLineQty holds the mutex until updateLine settles", async () => {
     let resolveUpdate;
     const updateDone = new Promise((r) => (resolveUpdate = r));
@@ -216,7 +197,6 @@ test("updateLineQty holds the mutex until updateLine settles", async () => {
     expect(order).toEqual(["update", "next"]);
 });
 
-// --- location paths survive names with regex metacharacters ---------------
 test("the location path strip handles names with regex metacharacters", async () => {
     const ctx = { model: { shouldShortenLocationName: false } };
     const strip = (name) =>
@@ -237,7 +217,6 @@ test("the location path strip handles names with regex metacharacters", async ()
     });
 });
 
-// --- a barcode that missed once must be retried after a refresh ------------
 test("refreshing the cache forgets earlier barcode misses", async () => {
     const cache = makeCache({ "product.trace": [] });
     let lookups = 0;
@@ -256,7 +235,6 @@ test("refreshing the cache forgets earlier barcode misses", async () => {
     expect(lookups).toBe(beforeRefresh + 1);
 });
 
-// --- 2026-09-28 audit -------------------------------------------------------
 test("a refused destination leaves an earlier accepted one in place", async () => {
     const accepted = { id: 1 };
     const refused = { id: 2 };
@@ -273,7 +251,6 @@ test("a refused destination leaves an earlier accepted one in place", async () =
     expect(ctx.lastScanned.destLocation).toBe(accepted, {
         message: "a wrong scan must not erase the destination scanned before it",
     });
-    // `_checkBarcode` records the first destination before it is checked.
     ctx.lastScanned.destLocation = refused;
     await process.call(ctx, { destLocation: refused });
     expect(ctx.lastScanned.destLocation).toBe(false, {
@@ -337,7 +314,6 @@ test("RFID reads arriving while a batch is processed start the next batch", asyn
         model: {
             processBarcode: async (barcodes) => {
                 processed.push(barcodes);
-                // What `onMobileReaderScanned` does when the reader sends more tags.
                 ctx.bufferedBarcodes = ctx.bufferedBarcodes.concat(["urn:B"]);
             },
         },
@@ -365,7 +341,6 @@ test("an unreserved subline is not counted twice by the backorder check", async 
         reserved_uom_qty: 0,
         qty_done: 3,
     };
-    // `_groupSublines` gives the parent the sublines' totals.
     const grouped = {
         ...reserved,
         virtual_id: "g",
@@ -436,7 +411,6 @@ test("un-completing a package resets every subline, not below zero", async () =>
         reserved_uom_qty: 5,
         product_id: {},
     };
-    // A package line is a copy of its first subline, here the untouched one.
     const packageLine = { ...untouched, virtual_id: "p", lines: [untouched, done] };
     const ctx = {
         actionMutex: new Mutex(),
@@ -573,7 +547,6 @@ test("only the products the server names count as having all their quants", asyn
         records: {
             "product.product": [
                 { id: 1, barcode: "2300001000084" },
-                // Brought along by a scanned packaging: its quants were not fetched.
                 { id: 2, barcode: "5468123001239" },
             ],
         },

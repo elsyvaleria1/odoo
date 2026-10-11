@@ -62,7 +62,6 @@ export async function spawnListViewForSpreadsheet(params = {}) {
         },
     );
 
-    /** sort the view by field */
     for (const order of params.orderBy || []) {
         const selector = `thead th.o_column_sortable[data-name='${order.name}']`;
         await contains(selector).click();
@@ -111,7 +110,6 @@ export async function createSpreadsheetFromListView(params = {}) {
     if (params.actions) {
         await params.actions();
     }
-    /** Put the current list in a new spreadsheet */
     await invokeInsertListInSpreadsheetDialog();
     const value = params.linesNumber ? params.linesNumber.toString() : "10";
     await contains(".o-sp-dialog-meta-threshold-input").edit(value);
@@ -145,10 +143,6 @@ export async function toggleCogMenuSpreadsheet() {
     await waitFor(".o-dropdown.show");
 }
 
-/** While the actual flow requires to toggle the list view action menu
- * The current helper uses `contains` which slowsdown drastically the tests
- * This helper takes a shortcut by relying on the implementation
- */
 export async function invokeInsertListInSpreadsheetDialog() {
     getMockEnv().bus.trigger("insert-in-spreadsheet");
     await animationFrame();

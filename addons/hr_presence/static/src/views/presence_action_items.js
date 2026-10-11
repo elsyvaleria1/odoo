@@ -3,10 +3,6 @@ import { COG_GROUP } from "@web/search/cog_menu/cog_menu_group";
 
 import { HrPresenceSubMenu } from "../search/hr_presence_sub_menu/hr_presence_sub_menu.js";
 
-// hr_presence.ir.actions.server declares hr_presence_section, and
-// ir.actions.actions ships it with the binding, so identifying a presence
-// action costs no round-trip. Sections are drawn in this order, with one
-// divider between them; binding_sequence orders the items inside each.
 const SECTION_ORDER = ["state", "follow_up"];
 
 /**

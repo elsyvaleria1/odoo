@@ -200,8 +200,6 @@ registry.category("web_tour.tours").add("test_reload_right_after_a_change_keeps_
                 run: () => window.location.reload(),
                 expectUnloadPage: true,
             },
-            // mounting the product screen deselects the order's line, after a
-            // reload as on any other entry: only the line and its quantity count
             inLeftSide(
                 Order.hasLine({ productName: "Desk Organizer", quantity: "2.0" }),
             ),

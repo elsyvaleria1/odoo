@@ -75,7 +75,6 @@ beforeEach(() => {
     });
 });
 
-// Helper utility method to mount a WebClient and a specific view.
 async function mountView(viewName) {
     const view = await mountWithCleanup(WebClient);
     await getService("action").doAction({

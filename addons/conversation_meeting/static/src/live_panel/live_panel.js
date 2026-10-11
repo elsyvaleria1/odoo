@@ -13,11 +13,6 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { standardWidgetProps } from "@web/views/widgets";
 
-/**
- * Live meeting panel: subscribes to the conversation's bus channel while a
- * live session runs. The payload carries what the panel shows; the record is
- * reloaded only when the form holds no unsaved edits.
- */
 export class ConversationLivePanel extends Component {
     static template = "conversation_meeting.LivePanel";
     static props = { ...standardWidgetProps };
@@ -49,7 +44,6 @@ export class ConversationLivePanel extends Component {
             ? `speech.live/conversation.conversation/${props.record.resId}`
             : null;
         if (wanted === this.channel) {
-            // Same session: a "stopped" already seen on a dirty record stands.
             return;
         }
         this.state.live = Boolean(wanted);

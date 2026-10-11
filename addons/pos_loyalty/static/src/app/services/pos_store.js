@@ -37,14 +37,12 @@ patch(PosStore.prototype, {
         await this.updateOrder(this.getOrder());
     },
     async afterProcessServerData() {
-        // Remove reward lines that have no reward anymore (could happen if the program got archived)
         this.models["pos.order.line"]
             .filter((order) => order.is_reward_line && !order.reward_id)
             .map((line) => line.delete());
         await super.afterProcessServerData(...arguments);
     },
     async updateOrder(order) {
-        // Read value to trigger effect
         order?.lines?.length;
         await this.orderUpdateLoyaltyPrograms();
     },
@@ -72,7 +70,6 @@ patch(PosStore.prototype, {
         await this.updatePrograms();
     },
     updateRewards() {
-        // Calls are not expected to take some time besides on the first load + when loyalty programs are made applicable
         if (this.models["loyalty.program"].length === 0) {
             return;
         }
@@ -83,7 +80,6 @@ patch(PosStore.prototype, {
         }
         updateRewardsMutex.exec(() =>
             this.orderUpdateLoyaltyPrograms().then(async () => {
-                // Try auto claiming rewards
                 const claimableRewards = order.getClaimableRewards(false, false, true);
                 let changed = false;
                 for (const { coupon_id, reward } of claimableRewards) {
@@ -100,7 +96,6 @@ patch(PosStore.prototype, {
 
                 const rewardLinesChanged = order._updateRewardLines();
 
-                // Rewards may impact the number of points gained
                 if (changed || rewardLinesChanged) {
                     await this.orderUpdateLoyaltyPrograms();
                 }
@@ -112,7 +107,6 @@ patch(PosStore.prototype, {
         if (program.is_nominative) {
             return await this.fetchLoyaltyCard(program.id, order.getPartner().id);
         }
-        // This type of coupons don't need to really exist up until validating the order, so no need to cache
         return this.models["loyalty.card"].create({
             id: loyaltyIdsGenerator(),
             code: null,
@@ -121,25 +115,19 @@ patch(PosStore.prototype, {
             points: 0,
         });
     },
-    /**
-     * Update our couponPointChanges, meaning the points/coupons each program give etc.
-     */
     async updatePrograms() {
         return updateProgramsMutex.exec(async () => {
             await this._updatePrograms();
         });
     },
 
-    // This method should never be called directly, use updatePrograms() instead
     async _updatePrograms() {
         const order = this.getOrder();
-        // 'order.delivery_provider_id' check is used for UrbanPiper orders (as loyalty points and rewards are not allowed for UrbanPiper orders)
         if (!order || order.delivery_provider_id) {
             return;
         }
         const changesPerProgram = {};
         const programsToCheck = new Set();
-        // By default include all programs that are considered 'applicable'
         for (const program of this.models["loyalty.program"].getAll()) {
             if (order._programIsApplicable(program)) {
                 programsToCheck.add(program.id);
@@ -160,17 +148,13 @@ patch(PosStore.prototype, {
         );
         const pointsAddedPerProgram = order.pointsForPrograms(programs);
         for (const program of this.models["loyalty.program"].getAll()) {
-            // Future programs may split their points per unit paid (gift cards for example), consider a non applicable program to give no points
             const pointsAdded = order._programIsApplicable(program)
                 ? pointsAddedPerProgram[program.id]
                 : [];
-            // For programs that apply to both (loyalty) we always add a change of 0 points, if there is none, since it makes it easier to
-            //  track for claimable rewards, and makes sure to load the partner's loyalty card.
             if (program.is_nominative && !pointsAdded.length && order.getPartner()) {
                 pointsAdded.push({ points: 0 });
             }
             const oldChanges = changesPerProgram[program.id] || [];
-            // Update point changes for those that exist
             for (
                 let idx = 0;
                 idx < Math.min(pointsAdded.length, oldChanges.length) &&
@@ -205,7 +189,6 @@ patch(PosStore.prototype, {
                     }
                 });
 
-                // Get new points added which are not in oldChanges
                 const newPointsAdded = [];
                 Object.keys(pointsCount).forEach((key) => {
                     const [points, barcode = ""] = key.split("-");
@@ -240,7 +223,6 @@ patch(PosStore.prototype, {
             }
         }
 
-        // Also remove coupons from _code_activated_coupon_ids if their program applies_on current orders and the program does not give any points
         const toUnlink = order._code_activated_coupon_ids.filter(
             inverted((coupon) => {
                 const program = coupon.program_id;
@@ -269,7 +251,6 @@ patch(PosStore.prototype, {
         )?.[0];
         let claimableRewards = null;
         let coupon = null;
-        // If the code belongs to a loyalty card we just set the partner
         if (partnerId) {
             if (!this.models["res.partner"].get(partnerId)) {
                 await this.data.read("res.partner", [partnerId]);
@@ -318,7 +299,6 @@ patch(PosStore.prototype, {
                 ],
             );
             if (successful) {
-                // Allow rejecting a gift card that is not yet paid.
                 const program = this.models["loyalty.program"].get(payload.program_id);
                 if (
                     program &&
@@ -335,16 +315,12 @@ patch(PosStore.prototype, {
                         return _t("Unpaid gift card rejected.");
                     }
                 }
-                // TODO JCB: It's possible that the coupon is already loaded. We should check for that.
-                //   - At the moment, creating a new one with existing id creates a duplicate.
                 coupon = this.models["loyalty.card"].create({
                     id: payload.coupon_id,
                     code: code,
                     program_id: this.models["loyalty.program"].get(payload.program_id),
                     partner_id: this.models["res.partner"].get(payload.partner_id),
                     points: payload.points,
-                    // TODO JCB: make the expiration_date work.
-                    // expiration_date: payload.expiration_date,
                 });
                 order._code_activated_coupon_ids = [["link", coupon]];
                 await this.orderUpdateLoyaltyPrograms();
@@ -375,7 +351,6 @@ patch(PosStore.prototype, {
         return true;
     },
     async checkMissingCoupons() {
-        // This function must stay sequential to avoid potential concurrency errors.
         const order = this.getOrder();
         await mutex.exec(async () => {
             if (!order.invalidCoupons) {
@@ -455,7 +430,6 @@ patch(PosStore.prototype, {
         }
         const potentialRewards = this.getPotentialFreeProductRewards();
 
-        // move price_unit from opt to vals
         if (opt.price_unit !== undefined) {
             vals.price_unit = opt.price_unit;
             delete opt.price_unit;
@@ -505,11 +479,6 @@ patch(PosStore.prototype, {
         options.eWalletGiftCardProgram = program;
         return true;
     },
-    /**
-     * Returns the reward such that when its reward product is added
-     * in the order, it will be added as free. That is, when added,
-     * it comes with the corresponding reward product line.
-     */
     async pay() {
         const currentOrder = this.getOrder();
         const eWalletLine = currentOrder
@@ -568,7 +537,6 @@ patch(PosStore.prototype, {
                 if (points < reward.required_points) {
                     continue;
                 }
-                // Loyalty program (applies_on == 'both') should needs an orderline before it can apply a reward.
                 const considerTheReward =
                     program.applies_on !== "both" ||
                     (program.applies_on === "both" && hasLine);
@@ -595,7 +563,6 @@ patch(PosStore.prototype, {
         return result;
     },
 
-    //@override
     async processServerData() {
         await super.processServerData();
 
@@ -766,10 +733,6 @@ patch(PosStore.prototype, {
         }
         return loyaltyCards;
     },
-    /**
-     * IMPROVEMENT: It would be better to update the local order object instead of creating a new one.
-     *   - This way, we don't need to remember the lines linked to negative coupon ids and relink them after pushing the order.
-     */
     async preSyncAllOrders(orders) {
         await super.preSyncAllOrders(orders);
 
@@ -821,7 +784,6 @@ patch(PosStore.prototype, {
         }
     },
     async postProcessLoyalty(order) {
-        // Compile data for our function
         const ProgramModel = this.models["loyalty.program"];
         const rewardLines = order._get_reward_lines();
         const partner = order.getPartner();
@@ -874,7 +836,6 @@ patch(PosStore.prototype, {
             }
             couponData[couponId].points -= line.points_cost;
         }
-        // We actually do not care about coupons for 'current' programs that did not claim any reward, they will be lost if not validated
         couponData = Object.fromEntries(
             Object.entries(couponData)
                 .filter(([key, value]) => {
@@ -894,15 +855,7 @@ patch(PosStore.prototype, {
             );
             if (payload.coupon_updates) {
                 for (const couponUpdate of payload.coupon_updates) {
-                    // The following code is a workaround to update the id of an existing record.
-                    // It's so ugly.
-                    // FIXME: Find a better way of updating the id of an existing record.
-                    // It would be better if we can do this:
-                    // const coupon = this.models["loyalty.card"].get(couponUpdate.old_id);
-                    // coupon.update({ id: couponUpdate.id, points: couponUpdate.points })
-
                     if (couponUpdate.old_id === couponUpdate.id) {
-                        // just update the points
                         const coupon = this.models["loyalty.card"].get(couponUpdate.id);
 
                         if (!coupon) {
@@ -911,7 +864,6 @@ patch(PosStore.prototype, {
                             coupon.points = couponUpdate.points;
                         }
                     } else {
-                        // create a new coupon and delete the old one
                         const coupon = this.models["loyalty.card"].create({
                             id: couponUpdate.id,
                             code: couponUpdate.code,
@@ -924,7 +876,6 @@ patch(PosStore.prototype, {
                             points: couponUpdate.points,
                         });
 
-                        // Before deleting the old coupon, update the order lines that use it.
                         for (const line of order.lines) {
                             if (line.coupon_id?.id === couponUpdate.old_id) {
                                 line.coupon_id = coupon;
@@ -935,7 +886,6 @@ patch(PosStore.prototype, {
                     }
                 }
             }
-            // Update the usage count since it is checked based on local data
             if (payload.program_updates) {
                 for (const programUpdate of payload.program_updates) {
                     const program = ProgramModel.get(programUpdate.program_id);

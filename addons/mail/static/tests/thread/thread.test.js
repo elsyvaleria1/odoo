@@ -794,9 +794,6 @@ test("[text composer] Opening thread with needaction messages should mark all me
     await click(".o-mail-Discuss .o-mail-NotificationItem", { text: "General" });
     await contains(".o-mail-DiscussContent-threadName", { value: "General" });
     await contains(".o-discuss-badge", { count: 0 });
-    // opening marks the needaction read either through the client's
-    // mark_all_as_read or through the message fetch's mark_done, whichever
-    // runs first: the outcome is the contract, not the route
     await waitUntil(
         () =>
             pyEnv["mail.notification"].search_read([
@@ -849,9 +846,6 @@ test("Opening thread with needaction messages should mark all messages of thread
     await click(".o-mail-Discuss .o-mail-NotificationItem", { text: "General" });
     await contains(".o-mail-DiscussContent-threadName", { value: "General" });
     await contains(".o-discuss-badge", { count: 0 });
-    // opening marks the needaction read either through the client's
-    // mark_all_as_read or through the message fetch's mark_done, whichever
-    // runs first: the outcome is the contract, not the route
     await waitUntil(
         () =>
             pyEnv["mail.notification"].search_read([

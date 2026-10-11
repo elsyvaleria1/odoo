@@ -20,7 +20,6 @@ export function humanReadableError(error) {
     let viewError;
     const context = error.context || {};
     if (context.view) {
-        // see @ def _prepare_view_error.
         viewError = {
             viewModel: context.view.model,
             completeName: context.xmlid

@@ -36,7 +36,6 @@ export const kanbanMany2OneAvatarResourceField = {
     additionalClasses: ["o_field_many2one_avatar_kanban", "o_field_many2one_avatar"],
     fieldDependencies: [
         { name: "display_name", type: "char" },
-        // to add in model that will use this widget for m2o field related to resource.resource record (as related field is only supported for x2m)
         { name: "resource_type", type: "selection" },
     ],
 };

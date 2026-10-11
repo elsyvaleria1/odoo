@@ -65,7 +65,6 @@ export const XML_REQUESTS = {
     },
 };
 
-// See p198 of the IF Specification document, "StatusChangeNotification"
 export const GLORY_STATUS = {
     0: "INITIALIZING",
     1: "IDLE",
@@ -126,7 +125,6 @@ export const GLORY_STATUS_STRING = {
     WAITING_ERROR_RECOVERY: _t("Waiting for error recovery"),
 };
 
-// See p51 of the IF Specification document, "ChangeResponse"
 export const GLORY_RESULT = {
     0: "SUCCESS",
     1: "CANCEL",
@@ -164,7 +162,6 @@ export const GLORY_RESULT = {
     100: "DEVICE_ERROR",
 };
 
-// See p77 of the IF Specification document, "InventoryResponse"
 export const GLORY_CURRENCY_STATUS = {
     0: "EMPTY",
     1: "NEAR_EMPTY",

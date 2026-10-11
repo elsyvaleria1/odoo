@@ -3,10 +3,6 @@ import { Component, t, useProps } from "@odoo/owl";
 import { _t } from "@web/core/translation";
 import { url } from "@web/core/utils/urls";
 
-/**
- * Displays general information (avatar, name, etc.) about the contact
- * associated with the given call.
- */
 export class ContactInfo extends Component {
     static props = {
         contact: t.or([t.object(), t.boolean()]).optional(),
@@ -44,13 +40,12 @@ export class ContactInfo extends Component {
     /** @returns {string} */
     get contactInfo() {
         if (!this.contact) {
-            return ""; // TODO
+            return "";
         }
         const info = [];
         if (this.contact.commercial_company_name) {
             info.push(this.contact.commercial_company_name);
         }
-        // ⚠ French: function = job position
         if (this.contact.function) {
             info.push(this.contact.function);
         }

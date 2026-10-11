@@ -78,8 +78,6 @@ export class ChatGPTPlugin extends Plugin {
             insert: (content) => {
                 const insertedNodes = this.dependencies.dom.insert(content);
                 this.dependencies.history.addStep();
-                // Add a frame around the inserted content to highlight it for 2
-                // seconds.
                 const start = insertedNodes?.length && closestElement(insertedNodes[0]);
                 const end =
                     insertedNodes?.length &&
@@ -135,7 +133,7 @@ export class ChatGPTPlugin extends Plugin {
             if (resModel === "wizard.mail.message.send") {
                 callerComp = "mail_composer";
                 recordModel = data.model;
-                recordId = Number(data.res_ids.slice(1, -1)); // resIds should look like so `[id]`, the slice and cast allows to extract the id
+                recordId = Number(data.res_ids.slice(1, -1));
                 recordData = data;
                 channelTitle = data.subject;
                 callerId = id;
@@ -172,21 +170,13 @@ export class ChatGPTPlugin extends Plugin {
             textSelection: textSelection,
         });
         if (this.services.ui.isTouch) {
-            // TODO: Find a better way and avoid modifying range
-            // HACK: when opened from a dropdown, closing the dropdown restores
-            // focus on the element focused before it opened (the editable), so
-            // the range must be removed in the next tick to run after that.
             Promise.resolve().then(() => {
-                // On small screens the selection can be seen through the dialog
-                // on some devices.
                 this.document.getSelection()?.removeAllRanges();
             });
         }
     }
 
     destroy() {
-        // ``getRecordInfo`` is an optional editor-config hook, so guard against
-        // its absence: an editor mounted without it would throw on teardown.
         const { resModel } = this.config.getRecordInfo?.() || {};
         if (resModel !== "wizard.mail.message.send") {
             this.services["mail.store"].aiInsertButtonTarget = false;

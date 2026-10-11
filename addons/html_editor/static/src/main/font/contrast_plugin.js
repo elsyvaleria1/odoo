@@ -10,13 +10,6 @@ import {
     convertRgbToHsl,
 } from "@web/core/utils/format/colors";
 
-/**
- * Text saved with a colour that is nearly the colour of the page behind it is
- * unreadable in the editor. This plugin darkens or lightens such colours just
- * enough to be legible, keeps the author's colour in `data-original-color`, and
- * puts it back before the content is saved -- so what is stored is always what
- * the author chose.
- */
 export class ContrastPlugin extends Plugin {
     static id = "contrast";
     resources = {
@@ -26,8 +19,6 @@ export class ContrastPlugin extends Plugin {
 
     setup() {
         const htmlStyle = getHtmlStyle(this.document);
-        // Our fork publishes the page background through the token system, so
-        // that is what the editor reads.
         this.defaultBg =
             toRgbColor(getCSSVariableValue("o-bg-view", htmlStyle), this.document) ||
             "rgb(255, 255, 255)";
@@ -35,9 +26,6 @@ export class ContrastPlugin extends Plugin {
         this.applyContrast();
     }
 
-    /**
-     * Adjusts element colors to improve readability against background.
-     */
     applyContrast() {
         const elementColorData = [];
         const adjustedColors = new Map();
@@ -81,8 +69,6 @@ export class ContrastPlugin extends Plugin {
             if (adjustedColor) {
                 element.dataset.originalColor = element.style.color || "";
                 if (hasColorClass) {
-                    // The class still carries the author's colour, so the
-                    // adjustment has to outrank it.
                     element.style.setProperty("color", adjustedColor, "important");
                 } else {
                     element.style.color = adjustedColor;
@@ -136,7 +122,6 @@ export class ContrastPlugin extends Plugin {
             return `rgb(${parsed.red}, ${parsed.green}, ${parsed.blue})`;
         }
 
-        // Blend with background for partial transparency
         const base = convertCSSColorToRgba(bgColor);
         const a = parsed.opacity / 100;
         const r = Math.round(parsed.red * a + base.red * (1 - a));
@@ -161,11 +146,9 @@ export class ContrastPlugin extends Plugin {
             el.removeAttribute("data-original-color");
         };
 
-        // Color change: restore the original color of the adjusted element.
         if (element.hasAttribute?.("data-original-color")) {
             restoreColor(element);
         } else {
-            // Content save: restore the original colors of all adjusted elements.
             element.querySelectorAll("[data-original-color]").forEach(restoreColor);
         }
         return element;
@@ -192,8 +175,6 @@ function toRgbColor(cssColor, doc) {
     if (convertCSSColorToRgba(cssColor)) {
         return cssColor;
     }
-    // `body` is not there yet when the editor lives in an iframe that is still
-    // being written to.
     const host = doc.body || doc.documentElement;
     if (!host) {
         return "";
@@ -240,7 +221,6 @@ export function adjustColorContrast(color, background) {
     const fg = [parsedColor.red, parsedColor.green, parsedColor.blue];
     const bg = [parsedBg.red, parsedBg.green, parsedBg.blue];
 
-    // Early exit: contrast already sufficient
     const MIN_CONTRAST = 2;
     if (contrast(fg, bg) >= MIN_CONTRAST) {
         return;
@@ -250,21 +230,14 @@ export function adjustColorContrast(color, background) {
     if (!hsl) {
         return;
     }
-    const { hue: h, lightness: l } = hsl; // h in [0, 360], s,l in [0, 100]
-    // `convertRgbToHsl` can return a saturation a hair over 100 for a fully
-    // saturated colour, and `convertHslToRgb` rejects anything above it, which
-    // would silently skip the adjustment. Clamped here rather than in
-    // `web/core/utils/format/colors`, which is outside this module.
+    const { hue: h, lightness: l } = hsl;
     const s = Math.min(100, hsl.saturation);
 
-    // Adjust lightness toward the opposite end from the background.
-    // If the background is light, push the color darker (dir = -1).
-    // If the background is dark,  push the color lighter (dir = +1).
     const dir = lum(bg) > 0.5 ? -1 : 1;
     const MAX_DELTA = 50;
 
     let low = 0,
-        high = Math.min(MAX_DELTA, dir === -1 ? l : 100 - l), // operate in [0, 100] space
+        high = Math.min(MAX_DELTA, dir === -1 ? l : 100 - l),
         bestL = l;
     for (let i = 0; i < 15; i++) {
         if (high - low < 0.2) {

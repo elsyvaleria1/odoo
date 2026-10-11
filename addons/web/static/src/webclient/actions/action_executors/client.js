@@ -46,8 +46,6 @@ export async function executeClientAction(action, options, am) {
             const depth = nextActionDepth(options);
             return am.doAction(next, { ...options, _actionDepth: depth });
         }
-        // a navigation the function started owns the caller's onClose: it
-        // forwarded it or dropped it, and the caller may be gone already
         if (token.isCurrent()) {
             options.onClose?.();
         }

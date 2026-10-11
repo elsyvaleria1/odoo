@@ -25,10 +25,6 @@ export class GridRow extends Component {
             return fieldInfo.selection.find(([key]) => key === value)?.[1];
         }
         if (fieldInfo.type !== "many2one" && Array.isArray(value)) {
-            // read_group answers a grouping that has a label with a
-            // `(value, label)` pair -- a date granularity's, here. A
-            // many2one's pair is left whole for Many2OneGridRow, which
-            // needs the id to link to the record.
             value = value[1];
         }
         return value;

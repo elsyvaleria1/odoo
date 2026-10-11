@@ -103,9 +103,7 @@ test("Attachment on side", async () => {
     await contains(".o_form_sheet_bg > .o-mail-Form-chatter");
     await contains(".o-mail-Form-chatter:not(.o-aside)");
     await contains(".o_form_sheet_bg + .o_attachment_preview");
-    // Don't display arrow if there is no previous/next element
     await contains(".arrow", { count: 0 });
-    // send a message with attached PDF file
     await click("button", { text: "Send message" });
     await waitStoreFetch("mixin.mail.thread", {
         stepsAfter: ["register_as_main_attachment"],

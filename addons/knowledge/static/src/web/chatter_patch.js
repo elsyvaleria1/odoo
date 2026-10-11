@@ -9,12 +9,6 @@ import { useLayoutEffect } from "@web/core/utils/layout_effect";
 import { patch } from "@web/core/utils/patch";
 import { useViewModel } from "@web/model/model";
 
-/**
- * Knowledge articles can interact with some records with the help of the
- * @see KnowledgeCommandsService .
- * If any record in a form view has a chatter with the ability to send message
- * and/or attach files, they are a potential target for Knowledge macros.
- */
 const ChatterPatch = {
     setup() {
         super.setup(...arguments);
@@ -22,23 +16,12 @@ const ChatterPatch = {
         this.model = useViewModel();
         if (this.knowledgeContext.__knowledgeUpdateCommandsRecordInfo__) {
             this.knowledgeCommandsService = useService("knowledgeCommandsService");
-            // Only keep the last request to register a recordInfo active.
             const keepLastRecordInfoRequest = new KeepLast();
-            // Keep track of the fact that the chatter thread is ready and has
-            // loaded its access rights.
             let chatterThreadReady = new Deferred();
             let previousThreadId = this.props.threadId;
             useLayoutEffect(
-                // Access rights of the current thread of the chatter are
-                // populated asynchronously after the chatter is mounted, this
-                // method keeps track of those changes in order to determine
-                // when a recordInfo request can be evaluated.
                 (threadId, canPostOnReadonly, hasReadAccess, hasWriteAccess) => {
                     if (previousThreadId !== threadId) {
-                        // If the chatter changes threadId, resolve the current
-                        // promise keeping track of the thread state to false,
-                        // so that an ongoing request to evaluate a recordInfo
-                        // (related to the previous thread) will be discarded.
                         chatterThreadReady.resolve(false);
                         chatterThreadReady = new Deferred();
                     }
@@ -47,8 +30,6 @@ const ChatterPatch = {
                         hasReadAccess !== undefined &&
                         hasWriteAccess !== undefined
                     ) {
-                        // When the access rights are all loaded, the thread
-                        // is ready and a recordInfo request can be evaluated.
                         chatterThreadReady.resolve(true);
                     }
                     previousThreadId = threadId;
@@ -61,23 +42,14 @@ const ChatterPatch = {
                 ],
             );
             onWillUnmount(() => {
-                // If there is an ongoing request to evaluate a recordInfo,
-                // discard it.
                 chatterThreadReady.resolve(false);
             });
             useCallbackRecorder(
                 this.knowledgeContext.__knowledgeUpdateCommandsRecordInfo__,
-                // Callback used to record the values related to the ability to
-                // post messages or attach files on the current record.
                 async (recordInfo) => {
-                    // At each new recording request, all previous ongoing
-                    // requests are discarded through the keepLast.
                     const chatterThreadReadyForRecordInfo =
                         keepLastRecordInfoRequest.add(chatterThreadReady);
                     if (!(await chatterThreadReadyForRecordInfo)) {
-                        // If the chatterThreadReadyForRecordInfo promise
-                        // resolves to false, the recording request should be
-                        // discarded.
                         return;
                     }
                     if (
@@ -85,12 +57,8 @@ const ChatterPatch = {
                         recordInfo.resId !== this.model.root.resId ||
                         recordInfo.resModel !== this.model.root.resModel
                     ) {
-                        // Ensure that the current record matches the recordInfo
-                        // candidate.
                         return;
                     }
-                    // The conditions for the ability to post or attach should
-                    // be the same as the ones in the Chatter template.
                     Object.assign(recordInfo, {
                         canPostMessages:
                             this.props.threadId &&

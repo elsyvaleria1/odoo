@@ -59,9 +59,6 @@ export class StreamPostCommentsFacebook extends StreamPostComments {
         return StreamPostCommentsReplyFacebook;
     }
 
-    /**
-     * Return the reactions and the count for each of them.
-     */
     get facebookReactions() {
         const reactionsCount = JSON.parse(
             this.props.originalPost.facebook_reactions_count.raw_value || "{}",

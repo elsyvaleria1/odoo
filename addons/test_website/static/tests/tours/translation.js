@@ -117,7 +117,6 @@ function singleLanguage() {
             content: "Ensure single language site",
             trigger: ":iframe body:not(:has(.js_language_selector))",
         },
-        // new page
         ...createNewPage(),
         ...openHtmlEditor(),
         {
@@ -135,7 +134,6 @@ function singleLanguage() {
             content: "Ensure page is updated",
             trigger: ":iframe body:contains(More text)",
         },
-        // xml record
         {
             content: "Go to test_view page",
             trigger: ":iframe main section.s_banner a",
@@ -250,7 +248,6 @@ function switchLanguage(lang, translatable, timeout = 50000) {
     ];
 }
 
-// TODO Such a step should not be needed, but test randomly fails without it.
 const awaitTranslationIsReady = {
     content: "Await translationIsReady",
     trigger: "body",
@@ -317,7 +314,6 @@ function multiLanguage(mainLanguage, secondLanguage) {
             content: "Ensure multi language site",
             trigger: ":iframe body:has(.js_language_selector)",
         },
-        // new page
         ...createNewPage(),
         ...switchLanguage(secondLanguage, true),
         ...openTranslate(),
@@ -387,7 +383,6 @@ function multiLanguage(mainLanguage, secondLanguage) {
             content: "Check translation is displayed",
             trigger: ":iframe h1:contains(Yet another translated text)",
         },
-        // xml record
         {
             content: "Go to test_view page",
             trigger: ":iframe main section.s_banner a",

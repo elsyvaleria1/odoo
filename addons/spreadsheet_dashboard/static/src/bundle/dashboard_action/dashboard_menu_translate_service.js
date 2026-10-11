@@ -14,7 +14,6 @@ export const dashboardMenuTranslateService = {
 
             urlRegistry.replace(key, {
                 ...linkSpec,
-                // Override createLink to translate the label
                 createLink(url, label) {
                     const dashboard = dashboardLoader.getActiveDashboard();
                     const translatedLabel = dashboard

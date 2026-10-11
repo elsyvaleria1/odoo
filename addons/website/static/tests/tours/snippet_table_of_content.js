@@ -11,8 +11,6 @@ const scrollToHeading = function (position) {
         content: `Scroll to h2 number ${position}`,
         trigger: `:iframe .s_table_of_content h2:eq(${position})`,
         run: function () {
-            // the navbar marks the heading within its offset of the viewport
-            // top, so a heading scrolled to the centre never reads as active
             this.anchor.scrollIntoView(true);
         },
     };

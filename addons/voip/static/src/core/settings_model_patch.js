@@ -30,7 +30,6 @@ patch(Settings.prototype, {
 
     setVoipDoNotDisturb(minutes) {
         if (minutes === 0) {
-            // available
             this.do_not_disturb_until_dt = null;
         } else if (minutes === -1) {
             this.do_not_disturb_until_dt = FOREVER;

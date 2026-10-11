@@ -52,16 +52,8 @@ export function isImageSupportedForStyle(img) {
         return false;
     }
 
-    // See also `[data-oe-type='image'] > img` added as data-exclude of some
-    // snippet options.
     const isTFieldImg = "oeType" in img.parentElement.dataset;
 
-    // Editable root elements are technically *potentially* supported here (if
-    // the edited attributes are not computed inside the related view, they
-    // could technically be saved... but as we cannot tell the computed ones
-    // apart from the "static" ones, we choose to not support edition at all in
-    // those "root" cases).
-    // See also `[data-oe-xpath]` added as data-exclude of some snippet options.
     const isEditableRootElement = "oeXpath" in img.dataset;
 
     return !isTFieldImg && !isEditableRootElement;

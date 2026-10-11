@@ -16,7 +16,6 @@ export class DocumentsFileViewer extends WebFileViewer {
     };
     static props = {
         ...WebFileViewer.props,
-        /** the folder the preview was opened from, for its action menu */
         folderId: t.or([t.string(), t.number(), t.boolean()]).optional(false),
     };
 
@@ -26,8 +25,6 @@ export class DocumentsFileViewer extends WebFileViewer {
         this.documentService = useService("document.document");
         this.notification = useService("notification");
         onWillUpdateProps((nextProps) => {
-            // new props are a new preview opened: show the file it asks for,
-            // not the one the base kept by re-anchoring on the previous file
             if (
                 nextProps.files !== this.props.files ||
                 nextProps.startIndex !== this.props.startIndex
@@ -40,17 +37,12 @@ export class DocumentsFileViewer extends WebFileViewer {
             }
         });
         onWillStart(() => this._showFile(this.state.file));
-        // a key pressed in the PDF viewer stays in its iframe: Escape closes
-        // the preview from there too. Keyed on the iframe, which next/previous
-        // replace without re-rendering any host
         useLayoutEffect(
             (iframe) => {
                 if (!iframe) {
                     return;
                 }
                 const onKeydown = (ev) => ev.key === "Escape" && this.close();
-                // the document there now, and each one a load brings: the
-                // iframe may have loaded before this effect runs
                 const listen = () =>
                     iframe.contentDocument?.addEventListener("keydown", onKeydown);
                 listen();
@@ -84,8 +76,6 @@ export class DocumentsFileViewer extends WebFileViewer {
             return;
         }
         this._shownFile = file;
-        // the view publishes the first file before rendering this viewer: a
-        // write here, mid-render, would restart its parent's render
         const { previewedDocument } = this.documentService.rightPanelReactive;
         if (toRaw(previewedDocument) !== toRaw(file ?? null)) {
             this.documentService.setPreviewedDocument(file ?? null);
@@ -95,7 +85,6 @@ export class DocumentsFileViewer extends WebFileViewer {
         }
     }
 
-    /** Email and textual files are fetched on demand; the others are streamed. */
     async _loadFileContent(file) {
         const kind = file.isEmail ? "email" : file.isTextual ? "text" : null;
         log.logic("loadFileContent", () => ({ documentId: file.id, kind }));

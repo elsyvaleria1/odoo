@@ -13,10 +13,6 @@ export const gamificationNotificationService = {
                 return;
             }
             const type = payload.type || "generic";
-            // Render the type-specific glyph inline: the notification service has
-            // no icon option, but its message is rendered with ``t-out`` so a
-            // Markup value is honored.  The ``markup`` tagged template escapes the
-            // interpolated ``message``.
             const icon = getNotificationIcon(payload.type);
             notification.add(
                 markup`<i class="fa ${icon} me-2" role="img" aria-hidden="true"></i>${payload.message}`,

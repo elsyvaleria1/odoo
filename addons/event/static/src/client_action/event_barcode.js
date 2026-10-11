@@ -97,13 +97,6 @@ export class EventScanView extends Component {
         }
     }
 
-    /**
-     * Scan from the dialog rather than through the BarcodeScanner component,
-     * which the template here does not mount. The scan itself is the
-     * component's, so the two cannot disagree about what a cancelled scan
-     * means -- this was a verbatim copy of `openMobileScanner`, and carried
-     * its bug of warning the user when they had simply closed the scanner.
-     */
     async doNextScan() {
         const barcode = await scanBarcodeOrWarn(
             () => scanBarcode(this.appContext, this.facingMode),

@@ -19,18 +19,12 @@ defineSpreadsheetModels();
 const chartId = "uuid1";
 let serverData = /** @type {ServerData} */ ({});
 
-/**
- * The chart menu is hidden by default, and visible on :hover, but this property
- * can't be triggered programmatically, so we artificially make it visible to be
- * able to interact with it.
- */
 async function showChartMenu(fixture) {
     const chartMenu = fixture.querySelector(".o-figure-menu");
     chartMenu.style.display = "flex";
     await animationFrame();
 }
 
-/** Click on external link of the first chart found in the page*/
 async function clickChartExternalLink(fixture) {
     await showChartMenu(fixture);
     const chartMenuItem = fixture.querySelector(
@@ -250,6 +244,5 @@ test("Trying to open a menu without an action sends a notification to the user",
 
     const expectedNotificationMessage =
         "The menu linked to this chart doesn't have an corresponding action. Please link the chart to another menu.";
-    // Notification was send and doAction wasn't called
     expect.verifySteps([expectedNotificationMessage]);
 });

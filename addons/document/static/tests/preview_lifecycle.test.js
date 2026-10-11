@@ -254,7 +254,6 @@ test("leaving the app with a preview open takes the preview along", async () => 
     await waitFor(".o-FileViewer");
     expect(documentService.rightPanelReactive.previewedDocument).not.toBe(null);
 
-    // not closed: left, as a menu or Back leaves it
     await getService("action").doAction("document_test_elsewhere", {
         clearBreadcrumbs: true,
     });
@@ -302,7 +301,6 @@ test("a change to the record shown after Next fetches its content no more", asyn
     expect(shown.record.resId).not.toBe(2);
     expect.verifySteps(["content 2", `content ${shown.record.resId}`]);
 
-    // reselecting it, as a click in the view behind does
     shown.record.toggleSelection();
     await animationFrame();
     expect.verifySteps([]);

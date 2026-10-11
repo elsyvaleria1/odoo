@@ -14,8 +14,6 @@ import { geoLibs, loadGeoLibs } from "@geoengine/lib/geo_libs";
 import { before, describe, expect, test, withFetch } from "@odoo/hoot";
 import { globalCachedFetch } from "@web/../tests/_framework/module_set.hoot";
 
-// ST_AsMVT over a record (fid 7, score 3.5) and a cell of 12 records, in
-// layer "features" with feature ids from "fid".
 const TILE =
     "GkwKCGZlYXR1cmVzEg8IBxICAQAYASIFCdAPsDASDRICAAEYASIFCfAukBEaBWNvdW50GgVzY29yZSIJGQAAAAAAAAxAIgIoDCiAIHgC";
 

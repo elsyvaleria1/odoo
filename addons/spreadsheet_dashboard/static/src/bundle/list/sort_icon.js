@@ -29,6 +29,6 @@ iconsOnCellRegistry.add("list_dashboard_sorting", (getters, position) => {
                 ? getCaretUpSvg(cellStyle)
                 : getCaretDownSvg(cellStyle),
         position,
-        onClick: undefined, // click is managed by ClickableCellSortIcon
+        onClick: undefined,
     };
 });

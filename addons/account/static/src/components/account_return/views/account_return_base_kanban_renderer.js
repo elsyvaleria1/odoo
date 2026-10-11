@@ -10,7 +10,6 @@ export class AccountReturnBaseKanbanRenderer extends KanbanRenderer {
         super.setup();
         this.orm = useService("orm");
 
-        // Retrieve the allowed categories from xml arch
         const optionsArch = this.props.archInfo.xmlDoc.getAttribute("options");
         this.allowedCategories = ["account_return"];
         if (optionsArch) {
@@ -35,16 +34,11 @@ export class AccountReturnBaseKanbanRenderer extends KanbanRenderer {
         const returnIds = await this.orm.call(
             "account.return",
             "get_next_returns_ids",
-            [
-                null,
-                additionalDomain,
-                true, //allow_multiple_by_types
-            ],
+            [null, additionalDomain, true],
         );
 
         await this.orm.call("account.return", "refresh_checks", [returnIds]);
 
-        // reload records
         await this.props.list.model.load();
     }
 }

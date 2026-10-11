@@ -8,8 +8,6 @@ registerComposerAction("add-documents", {
     name: _t("Add from Documents"),
     onSelected: ({ composer, owner, store }) => {
         openDocumentsPicker(store.env.services.dialog, {
-            // a thread refusing attachments (a spreadsheet cell's, a WhatsApp
-            // one already holding its file) may still take links
             onAddAttachments: owner.allowUpload
                 ? (attachments) => composer.attachments.push(...attachments)
                 : undefined,

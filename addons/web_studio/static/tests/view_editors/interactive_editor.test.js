@@ -463,10 +463,6 @@ test("add a one2many lines field", async () => {
 
 test("add a many2many field", async () => {
     expect.assertions(6);
-    // odoo bf19a83c9ab moved the relational autocomplete from `name_search` to
-    // `web_name_search`, which answers with records rather than [id, name]
-    // pairs. Mocking the old name silently stopped intercepting, so these tests
-    // were driving the real mock server's data.
     onRpc("web_name_search", () => [
         { id: 1, display_name: "Model 1" },
         { id: 2, display_name: "Model 2" },
@@ -512,10 +508,6 @@ test("add a many2many field", async () => {
 
 test("add a many2one field", async () => {
     expect.assertions(6);
-    // odoo bf19a83c9ab moved the relational autocomplete from `name_search` to
-    // `web_name_search`, which answers with records rather than [id, name]
-    // pairs. Mocking the old name silently stopped intercepting, so these tests
-    // were driving the real mock server's data.
     onRpc("web_name_search", () => [
         { id: 1, display_name: "Model 1" },
         { id: 2, display_name: "Model 2" },

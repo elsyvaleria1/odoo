@@ -104,8 +104,6 @@ export class PlanningFormController extends FormController {
             }
         } else if (clickParams.name === "action_send") {
             if (shift.resId) {
-                // We want to check if all employees impacted to this action have a email.
-                // For those who do not have any email in work_email field, then a FormViewDialog is displayed for each employee who is not email.
                 const result = await this.orm.call(
                     this.props.resModel,
                     "get_people_without_email",
@@ -149,7 +147,6 @@ export class PlanningFormController extends FormController {
             shift.data.allow_template_creation &&
             clickParams.name === "action_save_template"
         ) {
-            // then the shift should be saved as a template too.
             const message = _t("Shift saved as template");
             this.notification.add(
                 markup`<i class="fa-solid fa-check"></i><span class="ms-1">${message}</span>`,

@@ -10,13 +10,6 @@ export class ProductDocumentKanbanRecord extends KanbanRecord {
         this.fileViewer = useFileViewer();
     }
 
-    /**
-     * The ir.attachment holding the file, or a falsy value for a record that
-     * has none (a document pointing at a URL).
-     *
-     * The view is reused by models that name that relation differently, so a
-     * subclass points this at its own field.
-     */
     get attachment() {
         return this.props.record.data.attachment_id;
     }

@@ -14,7 +14,7 @@ test("suggestions from a single data source", async () => {
         expect(args).toEqual([["action_partner"]]);
         return {
             partner: [
-                /*xml*/ `
+                `
                 <search>
                     <field name="product_id" string="My product filter"/>
                     <field name="tag_ids"/>
@@ -64,7 +64,7 @@ test("suggestions for different models", async () => {
         expect(args).toEqual([["action_partner", "action_product"]]);
         return {
             partner: [
-                /*xml*/ `
+                `
                 <search>
                     <field name="product_id"/>
                     <!-- only currency_id is matching both -->
@@ -73,7 +73,7 @@ test("suggestions for different models", async () => {
                 `,
             ],
             product: [
-                /*xml*/ `
+                `
                 <search>
                     <field name="currency_id"/>
                 </search>
@@ -117,7 +117,7 @@ test("Filter with no matching is not proposed", async () => {
         expect(args).toEqual([["action_partner"]]);
         return {
             partner: [
-                /*xml*/ `
+                `
                 <search>
                     <field name="product_id"/>
                 </search>
@@ -142,19 +142,19 @@ test("Filter with no matching is not proposed", async () => {
 test("suggestions if field is duplicated in different archs", async () => {
     onRpc("get_search_view_archs", ({ args }) => ({
         partner: [
-            /*xml*/ `
+            `
                 <search>
                     <field name="currency_id"/>
                 </search>
                 `,
-            /*xml*/ `
+            `
                 <search>
                     <field name="currency_id"/>
                 </search>
                 `,
         ],
         product: [
-            /*xml*/ `
+            `
                 <search>
                     <field name="currency_id"/>
                 </search>
@@ -200,7 +200,7 @@ test("don't suggest if multiple matches are possible with the same arch", async 
     });
     onRpc("get_search_view_archs", ({ args }) => ({
         partner: [
-            /*xml*/ `
+            `
                 <search>
                     <!-- Two currencies -->
                     <field name="other_currency_id"/>
@@ -209,7 +209,7 @@ test("don't suggest if multiple matches are possible with the same arch", async 
                 `,
         ],
         product: [
-            /*xml*/ `
+            `
                 <search>
                     <field name="currency_id"/>
                 </search>
@@ -239,19 +239,19 @@ test("don't suggest if multiple matches are possible with different archs", asyn
     });
     onRpc("get_search_view_archs", ({ args }) => ({
         partner: [
-            /*xml*/ `
+            `
                 <search>
                     <field name="other_currency_id"/>
                 </search>
                 `,
-            /*xml*/ `
+            `
                 <search>
                     <field name="currency_id"/>
                 </search>
                 `,
         ],
         product: [
-            /*xml*/ `
+            `
                 <search>
                     <field name="currency_id"/>
                 </search>

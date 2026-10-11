@@ -64,8 +64,6 @@ beforeEach(() => {
     mockTimeZone("Europe/Brussels");
 });
 
-// Utils function
-
 async function multiCreateClickAddButton() {
     await click(".o_multi_selection_buttons .btn:contains(Add)");
     await animationFrame();
@@ -768,7 +766,7 @@ test(`multi_create: plan button if plan="1" and one cell selected`, async () => 
     await contains(".o_multi_selection_buttons > button:last").click();
     expect(".o_dialog").toHaveCount(1);
 
-    await contains(".o_data_cell").click(); // select record
+    await contains(".o_data_cell").click();
     expect(".o_dialog").toHaveCount(0);
     gridContent = getGridContent();
     expect(gridContent.rows).toEqual([
@@ -971,7 +969,6 @@ test("multi_create: can start selection over locked pills", async () => {
         },
     ]);
 
-    // Equivalent to select from 01 December todo to 02 December done
     const { drop } = await dragPill("Task 5");
     await drop({ row: "done", columnHeader: "02", groupHeader: "December 2018" });
 

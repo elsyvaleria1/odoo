@@ -107,8 +107,6 @@ export class OptionsDropdown extends Component {
     }
 
     export() {
-        // Use the browser print as wkhtmltopdf sadly does not handle emojis / embed views / ...
-        // (Investigation shows that it would be complicated to add that support).
         window.print();
     }
 
@@ -165,7 +163,6 @@ export class OptionsDropdown extends Component {
 
     toggleFullWidth() {
         this.props.record.update({ full_width: !this.props.record.data.full_width });
-        // For calendar view to resize.
         browser.dispatchEvent(new Event("resize"));
     }
 

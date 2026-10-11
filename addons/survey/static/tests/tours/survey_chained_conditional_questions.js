@@ -30,7 +30,7 @@ registry.category("web_tour.tours").add("test_survey_chained_conditional_questio
             run: "click",
         },
         {
-            content: "Answer Q1 with Answer 3", // This should hide Q2 and Q4 but not Q3.
+            content: "Answer Q1 with Answer 3",
             trigger:
                 'div.js_question-wrapper:contains("Q1") label:contains("Answer 3")',
             run: "click",
@@ -50,7 +50,7 @@ registry.category("web_tour.tours").add("test_survey_chained_conditional_questio
             run: "click",
         },
         {
-            content: "Answer Q1 with Answer 2", // This should hide all other questions.
+            content: "Answer Q1 with Answer 2",
             trigger:
                 'div.js_question-wrapper:contains("Q1") label:contains("Answer 2")',
             run: "click",
@@ -65,7 +65,7 @@ registry.category("web_tour.tours").add("test_survey_chained_conditional_questio
             },
         },
         {
-            content: "Answer Q1 with Answer 3", // This shows Q3.
+            content: "Answer Q1 with Answer 3",
             trigger:
                 'div.js_question-wrapper:contains("Q1") label:contains("Answer 3")',
             run: "click",
@@ -109,7 +109,6 @@ registry.category("web_tour.tours").add("test_survey_chained_conditional_questio
             trigger: 'button.btn-primary:contains("Submit")',
             run: "click",
         },
-        // Final page
         {
             content: "Thank you",
             trigger: 'h1:contains("Thank you!")',

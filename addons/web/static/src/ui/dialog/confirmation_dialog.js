@@ -96,7 +96,6 @@ export class ConfirmationDialog extends Component {
         try {
             return await this.runButton(callback);
         } catch (e) {
-            // a throwing callback must not leave a dialog nobody can close
             this.props.close();
             throw e;
         }

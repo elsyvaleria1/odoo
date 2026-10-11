@@ -11,11 +11,6 @@ export function createSelectionRectangle(
 ) {
     const pageRect = page.getBoundingClientRect();
 
-    // clientX/clientY are viewport-relative, and the handler converts them with
-    // `e.clientX - viewerContainerRect.left`, so the page's own offset has to be
-    // in them. Without pageRect.left/top the rectangle is drawn short of the
-    // page by exactly that offset and selects nothing. The sibling step below
-    // ("Click elsewhere to prepare for paste") already adds them.
     const startX = pageRect.left + pageRect.width * startPos;
     const startY = pageRect.top + pageRect.height * startPos;
     const endX = pageRect.left + pageRect.width * endPos;
@@ -95,7 +90,7 @@ registry.category("web_tour.tours").add("sign_template_creation_tour", {
         {
             content: "Wait for page to be loaded",
             trigger: ":iframe .page[data-page-number='1'] .textLayer",
-            timeout: 30000, //In view mode, pdf loading can take a long time
+            timeout: 30000,
         },
         {
             content: "Enter Template Edit Mode",
@@ -122,8 +117,6 @@ registry.category("web_tour.tours").add("sign_template_creation_tour", {
         },
         {
             content: "Open the added signer's dropdown",
-            // The first signer stays selected until the new role's RPC returns, and
-            // matching whichever signer is selected would edit that one instead.
             trigger:
                 ".o_sign_sidebar_signer_selected:nth-child(2) .o_sign_sidebar_icon.o-dropdown",
             run: "click",
@@ -235,7 +228,6 @@ registry.category("web_tour.tours").add("sign_template_creation_tour", {
             content: "Verify items are selected",
             trigger: ":iframe .o_sign_sign_item.multi_selected",
         },
-        // Testing if search works by searching for letter 'a'.
         {
             content: "Click on the find button",
             trigger: ":iframe #viewFindButton",

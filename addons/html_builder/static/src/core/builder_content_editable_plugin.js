@@ -49,8 +49,6 @@ export class BuilderContentEditablePlugin extends Plugin {
     }
 
     isValidContentEditable(contentEditableEl) {
-        // Check if an element is inside a ".o_not_editable" element that is not
-        // inside a snippet.
         const isDescendantOfNotEditableNotSnippet = (el) => {
             let notEditableEl = el.closest(".o_not_editable");
             if (!notEditableEl) {

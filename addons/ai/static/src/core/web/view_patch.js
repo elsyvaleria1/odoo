@@ -28,9 +28,8 @@ patch(View.prototype, {
                         aiProps.colGroupBys;
                 }
                 if (aiProps.sortedColumn) {
-                    // Set up sorted column with empty groupId for total column sorting
                     this.componentProps.modelParams.metaData.sortedColumn = {
-                        groupId: [[], []], // Empty groupId means sort by total column
+                        groupId: [[], []],
                         measure: aiProps.sortedColumn.measure,
                         order: aiProps.sortedColumn.order,
                     };
@@ -55,7 +54,6 @@ patch(View.prototype, {
                     this.componentProps.modelParams.groupBy = aiProps.groupBys;
                 }
             }
-            // Remove ai from componentProps to avoid passing it to the component
             delete this.componentProps.ai;
         }
     },

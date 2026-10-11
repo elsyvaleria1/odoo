@@ -21,7 +21,6 @@ const EMPLOYEE = {
     device_tracking_enabled: true,
 };
 
-/** Seed the systray with an employee, the way the lazy session does. */
 function mockEmployee(overrides = {}) {
     const employee = { ...EMPLOYEE, ...overrides };
     mockService("lazy_session", {
@@ -33,7 +32,6 @@ function mockEmployee(overrides = {}) {
     return employee;
 }
 
-/** Capture what the component asks the dialog service to show. */
 function captureConfirmation() {
     const captured = {};
     mockService("dialog", {

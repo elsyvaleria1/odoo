@@ -47,14 +47,6 @@ const dialogService = {
             const props = { env, Component, componentProps: _props };
             return dialog.add(DialogWithEnv, props, options);
         }
-        // `dialog` is a class instance (`DialogService`) since the
-        // service-shape refactor: `closeAll`/`destroy` live on the prototype,
-        // so a spread (`{ ...dialog, add }`) copies only own fields and
-        // silently drops them — the action manager's
-        // `dialog.closeAll({ noReload: true })` then crashes inside Studio's
-        // sub-env. Derive from the instance instead: the wrapper shadows `add`
-        // and delegates every other method (and the shared stack) to the real
-        // service.
         return Object.assign(Object.create(dialog), { add: addDialog });
     },
 };
@@ -69,12 +61,6 @@ const actionServiceStudio = {
             hideKeyFromUrl: () => {},
         };
         const action = makeActionManager(env, router);
-        // ``makeActionManager`` no longer installs the RPC cache-invalidation
-        // listener (the ctor used to, leaking a permanent rpcBus listener that
-        // pinned every short-lived Studio manager forever). Install it
-        // explicitly here and expose the disposer so the Editor component tears
-        // it down in ``onWillDestroy`` — one listener per live editor, none
-        // after it closes.
         action.uninstallActionCacheInvalidation =
             installActionCacheInvalidation(action);
         return action;
@@ -127,10 +113,6 @@ export class Editor extends Component {
             this.state.actionContainerId++;
         });
 
-        // Push instance-specific components in the navbar. Because we want those elements
-        // immediately, we add them at setup time, not onMounted.
-        // Also, because they are Editor instance-specific, and that Destroyed is mostly called
-        // after the new instance is created, we need to remove the old entries before adding the new ones
         menuButtonsRegistry.getEntries().forEach(([name]) => {
             if (
                 name.startsWith("app_menu_editor_") ||
@@ -150,11 +132,6 @@ export class Editor extends Component {
         onWillDestroy(() => {
             menuButtonsRegistry.remove(`app_menu_editor_${menuButtonsId}`);
             menuButtonsRegistry.remove(`new_model_item_${menuButtonsId}`);
-            // Dispose the Studio action manager's RPC cache-invalidation
-            // listener installed in ``actionServiceStudio.start``. Without this
-            // every Studio entry leaked a permanent rpcBus listener pinning the
-            // dead manager, so each subsequent ir.actions write fanned out N+1
-            // stale breadcrumb refreshes.
             this.actionService.uninstallActionCacheInvalidation?.();
         });
     }

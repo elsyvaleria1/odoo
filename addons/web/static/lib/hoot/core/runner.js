@@ -220,8 +220,6 @@ function handleConsoleIssues(test, shouldSuppress) {
     } else {
         const cleanups = [];
         if (isInstanceOf(globalThis.console, EventTarget)) {
-            // untracked: a message logged during a render must not make that
-            // render depend on the counter it then increments
             cleanups.push(
                 on(globalThis.console, "error", () => untrack(() => test.logs.error++)),
                 on(globalThis.console, "warn", () => untrack(() => test.logs.warn++)),

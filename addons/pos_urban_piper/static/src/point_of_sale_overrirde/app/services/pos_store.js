@@ -13,7 +13,6 @@ patch(PosStore.prototype, {
         this.delivery_order_count = {};
         this.enabledProviders = {};
 
-        // Init provider states from other sources
         if (this.config.module_pos_urban_piper) {
             await this.initProviderStatus();
         }
@@ -76,7 +75,6 @@ patch(PosStore.prototype, {
     },
 
     async initProviderStatus() {
-        // If certain providers are not yet in the status cache, we create it and set it to true.
         let changed = false;
         this.enabledProviders = await this.getProviderState();
 
@@ -86,7 +84,7 @@ patch(PosStore.prototype, {
             const newValue =
                 currentValue === undefined ? true : this.enabledProviders[name];
             if (currentValue === undefined) {
-                changed = true; // Initialize provider state to true
+                changed = true;
             }
             this.enabledProviders[name] = newValue;
         }
@@ -144,7 +142,6 @@ patch(PosStore.prototype, {
             this.enabledProviders[data.platform] = data.action === "enable";
             this.saveProviderState(this.enabledProviders);
         }
-        // Prepare notification message
         if (!data.status) {
             params.type = "danger";
             message = _t("Error occurred while updating %s status.", data.platform);

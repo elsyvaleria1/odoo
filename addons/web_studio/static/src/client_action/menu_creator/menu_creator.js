@@ -17,7 +17,6 @@ export class MenuCreatorModel {
             modelChoice: "new",
         };
 
-        // Info to select what kind of model is linked to the menu
         this.modelChoiceSelection = {
             new: _t("New Model"),
             existing: _t("Existing Model"),

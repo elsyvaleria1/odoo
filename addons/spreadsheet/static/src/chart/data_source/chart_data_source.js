@@ -116,10 +116,6 @@ export class ChartDataSource extends OdooViewsDataSource {
         return this._hierarchicalData;
     }
 
-    /**
-     * Build a domain from the labels of the values of the groupBys.
-     * Only works if getHierarchicalData was called before to build a mapping between groupBy labels and domains.
-     */
     buildDomainFromGroupByLabels(groupByValuesLabels) {
         const domains = [this._searchParams.domain];
         for (let i = 0; i < groupByValuesLabels.length; i++) {

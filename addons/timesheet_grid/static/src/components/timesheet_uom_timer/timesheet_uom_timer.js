@@ -26,7 +26,6 @@ class TimesheetUOMTimer extends TimesheetUOM {
     }
 }
 
-// As we replace FloatTimeField by TimesheetUOMHourTimer, we remove it from the components that we get from TimesheetUOM.
 delete TimesheetUOMTimer.components.FloatTimeField;
 
 registry.category("fields").add("timesheet_uom_timer", {

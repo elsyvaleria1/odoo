@@ -10,7 +10,7 @@ export class Router extends Component {
     setup() {
         this.router = useService("router");
         this.routes = {};
-        const lgPrefixRegex = "^(?:/([a-zA-Z]{2}(?:_[a-zA-Z]{2})?))?"; // optional language code: e.g. fr/ or fr_be/
+        const lgPrefixRegex = "^(?:/([a-zA-Z]{2}(?:_[a-zA-Z]{2})?))?";
 
         for (const [routeName, slot] of Object.entries(this.props.slots)) {
             const route = slot.route;

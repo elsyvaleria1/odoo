@@ -127,8 +127,6 @@ export class GanttRendererSelection extends GanttRendererDialogs {
     prepareSelectionFeature() {
         this.selectedCells = new Set();
         this.selectionAction = null;
-        // Whether "dragend" should clean the current selection up: not after a
-        // multi-select "drop", where the selection is what was just made.
         this.cleanupSelectionOnDragEnd = true;
         this.cellGhost = document.createElement("div");
         this.cellGhost.classList.add(
@@ -139,8 +137,6 @@ export class GanttRendererSelection extends GanttRendererDialogs {
         );
         this.multiSelectionButtonsReactive =
             this.prepareMultiSelectionButtonsReactive();
-        // One stable object, so the controls' props stay shallow-equal from one
-        // renderer render to the next and the toolbar is not re-rendered on scroll.
         this.controlsCallbacks.multiSelection = {
             Component: this.constructor.components.MultiSelectionButtons,
             reactive: this.multiSelectionButtonsReactive,
@@ -254,11 +250,6 @@ export class GanttRendererSelection extends GanttRendererDialogs {
         };
     }
 
-    /**
-     * Which records each grid cell holds and which record row starts at each
-     * grid row, for the multi-selection: `getSelectedRecordIds` and
-     * `getCellsInfo` read them, and so does hr_work_entry_enterprise.
-     */
     indexPillsForMultiCreate() {
         /** @type {Record<string, Record<string, any>[]>} */
         this.mappingCellToRecords = {};

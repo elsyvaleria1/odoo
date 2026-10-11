@@ -84,8 +84,6 @@ export class DocRequest extends Component {
         this.state.showTraceback = !this.state.showTraceback;
     }
 
-    // `error` is an object only when the body parsed as JSON; a plain string is
-    // what a proxy, or any non-JSON 500, gives us instead.
     get errorTitle() {
         const error = this.state.response.error;
         return typeof error === "string" ? error : (error?.title ?? "");

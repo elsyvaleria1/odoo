@@ -73,10 +73,8 @@ export class DatePlugin extends Plugin {
             { commandId: "insertDateTime", categoryId: "date" },
         ],
 
-        /** Providers */
         selectors_for_feff_providers: () => EMBEDDED_DATE_SELECTOR,
 
-        /** Overrides */
         color_apply_overrides: this.applyColorToDateNodes.bind(this),
     };
 
@@ -102,9 +100,6 @@ export class DatePlugin extends Plugin {
                     pickerProps.value = date;
                 }
             },
-            // Our popover always renders the Clear button and binds it to this
-            // handler, so it has to exist. Nothing has been inserted yet at
-            // this point, so clearing means "never mind".
             onReset: () => this.overlay.close(),
         });
         this.overlay.open({

@@ -21,7 +21,7 @@ export class BankStatementImportAction extends ImportAction {
             context: this.props.action.params.context || {},
         });
 
-        this.config.setDisplayName(_t("Import Bank Statement")); // Displayed in the breadcrumbs
+        this.config.setDisplayName(_t("Import Bank Statement"));
         this.state.filename = this.props.action.params.filename || undefined;
 
         onWillStart(async () => {
@@ -39,10 +39,6 @@ export class BankStatementImportAction extends ImportAction {
             [["id", "in", resIds]],
             ["statement_id", "journal_id"],
         );
-        // A line only has a statement when the wizard created one, which it skips
-        // when the user mapped a statement column themselves. Reading [0] off a
-        // false statement_id yields undefined rather than throwing, so an
-        // unfiltered list would reach the write as [undefined].
         const statementIds = Array.from(
             new Set(
                 statementLines

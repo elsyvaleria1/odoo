@@ -44,22 +44,14 @@ export class SavePlugin extends Plugin {
     resources = {
         handleNewRecords: this.handleMutations.bind(this),
         start_edition_handlers: this.startObserving.bind(this),
-        // Resource definitions:
         savable_selectors: [
             "#wrapwrap .oe_structure[data-oe-xpath][data-oe-id]",
             "#wrapwrap [data-oe-field]:not([data-oe-sanitize-prevent-edition])",
             "#wrapwrap .s_cover[data-res-model]",
         ],
-        clean_for_save_handlers: [
-            // ({root}) => {
-            //     clean DOM before save (leaving edit mode)
-            //     root is the clone of a node that was o_dirty
-            // }
-        ],
+        clean_for_save_handlers: [],
         save_element_handlers: [this.saveView.bind(this)],
         get_dirty_els: () => this.editable.querySelectorAll(".o_dirty"),
-        // Do not change the sequence of this resource, it must stay the first
-        // one to avoid marking dirty when not needed during the drag and drop.
         on_prepare_drag_handlers: withSequence(0, this.ignoreDirty.bind(this)),
     };
 
@@ -74,14 +66,10 @@ export class SavePlugin extends Plugin {
             const recordId = toGroupEl.dataset.oeId;
             const field = toGroupEl.dataset.oeField;
 
-            // There are elements which have no linked model as something
-            // special is to be done "to save them". In that case, do not group
-            // those elements.
             if (!model) {
                 return uniqueId("special-element-to-save-");
             }
 
-            // Group elements which are from the same field of the same record.
             return `${model}::${recordId}::${field}`;
         });
     }
@@ -105,7 +93,6 @@ export class SavePlugin extends Plugin {
         for (const getDirtyEls of this.getResource("get_dirty_els")) {
             dirtyEls.push(...getDirtyEls());
         }
-        // Group elements to save if possible
         const groupedElements = this.groupElements(dirtyEls);
         const preSaveHandlers = [];
         for (const preSaveHandler of this.getResource("pre_save_handlers")) {
@@ -113,14 +100,6 @@ export class SavePlugin extends Plugin {
         }
         await Promise.all(preSaveHandlers);
         const saveProms = Object.values(groupedElements).map(async (dirtyEls) => {
-            // Strip `o_dirty` from the *clone* that gets persisted, never from
-            // the live element -- the live element stays dirty until its write
-            // has actually succeeded. Clearing it up-front (before any await,
-            // and therefore for every group before the first RPC resolves)
-            // meant a partial save failure left the still-unsaved elements
-            // unmarked: `get_dirty_els` is re-read from the DOM on every
-            // `_save()`, so the user's retry found nothing to save, reported
-            // success and reloaded the iframe, silently discarding their work.
             const cleanedEls = dirtyEls.map((dirtyEl) => {
                 const cleanedEl = dirtyEl.cloneNode(true);
                 cleanedEl.classList.remove("o_dirty");
@@ -146,14 +125,7 @@ export class SavePlugin extends Plugin {
             }
             markSaved();
         });
-        // used to track dirty out of the editable scope, like header, footer or wrapwrap
         const willSaves = this.getResource("save_handlers").map((c) => c());
-        // `allSettled`, not `all`: a rejection from one group must not stop the
-        // others from completing and clearing their own dirty flags, otherwise
-        // one failure would strand successfully-written groups as dirty and the
-        // next save would rewrite them needlessly. The first rejection reason is
-        // then re-thrown unchanged, so `save()` still rejects with the original
-        // error and the editor stays open on the unsaved work.
         const results = await Promise.allSettled(saveProms.concat(willSaves));
         const failure = results.find((result) => result.status === "rejected");
         if (failure) {
@@ -210,8 +182,6 @@ export class SavePlugin extends Plugin {
             return;
         }
         if (currentOperation === "undo" || currentOperation === "redo") {
-            // Do nothing as `o_dirty` has already been handled by the history
-            // plugin.
             return;
         }
         for (const record of records) {

@@ -5,9 +5,6 @@ import { elementRef } from "@web/core/utils/element_ref";
 import { useService } from "@web/core/utils/hooks";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
 
-/**
- * Search bar component used in softphone tabs to filter entries.
- */
 export class SearchBar extends Component {
     static template = "voip.SearchBar";
     static props = {

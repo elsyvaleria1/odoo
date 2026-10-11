@@ -24,14 +24,11 @@ export class CohortModel extends Model {
      * @override
      */
     setup(params) {
-        // concurrency management
         this.keepLast = new KeepLast();
         this.race = new Race();
         const _load = this._load.bind(this);
         this._load = (...args) => this.race.add(_load(...args));
 
-        // a copy: the view's modelParams are its props, and a reactive model
-        // writing into them would re-render the view and reload
         this.metaData = { ...params };
         this.data = null;
         this.searchParams = null;
@@ -83,10 +80,6 @@ export class CohortModel extends Model {
         await this._load(metaData);
         this.notify();
     }
-
-    //--------------------------------------------------------------------------
-    // Protected
-    //--------------------------------------------------------------------------
 
     /**
      * Publishes metaData together with the data fetched for it, so a view

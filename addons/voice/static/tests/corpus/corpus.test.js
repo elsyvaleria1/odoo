@@ -29,11 +29,6 @@ describe.current.tags("headless");
  * }} Corpus
  */
 
-// Real recordings. Each written sentence must keep its recorded reading; the
-// floors only go up: a grammar change that loses a command a model heard right
-// lowers one, and one that recovers a misheard command raises it. "rescued" is
-// what correction makes of sentences the grammar does not understand as
-// written: each must be what was meant, and a new one is a change to review.
 /** @type {Corpus[]} */
 const CORPORA = [
     {
@@ -61,13 +56,6 @@ const CORPORA = [
     },
 ];
 
-// what a recogniser can swap without either word being wrong to the ear, per
-// screen ("nuevo" ~ "nueve", "vista" ~ "lista", "lista" ~ "listo"): the floor
-// only goes down, as the spoken words are redesigned; a label's other-language
-// name ("Notes", "Late") counts as one of the screen's words, and so does a
-// term's meaning: "stock" is the Inventory app and, as a word, "existencias";
-// an English label's other number too: "Bill", said "bil", is near "mil";
-// and the order's Enviar button, "Send", said "sen", is near "cien" and "set"
 const COLLISIONS = {
     bills: 14,
     invoices: 14,
@@ -196,12 +184,6 @@ for (const corpus of CORPORA) {
             expect(rescued).toEqual(corpus.rescued);
         });
 
-        // what the English second pass would make of each command small, the
-        // command model, still misses after the grammar, the terms and
-        // correction: rescued (the command meant), misled (another one), or
-        // unasked (a sentence the grammar does not take as written, read by
-        // translation). It stays off until it rescues more than it misleads.
-        // turbo is not scored: its transcripts here predate full-window padding.
         test("heard again in English, a missed command is rescued or misled", () => {
             const outcome = { rescued: 0, misled: 0, unasked: 0 };
             /** @type {string[]} */
@@ -231,8 +213,6 @@ for (const corpus of CORPORA) {
     });
 }
 
-// Kit 3 as written, before it is recorded: what the company's terms add to
-// the labels' other-language names
 const ANGLICISMS_UNDERSTOOD = { withoutTerms: 35, withTerms: 36 };
 
 describe("anglicisms, as written", () => {

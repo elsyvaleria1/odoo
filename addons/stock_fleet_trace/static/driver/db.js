@@ -1,6 +1,3 @@
-// IndexedDB storage of the driver screen: the trip packages, the event queue in
-// chain order and a few settings (device id, cached trip list, last sync).
-
 const DB_NAME = "stock_fleet_trace_driver";
 const DB_VERSION = 1;
 
@@ -79,11 +76,6 @@ export async function getAllEvents() {
     return promisify((await store("events")).getAll());
 }
 
-/**
- * Append an event to the queue. The record is ``{batch_id, sync, state, error,
- * event}`` where ``event`` is exactly what is sent to the server and is never
- * modified afterwards.
- */
 export async function addEvent(record) {
     return promisify((await store("events", "readwrite")).add(record));
 }

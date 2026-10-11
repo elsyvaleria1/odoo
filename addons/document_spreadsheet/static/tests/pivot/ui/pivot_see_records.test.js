@@ -36,7 +36,6 @@ test("Can see records and go back after a pivot insertion", async function () {
         documentId: 456,
         serverData,
     });
-    // Go the the list view and go back, a third pivot should not be opened
     selectCell(model, "B3");
     const root = cellMenuRegistry
         .getAll()

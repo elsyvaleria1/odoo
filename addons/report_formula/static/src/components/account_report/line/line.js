@@ -20,9 +20,6 @@ export class AccountReportLine extends Component {
         this.controller = proxy(this.reportContext.controller);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Line
-    // -----------------------------------------------------------------------------------------------------------------
     get lineClasses() {
         let classes =
             "level" in this.props.line
@@ -64,9 +61,6 @@ export class AccountReportLine extends Component {
         return false;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Growth comparison
-    // -----------------------------------------------------------------------------------------------------------------
     get growthComparisonClasses() {
         let classes = "text-end";
 
@@ -85,9 +79,6 @@ export class AccountReportLine extends Component {
         return classes;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Total Horizontal Group
-    // -----------------------------------------------------------------------------------------------------------------
     get HorizontalGroupTotalClasses() {
         let classes = "text-end";
         switch (Math.sign(this.props.line.horizontal_group_total_data?.no_format)) {
@@ -104,9 +95,6 @@ export class AccountReportLine extends Component {
         return classes;
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Search
-    //------------------------------------------------------------------------------------------------------------------
     isHiddenBySearchFilter(lineId = null) {
         lineId ||= this.props.line.id;
 
@@ -126,9 +114,6 @@ export class AccountReportLine extends Component {
         return true;
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Debug popover
-    //------------------------------------------------------------------------------------------------------------------
     showDebugPopover(ev) {
         const close = () => {
             this.popoverCloseFn();

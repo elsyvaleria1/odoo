@@ -123,8 +123,6 @@ export class ModelStore extends SignalStore {
 
     async loadModel(modelId) {
         try {
-            // A previous model's failure must not outlive the navigation away
-            // from it.
             this.error = null;
             const model = await tryFetch(`/doc/${modelId}.json`);
 
@@ -139,12 +137,8 @@ export class ModelStore extends SignalStore {
             log.logic("model loaded", { model: model.model });
             return model;
         } catch (e) {
-            // Name what failed: reporting one model's failure as "error while
-            // loading models" leaves the reader guessing which one.
             e.subject = modelId;
             this.error = e;
-            // An explicit null, so the caller does not read `.model` off
-            // undefined and turn a handled failure into a TypeError.
             return null;
         }
     }

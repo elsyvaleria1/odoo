@@ -320,7 +320,6 @@ export const DEFAULT_THEME_COLOR_VARS = [
     "o-color-5",
 ];
 
-// The given colors are the same as those used by D3
 export const SURVEY_CHART_COLORS = [
     "#1f77b4",
     "#ff7f0e",
@@ -433,8 +432,6 @@ export const DEFAULT_GRADIENT_STOPS = [
     { hex: "#6C3582", percentage: 100 },
 ];
 
-// Calendar indices and string hashes have a separate historical palette contract.
-// Keep its CSS recognition unchanged: a named colour can also be a category key.
 const CALENDAR_CSS_COLOR_REGEX =
     /^((#[A-F0-9]{3})|(#[A-F0-9]{6})|((hsl|rgb)a?\(\s*(?:(\s*\d{1,3}%?\s*),?){3}(\s*,\s*[0-9.]{1,4}\s*)?\))|)$/i;
 const calendarColorMap = new Map();

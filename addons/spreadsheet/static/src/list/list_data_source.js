@@ -73,9 +73,6 @@ export class ListDataSource extends OdooViewsDataSource {
             log.logic("load:joinScheduledFetch", () => ({
                 model: this._metaData.resModel,
             }));
-            // if fetching is already scheduled for the next tick,
-            // wait the fetching promise to trigger the data source loading
-            // and then await the loading.
             await this._fetchingPromise;
             await this._loadPromise;
             return;
@@ -119,15 +116,11 @@ export class ListDataSource extends OdooViewsDataSource {
         this.maxPositionFetched = this.maxPosition;
     }
 
-    /**
-     * The currency of a monetary value is a separate record: ask for the parts
-     * the spreadsheet needs to format with.
-     */
     _addCurrencySpec(spec, currencyField) {
         spec[currencyField] = {
             fields: {
                 ...spec[currencyField]?.fields,
-                name: {}, // currency code
+                name: {},
                 symbol: {},
                 decimal_places: {},
                 position: {},
@@ -135,9 +128,6 @@ export class ListDataSource extends OdooViewsDataSource {
         };
     }
 
-    /**
-     * Automatically add the currency field if the field is a monetary field.
-     */
     _addSpecForFieldPath(spec, pathInfo) {
         const [first, ...rest] = pathInfo.names;
         const [modelInfo, ...othersModelsInfo] = pathInfo.modelsInfo;
@@ -148,10 +138,6 @@ export class ListDataSource extends OdooViewsDataSource {
                 this._addCurrencySpec(spec, field.currency_field);
                 break;
             case "properties": {
-                // The whole blob comes back in one read, so the properties
-                // field itself is all we ask for. `rest` holds the property
-                // names the columns picked out of it, and a monetary one still
-                // needs its currency, which lives on this record.
                 spec[field.name] = {};
                 const propertyDefs = othersModelsInfo[0]?.fieldDefs ?? {};
                 for (const propertyName of rest) {
@@ -183,9 +169,6 @@ export class ListDataSource extends OdooViewsDataSource {
         return spec;
     }
 
-    /**
-     * Get the fields to fetch from the server.
-     */
     async _getReadSpec() {
         const allFieldPaths = await Promise.all(
             [...this.fieldPathsToFetch].map((fieldPath) =>
@@ -238,11 +221,6 @@ export class ListDataSource extends OdooViewsDataSource {
     _getRecordFromRelation(mainRecord, fieldPath) {
         const fields = fieldPath.split(".");
         let record = mainRecord;
-        // The last item of fields is the name of the field. As we want to
-        // get the record on which the field is defined, we need to iterate until
-        // the penultimate item of fields.
-        // A property is addressed as `<properties_field>.<property>`, so its
-        // two last items both belong to the same record: stop one earlier.
         const isProperty = this.getFieldFromFieldPath(fieldPath)?.is_property;
         const stopAt = fields.length - (isProperty ? 2 : 1);
         for (let i = 0; i < stopAt; i++) {
@@ -269,7 +247,6 @@ export class ListDataSource extends OdooViewsDataSource {
         }
         if (position >= this.maxPositionFetched) {
             this.increaseMaxPosition(position + 1);
-            // A reload is needed because the asked position is not already loaded.
             this._triggerFetching();
             return LOADING_ERROR;
         }
@@ -305,8 +282,6 @@ export class ListDataSource extends OdooViewsDataSource {
         }
         const lastField = fieldPath.split(".").at(-1);
         if (Array.isArray(record)) {
-            // remove duplicates?
-            // needs to be formatted...
             return record
                 .map((r) => this._parseServerValue(field, r[lastField]))
                 .join(", ");
@@ -341,8 +316,6 @@ export class ListDataSource extends OdooViewsDataSource {
                     ? toNumber(this._formatDateTime(value), DEFAULT_LOCALE)
                     : "";
             case "properties":
-                // Listing the property labels was never useful; a column has to
-                // name the property it wants.
                 return new EvaluationError(
                     _t("Please specify the property field name"),
                 );
@@ -419,10 +392,6 @@ export class ListDataSource extends OdooViewsDataSource {
         return this.fieldPathsToFieldMap[fieldPath];
     }
 
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
-
     _formatDateTime(dateValue) {
         return formatWithTokens(deserializeDateTime(dateValue), "yyyy-MM-dd HH:mm:ss", {
             numberingSystem: "latn",
@@ -435,11 +404,6 @@ export class ListDataSource extends OdooViewsDataSource {
         });
     }
 
-    /**
-     * Ask the parent data source to force a reload of this data source in the
-     * next clock cycle. It's necessary when this.limit was updated and new
-     * records have to be fetched.
-     */
     _triggerFetching() {
         if (this._fetchingPromise) {
             return;

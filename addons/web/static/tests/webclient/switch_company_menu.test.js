@@ -318,7 +318,6 @@ test("the search row is on screen in any multi-company environment", async () =>
         ".o-dropdown--menu div:has(> [role=search]) [role=menuitemcheckbox]",
     ).toHaveCount(1);
     expect(".o-dropdown--menu .visually-hidden").toHaveCount(0);
-    // `visually-hidden` collapses the row to 1x1: assert it really takes room
     expect(
         queryRect(".o-dropdown--menu div:has(> [role=search])").height,
     ).toBeGreaterThan(1);

@@ -157,11 +157,6 @@ export class TourStepAutomatic extends TourStep {
         );
     }
 
-    // a public page's body says `is-ready="false"` until its interactions
-    // have started; a step that acts before that is undone by them (a form
-    // prefilled over what the step typed), while a step that only observes
-    // may look at a page that is still booting. A page without the
-    // attribute -- the backend -- is ready when its element is
     get documentIsReady() {
         if (this.trigger.match(/\[is-ready=(true|false)\]/)) {
             return true;

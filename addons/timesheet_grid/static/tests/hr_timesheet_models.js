@@ -66,7 +66,6 @@ export class HRTimesheet extends hrTimesheetModels.HRTimesheet {
         }
         const timesheetId = this.create(vals);
 
-        // Creating a timer to run usally done "mixin.timer"
         const timer = this.env["timer.timer"].create({
             timer_start: false,
             timer_pause: false,
@@ -78,7 +77,7 @@ export class HRTimesheet extends hrTimesheetModels.HRTimesheet {
         const Timer = this.env["timer.timer"];
         Timer.action_timer_start(timer);
         const timerData = Timer.read(timer, ["timer_start"])[0];
-        this.write(timesheetId, { timer_start: timerData.timer_start }); // should be computed instead
+        this.write(timesheetId, { timer_start: timerData.timer_start });
         return this.read(timesheetId, this._get_timesheet_timer_field_names())[0];
     }
 
@@ -343,14 +342,12 @@ export function defineTimesheetModels() {
             const result = {};
             for (const employeeId of employeeIds) {
                 if (employeeId === 1) {
-                    // Employee 11 hasn't done all his hours
                     result[employeeId] = {
                         units_to_work: 987,
                         uom: "hours",
                         worked_hours: 789,
                     };
                 } else if (employeeId === 2) {
-                    // Employee 7 has done all his hours
                     result[employeeId] = {
                         units_to_work: 654,
                         uom: "hours",
@@ -363,7 +360,6 @@ export function defineTimesheetModels() {
                         worked_hours: 20,
                     };
                 } else {
-                    // The others have done too much hours (overtime)
                     result[employeeId] = {
                         units_to_work: 6,
                         uom: "hours",

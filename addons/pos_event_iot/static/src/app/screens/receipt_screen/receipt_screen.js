@@ -26,7 +26,6 @@ patch(ReceiptScreen.prototype, {
             );
         }
 
-        // Update the status to "attended" if we print the attendee badge
         if (registrations.length > 0) {
             const registrationIds = registrations.map(
                 (registration) => registration.id,

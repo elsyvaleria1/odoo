@@ -403,8 +403,6 @@ test("click on the 'More' Button", async () => {
 test("open xml editor of component view", async () => {
     serverState.debug = "1";
 
-    // the XML editor lazy loads its libs and its templates so its start
-    // method is monkey-patched to know when the widget has started
     const def = new Deferred();
     patchWithCleanup(CodeEditor.prototype, {
         setup() {

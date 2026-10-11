@@ -38,9 +38,6 @@ export class WorkEntriesGanttModel extends GanttModel {
         if (!cellsInfo.length) {
             return;
         }
-        // Ask before touching anything: the replace ends in create + unlink and
-        // unlink carries no validated guard, so a locked entry that reached this
-        // far would be deleted instead of refused.
         await this.orm.call("hr.work.entry", "check_modification_allowed", [
             records.map((r) => r.id),
         ]);

@@ -20,7 +20,6 @@ patch(LineComponent.prototype, {
     get pickingName() {
         if (this.model.resModel === "stock.picking.batch") {
             if (this.line.lines?.length > 1) {
-                // Don't display picking name if line has sublines belonging to different pickings.
                 const pickingId = this.line.picking_id.id;
                 for (const line of this.line.lines) {
                     if (line.picking_id.id !== pickingId) {

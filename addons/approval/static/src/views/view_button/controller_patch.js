@@ -7,11 +7,6 @@ import { ListController } from "@web/views/list/list_controller";
 
 import { trace } from "../../common/approval_trace.js";
 
-/**
- * Tells the view's buttons which of its models carry approval bindings, so a
- * button of a list row, a kanban card or a list header is gated as a form's is:
- * a window action has nothing on the server to refuse it.
- */
 function provideGatedModels(props) {
     const approvalGatedModels = {};
     for (const [model, info] of Object.entries(props.relatedModels || {})) {

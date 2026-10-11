@@ -33,11 +33,6 @@ export default class KnowledgeHierarchy extends Component {
         });
     }
 
-    /**
-     * Whether to display the dropdown toggle used to get the articles that are between the root
-     * and the parent article. It is only shown if there are any articles to show (parent_path is
-     * of the form "1/2/3/4/", hence length > 4 as condition)
-     */
     get displayDropdownToggle() {
         return this.props.record.data.parent_path.split("/").length > 4;
     }
@@ -64,9 +59,6 @@ export default class KnowledgeHierarchy extends Component {
         return this.props.record.data.root_article_id.display_name;
     }
 
-    /**
-     * Load the articles that should be shown in the dropdown
-     */
     async loadHierarchy() {
         this.articleHierarchy = await this.orm.call(
             "knowledge.article",
@@ -83,10 +75,6 @@ export default class KnowledgeHierarchy extends Component {
         this.state.isLoadingArticleHierarchy = false;
     }
 
-    /**
-     * If needed, will show the loading indicator in the dropdown and start the loading
-     * of the articles to show in it
-     */
     async onBeforeOpen() {
         this.state.isLoadingArticleHierarchy = true;
         this.loadHierarchy();

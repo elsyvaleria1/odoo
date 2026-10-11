@@ -1,9 +1,6 @@
 // @ts-check
 /** @odoo-module native */
 
-// Ported from htmx 4.0.0's built-in morph (bigskysoftware/htmx, branch `four`,
-// src/htmx.js `__morph`), itself derived from idiomorph; both are 0BSD.
-
 const SCAN_LIMIT = 10;
 
 /**
@@ -39,8 +36,6 @@ const SCAN_LIMIT = 10;
 export function morph(target, content, options = {}) {
     const fragment = toFragment(content);
     const { persistentIds, idMap } = createIdMaps(target, fragment);
-    // persistent-id nodes wait here between removal and reuse; it stays in the
-    // document so moveBefore keeps their state (focus, iframes, media)
     const pantry = document.createElement("div");
     pantry.hidden = true;
     document.body.after(pantry);
@@ -151,8 +146,6 @@ function morphChildren(
 
         const nextNewChild = newChild.nextSibling;
         if (newChild instanceof Element && ctx.idMap.has(newChild)) {
-            // the new subtree holds persistent ids: build it in place so those
-            // nodes are moved into it rather than recreated
             const placeholder = document.createElement(newChild.tagName);
             oldParent.insertBefore(placeholder, insertionPoint);
             ctx.building++;
@@ -280,7 +273,6 @@ function findBestMatch(ctx, node, startPoint, endPoint) {
         if (displaced > newIdCount) {
             break;
         }
-        // moving the node that holds a focused text field would drop the caret
         if (typing && cursor.contains(active)) {
             break;
         }
@@ -335,9 +327,7 @@ function moveBefore(parent, node, before) {
         try {
             target.moveBefore(node, before);
             return;
-        } catch {
-            // moveBefore refuses moves across documents or into a disconnected parent
-        }
+        } catch {}
     }
     parent.insertBefore(node, before);
 }
@@ -357,8 +347,6 @@ function morphNode(ctx, oldNode, newNode) {
     if (!(oldNode instanceof Element) || !(newNode instanceof Element)) {
         return;
     }
-    // htmx's hx-preserve: the client owns what grew inside (a mounted app, a
-    // player, a map), which the server's markup never shows
     if (oldNode.hasAttribute("data-morph-preserve")) {
         return;
     }
@@ -371,7 +359,6 @@ function morphNode(ctx, oldNode, newNode) {
     ) {
         oldNode.value = newNode.value;
     }
-    // isEqualNode does not see into a template's content
     if (
         !oldNode.isEqualNode(newNode) ||
         newNode.tagName === "TEMPLATE" ||

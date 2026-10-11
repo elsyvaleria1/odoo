@@ -2,8 +2,6 @@
 /** @odoo-module native */
 import { toRaw } from "@odoo/owl";
 
-// a chatter's data fetched before the chatter exists, alongside the read of
-// its record instead of after the form is shown; the chatter adopts it
 /** @type {WeakMap<object, { requestList: string[], promise: Promise<boolean> }>} */
 const prefetches = new WeakMap();
 

@@ -129,9 +129,6 @@ export function toRatio(value) {
     return `${ratio.toFixed(2)}x`;
 }
 
-/**
- * Filters an array of classes to only include those that extend a given class.
- */
 export function filterExtends(arr, PotentialSuperClass) {
     return arr.filter((PotentialSubClass) =>
         doesExtendsClass(PotentialSubClass, PotentialSuperClass),
@@ -151,7 +148,6 @@ function doesExtendsClass(PotentialSubClass, PotentialSuperClass) {
     if (PotentialSubClass === PotentialSuperClass) {
         return false;
     }
-    // Classes are functions, so their prototype chain reflects the inheritance.
     return PotentialSubClass.prototype instanceof PotentialSuperClass;
 }
 

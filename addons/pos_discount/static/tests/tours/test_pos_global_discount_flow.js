@@ -20,8 +20,6 @@ registry.category("web_tour.tours").add("test_pos_global_discount_sell_and_refun
                 productName: "Desk Pad",
                 quantity: "1",
             }),
-            // Check that the draft order's order line is not selected and not causing issues while
-            // comparing the line to the discount line
             {
                 content: "Manually trigger keyup event",
                 trigger: ".ticket-screen",

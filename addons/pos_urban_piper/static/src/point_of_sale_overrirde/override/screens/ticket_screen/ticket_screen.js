@@ -185,7 +185,6 @@ patch(TicketScreen.prototype, {
         }
         await this.pos.data.loadServerOrders([["uuid", "=", order.uuid]]);
 
-        // make sure the order is identified as paid.
         order = this.pos.models["pos.order"].get(order.id);
         this.state.selectedOrderUuid = order.uuid;
         order.setScreenData({ name: "" });

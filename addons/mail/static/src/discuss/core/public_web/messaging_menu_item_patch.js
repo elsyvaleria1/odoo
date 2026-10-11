@@ -61,7 +61,6 @@ patch(MessagingMenuItem.prototype, {
             this.store.discuss?.isActive && this.channel.eq(this.store.discuss.thread),
         );
     },
-    /** When the channel's meeting starts: its time, with the day unless today. */
     get meetingStartText() {
         const start = this.channel?.meeting_start_dt;
         if (!start) {

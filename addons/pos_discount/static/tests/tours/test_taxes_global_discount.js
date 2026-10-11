@@ -86,13 +86,12 @@ registry
                 ProductScreen.checkTotalAmount("30.04"),
                 ProductScreen.checkTaxAmount("3.99"),
                 ...payAndInvoice("30.04"),
-                // On refund, check if the global discount line is correctly prorated in the refund order
                 ...ProductScreen.clickRefund(),
                 TicketScreen.filterIs("Paid"),
                 TicketScreen.selectOrder("001"),
                 ProductScreen.clickNumpad("1"),
                 TicketScreen.confirmRefund(),
-                PaymentScreen.totalIs("-17.95"), // -18.32 (product_1_1) + 0.37 (discount)
+                PaymentScreen.totalIs("-17.95"),
             ].flat(),
     });
 

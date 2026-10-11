@@ -1,21 +1,5 @@
 /** @odoo-module ignore */
-// ==ClosureCompiler==
-// @compilation_level ADVANCED_OPTIMIZATIONS
-// @externs_url https://raw.githubusercontent.com/google/closure-compiler/master/contrib/externs/maps/google_maps_api_v3.js
-// ==/ClosureCompiler==
 
-/**
- * @name MarkerClusterer for Google Maps v3
- * @version version 1.0
- * @author Luke Mahe
- * @fileoverview
- * The library creates and manages per-zoom-level clusters for large amounts of
- * markers.
- * <br/>
- * This is a v3 implementation of the
- * <a href="http://gmaps-utility-library-dev.googlecode.com/svn/tags/markerclusterer/"
- * >v2 MarkerClusterer</a>.
- */
 
 /**
  * @license
@@ -65,11 +49,6 @@
  * @extends google.maps.OverlayView
  */
 function MarkerClusterer(map, opt_markers, opt_options) {
-  // MarkerClusterer implements google.maps.OverlayView interface. We use the
-  // extend function to extend MarkerClusterer with google.maps.OverlayView
-  // because it might not always be available when the code is defined so we
-  // look for it at the last possible moment. If it doesn't exist now then
-  // there is no point going ahead :)
   this.extend(MarkerClusterer, google.maps.OverlayView);
   this.map_ = map;
 
@@ -163,7 +142,6 @@ function MarkerClusterer(map, opt_markers, opt_options) {
    */
   this.prevZoom_ = this.map_.getZoom();
 
-  // Add the map event listeners
   var that = this;
   google.maps.event.addListener(this.map_, 'zoom_changed', function() {
     var zoom = that.map_.getZoom();
@@ -178,7 +156,6 @@ function MarkerClusterer(map, opt_markers, opt_options) {
     that.redraw();
   });
 
-  // Finally, add the markers
   if (opt_markers && opt_markers.length) {
     this.addMarkers(opt_markers, false);
   }
@@ -221,18 +198,10 @@ MarkerClusterer.prototype.extend = function(obj1, obj2) {
 };
 
 
-/**
- * Implementaion of the interface method.
- * @ignore
- */
 MarkerClusterer.prototype.onAdd = function() {
   this.setReady_(true);
 };
 
-/**
- * Implementaion of the interface method.
- * @ignore
- */
 MarkerClusterer.prototype.draw = function() {};
 
 /**
@@ -254,9 +223,6 @@ MarkerClusterer.prototype.setupStyles_ = function() {
   }
 };
 
-/**
- *  Fit the map to the bounds of the markers in the clusterer.
- */
 MarkerClusterer.prototype.fitMapToMarkers = function() {
   var markers = this.getMarkers();
   var bounds = new google.maps.LatLngBounds();
@@ -420,8 +386,6 @@ MarkerClusterer.prototype.addMarkers = function(markers, opt_nodraw) {
 MarkerClusterer.prototype.pushMarkerTo_ = function(marker) {
   marker.isAdded = false;
   if (marker['draggable']) {
-    // If the marker is draggable add a listener so we update the clusters on
-    // the drag end.
     var that = this;
     google.maps.event.addListener(marker, 'dragend', function() {
       marker.isAdded = false;
@@ -467,7 +431,6 @@ MarkerClusterer.prototype.removeMarker_ = function(marker) {
   }
 
   if (index == -1) {
-    // Marker is not in our list of markers.
     return false;
   }
 
@@ -613,13 +576,11 @@ MarkerClusterer.prototype.setMinClusterSize = function(size) {
 MarkerClusterer.prototype.getExtendedBounds = function(bounds) {
   var projection = this.getProjection();
 
-  // Turn the bounds into latlng.
   var tr = new google.maps.LatLng(bounds.getNorthEast().lat(),
       bounds.getNorthEast().lng());
   var bl = new google.maps.LatLng(bounds.getSouthWest().lat(),
       bounds.getSouthWest().lng());
 
-  // Convert the points to pixels and the extend out by the grid size.
   var trPix = projection.fromLatLngToDivPixel(tr);
   trPix.x += this.gridSize_;
   trPix.y -= this.gridSize_;
@@ -628,11 +589,9 @@ MarkerClusterer.prototype.getExtendedBounds = function(bounds) {
   blPix.x -= this.gridSize_;
   blPix.y += this.gridSize_;
 
-  // Convert the pixel points back to LatLng
   var ne = projection.fromDivPixelToLatLng(trPix);
   var sw = projection.fromDivPixelToLatLng(blPix);
 
-  // Extend the bounds to contain the new bounds.
   bounds.extend(ne);
   bounds.extend(sw);
 
@@ -653,13 +612,9 @@ MarkerClusterer.prototype.isMarkerInBounds_ = function(marker, bounds) {
 };
 
 
-/**
- * Clears all clusters and markers from the clusterer.
- */
 MarkerClusterer.prototype.clearMarkers = function() {
   this.resetViewport(true);
 
-  // Set the markers a empty array.
   this.markers_ = [];
 };
 
@@ -669,12 +624,10 @@ MarkerClusterer.prototype.clearMarkers = function() {
  * @param {boolean} opt_hide To also hide the marker.
  */
 MarkerClusterer.prototype.resetViewport = function(opt_hide) {
-  // Remove all the clusters
   for (var i = 0, cluster; cluster = this.clusters_[i]; i++) {
     cluster.remove();
   }
 
-  // Reset the markers to not be added and to be invisible.
   for (var i = 0, marker; marker = this.markers_[i]; i++) {
     marker.isAdded = false;
     if (opt_hide) {
@@ -685,17 +638,12 @@ MarkerClusterer.prototype.resetViewport = function(opt_hide) {
   this.clusters_ = [];
 };
 
-/**
- *
- */
 MarkerClusterer.prototype.repaint = function() {
   var oldClusters = this.clusters_.slice();
   this.clusters_.length = 0;
   this.resetViewport();
   this.redraw();
 
-  // Remove the old clusters.
-  // Do it in a timeout so the other clusters have been drawn first.
   window.setTimeout(function() {
     for (var i = 0, cluster; cluster = oldClusters[i]; i++) {
       cluster.remove();
@@ -704,9 +652,6 @@ MarkerClusterer.prototype.repaint = function() {
 };
 
 
-/**
- * Redraws the clusters.
- */
 MarkerClusterer.prototype.redraw = function() {
   this.createClusters_();
 };
@@ -726,7 +671,7 @@ MarkerClusterer.prototype.distanceBetweenPoints_ = function(p1, p2) {
     return 0;
   }
 
-  var R = 6371; // Radius of the Earth in km
+  var R = 6371;
   var dLat = (p2.lat() - p1.lat()) * Math.PI / 180;
   var dLon = (p2.lng() - p1.lng()) * Math.PI / 180;
   var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -745,7 +690,7 @@ MarkerClusterer.prototype.distanceBetweenPoints_ = function(p1, p2) {
  * @private
  */
 MarkerClusterer.prototype.addToClosestCluster_ = function(marker) {
-  var distance = 40000; // Some large number
+  var distance = 40000;
   var clusterToAddTo = null;
   var pos = marker.getPosition();
   for (var i = 0, cluster; cluster = this.clusters_[i]; i++) {
@@ -779,8 +724,6 @@ MarkerClusterer.prototype.createClusters_ = function() {
     return;
   }
 
-  // Get our current map view bounds.
-  // Create a new bounds object so we don't affect the map.
   var mapBounds = new google.maps.LatLngBounds(this.map_.getBounds().getSouthWest(),
       this.map_.getBounds().getNorthEast());
   var bounds = this.getExtendedBounds(mapBounds);
@@ -863,12 +806,10 @@ Cluster.prototype.addMarker = function(marker) {
 
   var len = this.markers_.length;
   if (len < this.minClusterSize_ && marker.getMap() != this.map_) {
-    // Min cluster size not reached so show the marker.
     marker.setMap(this.map_);
   }
 
   if (len == this.minClusterSize_) {
-    // Hide the markers that were showing.
     for (var i = 0; i < len; i++) {
       this.markers_[i].setMap(null);
     }
@@ -908,9 +849,6 @@ Cluster.prototype.getBounds = function() {
 };
 
 
-/**
- * Removes the cluster
- */
 Cluster.prototype.remove = function() {
   this.clusterIcon_.remove();
   this.markers_.length = 0;
@@ -980,15 +918,11 @@ Cluster.prototype.getMap = function() {
 };
 
 
-/**
- * Updates the cluster icon
- */
 Cluster.prototype.updateIcon = function() {
   var zoom = this.map_.getZoom();
   var mz = this.markerClusterer_.getMaxZoom();
 
   if (mz && zoom > mz) {
-    // The zoom is greater than our max zoom so show all the markers in cluster.
     for (var i = 0, marker; marker = this.markers_[i]; i++) {
       marker.setMap(this.map_);
     }
@@ -996,7 +930,6 @@ Cluster.prototype.updateIcon = function() {
   }
 
   if (this.markers_.length < this.minClusterSize_) {
-    // Min cluster size not yet reached.
     this.clusterIcon_.hide();
     return;
   }
@@ -1050,20 +983,14 @@ function ClusterIcon(cluster, styles, opt_padding) {
 ClusterIcon.prototype.triggerClusterClick = function(event) {
   var markerClusterer = this.cluster_.getMarkerClusterer();
 
-  // Trigger the clusterclick event.
   google.maps.event.trigger(markerClusterer, 'clusterclick', this.cluster_, event);
 
   if (markerClusterer.isZoomOnClick()) {
-    // Zoom into the cluster.
     this.map_.fitBounds(this.cluster_.getBounds());
   }
 };
 
 
-/**
- * Adding the cluster icon to the dom.
- * @ignore
- */
 ClusterIcon.prototype.onAdd = function() {
   this.div_ = document.createElement('DIV');
   if (this.visible_) {
@@ -1078,7 +1005,6 @@ ClusterIcon.prototype.onAdd = function() {
   var that = this;
   var isDragging = false;
   google.maps.event.addDomListener(this.div_, 'click', function(event) {
-    // Only perform click when not preceded by a drag
     if (!isDragging) {
       that.triggerClusterClick(event);
     }
@@ -1113,10 +1039,6 @@ ClusterIcon.prototype.getPosFromLatLng_ = function(latlng) {
 };
 
 
-/**
- * Draw the icon.
- * @ignore
- */
 ClusterIcon.prototype.draw = function() {
   if (this.visible_) {
     var pos = this.getPosFromLatLng_(this.center_);
@@ -1126,9 +1048,6 @@ ClusterIcon.prototype.draw = function() {
 };
 
 
-/**
- * Hide the icon.
- */
 ClusterIcon.prototype.hide = function() {
   if (this.div_) {
     this.div_.style.display = 'none';
@@ -1137,9 +1056,6 @@ ClusterIcon.prototype.hide = function() {
 };
 
 
-/**
- * Position and show the icon.
- */
 ClusterIcon.prototype.show = function() {
   if (this.div_) {
     var pos = this.getPosFromLatLng_(this.center_);
@@ -1150,18 +1066,11 @@ ClusterIcon.prototype.show = function() {
 };
 
 
-/**
- * Remove the icon from the map
- */
 ClusterIcon.prototype.remove = function() {
   this.setMap(null);
 };
 
 
-/**
- * Implementation of the onRemove interface.
- * @ignore
- */
 ClusterIcon.prototype.onRemove = function() {
   if (this.div_ && this.div_.parentNode) {
     this.hide();
@@ -1190,9 +1099,6 @@ ClusterIcon.prototype.setSums = function(sums) {
 };
 
 
-/**
- * Sets the icon to the styles.
- */
 ClusterIcon.prototype.useStyle = function() {
   var index = Math.max(0, this.sums_.index - 1);
   index = Math.min(this.styles_.length - 1, index);
@@ -1265,9 +1171,6 @@ ClusterIcon.prototype.createCss = function(pos) {
 };
 
 
-// Export Symbols for Closure
-// If you are not going to compile with closure then you can remove the
-// code below.
 window['MarkerClusterer'] = MarkerClusterer;
 MarkerClusterer.prototype['addMarker'] = MarkerClusterer.prototype.addMarker;
 MarkerClusterer.prototype['addMarkers'] = MarkerClusterer.prototype.addMarkers;

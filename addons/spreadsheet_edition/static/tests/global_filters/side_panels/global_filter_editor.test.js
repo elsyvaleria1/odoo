@@ -167,11 +167,9 @@ async function selectFieldForSelection(fieldName) {
 }
 
 async function selectFieldMatching(fieldName, fieldMatching = target) {
-    // skipVisibilityCheck because the section is collapsible, which we don't care about in the tests
     await contains(fieldMatching.querySelector(".o_model_field_selector"), {
         visible: false,
     }).click();
-    // We use `target` here because the popover is not in fieldMatching
     await contains(
         `.o_model_field_selector_popover_item[data-name='${fieldName}'] button`,
     ).click();
@@ -399,7 +397,7 @@ test("Create a new text global filter with a default value from a range", async 
     await contains(".restrict_to_range input[type=checkbox]").click();
     selectCell(model, "B1");
     await animationFrame();
-    await animationFrame(); // SelectionInput component needs an extra tick to update
+    await animationFrame();
     await contains(".o-selection-ok").click();
     await contains(".o-autocomplete input").click();
     await animationFrame();
@@ -422,7 +420,7 @@ test("Create a new text global filter, set a default value ,then restrict values
     await contains(".restrict_to_range input[type=checkbox]").click();
     selectCell(model, "B1");
     await animationFrame();
-    await animationFrame(); // SelectionInput component needs an extra tick to update
+    await animationFrame();
     await contains(".o-selection-ok").click();
     await contains(".o-autocomplete input").click();
     await animationFrame();
@@ -442,14 +440,14 @@ test("edit a text global filter with a default value not from the range", async 
         defaultValue: { operator: "ilike", strings: ["Hi"] },
         rangesOfAllowedValues: [toRangeData(sheetId, "B2")],
     });
-    setCellContent(model, "B2", "hello"); // the range does not contain the default value
+    setCellContent(model, "B2", "hello");
     await animationFrame();
     await openSidePanel(model, env, "42");
     expect(".o_tag").toHaveText("Hi");
     await contains(".o-autocomplete input").click();
     await animationFrame();
     expect(queryAllTexts(".dropdown-item")).toEqual(["hello"]);
-    await saveGlobalFilter(); // save without changing anything
+    await saveGlobalFilter();
     const [globalFilter] = model.getters.getGlobalFilters();
     expect(globalFilter.defaultValue).toEqual({ operator: "ilike", strings: ["Hi"] });
 });
@@ -615,8 +613,8 @@ test("Display with an existing 'Relation' global filter", async function () {
     };
     addGlobalFilterWithoutReload(model, filter, {
         pivot: {
-            [pivotId]: { type: "many2one", chain: "product_id" }, // first pivotId
-            [pivotId2]: { type: "many2one", chain: "product_id" }, // second pivotId
+            [pivotId]: { type: "many2one", chain: "product_id" },
+            [pivotId2]: { type: "many2one", chain: "product_id" },
         },
     });
     await openSidePanel(model, env, "42");
@@ -678,11 +676,9 @@ test("Fields are ordered by global filter type then relation", async function ()
     await contains(".o_model_field_selector_value").click();
     const [model1, model2, model3, model4, model5, model6, model7] =
         target.querySelectorAll(".o_model_field_selector_popover_item_name");
-    // Date first
     expect(model1).toHaveText("Creation Date");
     expect(model2).toHaveText("Date");
     expect(model3).toHaveText("Last Modified on");
-    // Then relation
     expect(model4).toHaveText("Currency");
     expect(model5).toHaveText("Product");
     expect(model6).toHaveText("Tags");
@@ -866,17 +862,14 @@ test("Create a new date filter with period offsets", async function () {
         ".o_spreadsheet_field_matching",
     )[2];
 
-    // pivot
     await selectFieldMatching("date", pivotFieldMatching);
     await contains(pivotFieldMatching.querySelector("select")).select("-1");
     await contains(
         pivotFieldMatching.querySelector("input.o_filter_offset_input"),
     ).edit("1");
 
-    //list
     await selectFieldMatching("date", listFieldMatching);
 
-    // chart
     await selectFieldMatching("date", chartFieldMatching);
     await contains(chartFieldMatching.querySelector("select")).select("-1");
     await contains(
@@ -915,7 +908,6 @@ test("Cannot create a new date filter with period offsets without setting the fi
     )[0];
     expect(".o_filter_field_offset select.o-input").toHaveCount(0);
 
-    // pivot
     await selectFieldMatching("date", pivotFieldMatching);
     expect(".o_filter_field_offset select.o-input").toHaveCount(1);
     expect(".o_filter_field_offset select.o-input").toHaveProperty("disabled", false);
@@ -1135,8 +1127,6 @@ test("Change all domains -> Set corresponding model should allow saving", async 
 
     expect(".o_global_filter_label").toHaveValue("Product");
 
-    // visible: false to skip the collapsible. We really don't want to use the collapsible here, as bootstrap dispatches
-    // scroll events which have the side effect to close the autocomplete
     await contains(".o_model_field_selector_value", { visible: false }).click();
     await contains(
         target.querySelectorAll(".o_model_field_selector_popover_item")[3],
@@ -1251,7 +1241,7 @@ test("Can clear a field matching an invalid field", async function () {
         },
     );
     await openSidePanel(model, env, "42");
-    await contains(".collapsor").click(); // uncollapse the field matching
+    await contains(".collapsor").click();
     expect(".o_model_field_selector_warning").toHaveCount(1);
     expect(".o_spreadsheet_field_matching .o_model_field_selector").toHaveText(
         "not_a_field",

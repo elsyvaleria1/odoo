@@ -138,7 +138,6 @@ test("rendering of tracked field of type monetary: from non-0 to 0", async () =>
     const pyEnv = await startServer();
 
     const testCurrencyId = pyEnv["res.currency"].create({ name: "ECU", symbol: "§" });
-    // need to patch currencies as they're passed via cookies, not through the orm
     patchWithCleanup(currencies, {
         [testCurrencyId]: { digits: [69, 2], position: "after", symbol: "§" },
     });
@@ -381,7 +380,6 @@ test("Search message with filter in chatter", async () => {
         text: "Hermit",
     });
     await click(".o_form_button_save");
-    // Search message with filter
     await click("[title='Search Messages']");
     await insertText(".o_searchview_input", "Hermit");
     await click("button[title='Filter Messages']");

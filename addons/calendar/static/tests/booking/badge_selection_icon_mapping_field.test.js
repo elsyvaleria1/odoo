@@ -42,7 +42,6 @@ test("verify badges and their icon are correctly displayed", async () => {
 
     await waitFor("span.o_selection_badge:contains(Char) span.fa-times");
     await waitFor("span.o_selection_badge:contains(Checkbox) span.fa-check-square");
-    // Default icon is fa-check
     await waitFor("span.o_selection_badge:contains(Text) span.fa-check");
 });
 

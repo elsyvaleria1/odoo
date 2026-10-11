@@ -11,7 +11,6 @@ import { useEventBus } from "@web/core/utils/hooks";
 
 const log = makeLogger("web.action.container");
 
-// above this the element under the pointer is a region, not a control
 const POINTER_TARGET_MAX_DESCENDANTS = 16;
 
 /** @returns {Element | undefined} */
@@ -61,8 +60,6 @@ export class ActionContainer extends Component {
         this.busyHolds = 0;
         /** @type {() => void} */
         this.givePointerBack = () => {};
-        // a menu item is gone a frame after it is clicked, and a pointer
-        // moves: the cursor goes to whatever the pointer comes to rest on
         /** @param {Event} event */
         this.onPointerOver = ({ target }) =>
             this.pointAt(target instanceof Element ? target : undefined);
@@ -76,7 +73,6 @@ export class ActionContainer extends Component {
                 component: info.Component?.name,
                 jsId: info.componentProps?.jsId,
             }));
-            // a view switch or a breadcrumb is dispatched without an action
             info.settled?.then(this.holdBusy());
             this.state.info = markRaw(info);
         };

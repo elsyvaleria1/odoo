@@ -405,7 +405,6 @@ test("remove background image removes color filter", async () => {
     expect(":iframe section .o_we_bg_filter").not.toHaveCount();
 });
 
-// Chrome serialises a one-value background-size with its implied `auto`
 function expectBackgroundSize(el, expected) {
     expect(el.style.backgroundSize.replace(/ auto$/, "")).toBe(expected);
 }

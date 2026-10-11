@@ -270,9 +270,6 @@ test(`o_past_event: an all-day event on its last day today is not styled past`, 
 
 test(`isSelectionAllowed: a timed selection ending exactly at midnight is allowed`, async () => {
     const renderer = await start();
-    // the instants must be built in the user's zone, the one fromFcDate
-    // reads them in: a native Date built with setHours() lives in the browser's
-    // real zone, and the assertion then depends on where the test runs
     const atLocal = (year, month, day, hour) =>
         toJSDate(dateTime({ year, month, day, hour }));
     expect(

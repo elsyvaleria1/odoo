@@ -17,7 +17,6 @@ export class HeadingLinkPlugin extends Plugin {
     static id = "headingLink";
     static dependencies = ["localOverlay", "history"];
     resources = {
-        /** Handlers */
         start_edition_handlers: this.onStartEdition.bind(this),
         normalize_handlers: (root) => this.updateHeadingIds(root),
         clean_for_save_handlers: ({ root }) => this.cleanForSave(root),
@@ -30,7 +29,6 @@ export class HeadingLinkPlugin extends Plugin {
     };
 
     setup() {
-        // Create an overlay with the anchor.
         this.headingLinkOverlay = this.dependencies.localOverlay.makeLocalOverlay(
             "o-heading-link-overlay",
         );
@@ -44,12 +42,9 @@ export class HeadingLinkPlugin extends Plugin {
         this.headingLinkOverlay.style.visibility = "hidden";
         this.addDomListener(this.headingLink, "click", () => {
             const headingId = this.currentHeading?.getAttribute("data-heading-link-id");
-            // Navigate to the heading and add the url to the clipboard.
             browser.location.hash = headingId;
             browser.navigator.clipboard.writeText(browser.location.href);
-            // Add a step to the history and make sure the ID is saved.
             this.dependencies.history.addStep();
-            // Highlight the heading.
             scrollAndHighlightHeading(this.editable, headingId);
         });
         this.addDomListener(this.headingLink, "dragstart", (ev) => ev.preventDefault());
@@ -82,15 +77,12 @@ export class HeadingLinkPlugin extends Plugin {
     onMousemove(heading) {
         if (heading?.textContent) {
             this.currentHeading = heading;
-            // Resetting the position of the overlay.
             this.headingLinkOverlay.style.top = "0px";
             this.headingLinkOverlay.style.left = "0px";
             const containerRect = this.headingLinkContainer.getBoundingClientRect();
-            // Get the range rectangle to position the overlay after it.
             const range = this.document.createRange();
             range.selectNodeContents(this.currentHeading);
             const rangeRect = range.getBoundingClientRect();
-            // Position the overlay.
             this.headingLinkOverlay.style.top = `${rangeRect.top - containerRect.top + (rangeRect.height - containerRect.height) / 2 + 2}px`;
             this.headingLinkOverlay.style.left = `${rangeRect.right - containerRect.left + 5}px`;
             this.headingLinkOverlay.style.visibility = "visible";
@@ -110,10 +102,6 @@ export class HeadingLinkPlugin extends Plugin {
         super.destroy();
     }
 
-    /**
-     * Always reset the `data-heading-link-id` when inserting a heading which
-     * already has one.
-     */
     ensureIdUniqueness(insertContainer) {
         for (const heading of insertContainer.querySelectorAll(
             "[data-heading-link-id]",
@@ -124,7 +112,6 @@ export class HeadingLinkPlugin extends Plugin {
     }
 
     onAfterSplitElement(secondPart) {
-        // Ensure the ID doesn't get cloned.
         secondPart?.removeAttribute("data-heading-link-id");
     }
 

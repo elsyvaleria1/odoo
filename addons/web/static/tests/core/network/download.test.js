@@ -148,8 +148,6 @@ test("a FileReader failure rejects instead of hanging forever", async () => {
 });
 
 test("names a cloud storage download from the disposition signed into its url", async () => {
-    // A redirect to a bucket answers cross-origin: its Content-Disposition is
-    // unreadable, but the server signed it into the url the XHR ended on.
     const disposition =
         "attachment; filename=\"CSD Marin.cer\"; filename*=UTF-8''CSD%20Mar%C3%ADn.cer";
     mockFetch(() => {

@@ -11,8 +11,6 @@ import {
 import { registerSessionInfo } from "@web/../tests/_framework/mock_session.hoot";
 import { fields } from "@web/../tests/web_test_helpers";
 
-// spreadsheet_dashboard_edition/models/ir_http.py enables the "Insert in
-// spreadsheet" entries for a dashboard manager; the mock admin is one
 registerSessionInfo({ can_insert_in_spreadsheet: true });
 
 export class SpreadsheetDashboard extends SpreadsheetDashboardCommunity {

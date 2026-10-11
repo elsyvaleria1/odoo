@@ -41,7 +41,6 @@ export class PosOrderAccounting extends Base {
     get remainingDue() {
         const isNegative = this.totalDue < 0;
         const total = this.totalDue;
-        // 10.10 - 10.05 is 0.0499…, which DOWN rounding would forgive
         const remaining = this.currency.round(total - this.amountPaid);
 
         if ((isNegative && remaining >= 0) || (!isNegative && remaining <= 0)) {
@@ -160,7 +159,6 @@ export class PosOrderAccounting extends Base {
             order: this.uuid,
             lines: this.lines.length,
         }));
-        // Every value is read before any is written: a write may invalidate `prices`.
         const { baseLineByLineUuids } = this.prices;
         const orderValues = {
             amount_paid: this.amountPaid,

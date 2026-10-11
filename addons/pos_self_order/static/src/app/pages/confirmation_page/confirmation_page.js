@@ -90,7 +90,6 @@ export class ConfirmationPage extends Component {
     }
 
     beforePrintOrder() {
-        // meant to be overriden.
         return true;
     }
 

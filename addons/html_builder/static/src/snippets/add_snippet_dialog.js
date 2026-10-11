@@ -63,17 +63,11 @@ export class AddSnippetDialog extends Component {
                 isFirefox &&
                 !(this.iframeRef.el?.contentDocument.readyState === "complete")
             ) {
-                // Make sure empty preview iframe is loaded. This was necessary
-                // in Firefox < 148 as it created and parsed a new document.
-                // This event is never triggered on Chrome.
                 await new Promise((resolve) => {
                     this.iframeRef.el.addEventListener("load", resolve, { once: true });
                 });
             }
 
-            // Ensure preview styles are applied before mounting the snippets.
-            // Otherwise layout-dependent measurements (e.g., carousel height in
-            // preview) can be wrong.
             await this.insertStyle();
 
             const iframeDocument = this.iframeRef.el.contentDocument;
@@ -109,11 +103,6 @@ export class AddSnippetDialog extends Component {
         });
     }
 
-    /**
-     * Loads and injects the required styles into the iframe's <head>.
-     * The URL for web.assets_frontend CSS bundle is retrieved from the editor
-     * document to ensure consistency, especially when using the RTL version.
-     */
     async insertStyle() {
         const loadCSSBundleFromEditor = (bundleName, loadOptions) => {
             const cssLinkEl = this.props.editor.document.head.querySelector(
@@ -151,11 +140,6 @@ export class AddSnippetDialog extends Component {
         iframeDocument.body.scrollTop = 0;
     }
 
-    /**
-     * Retrieves the color-scheme cookie and injects it into the iframe's
-     * <head> and add a custom class. This is necessary to allow the dark mode
-     * to be handled correctly across browsers.
-     */
     insertColorScheme() {
         const scheme = colorScheme.current;
         const metaElement = document.createElement("meta");

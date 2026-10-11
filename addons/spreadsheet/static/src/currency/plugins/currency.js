@@ -39,10 +39,6 @@ export class CurrencyPlugin extends OdooUIPlugin {
         return this._serverData;
     }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
     /**
      * Get the currency rate between the two given currencies
      * @param {string} from Currency from

@@ -113,7 +113,6 @@ export class SocialMediaLinks extends BaseOptionComponent {
      * @returns { SocialMediaLinkItem[] }
      */
     computeItems() {
-        // a drop that moved no link in the page still reorders this.ids
         void this.reorderTriggered.trigger;
         const missingRecordedSocialMediaNames = new Set(this.recordedSocialMediaNames);
         const idsLookUp = new Map(this.ids.map((id, i) => [id, i]));

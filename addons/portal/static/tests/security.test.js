@@ -27,7 +27,6 @@ async function prepareCheck(call) {
         },
         getService("dialog"),
     );
-    // Observe failures immediately, including dismissal during a pending check.
     const outcome = result.then(
         (value) => ({ value }),
         (error) => ({ error }),

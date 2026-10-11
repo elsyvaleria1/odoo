@@ -33,11 +33,6 @@ export class StreamPostCommentsTwitter extends StreamPostComments {
         });
     }
 
-    /**
-     * Twitter is a bit special as it does not handle the "load more", we receive all comments
-     * at once. To avoid flooding the UI, we manually split the array to simulate a load more
-     * behavior.
-     */
     async loadMoreComments() {
         this.page += 1;
         const start = (this.page - 1) * this.commentsCount;

@@ -49,7 +49,6 @@ export default class HeaderComponent extends Component {
         if (this.order.trace_producing_ids.length) {
             const serialNames = this.order.trace_producing_ids.map((sn) => sn.name);
             if (serialNames.length > 5) {
-                // Too many serial numbers, display the three firsts and the last one instead.
                 return _t("%(firstSN)s, %(secondSN)s, %(thirdSN)s, …, %(lastSN)s", {
                     firstSN: serialNames[0],
                     secondSN: serialNames[1],

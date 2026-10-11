@@ -36,8 +36,6 @@ export function useAutoresize(ref, options = {}) {
                 el.addEventListener("input", inputHandler);
                 const resizeObserver = new ResizeObserver(() => {
                     const { width, height } = el.getBoundingClientRect();
-                    // Ignore only the size we applied, not a later external resize
-                    // after a render that did not change the element's size.
                     if (width === lastWidth && height === lastHeight) {
                         return;
                     }

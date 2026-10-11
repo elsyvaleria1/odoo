@@ -40,8 +40,6 @@ export class DocClient extends Component {
             this.selectUrlModel();
         });
 
-        // useListener rather than addEventListener: the raw listener
-        // outlives the component and keeps it alive with it.
         useListener(window, "popstate", () => {
             this.selectUrlModel();
         });

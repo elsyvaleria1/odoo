@@ -26,8 +26,6 @@ export class QuantityButtons extends Component {
         const input = event.target;
         const quantity = parseFloat(input.value);
         await this.props.setQuantity(isNaN(quantity) ? 0 : quantity);
-        // A refused or clamped quantity can leave the prop unchanged, and an
-        // unchanged prop re-renders nothing: the typed text would stay.
         if (parseFloat(input.value) !== this.props.quantity) {
             input.value = this.props.quantity;
         }

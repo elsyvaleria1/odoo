@@ -40,7 +40,6 @@ export class Input extends TModelInput {
             this.inputRef;
         this.props.getRef?.(ref);
         onWillUpdateProps(() => {
-            // Flush before the binding and callback are replaced by the new props.
             log.logic("flush pending input before updating props");
             this.setValue.cancel(true);
         });

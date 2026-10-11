@@ -12,9 +12,6 @@ export class AccountReportButtonsBar extends Component {
         this.controller = proxy(this.reportContext.controller);
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Buttons
-    //------------------------------------------------------------------------------------------------------------------
     get barButtons() {
         const buttons = [];
 

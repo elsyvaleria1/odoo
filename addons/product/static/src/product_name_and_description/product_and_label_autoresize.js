@@ -1,10 +1,6 @@
 /** @odoo-module native */
 import { useAutoresize } from "@web/core/utils/dom/autoresize";
 
-// The walk below grows every ancestor up to the cell that owns the field. These
-// are where a row ends: reaching one without having matched `targetParentName`
-// means the layout does not carry that name, and climbing further would put an
-// inline height on <body> and <html>.
 const CELL_BOUNDARY = new Set(["TD", "TH", "TR", "TABLE", "FORM", "BODY", "HTML"]);
 
 /**
@@ -19,8 +15,6 @@ const CELL_BOUNDARY = new Set(["TD", "TH", "TR", "TABLE", "FORM", "BODY", "HTML"
  * @param {{ targetParentName?: string }} [options]
  */
 export function useProductAndLabelAutoresize(ref, options = {}) {
-    // `useAutoresize` reads `onResize` only; it has no `onMounted` option, and
-    // its own trailing effect already covers the mounted case.
     useAutoresize(ref, { onResize: productAndLabelResizeTextArea, ...options });
 }
 
@@ -29,9 +23,6 @@ export function productAndLabelResizeTextArea(textarea, options = {}) {
         return;
     }
     const lineHeight = window.getComputedStyle(textarea).lineHeight;
-    // Stop at the cell that owns this field. Bounded by the field's own cell so
-    // a layout that never carries that name cannot walk out of the row and set
-    // an inline height on <body> and <html>.
     let target = textarea.parentElement;
     while (target && target.getAttribute("name") !== options.targetParentName) {
         const totalParentHeight = Array.from(target.children).reduce(

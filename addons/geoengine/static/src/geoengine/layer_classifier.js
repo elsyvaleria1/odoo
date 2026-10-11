@@ -26,14 +26,6 @@ const DEFAULT_NUM_CLASSES = 5;
 const LEGEND_MAX_ITEMS = 10;
 const CACHE_SIZE = 50;
 
-/**
- * Turns a layer's configuration and rows into the styling the renderers
- * consume: class bounds, colours and legend for a choropleth, a size map for
- * proportional symbols. Classes are computed over the layer's whole
- * population when the server can answer (get_class_values / get_class_bounds)
- * and over the drawn rows otherwise. Results are cached by configuration and
- * a fingerprint of the data and the population.
- */
 export class LayerClassifier {
     /**
      * @param {Object} orm
@@ -77,7 +69,6 @@ export class LayerClassifier {
                 if (unique) {
                     return null;
                 }
-                // Too many values to send: the database cuts the quantiles.
                 const quantiles = await this.orm.call(
                     "geoengine.vector.layer",
                     "get_class_quantiles",
@@ -181,8 +172,6 @@ export class LayerClassifier {
         const indicator = layerConfig.attribute_field_name;
         const bounds = population?.bounds;
         const drawn = population?.values || this._values(layerConfig, data);
-        // A tiled layer draws no rows here: its classes come from the
-        // population's bounds or quantiles, which geostats reads from a series.
         const seed =
             population?.quantiles || (bounds ? [bounds.min, bounds.max] : null);
         const values = drawn.length || !seed ? drawn : seed;

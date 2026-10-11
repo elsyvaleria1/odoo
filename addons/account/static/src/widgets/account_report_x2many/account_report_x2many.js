@@ -27,8 +27,6 @@ export class AccountReportListRenderer extends ListRenderer {
         this.dialog = useService("dialog");
         this.orm = useService("orm");
 
-        // From ListRenderer
-        // We can't really use `super.setup()` because it expects to be used on a html table.
         this.allColumns = processAllColumns(
             this.props.archInfo.columns,
             this.props.list,
@@ -80,9 +78,6 @@ export class AccountReportListRenderer extends ListRenderer {
         };
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Records
-    //------------------------------------------------------------------------------------------------------------------
     recordsDataDeepCopy(records) {
         const fields = this.allColumns.map((column) => column.name);
 
@@ -97,9 +92,6 @@ export class AccountReportListRenderer extends ListRenderer {
         });
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Format
-    //------------------------------------------------------------------------------------------------------------------
     formatData() {
         const idToIndexMap = {};
         const tree = [];
@@ -124,7 +116,6 @@ export class AccountReportListRenderer extends ListRenderer {
                         parentLine = lines[idToIndexMap[parentLine.parent_id?.id]];
                     }
                 } else {
-                    // The parent line hasn't been met yet, which means this line is out of sequence.
                     line.out_of_sequence_error = true;
 
                     tree.push(line);
@@ -137,9 +128,6 @@ export class AccountReportListRenderer extends ListRenderer {
         return tree;
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Placeholder
-    //------------------------------------------------------------------------------------------------------------------
     onDragStart(ctx) {
         function sanitize(element) {
             if (element.nodeName === "LI") {
@@ -170,21 +158,15 @@ export class AccountReportListRenderer extends ListRenderer {
     }
 
     onDragEnd() {
-        // Clear placeholder
         document.querySelector(".o_dragged_placeholder").remove();
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Nested sorting
-    //------------------------------------------------------------------------------------------------------------------
     async setRecordParent(currentElement, parentElement) {
         const currentRecordIndex = currentElement.dataset.record_index;
         const parentRecordIndex = parentElement?.dataset.record_index;
 
-        // Default root element
         let parent = false;
 
-        // parentRecordIndex is a string, so index 0 reads as the truthy '0' and is handled here.
         if (parentRecordIndex) {
             parent = {
                 id: this.props.list.records[parentRecordIndex].data.id,
@@ -257,7 +239,6 @@ export class AccountReportListRenderer extends ListRenderer {
             lastDescendantIndex + 1,
         );
 
-        // We remove the element(s) we are moving
         this.props.list.records.splice(currentRecordIndex, recordsToMove.length);
 
         const previousRecordIndex = previousElement?.dataset.record_index;
@@ -271,20 +252,15 @@ export class AccountReportListRenderer extends ListRenderer {
                 1 +
                 parseInt(previousElementDescendantCount);
         } else if (nextRecordIndex) {
-            // We add the element in the first position
             newCurrentRecordIndex = parseInt(nextRecordIndex);
         } else {
-            // We add the element as a first child
             newCurrentRecordIndex = parseInt(parentElement?.dataset.record_index) + 1;
         }
 
-        // If the original position of the line we want to move is before the position we want to drop it, then we need
-        // to adjust the index because all the indexes of the lines after it have changed (we removed lines).
         if (currentRecordIndex < newCurrentRecordIndex) {
             newCurrentRecordIndex -= 1 + currentRecordDescendantsCount;
         }
 
-        // We add the element(s) we are moving into the new position
         this.props.list.records.splice(newCurrentRecordIndex, 0, ...recordsToMove);
 
         for (const [index, record] of this.props.list.records.entries()) {
@@ -295,14 +271,12 @@ export class AccountReportListRenderer extends ListRenderer {
     async onDrop(ctx) {
         const parentRecordIndex = ctx.parent?.dataset.record_index;
 
-        // We can't drop a line if its parent has a 'user_groupby'
         if (this.props.list.records[parentRecordIndex]?.data.user_groupby) {
             return this.dialog.add(WarningDialog, {
                 message: _t("A line with a 'Group By' value cannot have children."),
             });
         }
 
-        // We need to save it beforehand as its value might change during the calculations below
         const previousElementDescendantCount = ctx.previous?.dataset.descendants_count;
 
         await this.setRecordParent(ctx.element, ctx.parent);
@@ -316,15 +290,11 @@ export class AccountReportListRenderer extends ListRenderer {
         );
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Delete
-    //------------------------------------------------------------------------------------------------------------------
     onDeleteRecord(recordIndex) {
         const currentRecordId = this.props.list.records[recordIndex].data.id;
         const nextRecordParentId =
             this.props.list.records[recordIndex + 1]?.data.parent_id.id;
 
-        // We check if the next line is a children of the current one
         if (nextRecordParentId === currentRecordId) {
             return new Promise((resolve) => {
                 this.dialog.add(ConfirmationDialog, {
@@ -349,7 +319,6 @@ export class AccountReportListRenderer extends ListRenderer {
         const recordsToDelete = [recordToDelete];
         const ancestors = new Set([recordToDelete.data.id]);
 
-        // We get all the children of the line we are deleting
         for (
             let index = recordIndex + 1;
             index < this.props.list.records.length;
@@ -377,8 +346,6 @@ export class AccountReportsLinesListX2ManyField extends X2ManyField {
         ListRenderer: AccountReportListRenderer,
     };
 
-    // Rebuilds `this._openRecord` so that saving a record from the dialog also resequences the lines
-    // and saves the parent record, forcing everything to be written to the database.
     setup() {
         super.setup();
 

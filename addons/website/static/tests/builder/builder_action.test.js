@@ -79,8 +79,6 @@ test("the homepage welcome message is a node of the page, not of the web client"
     await websiteBuilder.addWelcomeMessage();
 
     const welcomeEl = pageDocument.querySelector(".o_homepage_editor_welcome_message");
-    // the page's own realm check, the one OWL mounts with (hoot's
-    // toBeInstanceOf also accepts an instance of another realm's class)
     expect(welcomeEl instanceof iframe.contentWindow.HTMLElement).toBe(true);
 });
 

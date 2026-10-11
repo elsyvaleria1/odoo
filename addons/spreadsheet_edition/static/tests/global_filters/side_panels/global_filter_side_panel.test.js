@@ -219,7 +219,7 @@ describe("integration", () => {
             expect(args).toEqual([["action_partner"]]);
             return {
                 partner: [
-                    /*xml*/ `
+                    `
                     <search>
                         <field name="product_id" string="My product filter"/>
                     </search>

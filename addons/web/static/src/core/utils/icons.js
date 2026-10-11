@@ -5,22 +5,14 @@ export const FA_STYLE_CLASSES = ["fa-solid", "fa-regular", "fa-brands"];
 
 const ICON_TAGS = ["I", "SPAN"];
 
-/**
- * Every class that makes an `<i>` or `<span>` an icon: the FA4 bases, which
- * old markup still carries, and FA7's style classes, which new markup carries
- * instead of `fa`. Test an element for being an icon against this list, never
- * against `.fa` alone.
- */
 export const iconClasses = ["fa", "fab", "fad", "far", "oi", ...FA_STYLE_CLASSES];
 
-/** The icon classes alone, for a selector a stylesheet must read back verbatim. */
 export const ICON_CLASS_SELECTOR = iconClasses.map((cls) => `.${cls}`).join(", ");
 
 export const ICON_SELECTOR = ICON_TAGS.map((tag) =>
     iconClasses.map((cls) => `${tag}.${cls}`).join(", "),
 ).join(", ");
 
-/** A Font Awesome icon of either spelling: every icon class but Odoo's `oi`. */
 export const FONT_AWESOME_SELECTOR = ICON_TAGS.map((tag) =>
     iconClasses
         .filter((cls) => cls !== "oi")
@@ -33,7 +25,6 @@ export const FONT_AWESOME_SELECTOR = ICON_TAGS.map((tag) =>
  * @returns {boolean}
  */
 export function isIconElement(node) {
-    // duck-typed: an editor's nodes belong to its iframe's realm
     return !!(
         node &&
         ICON_TAGS.includes(node.nodeName) &&

@@ -22,7 +22,6 @@ registry.category("web_tour.tours").add("pos_settle_account_due", {
                 true,
             ),
             ProductScreen.clickPartnerButton(),
-            // Confirm that same invoice shouldn't be in the list again
             PartnerList.settleCustomerAccount(
                 "Partner Test 1",
                 "10",
@@ -33,7 +32,6 @@ registry.category("web_tour.tours").add("pos_settle_account_due", {
                 false,
             ),
             Dialog.cancel(),
-            // On cancelling it will remove customer as well
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("Partner Test 1"),
             ProductScreen.clickPayButton(),
@@ -96,7 +94,6 @@ registry.category("web_tour.tours").add("pos_settle_account_due_update_instantly
                 true,
             ),
             ProductScreen.clickPartnerButton(),
-            // Confirm that same invoice shouldn't be in the list again
             PartnerList.settleCustomerAccount(
                 "A Partner",
                 "19.80",
@@ -108,7 +105,6 @@ registry.category("web_tour.tours").add("pos_settle_account_due_update_instantly
                 false,
             ),
             Dialog.cancel(),
-            // On cancelling it will remove customer as well
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("A Partner"),
             ProductScreen.modeIsActive("Price"),
@@ -137,7 +133,6 @@ registry.category("web_tour.tours").add("pos_settle_account_due_update_instantly
             ReceiptScreen.clickNextOrder(),
             ProductScreen.clickPartnerButton(),
             PartnerList.clickPartnerOptions("A Partner"),
-            // Deposit money should be shown (since we have no more due to settle)
             PartnerList.checkDropDownItemText("Deposit money"),
             PartnerList.clickDropDownItemText("Deposit money"),
             Dialog.is("Select the payment method to deposit money"),

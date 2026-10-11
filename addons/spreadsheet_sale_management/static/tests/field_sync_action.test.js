@@ -155,7 +155,7 @@ test("auto resize list columns", async () => {
     const sheetId = model.getters.getActiveSheetId();
     expect(getCellContent(model, "A1")).toBe('=ODOO.LIST.HEADER(1,"product_uom_qty")');
     expect(model.getters.getHeaderSize(sheetId, "COL", 0)).not.toBe(96);
-    expect(model.getters.getHeaderSize(sheetId, "COL", 1)).toBe(96); // default width
+    expect(model.getters.getHeaderSize(sheetId, "COL", 1)).toBe(96);
 });
 
 test("hover field sync highlights matching list formulas", async () => {
@@ -171,7 +171,6 @@ test("hover field sync highlights matching list formulas", async () => {
     expect(highlightStore.highlights[0].color).toBe("#875A7B");
     expect(highlightStore.highlights[0].sheetId).toBe(model.getters.getActiveSheetId());
 
-    // with computed list args
     setCellContent(model, "A1", "=ODOO.LIST(A2, A3, A4)");
     expect(highlightStore.highlights).toHaveLength(0);
     setCellContent(model, "A2", "1");

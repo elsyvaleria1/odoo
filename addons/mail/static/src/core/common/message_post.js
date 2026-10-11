@@ -162,7 +162,6 @@ export async function getMessagePostParams(store, { body, postData, thread }) {
     });
     const partner_ids = validMentions?.partners.map((partner) => partner.id) ?? [];
     const role_ids = validMentions?.roles.map((role) => role.id) ?? [];
-    // every recipient travels by email: the server resolves or creates the partner
     const recipientEmails = isNote
         ? []
         : thread.allRecipients.map((recipient) => recipient.email);

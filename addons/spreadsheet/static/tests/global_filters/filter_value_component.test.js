@@ -151,7 +151,6 @@ test("text filter with range", async function () {
     expect(".o_tag").toHaveText("0.00");
     expect(model.getters.getGlobalFilterValue("42").strings).toEqual(["0"]);
 
-    // select a second value
     await click(".o-autocomplete input");
     await animationFrame();
 

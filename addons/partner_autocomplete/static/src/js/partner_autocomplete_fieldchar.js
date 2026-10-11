@@ -44,10 +44,6 @@ export class PartnerAutoCompleteCharField extends CharField {
         }
 
         if (data.logo) {
-            // `data.logo` is a URL (e.g. https://logo.clearbit.com/...), not
-            // base64 image bytes. Writing it under the target field's own
-            // name here means the server will reject it loudly if the
-            // record is ever saved with no further processing in between.
             data.company.image_1920 = data.logo;
         }
 
@@ -60,18 +56,11 @@ export class PartnerAutoCompleteCharField extends CharField {
             Object.keys(this.props.record.fields),
         );
 
-        // Update record with retrieved values.
-        // The widget lives on the `name` input, which is `isDirty` from the typed
-        // query. useInputField only resyncs the DOM input from the record while
-        // NOT dirty, so writing the enriched name in the bulk update below can be
-        // overwritten by the stale typed value on the next commit. Writing name on
-        // its own first settles it before the rest of the payload lands.
         if (data.company.name) {
             await this.props.record.update({ name: data.company.name });
         }
         await this.props.record.update(data.company);
 
-        // Post message with company info card
         if (this.props.record.resModel === "res.partner") {
             const saved = await this.props.record.save();
             if (saved && data.isEnrichAccessible) {

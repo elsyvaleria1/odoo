@@ -309,8 +309,6 @@ export class PartnerList extends Component {
                     return ids;
                 }
             }
-            // One ranking serves several pages: it counts every order of the
-            // company, so asking for it page by page repeats that count each time.
             const pages = await this.pos.data.call(
                 "pos.config",
                 "get_ranked_partner_pages",

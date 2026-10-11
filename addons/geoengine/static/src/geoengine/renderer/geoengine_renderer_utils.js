@@ -28,9 +28,7 @@ export function detectGeoJSONProjection(geojson) {
                 return `EPSG:${match[1]}`;
             }
         }
-    } catch {
-        // an unreadable CRS falls back to the GeoJSON default below
-    }
+    } catch {}
     return "EPSG:4326";
 }
 
@@ -137,7 +135,6 @@ export class GeoengineRendererUtils {
         );
         return layers.filter((layer) => {
             const config = configs.get(layer.get("layerId"));
-            // A layer that names no model of its own draws the view's records.
             return config && (!config.model || config.model === resModel);
         });
     }

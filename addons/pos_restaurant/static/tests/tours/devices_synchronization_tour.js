@@ -20,9 +20,6 @@ registry.category("web_tour.tours").add("test_devices_synchronization", {
             Dialog.confirm("Open Register"),
             FloorScreen.clickTable("5"),
 
-            // product_screen
-            // Check if lines created from another devices
-            // correctly appear in the current device
             ProductScreen.orderlineIsToOrder("Coca-Cola"),
             DeviceSynchronization.createNewLine("Water", 2),
             ProductScreen.orderlineIsToOrder("Water"),
@@ -32,22 +29,13 @@ registry.category("web_tour.tours").add("test_devices_synchronization", {
             ProductScreen.clickCustomer("Acme Corporation"),
             Chrome.clickPlanButton(),
 
-            // prpoduct_screen
-            // Check if changing partner form another device
-            // correctly appear in the current device
             FloorScreen.clickTable("5"),
             DeviceSynchronization.changePartner("Lumber Inc"),
             ProductScreen.customerIs("Lumber Inc"),
 
-            // prpoduct_screen
-            // Check if paying from another device
-            // is correctly synchronized
             DeviceSynchronization.markOrderAsPaid(),
             ProductScreen.orderIsEmpty(),
 
-            // floor_screen
-            // Check if floor plan is correctly updated
-            // when creating a new order from another device
             DeviceSynchronization.createNewOrderOnTable("5", [
                 ["Coca-Cola", 1],
                 ["Water", 2],
@@ -75,9 +63,6 @@ registry.category("web_tour.tours").add("test_devices_synchronization", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // product_screen
-            // Check if creating an order one same table from two devices
-            // is correctly handlded
             FloorScreen.clickTable("5"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             DeviceSynchronization.createNewOrderOnTable(
@@ -88,7 +73,6 @@ registry.category("web_tour.tours").add("test_devices_synchronization", {
                 ],
                 false,
             ),
-            // the two devices' Coca-Cola lines display as one group
             ProductScreen.orderLineHas("Coca-Cola", "3"),
             ProductScreen.orderLineHas("Water", "2"),
             ProductScreen.clickDisplayedProduct("Water"),

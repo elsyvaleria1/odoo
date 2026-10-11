@@ -222,8 +222,6 @@ export class WebChatter extends Chatter {
         if (!record) {
             return;
         }
-        // subscribe the record observer: to every field until the thread tells which
-        // fields matter for recipients, then to those only
         const watchedFields = [
             ...this.mailImpactingFields.recordFields,
             ...this.mailImpactingFields.emailFields,
@@ -622,8 +620,6 @@ export class WebChatter extends Chatter {
             toggle();
             return;
         }
-        // the thread arrives when the record is saved, or, where there is
-        // nothing to save (a panel still loading its record), when it loads
         this.onThreadCreated = toggle;
         if (this.props.saveRecord) {
             const saved = await this.props.saveRecord();

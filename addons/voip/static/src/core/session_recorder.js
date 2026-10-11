@@ -26,7 +26,7 @@ export class SessionRecorder {
         "audio/webm;codecs=opus",
         "audio/ogg;codecs=opus",
         "audio/aac",
-        "audio/wav", // uncompressed, last resort
+        "audio/wav",
     ];
 
     /** @type {Deferred<File>} */
@@ -46,7 +46,7 @@ export class SessionRecorder {
         const { audioContext, stream } = SessionRecorder.mergeStreams(sipSession);
         this._audioContext = audioContext;
         const recorder = new MediaRecorder(stream, {
-            audioBitsPerSecond: 8000, // bitrate of G.729 (widely used codec for VoIP)
+            audioBitsPerSecond: 8000,
             mimeType: this.outputMimeType,
         });
         recorder.addEventListener("stop", (event) => this._onStop(event));
@@ -74,14 +74,12 @@ export class SessionRecorder {
         const remoteStream = sipSession.sessionDescriptionHandler.remoteMediaStream;
         const audioContext = new AudioContext();
         const mergedAudio = new MediaStreamAudioDestinationNode(audioContext, {
-            // down-mix to mono, using pre-defined mixing rules
             channelCount: 1,
             channelCountMode: "explicit",
             channelInterpretation: "speakers",
         });
         const localSource = audioContext.createMediaStreamSource(localStream);
         const remoteSource = audioContext.createMediaStreamSource(remoteStream);
-        // add gain to reduce clipping
         const gain = 1 / Math.sqrt(2);
         localSource.connect(new GainNode(audioContext, { gain })).connect(mergedAudio);
         remoteSource.connect(new GainNode(audioContext, { gain })).connect(mergedAudio);
@@ -135,7 +133,7 @@ export class SessionRecorder {
                 return mimeType;
             }
         }
-        return ""; // let browser pick
+        return "";
     }
 
     /** @returns {number} */

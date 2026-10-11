@@ -26,7 +26,6 @@ export class InsertPendingElementPlugin extends Plugin {
             let insert;
             if (isPhrasingContent(embeddedBlueprint)) {
                 insert = () => {
-                    // insert phrasing content
                     const paragraph =
                         this.dependencies.baseContainer.createBaseContainer();
                     paragraph.appendChild(embeddedBlueprint);
@@ -36,7 +35,6 @@ export class InsertPendingElementPlugin extends Plugin {
                 };
             } else {
                 insert = () => {
-                    // insert block content
                     const childElements = children(this.editable);
                     let cursorTarget = null;
                     if (

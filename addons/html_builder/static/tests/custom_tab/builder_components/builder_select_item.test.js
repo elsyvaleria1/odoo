@@ -47,7 +47,6 @@ test("call a specific action with some params and value (BuilderSelectItem)", as
     expect(".popover [data-action-id='customAction']").toHaveText("MyAction");
     await click(".popover [data-action-id='customAction']");
     await animationFrame();
-    // The function `apply` should be called twice (on hover (for preview), then, on click).
     expect.verifySteps([
         "customAction myParam myValue",
         "customAction myParam myValue",

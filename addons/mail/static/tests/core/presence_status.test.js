@@ -51,9 +51,6 @@ test("a base word mail does not know is refused at registration", () => {
 });
 
 test("a decorated offline status still stamps offline_since", async () => {
-    // presence_mixin.updateImStatus records when someone went offline. Compared
-    // against the literal "offline" it never fires for a decorated status, so
-    // "last seen" stays empty for every employee with a work location.
     registerImStatusDecoration("teststamp_offline", "offline");
     const pyEnv = await startServer();
     const partnerId = pyEnv["res.partner"].create({ name: "Decorated" });

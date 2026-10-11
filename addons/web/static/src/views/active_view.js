@@ -47,9 +47,6 @@ export class ActiveViews {
         return this.entries.includes(/** @type {ActiveViewEntry} */ (view));
     }
 
-    // children mount before their parents, so an embedded view registers
-    // before the view that holds it: the last entry in the active element is
-    // the outermost view the user is looking at
     /** @returns {ActiveView | null} */
     get current() {
         const active = this.ui.activeElement;

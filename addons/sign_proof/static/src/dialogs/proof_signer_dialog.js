@@ -6,10 +6,6 @@ import { elementRef } from "@web/core/utils/element_ref";
 import { useService } from "@web/core/utils/hooks";
 import { Dialog } from "@web/ui/dialog";
 
-/**
- * The signer proves it is them with a code sent to their own email or
- * Telegram, before their signature is submitted.
- */
 export class ProofSignerDialog extends Component {
     static template = "sign_proof.ProofSignerDialog";
     static components = { Dialog };

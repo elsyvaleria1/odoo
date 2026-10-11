@@ -26,7 +26,7 @@ class Report extends models.Model {
         },
     ];
     _views = {
-        form: /* xml */ `
+        form: `
             <form>
                 <field class="w-100" name="line_ids" widget="account_report_lines_list_x2many">
                     <list>
@@ -97,9 +97,6 @@ class ReportLines extends models.Model {
 defineModels([Report, ReportLines]);
 defineMailModels();
 
-//------------------------------------------------------------------------------------------------------------------
-// Structure
-//------------------------------------------------------------------------------------------------------------------
 test("have correct descendants count", async () => {
     await mountView({
         type: "form",
@@ -124,9 +121,6 @@ test("have correct descendants count", async () => {
     ).toHaveCount(1);
 });
 
-//------------------------------------------------------------------------------------------------------------------
-// Create
-//------------------------------------------------------------------------------------------------------------------
 test("can create a line", async () => {
     await mountView({
         type: "form",
@@ -143,9 +137,6 @@ test("can create a line", async () => {
     await waitFor(".account_report_lines_list_x2many li span:contains('Created line')");
 });
 
-//------------------------------------------------------------------------------------------------------------------
-// Edit
-//------------------------------------------------------------------------------------------------------------------
 test("can edit a line", async () => {
     await mountView({
         type: "form",
@@ -166,9 +157,6 @@ test("can edit a line", async () => {
     );
 });
 
-//------------------------------------------------------------------------------------------------------------------
-// Delete
-//------------------------------------------------------------------------------------------------------------------
 test("can delete a root", async () => {
     await mountView({
         type: "form",
@@ -208,7 +196,6 @@ test("can delete a root with children", async () => {
         ".account_report_lines_list_x2many li[data-record_id='2'] > div > .trash",
     ).click();
 
-    // Confirmation dialog "This line and all its children will be deleted. Are you sure you want to proceed?"
     await waitFor(".o_dialog");
     await contains(".o_dialog .btn-primary").click();
 
@@ -257,9 +244,6 @@ test("can delete a last child", async () => {
     ).toHaveCount(1);
 });
 
-//------------------------------------------------------------------------------------------------------------------
-// Drag and drop
-//------------------------------------------------------------------------------------------------------------------
 test("can move a root down", async () => {
     Report._records[0].line_ids = [1, 2, 3, 4];
     ReportLines._records = [
@@ -297,13 +281,10 @@ test("can move a root down", async () => {
         expect.step("web_save");
         const lineIds = args.args[1].line_ids;
 
-        // Parents
         expect(lineIds[0][2].parent_id).toBe(3);
 
-        // Hierarchy levels
         expect(lineIds[0][2].hierarchy_level).toBe(3);
 
-        // Sequences
         expect(lineIds[0][2].sequence).toBe(4);
         expect(lineIds[1][2].sequence).toBe(1);
         expect(lineIds[2][2].sequence).toBe(2);
@@ -362,13 +343,10 @@ test("can move a root up", async () => {
         expect.step("web_save");
         const lineIds = args.args[1].line_ids;
 
-        // Parents
         expect(lineIds[0][2].parent_id).toBe(1);
 
-        // Hierarchy levels
         expect(lineIds[0][2].hierarchy_level).toBe(3);
 
-        // Sequences
         expect(lineIds[0][2].sequence).toBe(2);
         expect(lineIds[1][2].sequence).toBe(1);
         expect(lineIds[2][2].sequence).toBe(3);
@@ -427,13 +405,10 @@ test("can move a child down", async () => {
         expect.step("web_save");
         const lineIds = args.args[1].line_ids;
 
-        // Parents
         expect(lineIds[0][2].parent_id).toBe(false);
 
-        // Hierarchy levels
         expect(lineIds[0][2].hierarchy_level).toBe(1);
 
-        // Sequences
         expect(lineIds[0][2].sequence).toBe(4);
         expect(lineIds[1][2].sequence).toBe(1);
         expect(lineIds[2][2].sequence).toBe(2);
@@ -485,13 +460,10 @@ test("can move a child up", async () => {
         expect.step("web_save");
         const lineIds = args.args[1].line_ids;
 
-        // Parents
         expect(lineIds[0][2].parent_id).toBe(false);
 
-        // Hierarchy levels
         expect(lineIds[0][2].hierarchy_level).toBe(1);
 
-        // Sequences
         expect(lineIds[0][2].sequence).toBe(1);
         expect(lineIds[1][2].sequence).toBe(2);
         expect(lineIds[2][2].sequence).toBe(3);
@@ -554,18 +526,14 @@ test("can move a new root into a child", async () => {
     await moveAbove("li[data-record_id='2']");
     await drop();
 
-    // Only assert web_save for the main form view, not for the dialog
     onRpc("report", "web_save", (args) => {
         expect.step("web_save");
         const lineIds = args.args[1].line_ids;
 
-        // Parents
         expect(lineIds[0][2].parent_id).toBe(1);
 
-        // Hierarchy levels
         expect(lineIds[0][2].hierarchy_level).toBe(3);
 
-        // Sequences
         expect(lineIds[0][2].sequence).toBe(2);
         expect(lineIds[1][2].sequence).toBe(1);
         expect(lineIds[2][2].sequence).toBe(3);
@@ -597,18 +565,14 @@ test("can move a child into a new root", async () => {
     const { drop } = await contains("li[data-record_id='2']").drag();
     await drop("li[data-record_id='2']", { position: "right", relative: true });
 
-    // Only assert web_save for the main form view, not for the dialog
     onRpc("report", "web_save", (args) => {
         expect.step("web_save");
         const lineIds = args.args[1].line_ids;
 
-        // Parents
         expect(lineIds[0][2].parent_id).toBe(1);
 
-        // Hierarchy levels
         expect(lineIds[0][2].hierarchy_level).toBe(3);
 
-        // Sequences
         expect(lineIds[0][2].sequence).toBe(2);
         expect(lineIds[1][2].sequence).toBe(1);
     });
@@ -624,12 +588,10 @@ test("can display and hide 'Code' column when toggled in optional fields", async
         resId: 1,
         resModel: "report",
     });
-    // Ensure `code` column is hidden by default
     expect(
         ".account_report_lines_list_x2many span.fw-bold.fixed:contains('Code')",
     ).toHaveCount(0);
 
-    // Simulate toggling the `code` field to make it visible
     await contains(".o-dropdown.dropdown-toggle").click();
     await contains("input[name='code']").click();
 
@@ -637,7 +599,6 @@ test("can display and hide 'Code' column when toggled in optional fields", async
         ".account_report_lines_list_x2many span.fw-bold.fixed:contains('Code')",
     ).toHaveCount(1);
 
-    // Toggle it back to hide and verify
     await contains("input[name='code']").click();
     expect(
         ".account_report_lines_list_x2many span.fw-bold.fixed:contains('Code')",

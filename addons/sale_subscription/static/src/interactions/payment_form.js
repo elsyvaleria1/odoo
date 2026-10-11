@@ -59,11 +59,9 @@ patch(PaymentForm.prototype, {
         );
         const inlineForm = this._getInlineForm(checkedRadio);
 
-        // Fetch the `autoPaymentCheckboxNewToken` of the current payment method.
         const autoPaymentCheckboxNewToken = inlineForm?.querySelector(
             'input[name="o_payment_automate_payments_new_token"]',
         );
-        // Fetch the `autoPaymentCheckboxSavedToken` of the current token.
         const autoPaymentCheckboxSavedToken = inlineForm?.querySelector(
             `input[name="o_payment_automate_payments_saved_token"]`,
         );
@@ -73,8 +71,6 @@ patch(PaymentForm.prototype, {
                 autoPaymentCheckboxSavedToken?.checked) &&
             this.paymentContext.txRouteSubscription
         ) {
-            // TODO Should be replaced with an override of the account_payment controller to extend
-            // it with subscription logic.
             this.paymentContext.transactionRoute =
                 this.paymentContext.txRouteSubscription;
         }
@@ -87,7 +83,6 @@ patch(PaymentForm.prototype, {
      * @return {void}
      */
     onChangeAutomatePaymentsCheckbox: function (ev) {
-        // Fetch the `savePaymentMethodCheckbox` of the current payment method.
         const tokenizeContainer = ev.currentTarget.closest(
             'div[name="o_payment_tokenize_container"]',
         );
@@ -96,7 +91,6 @@ patch(PaymentForm.prototype, {
         );
         savePaymentMethodCheckbox.checked = ev.currentTarget.checked;
         savePaymentMethodCheckbox.disabled = ev.currentTarget.checked;
-        // Dispatch a fake event to update the payment form dependencies.
         savePaymentMethodCheckbox.dispatchEvent(new Event("input"));
     },
 

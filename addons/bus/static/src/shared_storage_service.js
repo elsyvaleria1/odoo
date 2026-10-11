@@ -3,24 +3,12 @@ import { EventBus } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 
-/**
- * A key/value store on localStorage shared by the tabs of an origin
- * (get/set/removeSharedValue), with a "shared_value_updated" event on its
- * `bus` when another tab changes a value: the bus watermark, the composer's
- * preference, the bus log switch. Main-tab election is `multi_tab`'s.
- */
 export const sharedStorageService = {
     start() {
         const bus = new EventBus();
 
-        // PROPERTIES
         const sanitizedOrigin = location.origin.replace(/:\/{0,2}/g, "_");
         const localStoragePrefix = `bus.${sanitizedOrigin}.`;
-        // Historical accident: the prefix used to be built from `this.name`,
-        // which is undefined on a service value, yielding literal
-        // "undefined.<origin>." keys. Consumers persist real user
-        // preferences under it (e.g. mail.html_composer.enabled, RTC device
-        // choices), so migrate them once instead of silently resetting.
         try {
             const legacyPrefix = `undefined.${sanitizedOrigin}.`;
             for (let i = browser.localStorage.length - 1; i >= 0; i--) {
@@ -37,10 +25,7 @@ export const sharedStorageService = {
                 }
                 browser.localStorage.removeItem(key);
             }
-        } catch {
-            // localStorage can be unavailable (privacy mode) — the service
-            // degrades the same way it always has, no migration needed.
-        }
+        } catch {}
 
         function generateLocalStorageKey(baseKey) {
             return localStoragePrefix + baseKey;
@@ -64,8 +49,6 @@ export const sharedStorageService = {
 
         function onStorage({ key, newValue }) {
             if (key && key.includes(localStoragePrefix)) {
-                // Only trigger the shared_value_updated event if the key is
-                // related to this service/origin.
                 const baseKey = key.replace(localStoragePrefix, "");
                 bus.trigger("shared_value_updated", { key: baseKey, newValue });
             }

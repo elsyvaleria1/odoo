@@ -5,9 +5,6 @@ import { rpc } from "@web/core/network";
 import { StreamPostCommentFacebook } from "./stream_post_comment.js";
 
 export class StreamPostCommentListFacebook extends StreamPostCommentList {
-    /**
-     * Update the likes count in the reactions.
-     */
     _updateLikes(comment) {
         comment.reactions = comment.reactions || {};
         comment.reactions["LIKE"] = comment.user_likes

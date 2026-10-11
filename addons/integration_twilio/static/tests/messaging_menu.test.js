@@ -12,9 +12,6 @@ describe.current.tags("desktop");
 defineMailModels();
 
 test("the messaging menu opens with the SMS tab hidden while it is empty", async () => {
-    // The tab reached the client but not the mock server, which refused it
-    // ("unknown messaging menu tab"): every test mounting the web client
-    // failed on a database with this module installed.
     await start();
     await openMessagingMenu();
     await contains(".o-mail-MessagingMenu");

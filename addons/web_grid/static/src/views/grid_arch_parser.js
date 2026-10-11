@@ -61,8 +61,6 @@ export class GridArchParser extends ViewArchParser {
             field: (node, info) => this._parseFieldNode(node, info, fields),
             button: this._parseButtonNode,
         });
-        // `measureField` always exists -- it defaults to a readonly `__count`,
-        // which is what makes a grid declaring no measure uneditable.
         archInfo.editable =
             archInfo.editable &&
             !archInfo.measureField.readonly &&
@@ -101,7 +99,7 @@ export class GridArchParser extends ViewArchParser {
     _parseFieldNode(node, archInfo, fields) {
         /** @type {GridFieldAttrs} */
         const attrs = node.attrs || {};
-        const fieldName = /** @type {string} */ (attrs.name); // exists (rng validation)
+        const fieldName = /** @type {string} */ (attrs.name);
         const fieldInfo = fields[fieldName];
         const type = attrs.type || "row";
         if (attrs.widget !== undefined && ["row", "measure"].includes(type)) {
@@ -109,8 +107,6 @@ export class GridArchParser extends ViewArchParser {
         }
         switch (type) {
             case "row": {
-                // Only a row groups by a bare field; a col groups by its
-                // <range> step and a measure does not group at all.
                 const rowField = {
                     name: fieldName,
                     invisible: exprToBoolean(attrs.invisible || ""),

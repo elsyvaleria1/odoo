@@ -5,18 +5,12 @@ import { patch } from "@web/core/utils/patch";
 import { Modal } from "@web/libs/bootstrap";
 import { patchDynamicContent } from "@web/public/utils";
 
-/**
- * PortalComposer
- *
- * Extends Portal Composer to handle rating submission
- */
 patch(PortalComposer, {
     /**
      * @override static
      */
     prepareOptions(options) {
         options = super.prepareOptions(options);
-        // apply ratio to default rating value
         if (options.default_rating_value) {
             options.default_rating_value = parseFloat(options.default_rating_value);
         }
@@ -24,7 +18,6 @@ patch(PortalComposer, {
             options.rating_count = parseInt(options.rating_count);
         }
 
-        // default options
         return Object.assign(
             {
                 rate_with_void_content: false,
@@ -53,7 +46,7 @@ patch(PortalComposer.prototype, {
                 "t-att-class": (el) => {
                     const index = Math.floor(this.starValue);
                     const decimal = this.starValue - index;
-                    const starIndex = [...el.parentElement.children].indexOf(el) + 1; // index counts from 1 to 5
+                    const starIndex = [...el.parentElement.children].indexOf(el) + 1;
                     const isHalf = decimal && starIndex === index;
                     const isFull = decimal ? starIndex < index : starIndex <= index;
                     return {
@@ -66,9 +59,8 @@ patch(PortalComposer.prototype, {
             },
         });
 
-        this.userClick = false; // user has click or not
+        this.userClick = false;
         this.starValue = this.options.default_rating_value;
-        // rating stars
         this.starListEls = this.el.querySelectorAll(".o-mail-Composer-stars i");
     },
 
@@ -77,14 +69,12 @@ patch(PortalComposer.prototype, {
      */
     start() {
         super.start();
-        // if this is the first review, we do not use grey color contrast, even with default rating value.
         if (!this.options.default_message_id) {
             for (const starEl of this.starListEls) {
                 starEl.classList.remove("text-black-25");
             }
         }
 
-        // set the default value to trigger the display of star widget and update the hidden input value.
         this.starValue = this.options.default_rating_value;
         this.ratingInputEl.value = this.options.default_rating_value;
     },
@@ -160,7 +150,6 @@ patch(PortalComposer.prototype, {
      */
     onSubmitCheckContent() {
         if (this.options.rate_with_void_content) {
-            // TODO verify comparison
             if (this.ratingInputEl.value === "0") {
                 return _t(
                     "The rating is required. Please make sure to select one before sending your review.",

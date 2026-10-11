@@ -35,10 +35,6 @@ export class ProductCatalogOrderLine extends Component {
         ev.target.select();
     }
 
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
-
     isInOrder() {
         return this.props.quantity !== 0;
     }

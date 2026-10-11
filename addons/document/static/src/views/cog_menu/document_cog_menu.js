@@ -38,11 +38,8 @@ const log = makeLogger("document.cog_menu");
 export class DocumentsCogMenu extends CogMenu {
     setup() {
         super.setup();
-        // its items are the open folder's: the base reloads them on new props
-        // only, and opening another folder brings none
         const render = useRender();
         const searchModel = useSearchModel();
-        // and the open folder's own state (its star) is the folder tree's
         for (const event of ["update", SEARCH_PANEL_UPDATED]) {
             useBus(searchModel, event, async () => {
                 await this._refreshRegistryItems(event);

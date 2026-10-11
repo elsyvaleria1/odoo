@@ -5,15 +5,6 @@ import { definePosEventModels } from "../data/generate_model_definitions.js";
 
 definePosEventModels();
 
-// CHARACTERIZATION OF A DEFECT, NOT OF DESIRED BEHAVIOUR. `setPreset` flips
-// every line negative for a return preset and discards what `setQuantity`
-// answers; `pos_event` refuses every quantity change on a ticket line. The
-// order is left holding both signs at once, which is the state
-// `pos_blackbox_be` raises "It is not allowed to mix refunds and sales" for.
-// Whether returning a ticket should flip the line, cancel the registration or
-// refuse the preset outright is an event-semantics decision that has not been
-// taken; this test exists so that taking it is a deliberate act with a visible
-// failure here, rather than a silent change to a behaviour nothing pinned.
 describe("switching an order to a return preset", () => {
     test("the event ticket line keeps the sign every other line just lost", async () => {
         const store = await setupPosEnv();

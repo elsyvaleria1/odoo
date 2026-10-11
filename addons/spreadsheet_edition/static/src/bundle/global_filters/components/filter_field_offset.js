@@ -31,9 +31,6 @@ export class FilterFieldOffset extends Component {
     onOffsetSelected(ev) {
         let newOffset = Math.abs(parseInt(ev.target.value));
         if (newOffset > 50) {
-            // We limit the offset to 50 to avoid having
-            // a too big offset that would result in an
-            // invalid date.
             newOffset = 50;
         }
         this.props.onOffsetSelected(this.offsetSign * newOffset);

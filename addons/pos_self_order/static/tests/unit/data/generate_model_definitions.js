@@ -1,8 +1,3 @@
-// Side-effect fixture imports: these files patch base model prototypes and
-// extend their `_records`. Importing them here creates a real ESM dependency
-// edge, so they are guaranteed to have been evaluated before
-// definePosSelfModels() registers the models — instead of relying on the asset
-// bundle happening to execute them first.
 import "./pos_session.data.js";
 
 import { beforeEach } from "@odoo/hoot";
@@ -37,7 +32,6 @@ import { applySelfOrderProductTemplateAttributeValueRecords } from "./product_te
  */
 export const definePosSelfModels = (extraModels = []) => {
     definePosRestaurantModels([PosSelfOrderCustomLink, ...extraModels]);
-    // Per-test scoped — see pos_restaurant's definer for why.
     beforeEach(applySelfOrderConfigRecords);
     beforeEach(applySelfOrderPosPresetRecords);
     beforeEach(applySelfOrderProductAttributeRecords);

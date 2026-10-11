@@ -76,7 +76,6 @@ export class TableBorderPlugin extends Plugin {
                             this.getTableSelectedBorder("color", "default") ||
                             "transparent";
                         if (this.selectedBorderColors.color === "default") {
-                            // Do not specify selection and display solid tab.
                             this.selectedBorderColors.color = "";
                         }
                         return this.selectedBorderColors;
@@ -141,7 +140,6 @@ export class TableBorderPlugin extends Plugin {
     };
 
     setup() {
-        // Background color is required by the color picker.
         this.selectedBorderColors = proxy({ color: "", backgroundColor: "" });
         this.selectedBorderWidth = proxy({ displayName: "1px" });
         this.selectedBorderStyle = proxy({ displayName: "solid" });
@@ -166,7 +164,6 @@ export class TableBorderPlugin extends Plugin {
         }
         const cellStyle = getComputedStyle(cell);
         let result = cellStyle.getPropertyValue(property);
-        // Handle defaults
         switch (subProperty) {
             case "style":
                 if (result === "inset") {
@@ -236,7 +233,6 @@ export class TableBorderPlugin extends Plugin {
             for (const cell of table.querySelectorAll(".o_selected_td")) {
                 const property = `border-${subProperty}`;
                 if (!cell.style.getPropertyValue(property)) {
-                    // Copy defaults.
                     for (const prop of ["color", "width", "style"]) {
                         cell.style.setProperty(
                             `border-${prop}`,
@@ -246,7 +242,6 @@ export class TableBorderPlugin extends Plugin {
                 }
                 cell.style.setProperty(property, value);
                 if (property === "border-style" && value === "double") {
-                    // Set a minimum of 3px by default
                     if (parseInt(cell.style.getPropertyValue("border-width")) < 3) {
                         cell.style.setProperty("border-width", "3px");
                     }
@@ -279,12 +274,8 @@ export class TableBorderPlugin extends Plugin {
      * @param {string} value
      */
     applyBorderPreview(subProperty, value) {
-        // Preview the border before applying it.
         this.previewableApplyBorder.preview(subProperty, value, true);
     }
-    /**
-     * Reset the border applied in preview mode.
-     */
     applyBorderResetPreview() {
         this.previewableApplyBorder.revert();
     }

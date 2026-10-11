@@ -276,7 +276,6 @@ describe("colour mixing, as each caller formats it", () => {
     });
 
     test("a channel exactly halfway rounds up, whatever the float noise of the weight", () => {
-        // red: 113 * 0.15 + 163 * 0.85 is 155.5 exactly
         expect(mixHexColors("#714B67", "#A3A288", 0.15)).toBe("#9c9583");
         expect(mixCssColors("#714B67", "#A3A288", 0.15)).toBe("#9C9583");
         expect(mixRgbaColors("#714B67", "#A3A288", 0.15)).toBe(

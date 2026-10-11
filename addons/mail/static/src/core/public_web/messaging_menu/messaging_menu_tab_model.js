@@ -176,8 +176,6 @@ export class MessagingMenuTab extends Record {
         if (key === filterKey || this.loadStatusByFilterId[filterKey] === "loaded") {
             return this.loadStatusByFilterId[filterKey] ?? "new";
         }
-        // the server matches a term as a substring: every match of a term
-        // containing a fully loaded one is already here
         const termPrefix = `${filterKey}::`;
         const term = key.slice(termPrefix.length);
         const covered = Object.entries(this.loadStatusByFilterId).some(

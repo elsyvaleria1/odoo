@@ -283,8 +283,6 @@ export class FormController extends ViewController {
             }
         });
 
-        // the name follows the record, which re-renders its fields, not the
-        // controller; the first run is in setup, before the model has a root
         useEffect(() => {
             if (!this.model.root) {
                 return;
@@ -439,8 +437,6 @@ export class FormController extends ViewController {
                     },
                     onStayHere: () => resolve(false),
                 },
-                // Escape and the backdrop close the dialog without a button: the
-                // save still holds the model mutex until this promise settles.
                 {
                     onClose: () => {
                         log.logic("save error dialog closed", () => ({

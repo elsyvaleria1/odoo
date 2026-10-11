@@ -198,8 +198,6 @@ export class CanvasStrategy extends RenderStrategy {
 
 const TILE_ERROR = 3;
 const CELL_STYLE_CACHE_SIZE = 500;
-// Where the MVT reader stores the tile layer's name; "layer" by default,
-// which would shadow a field of that name. No field name starts with "@".
 const MVT_LAYER_KEY = "@layer";
 const CELL_COLOR = "rgba(255, 104, 10, 0.85)";
 const CELL_MAX_RADIUS = 15;
@@ -229,13 +227,6 @@ export function createTileFormat() {
     return new ol.format.MVT({ featureClass: ol.Feature, layerName: MVT_LAYER_KEY });
 }
 
-/**
- * Draws a layer's whole population as vector tiles the server cuts
- * (geoengine.vector.layer.get_tile): only what the viewport shows is read, a
- * feature per record from the raw zoom on, a counted cell per grid square of
- * points below it. A tile's features carry their record id and styled values
- * as the plain record the style functions read.
- */
 export class TileStrategy extends RenderStrategy {
     getName() {
         return "TileStrategy";
@@ -386,14 +377,6 @@ export class TileStrategy extends RenderStrategy {
     }
 }
 
-/**
- * A heatmap of a population too large to send: OpenLayers draws a heatmap
- * from one vector source, so on every view change the source is refilled
- * with the server's cells for that view (geoengine.vector.layer.get_heat_cells),
- * each weighted by the square root of its share of the densest: linear lets
- * one dense spot blank out the rest, a log scale saturates the whole view.
- * A response a later move superseded is dropped.
- */
 export class ViewportHeatStrategy extends RenderStrategy {
     getName() {
         return "ViewportHeatStrategy";

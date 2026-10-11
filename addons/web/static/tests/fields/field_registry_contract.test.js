@@ -157,8 +157,6 @@ function archFor(viewType, fieldName, widget) {
     }
 }
 
-// Mounts one view per registered widget and supported type, well over a hundred in a
-// single test: at the suite's default 15 s it passed or failed on machine load.
 test.timeout(60_000);
 test("every widget renders each type it claims in supportedTypes", async () => {
     const failures = [];

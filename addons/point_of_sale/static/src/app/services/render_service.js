@@ -129,7 +129,6 @@ registry.category("services").add("renderer", renderService);
 
 const applyWhenMounted = async ({ el, container, callback }) => {
     const elClone = el.cloneNode(true);
-    // The render container belongs to one job at a time, regardless of CSS classes.
     container.replaceChildren(elClone);
     return await callback(elClone);
 };

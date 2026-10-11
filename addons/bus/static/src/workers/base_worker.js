@@ -12,7 +12,7 @@ export class BaseWorker {
     constructor(name, isShared = Boolean(name?.includes("shared"))) {
         this.name = name;
         this.isShared = isShared;
-        this.client = null; // only for testing purposes
+        this.client = null;
     }
 
     handleMessage(event) {

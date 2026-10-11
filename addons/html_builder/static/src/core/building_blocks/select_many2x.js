@@ -143,17 +143,13 @@ export class SelectMany2X extends Component {
             ["id", "name"],
         );
         const usedNames = [
-            // Exclude existing names
             ...allRecords.map((item) => item.name),
-            // Exclude new names
             ...this.props.selected.map((item) => item.name),
         ];
         return !usedNames.includes(name);
     }
     async onInput(searchValue) {
         const selectedIds = this.props.selected.map((e) => e.id);
-        // Avoid redundant search queries when the user toggles the dropdown
-        // without changing the search value or the selected options.
         if (
             searchValue === this.prevSearchValue &&
             shallowEqual(selectedIds, this.prevSelectedIds)

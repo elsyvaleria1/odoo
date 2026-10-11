@@ -546,7 +546,6 @@ test("record list sort should be manually observable", async () => {
     expect.verifySteps(["sortMessages"]);
     messages[0].body = "c";
     expect(`${thread.messages.map((m) => m.id)}`).toBe("2,1");
-    // the callback's own reordering does not call it back (OWL 2 did, once)
     expect.verifySteps(["sortMessages"]);
     messages[0].body = "d";
     expect(`${thread.messages.map((m) => m.id)}`).toBe("2,1");

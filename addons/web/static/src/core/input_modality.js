@@ -8,8 +8,6 @@ import { makeLogger } from "@web/core/debug/debug_logger";
 
 /** @typedef {"mouse" | "touch" | "pen" | "keyboard"} InputModality */
 
-// typing a character never means the user left the pointer: a phone's
-// on-screen keyboard sends keydown too
 const NAVIGATION_KEYS = new Set([
     "Tab",
     "ArrowUp",
@@ -32,7 +30,6 @@ const log = makeLogger("web.input_modality");
 /** @param {InputModality} modality */
 function publish(modality) {
     document.documentElement.dataset.inputModality = modality;
-    // the class the stylesheets and addons read before the attribute existed
     document.body?.classList.toggle("o_touch_device", modality === "touch");
     if (modality === state.current) {
         return;

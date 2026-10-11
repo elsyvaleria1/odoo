@@ -165,12 +165,8 @@ test("what the user is typing survives a re-render", async function () {
         value: 1999,
         onValueChanged: () => {},
     });
-    // The user is typing: the input is dirty but the prop still holds the
-    // saved value, because no change event fired yet.
     await contains("input").focus();
     queryOne("input").value = "42";
-    // Anything at all can re-render us here -- the filter list refreshing, a
-    // message from the session. It must not throw the typing away.
     component.__owl__.render(false);
     await animationFrame();
     expect(queryOne("input").value).toBe("42");

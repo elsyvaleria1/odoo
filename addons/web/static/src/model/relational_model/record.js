@@ -147,8 +147,6 @@ export class RelationalRecord extends DataPoint {
      */
     setData(data, { orderBys, keepChanges } = {}) {
         this._isEvalContextReady = false;
-        // a refresh told to keep the user's changes finds none to keep most
-        // of the time, and is then a reload like any other
         const inPlace = Boolean(
             this.data && this.resId && !(keepChanges && this._hasChanges),
         );
@@ -188,8 +186,6 @@ export class RelationalRecord extends DataPoint {
         if (keepChanges) {
             Object.assign(this._textValues, this._getTextValues(this.changes));
         }
-        // a line parsed while its parent parses would compute a context the
-        // parent's own setEvalContext replaces; StaticList.updateContext settles it
         if (!this._parentRecord || this._parentRecord._isEvalContextReady) {
             this.setEvalContext();
         }
@@ -1171,8 +1167,6 @@ export class RelationalRecord extends DataPoint {
             fieldNames: onChangeFields,
             evalContext: toRaw(this.evalContext),
             onError: (e) => {
-                // apply-then-undo is a state no-op on purpose: it forces the
-                // Field components to re-render from the pre-onchange values
                 const undoChanges = this.applyChanges(
                     changes,
                     {},
@@ -1223,8 +1217,6 @@ export class RelationalRecord extends DataPoint {
             preprocessHtmlChanges,
         ]) {
             try {
-                // Invoke synchronously: urgent saves depend on the initial
-                // property composition even when they skip asynchronous waits.
                 pending.push(Promise.resolve(preprocess(this, changes)));
             } catch (error) {
                 pending.push(Promise.reject(error));
@@ -1233,14 +1225,10 @@ export class RelationalRecord extends DataPoint {
         }
         return Promise.all(pending).then(
             (results) => {
-                // Keep the initial synchronous composition for urgent saves, but
-                // replace incomplete relation values before a normal save/onchange.
                 preprocessRelatedPropertyChanges(this, changes, relatedPropertyNames);
                 return results;
             },
             async (error) => {
-                // Join started work before rollback without adding a promise
-                // continuation to successful updates (which changes render timing).
                 await Promise.allSettled(pending);
                 throw error;
             },

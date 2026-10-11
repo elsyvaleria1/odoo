@@ -175,7 +175,7 @@ test("graph with a contextual domain", async () => {
             foo: uid,
         },
     ];
-    serverData.views["partner,false,search"] = /* xml */ `
+    serverData.views["partner,false,search"] = `
         <search>
             <filter string="Filter" name="filter" domain="[('foo', '=', uid)]"/>
         </search>
@@ -206,7 +206,7 @@ test("graph with a contextual domain", async () => {
 
 test("'cumulated_start' is fetched from the graph view", async () => {
     const serverData = getBasicServerData();
-    serverData.views["partner,false,graph"] = /* xml */ `
+    serverData.views["partner,false,graph"] = `
         <graph string="Partner" cumulated_start="true">
             <field name="foo" type="measure"/>
         </graph>

@@ -768,7 +768,6 @@ test("typing with the menu open renders neither the picker nor its 96 options", 
 
     await press("ArrowDown");
     await animationFrame();
-    // A value outside the suggestions clears navigation; down starts at midnight.
     expect("input.o_time_picker_input").toHaveValue("0:00");
     expect(pickerRenders).toBe(0);
 });

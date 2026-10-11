@@ -26,10 +26,6 @@ import { activateTarget } from "./numbers/targets.js";
  * @typedef {(() => Promise<any> | any) | null} Undo
  */
 
-/**
- * What another module teaches the executor: a proposal kind the interpreter
- * emits, carried out by `(proposal, context) => Promise<Undo>`.
- */
 export const voiceExecutorRegistry = registry.category("voice_executors");
 
 const HOTKEYS = {

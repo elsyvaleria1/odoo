@@ -24,9 +24,6 @@ test("quit form view when save actually deletes", async () => {
         form: `<form js_class="planning_form"><field name="name"/></form>`,
         list: `<list><field name="name"/></list>`,
     };
-    // Say a recurrence that repeats for ever.
-    // If, on the n'th occurrence, we change the recurrence to have max n-1 occurrences,
-    // then the n'th occurrence (which we just saved) is deleted.
     onRpc("web_save", () => []);
     await mountWithCleanup(WebClient);
     await getService("action").doAction({

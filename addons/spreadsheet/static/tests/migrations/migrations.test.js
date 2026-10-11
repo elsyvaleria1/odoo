@@ -551,7 +551,6 @@ test("Pivot sorted columns are migrated (12 to 13)", () => {
             },
             3: {
                 name: "test",
-                // sortedColumn is not in the measures
                 sortedColumn: {
                     groupId: [[], []],
                     measure: "testMeasure",

@@ -205,7 +205,6 @@ describe("destruction while requests are pending", () => {
             model,
             activeBars: { '"a"': { value: "done", count: 2 } },
         });
-        // A root reload may still have counts from the previous root.
         state._pbCounts = { a: { done: 0 } };
         const previousCounts = state._pbCounts;
         const pending = load(model);
@@ -481,8 +480,6 @@ describe("dropping the group-by", () => {
         await load(model);
         expect(state._pbCounts).not.toBe(null);
 
-        // The user removes the group-by: the root becomes a record list, which
-        // has no `groups` at all.
         delete model.root.groups;
         model.root.groupBy = [];
         const callsBefore = model.calls.length;

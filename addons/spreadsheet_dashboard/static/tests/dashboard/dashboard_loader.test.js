@@ -109,7 +109,6 @@ test("load spreadsheet data only once", async () => {
     const loader = await createDashboardLoader({
         mockRPC: function (route, args) {
             if (args.model === "spreadsheet.dashboard" && args.method === "read") {
-                // read names
                 expect.step(`spreadsheet ${args.args[0]} loaded`);
             }
         },
@@ -179,7 +178,6 @@ test("load multiple spreadsheets", async () => {
                 expect.step("load groups");
             }
             if (args.method === "read" && args.model === "spreadsheet.dashboard") {
-                // read names
                 expect.step(`spreadsheet ${args.args[0]} loaded`);
             }
         },
@@ -210,7 +208,6 @@ test("load spreadsheet data with error", async () => {
     await result.promise.catch(() => expect.step("error"));
     expect(result.status).toBe(Status.Error);
     expect(result.error.data.message).toBe("Bip");
-    // error is thrown
     expect.verifySteps(["error"]);
 });
 
@@ -220,7 +217,7 @@ test("async formulas are correctly evaluated", async () => {
             {
                 id: "sheet1",
                 cells: {
-                    A1: '=ODOO.CURRENCY.RATE("EUR","USD")', // an async formula
+                    A1: '=ODOO.CURRENCY.RATE("EUR","USD")',
                 },
             },
         ],

@@ -16,7 +16,6 @@ defineSpreadsheetActions();
 test("Can have positional args in pivot formula", async function () {
     const { model } = await createSpreadsheetWithPivot();
 
-    // Columns
     setCellContent(model, "H1", `=PIVOT.VALUE(1,"probability:avg","#foo", 1)`);
     setCellContent(model, "H2", `=PIVOT.VALUE(1,"probability:avg","#foo", 2)`);
     setCellContent(model, "H3", `=PIVOT.VALUE(1,"probability:avg","#foo", 3)`);
@@ -28,7 +27,6 @@ test("Can have positional args in pivot formula", async function () {
     expect(getCellValue(model, "H4")).toBe(95);
     expect(getCellValue(model, "H5")).toBe("");
 
-    // Rows
     setCellContent(model, "I1", `=PIVOT.VALUE(1,"probability:avg","#bar", 1)`);
     setCellContent(model, "I2", `=PIVOT.VALUE(1,"probability:avg","#bar", 2)`);
     setCellContent(model, "I3", `=PIVOT.VALUE(1,"probability:avg","#bar", 3)`);
@@ -39,7 +37,6 @@ test("Can have positional args in pivot formula", async function () {
 
 test("Can have positional args in pivot headers formula", async function () {
     const { model } = await createSpreadsheetWithPivot();
-    // Columns
     setCellContent(model, "H1", `=PIVOT.HEADER(1,"#foo",1)`);
     setCellContent(model, "H2", `=PIVOT.HEADER(1,"#foo",2)`);
     setCellContent(model, "H3", `=PIVOT.HEADER(1,"#foo",3)`);
@@ -57,7 +54,6 @@ test("Can have positional args in pivot headers formula", async function () {
     expect(getCellValue(model, "H5")).toBe("");
     expect(getCellValue(model, "H6")).toBe("Probability");
 
-    // Rows
     setCellContent(model, "I1", `=PIVOT.HEADER(1,"#bar",1)`);
     setCellContent(model, "I2", `=PIVOT.HEADER(1,"#bar",2)`);
     setCellContent(model, "I3", `=PIVOT.HEADER(1,"#bar",3)`);
@@ -74,7 +70,7 @@ test("Can have positional args in pivot headers formula", async function () {
 
 test("pivot positional with two levels of group bys in rows", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="bar" type="row"/>
                     <field name="product_id" type="row"/>
@@ -82,7 +78,6 @@ test("pivot positional with two levels of group bys in rows", async () => {
                     <field name="probability" type="measure"/>
                 </pivot>`,
     });
-    // Rows Headers
     setCellContent(model, "H1", `=PIVOT.HEADER(1,"bar","false","#product_id",1)`);
     setCellContent(model, "H2", `=PIVOT.HEADER(1,"bar","true","#product_id",1)`);
     setCellContent(model, "H3", `=PIVOT.HEADER(1,"#bar",1,"#product_id",1)`);
@@ -94,7 +89,6 @@ test("pivot positional with two levels of group bys in rows", async () => {
     expect(getCellValue(model, "H4")).toBe("xphone");
     expect(getCellValue(model, "H5")).toBe("");
 
-    // Cells
     setCellContent(
         model,
         "H1",
@@ -380,7 +374,7 @@ test("sort second pivot measure (descending)", async () => {
 
 test("Formatting a pivot positional preserves the interval", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date:day" type="row"/>
                     <field name="probability" type="measure"/>
@@ -392,7 +386,7 @@ test("Formatting a pivot positional preserves the interval", async () => {
 
 test("pivot positional formula with collapsed pivot", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" interval="year" type="row"/>
                     <field name="date" interval="month" type="row"/>

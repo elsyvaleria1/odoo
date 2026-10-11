@@ -66,8 +66,6 @@ registerWebsitePreviewTour(
             run: "click",
         },
         {
-            // Discard is async; without waiting for edit mode to exit, the next
-            // click still fires inside the editor and the link never navigates.
             content: "Wait for preview mode",
             trigger: "body:not(.o_builder_open)",
         },

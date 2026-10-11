@@ -12,14 +12,11 @@ test("_applyReward", async () => {
     const models = store.models;
     const order = store.addNewOrder();
 
-    // Get card #1 - belongs to a loyalty-type program
     const card = models["loyalty.card"].get(1);
-    // Get reward #2 - belongs to the same loyalty program, type = discount reward
     const reward = models["loyalty.reward"].get(2);
 
     await addProductLineToOrder(store, order);
 
-    // Total quantity in the order
     const potentialQty = order.getOrderlines().reduce((acc, line) => acc + line.qty, 0);
 
     const component = await mountWithCleanup(ControlButtons, {});
@@ -34,9 +31,7 @@ test("getPotentialRewards", async () => {
     const models = store.models;
     const order = store.addNewOrder();
 
-    // Get loyalty program #1 - type = loyalty
     const loyaltyProgram = models["loyalty.program"].get(1);
-    // Get card #1 - linked to loyalty program #1
     const card = models["loyalty.card"].get(1);
 
     await addProductLineToOrder(store, order);

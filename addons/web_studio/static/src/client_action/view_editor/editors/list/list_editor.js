@@ -27,7 +27,6 @@ class EditorArchParser extends listView.ArchParser {
         return parsed;
     }
 
-    // the list parser walks the view IR; `this.parents` is its walk
     parseFieldNode(node, models, modelName) {
         const parsed = super.parseFieldNode(...arguments);
         if ("data-used-by" in nodeAttrs(node)) {
@@ -53,27 +52,14 @@ class EditorArchParser extends listView.ArchParser {
     }
 }
 
-/**
- * X2Many fields can have their subview edited. There are some challenges currently with the RelationalModel
- * - We need to inject the parent record in the evalContext. That way, within the subview's arch
- *   a snippet like `<field name="..." invisible="not parent.id" />` works.
- * - We already know the resIds we have, since we are coming from a x2m. There is no need to search_read them, just to read them
- * - The RelationalModel doesn't really supports creatic staticLists as the root record
- *
- * StaticList supports the two first needs and not DynamicList, we assume that the amount of hacking
- * would be slightly bigger if our starting point is DynamicList. Hence, we choose
- * to extend StaticList instead of DynamicList, and make it the root record of the model.
- */
 function useParentedStaticList(model, parentRecord, resIds) {
     const config = model.config;
     config.resIds = resIds;
     config.offset = 0;
-    config.limit = Math.max(7, resIds.length); // don't load everything
+    config.limit = Math.max(7, resIds.length);
 
     model._createRoot = (config, data) => {
         const options = { parent: parentRecord };
-        // _loadData returns `{ records, length }` for a multi-record root;
-        // StaticList expects the raw array of record data.
         return new model.constructor.StaticList(
             model,
             { ...config },
@@ -131,17 +117,12 @@ const listEditor = {
     },
     Sidebar: ListEditorSidebar,
 };
-// The object itself, not a copy: the hooks assigned below register on it.
 Object.assign(listEditor, {
     label: _t("List"),
     icon: "oi oi-view-list",
     group: "multiple",
 });
 registry.category("studio_editors").add("list", listEditor);
-
-/**
- *  Drag/Drop styling
- */
 
 const colNearestHookClass = "o_web_studio_nearest_hook";
 listEditor.styleNearestHook = function styleNearestColumn(mainRef, nearestHook) {

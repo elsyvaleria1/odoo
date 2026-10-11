@@ -48,7 +48,7 @@ test("widget field_float_scannable", async () => {
         type: "form",
         resModel: "product",
         resId: 1,
-        arch: /*xml*/ `
+        arch: `
             <form>
                 <field name="display_name"/>
                 <field name="float_field" widget="field_float_scannable"/>
@@ -63,16 +63,12 @@ test("widget field_float_scannable", async () => {
 
     expect(".o_field_widget[name=float_field] input").toHaveValue("4.00");
 
-    // we check here that a scan on the field_float_scannable widget triggers a
-    // barcode event
     await contains(".o_field_widget[name=float_field] input").focus();
     await simulateBarCode(["6", "0", "1", "6", "4", "7", "8", "5"]);
     await animationFrame();
     expect.verifySteps(["barcode scanned 60164785"]);
     expect(".o_field_widget[name=float_field] input").toBeFocused();
 
-    // we check here that a scan on the field without widget does not trigger a
-    // barcode event
     await contains(".o_field_widget[name=float_field_2] input").focus();
     await simulateBarCode(["6", "0", "1", "6", "4", "7", "8", "5"]);
     await animationFrame();
@@ -86,9 +82,6 @@ test("widget field_float_scannable", async () => {
 
 test.tags("mobile");
 test("mobile Chrome: a scan into field_float_scannable reaches the field", async () => {
-    // On mobile Chrome the service reads scans from its hidden input, but a
-    // scan into an input that opted in with barcode_events is typed into that
-    // input, not the hidden one.
     patchWithCleanup(barcodeService, { isMobileChrome: true });
     const view = await mountView({
         type: "form",
@@ -108,9 +101,6 @@ test("mobile Chrome: a scan into field_float_scannable reaches the field", async
 
 test.tags("desktop");
 test("an interleaved keystroke does not steal a pending scan's target", async () => {
-    // A scan's terminal debounce timer must dispatch on the target the scan
-    // itself was aimed at, even if an ordinary keystroke lands on an
-    // unrelated element while that timer is still pending.
     patchWithCleanup(barcodeService, { maxTimeBetweenKeysInMs: 50 });
 
     const onBarcodeScanned = (event) => {
@@ -120,7 +110,7 @@ test("an interleaved keystroke does not steal a pending scan's target", async ()
         type: "form",
         resModel: "product",
         resId: 1,
-        arch: /*xml*/ `
+        arch: `
             <form>
                 <field name="float_field" widget="field_float_scannable"/>
             </form>
@@ -136,8 +126,6 @@ test("an interleaved keystroke does not steal a pending scan's target", async ()
     for (const key of ["6", "0", "1"]) {
         scanInput.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
     }
-    // An ordinary keystroke on an unrelated element, while the scan's own
-    // debounce timer is still pending.
     otherInput.dispatchEvent(new KeyboardEvent("keydown", { key: "z", bubbles: true }));
 
     await advanceTime(50);
@@ -162,7 +150,7 @@ test("do no update form twice after a command barcode scanned", async () => {
     await mountView({
         type: "form",
         resModel: "product",
-        arch: /*xml*/ `
+        arch: `
             <form>
                 <field name="display_name"/>
                 <field name="float_field" widget="field_float_scannable"/>
@@ -174,10 +162,7 @@ test("do no update form twice after a command barcode scanned", async () => {
 
     expect.verifySteps(["web_read"]);
 
-    // switch to next record
     await simulateBarCode(["O", "C", "D", "N", "E", "X", "T", "Enter"]);
 
-    // a first update is done to reload the data (thus followed by a read), but
-    // update shouldn't be called afterwards
     expect.verifySteps(["update", "web_read"]);
 });

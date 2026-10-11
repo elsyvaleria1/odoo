@@ -1,18 +1,12 @@
 import { clickOnSave, registerWebsitePreviewTour } from "@website/js/tours/tour_utils";
 
 const BROKEN_STEP = {
-    // because saving a broken template opens a recovery page with no assets
-    // there's no way for the tour to resume on the new page, and thus no way
-    // to properly wait for the page to be saved & reloaded in order to fix the
-    // race condition of a tour ending on a side-effect (with the possible
-    // exception of somehow telling the harness / browser to do it)
     trigger: "body",
 };
 registerWebsitePreviewTour(
     "test_reset_page_view_complete_flow_part1",
     {
         url: "/test_page_view",
-        // 1. Edit the page through Edit Mode, it will COW the view
         edition: true,
     },
     () => [
@@ -21,7 +15,6 @@ registerWebsitePreviewTour(
                 "Drag the Intro snippet group and drop it in #oe_structure_test_website_page.",
             trigger:
                 ".o_block_tab:not(.o_we_ongoing_insertion) #snippet_groups .o_snippet[name='Intro'] .o_snippet_thumbnail .o_snippet_thumbnail_area",
-            // id starting by 'oe_structure..' will actually create an inherited view
             run: "drag_and_drop :iframe #oe_structure_test_website_page",
         },
         {
@@ -30,7 +23,6 @@ registerWebsitePreviewTour(
             run: "click",
         },
         ...clickOnSave(),
-        // 2. Edit that COW'd view in the HTML editor to break it.
         {
             content: "open site menu",
             trigger: 'button[data-menu-xmlid="website.menu_site"]',
@@ -78,7 +70,6 @@ registerWebsitePreviewTour(
                 "check that the inherited COW view is still there (created during edit mode)",
             trigger: ":iframe #oe_structure_test_website_page .s_cover",
         },
-        //4. Now break the inherited view created when dropping a snippet
         {
             content: "open site menu",
             trigger: 'button[data-menu-xmlid="website.menu_site"]',

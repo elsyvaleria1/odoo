@@ -27,8 +27,6 @@ export class ProductPricelistReport extends Component {
         this.dialog = useService("dialog");
         this.notification = useService("notification");
 
-        // Serialize report renders so a slow earlier request can't overwrite
-        // the HTML of a later pricelist/quantity selection.
         this.renderKeepLast = new KeepLast();
         this.qtyInputRef = elementRef();
         this.formatRef = elementRef();
@@ -71,13 +69,6 @@ export class ProductPricelistReport extends Component {
 
         this.config.setDisplayName(_t("Pricelist Report"));
 
-        /*
-        When following the link of a product and coming back we need to keep the
-        precedent state:
-            - if the pricelist was being showed
-            - wich pricelist is selected at the moment
-            - which quantities
-        */
         useSetupAction({
             getLocalState: () => ({
                 displayPricelistTitle: this.displayPricelistTitle,
@@ -89,8 +80,6 @@ export class ProductPricelistReport extends Component {
             }),
         });
     }
-
-    // getters
 
     get activeIds() {
         return this.state.activeIds;
@@ -130,11 +119,7 @@ export class ProductPricelistReport extends Component {
         return this.state.selectedPricelist;
     }
 
-    // orm calls
-
     getPricelists() {
-        // The pricelist the report was opened from is listed even archived:
-        // otherwise another one would be priced silently.
         return this.orm.searchRead(
             "product.pricelist",
             ["|", ["active", "=", true], ["id", "=", this.defaultPricelistId || 0]],
@@ -145,7 +130,6 @@ export class ProductPricelistReport extends Component {
 
     async renderHtml() {
         if (this.noProducts) {
-            // do not make an rpc to get empty report data
             this.state.html = "";
             return;
         }
@@ -157,10 +141,8 @@ export class ProductPricelistReport extends Component {
         this.state.html = markup(html);
     }
 
-    // events
-
     onClickAddQty(ev) {
-        ev.preventDefault(); // avoid automatic reloading of the page
+        ev.preventDefault();
 
         if (this.quantities.length >= this.constructor.MAX_QTY) {
             this.notification.add(

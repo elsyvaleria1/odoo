@@ -11,14 +11,12 @@ registry.category("web_tour.tours").add("SellingEventInPos", {
         [
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
-            // Confirm popup - There isn't enough tickets available
             ProductScreen.clickDisplayedProduct("My Awesome Event"),
             EventTourUtils.increaseQuantityOfTicket("Ticket VIP"),
             EventTourUtils.increaseQuantityOfTicket("Ticket VIP"),
             Dialog.confirm(),
             Dialog.confirm(),
 
-            // Buy a VIP Ticket
             ProductScreen.clickDisplayedProduct("My Awesome Event"),
             EventTourUtils.increaseQuantityOfTicket("Ticket VIP"),
             Dialog.confirm(),
@@ -101,7 +99,6 @@ registry.category("web_tour.tours").add("test_pos_event_registration_not_mandato
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // No customer, all information filled
             ProductScreen.clickDisplayedProduct("Event regitration not mandatory"),
             EventTourUtils.increaseQuantityOfTicket("Ticket Basic"),
             Dialog.confirm(),
@@ -113,7 +110,6 @@ registry.category("web_tour.tours").add("test_pos_event_registration_not_mandato
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // Customer given, all information filled
             ProductScreen.clickDisplayedProduct("Event regitration not mandatory"),
             EventTourUtils.increaseQuantityOfTicket("Ticket Basic"),
             Dialog.confirm(),
@@ -127,7 +123,6 @@ registry.category("web_tour.tours").add("test_pos_event_registration_not_mandato
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // Customer given, partial information filled
             ProductScreen.clickDisplayedProduct("Event regitration not mandatory"),
             EventTourUtils.increaseQuantityOfTicket("Ticket Basic"),
             Dialog.confirm(),
@@ -140,7 +135,6 @@ registry.category("web_tour.tours").add("test_pos_event_registration_not_mandato
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // Customer given, partial information filled
             ProductScreen.clickDisplayedProduct("Event regitration not mandatory"),
             EventTourUtils.increaseQuantityOfTicket("Ticket Basic"),
             Dialog.confirm(),

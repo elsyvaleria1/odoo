@@ -34,12 +34,6 @@ const ARCH = `
         <field name="flag"/>
     </form>`;
 
-/**
- * Counts, per field name, the feedback evaluations the wrapper ran (its debug
- * logger's "visualFeedback" line), the feedback values its render received that
- * it had not seen before (an unchanged value is the same object), and the
- * tooltips it computed.
- */
 function countDerivations() {
     /**
      * @type {{

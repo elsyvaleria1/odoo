@@ -17,7 +17,6 @@ registry.category("web_tour.tours").add("sale_renting_product_configurator", {
         },
         ...tourUtils.selectCustomer("Test Partner"),
         ...tourUtils.addProduct("Main product"),
-        // Assert that the rental prices and durations are correct.
         configuratorTourUtils.assertProductPrice("Main product", "15.00"),
         configuratorTourUtils.assertProductPriceInfo("Main product", "1 Day"),
         configuratorTourUtils.assertOptionalProductPrice("Optional product", "16.00"),
@@ -26,7 +25,6 @@ registry.category("web_tour.tours").add("sale_renting_product_configurator", {
             "1 Day",
         ),
         ...configuratorTourUtils.saveConfigurator(),
-        // Don't end the tour with a form in edition mode.
         ...stepUtils.saveForm(),
     ],
 });

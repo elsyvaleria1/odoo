@@ -5,11 +5,8 @@ import { swapFragment } from "@web/public/fragments";
 
 /** @typedef {import("@web/public/interaction_service").InteractionService} InteractionService */
 
-// http_routing's PARTIAL_NAVIGATION_HEADER: the server leaves out the header
-// and footer, which a page swapped in place keeps
 export const PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation";
 
-// what a page says about itself in <head>, kept in step with the page shown
 const HEAD_SELECTORS = [
     'link[rel="canonical"]',
     'link[rel="alternate"][hreflang]',

@@ -34,7 +34,6 @@ test("a cancelled touch on a rendered list row does not select it", async () => 
 
     expect(".o_data_row").not.toHaveClass("o_data_row_selected");
 
-    // Positive control: cancellation must not permanently disable long-touch selection.
     row.dispatchEvent(new Event("touchstart", { bubbles: true }));
     await advanceTime(2000);
     expect(".o_data_row").toHaveClass("o_data_row_selected");

@@ -22,7 +22,6 @@ class PauseCardWarning extends Component {
         this.close = this.props.close;
     }
 
-    // Common
     async actionPauseCard() {
         await this.orm.call("hr.expense.stripe.card", "action_pause_card", [
             this.card_id,

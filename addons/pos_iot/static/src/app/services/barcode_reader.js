@@ -10,7 +10,6 @@ patch(BarcodeReader.prototype, {
         }
     },
 
-    // the barcode scanner will stop listening on the hw_proxy/scanner remote interface
     disconnectFromProxy() {
         if (this.scanners) {
             for (const scanner of Object.values(this.scanners)) {

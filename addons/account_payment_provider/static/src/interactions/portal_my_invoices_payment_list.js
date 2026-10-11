@@ -23,7 +23,6 @@ export class PortalMyInvoicesPaymentList extends Interaction {
                       ? _t("due in %s day(s)", Math.abs(days).toFixed())
                       : _t("%s day(s) overdue", Math.abs(days).toFixed());
 
-            // We use `.createTextNode()` to escape possible HTML in translations (XSS)
             dueDateEl.replaceChildren(document.createTextNode(dueDateLabel));
         }
     }

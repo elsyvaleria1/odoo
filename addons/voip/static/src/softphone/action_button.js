@@ -1,9 +1,6 @@
 /** @odoo-module native */
 import { Component, t, useProps } from "@odoo/owl";
 
-/**
- * Generic component that defines the general structure of an action button.
- */
 export class ActionButton extends Component {
     static props = {
         extraClass: t.string().optional(""),

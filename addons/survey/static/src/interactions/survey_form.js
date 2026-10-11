@@ -126,10 +126,6 @@ export class SurveyForm extends Interaction {
             shouldUpdate: false,
         };
 
-        // NOTE: the following few lines are only there to solve a bug where when
-        // the user changes the language of the survey and the page is reloaded,
-        // the background image disappears
-        // the language-changed param is added to the url in onLanguageChange
         const url = new URL(window.location.href);
         const languageChanged = url.searchParams.has("language-changed");
         if (languageChanged) {
@@ -150,7 +146,6 @@ export class SurveyForm extends Interaction {
 
         this.submitting = false;
         this.breadcrumbData = null;
-        // Add Survey cookie to retrieve the survey if you quit the page and restart the survey.
         if (!cookie.get(`survey_${this.options.surveyToken}`)) {
             cookie.set(
                 `survey_${this.options.surveyToken}`,
@@ -170,7 +165,6 @@ export class SurveyForm extends Interaction {
     }
 
     async willStart() {
-        // initialize session management
         const busService = this.services.bus_service;
         if (this.options.sessionBusChannel && this.options.sessionInProgress) {
             this.registerCleanup(busService.addChannel(this.options.sessionBusChannel));
@@ -195,7 +189,6 @@ export class SurveyForm extends Interaction {
     }
 
     start() {
-        // These elements are not children of this.el
         this.surveyProgressEl = document.querySelector(".o_survey_progress_wrapper");
         this.surveyNavigationEl = document.querySelector(
             ".o_survey_navigation_wrapper",
@@ -205,19 +198,9 @@ export class SurveyForm extends Interaction {
             this.initBreadcrumb();
         }
         this.updateNavigationListeners();
-        this.updateContent(); // necessary to show/hide breadcrumb
+        this.updateContent();
     }
 
-    // Handlers
-    // -------------------------------------------------------------------------
-
-    /**
-     * Handle keyboard navigation:
-     * - 'enter' or 'arrow-right' => submit form
-     * - 'arrow-left' => submit form (but go back backwards)
-     * - other alphabetical character ('a', 'b', ...)
-     *   Select the related option in the form (if available)
-     */
     onKeyDown(ev) {
         const ctrlKeyClicked = ev.ctrlKey || ev.metaKey;
         const inputFocused =
@@ -236,11 +219,9 @@ export class SurveyForm extends Interaction {
             }
         }
 
-        // If in session mode and question already answered, do not handle keydown
         if (this.el.querySelector("fieldset[disabled='disabled']")) {
             return;
         }
-        // Disable all navigation keys when zoom modal is open, except the ESC.
         if (this.imgZoomerEl && this.imgZoomerEl.isConnected && ev.key !== "Escape") {
             return;
         }
@@ -249,8 +230,6 @@ export class SurveyForm extends Interaction {
             document.activeElement.tagName.toLowerCase() === "textarea" &&
             document.hasFocus();
 
-        // If user is answering a text input, do not handle keydown
-        // CTRL+enter will force submission (meta key for Mac)
         if (
             (textareaFocused || inputFocused) &&
             (!ctrlKeyClicked || ev.key !== "Enter")
@@ -259,7 +238,6 @@ export class SurveyForm extends Interaction {
         }
 
         if (ev.key === "Enter" || ev.key === "ArrowRight") {
-            // Enter or arrow-right: go Next
             ev.preventDefault();
             if (this.showingCorrectAnswers) {
                 this.showingCorrectAnswers = false;
@@ -278,13 +256,9 @@ export class SurveyForm extends Interaction {
             return;
         }
         if (ev.key === "ArrowLeft") {
-            // arrow-left: previous (if available)
             if (this.showingCorrectAnswers) {
                 return;
             }
-            // It's easier to actually click on the button (if in the DOM) as it contains necessary
-            // data that are used in the event handler.
-            // Again, global selector necessary since the navigation is outside of the form.
             document
                 .querySelector(".o_survey_navigation_submit[value='previous']")
                 ?.click();
@@ -299,7 +273,6 @@ export class SurveyForm extends Interaction {
         if (choiceInputEl) {
             choiceInputEl.checked = !choiceInputEl.checked;
             this.triggerEvent(choiceInputEl, "change");
-            // Avoid selection key to be typed into the textbox if 'other' is selected by key
             ev.preventDefault();
         }
     }
@@ -317,15 +290,12 @@ export class SurveyForm extends Interaction {
         const targetEl = ev.currentTarget;
         let questionEl = targetEl.closest(".o_survey_form_choice");
         if (!questionEl) {
-            // if the question is of type matrix, then targetEl does not have a parent with class o_survey_form_choice
             questionEl = targetEl.closest(".o_survey_question_matrix");
             if (!questionEl) {
                 return;
             }
         }
 
-        // Update survey button to "continue" if the current page/question is the last (without accounting for
-        // its own conditional questions) but a selected answer is triggering a conditional question on a next page.
         const surveyLastTriggeringAnswers = this.el.querySelector(
             ".o_survey_form_content_data",
         ).dataset.surveyLastTriggeringAnswers;
@@ -350,12 +320,10 @@ export class SurveyForm extends Interaction {
                     surveyLastTriggeringAnswers.includes(answerId),
                 )
             ) {
-                // change to continue
                 submitButton.value = "next";
                 submitButton.textContent = _t("Continue");
                 submitButton.classList.replace("btn-secondary", "btn-primary");
             } else {
-                // change to submit
                 submitButton.value = "finish";
                 submitButton.textContent = _t("Submit");
                 submitButton.classList.replace("btn-primary", "btn-secondary");
@@ -367,7 +335,6 @@ export class SurveyForm extends Interaction {
             questionEl,
         );
 
-        // if the question is complete, not the last and does not have a comment, we can automatically continue to the next one
         if (!isQuestionComplete || !this.options.usersCanGoBack) {
             return;
         }
@@ -398,13 +365,11 @@ export class SurveyForm extends Interaction {
             return;
         }
 
-        // Update conditional questions visibility
         const previousValue = selectEl.dataset.previousValue || "";
         const newValue = selectEl.value;
         selectEl.dataset.previousValue = newValue;
 
         if (this.options.questionsLayout !== "page_per_question") {
-            // Remove old answer, add new
             if (previousValue) {
                 const idx = this.selectedAnswers.indexOf(parseInt(previousValue));
                 if (idx !== -1) {
@@ -422,7 +387,6 @@ export class SurveyForm extends Interaction {
             }
         }
 
-        // Auto-advance if page_per_question and question is answered
         if (
             newValue &&
             this.options.questionsLayout === "page_per_question" &&
@@ -443,9 +407,6 @@ export class SurveyForm extends Interaction {
      */
     onChoiceImageClick(ev) {
         if (!inputModality.isTouch) {
-            // With a precise pointer a click on the image only enlarges it; a
-            // finger also selects the answer, as the area outside the picture
-            // is hard to hit.
             ev.preventDefault();
         }
         const [zoomerEl] = this.renderAt(
@@ -500,10 +461,6 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Invert the related input's "checked" property.
-     * This will tick or untick the option (based on the previous state).
-     */
     onMatrixButtonClick(ev) {
         if (this.readonly) {
             return;
@@ -514,22 +471,6 @@ export class SurveyForm extends Interaction {
         this.triggerEvent(inputEl, "change");
     }
 
-    /**
-     * Base browser behavior when clicking on a radio input is to leave the radio checked if it was
-     * already checked before.
-     * Here for survey we want to be able to un-tick the choice.
-     *
-     * e.g: You select an option but on second thoughts you're unsure it's the right answer, you
-     * want to be able to remove your answer.
-     *
-     * To do so, we use an alternate class "o_survey_form_choice_item_selected" that is added when
-     * the option is ticked and removed when the option is unticked.
-     *
-     * - When it's ticked, we simply add the class (the browser will set the "checked" property
-     *   to true).
-     * - When it's unticked, we manually set the "checked" property of the element to "false".
-     *   We also trigger the 'change' event to go into 'onChoiceItemChange'.
-     */
     onRadioChoiceClick(ev) {
         const targetEl = ev.currentTarget;
         if (targetEl.classList.contains("o_survey_form_choice_item_selected")) {
@@ -558,7 +499,6 @@ export class SurveyForm extends Interaction {
         } else if (targetEl.value === "next_skipped") {
             this.submitForm({ nextSkipped: true });
         } else if (targetEl.value === "finish" && !this.options.sessionInProgress) {
-            // Adding pop-up before the survey is submitted when not in live session
             this.dialog.add(ConfirmationDialog, {
                 title: _t("Submit confirmation"),
                 body: _t("Are you sure you want to submit the survey?"),
@@ -612,15 +552,8 @@ export class SurveyForm extends Interaction {
         this.goToNextPage();
     }
 
-    /**
-     * Handle the `end_session` bus event. This will fade out the current page
-     * and fade in the end screen.
-     *
-     */
     onEndSessionNotification() {
         if (this.options.isStartScreen) {
-            // can happen when triggering the same survey session multiple times
-            // we received an "old" end_session event that needs to be ignored
             return;
         }
         this.fadeInOutDelay = 400;
@@ -664,9 +597,6 @@ export class SurveyForm extends Interaction {
         );
     }
 
-    // SUBMIT
-    // -------------------------------------------------------------------------
-
     /**
      * This function will send a json rpc call to the server to
      * - start the survey (if we are on start screen)
@@ -700,7 +630,6 @@ export class SurveyForm extends Interaction {
                 ".o_survey_lang_selector[name='lang_code']",
             ).value;
             route = "/survey/begin";
-            // Hide survey title in 'page_per_question' layout: it takes too much space
             if (this.options.questionsLayout === "page_per_question") {
                 fadeOut(this.el.querySelector(".o_survey_main_title"), 400);
             }
@@ -717,9 +646,7 @@ export class SurveyForm extends Interaction {
         }
 
         if (this.options.sessionInProgress) {
-            // reset the fadeInOutDelay when attendee is submitting form
             this.fadeInOutDelay = 400;
-            // prevent user from clicking on matrix options when form is submitted
             this.readonly = true;
         }
 
@@ -728,11 +655,6 @@ export class SurveyForm extends Interaction {
             params,
         );
 
-        // `finally`, not two assignments: if the request fails -- a 500, a dropped
-        // connection, a tab that lost the network -- the flag stayed true and every
-        // later click returned early at the guard above. The form was then dead for
-        // good, and reloading mid-survey is how a respondent loses the page they were
-        // on.
         try {
             if (
                 !this.options.isStartScreen &&
@@ -765,7 +687,6 @@ export class SurveyForm extends Interaction {
     async nextScreen(nextScreenPromise, options) {
         const selectorsToFadeout = [".o_survey_form_content"];
         if (options.isFinish && !this.nextScreenResult?.data?.has_skipped_questions) {
-            // Fade out the top title
             document
                 .querySelector(".o_survey_main_title_fade")
                 ?.classList.replace("opacity-100", "opacity-0");
@@ -827,13 +748,10 @@ export class SurveyForm extends Interaction {
             );
             return;
         }
-        // Handle skip action redirect
         if (data.redirect_url) {
             redirect(data.redirect_url);
             return;
         }
-        // the content, the progress and the navigation are each replaced by
-        // the server's next screen
         this.swapFragments(result);
         const formContentEl = this.el.querySelector(".o_survey_form_content");
         this.surveyProgressEl = document.querySelector(".o_survey_progress_wrapper");
@@ -844,7 +762,6 @@ export class SurveyForm extends Interaction {
             this.updateNavigationListeners();
         }
 
-        // Hide timer if end screen (if page_per_question in case of conditional questions)
         if (
             this.options.questionsLayout === "page_per_question" &&
             this.el.querySelector(".o_survey_finished")
@@ -852,7 +769,6 @@ export class SurveyForm extends Interaction {
             options.isFinish = true;
         }
 
-        // Force recompute the title's display condition and fade it in
         if (
             this.options.isStartScreen &&
             this.options.questionsLayout !== "page_per_question"
@@ -883,10 +799,8 @@ export class SurveyForm extends Interaction {
         this.initTextArea();
 
         if (this.options.sessionInProgress && this.options.isPageDescription) {
-            // Prevent enter submit if we're on a page description (there is nothing to submit)
             this.preventEnterSubmit = true;
         }
-        // Background management - reset background overlay opacity to 0.7 to discover next background.
         if (this.options.refreshBackground) {
             this.background.transition = false;
             this.background.image = data.background_image_url;
@@ -895,22 +809,10 @@ export class SurveyForm extends Interaction {
         fadeIn(formContentEl, this.fadeInOutDelay);
         this.enableSubmitButtons();
         this.focusOnFirstInput();
-        this.scrollTop(); // must be after focus
+        this.scrollTop();
         this.scrollToFirstError();
     }
 
-    // VALIDATION TOOLS
-    // -------------------------------------------------------------------------
-    /**
-     * Validation is done in frontend before submit to avoid latency from the server.
-     * If the validation is incorrect, the errors are displayed before submitting and
-     * fade in / out of submit is avoided.
-     *
-     * Each question type gets its own validation process.
-     *
-     * There is a special use case for the 'required' questions, where we use the constraint
-     * error message that comes from the question configuration ('constr_error_msg' field).
-     */
     validateForm(formEl, formData) {
         const errors = {};
         const validationEmailMsg = _t("This answer must be an email address.");
@@ -1016,7 +918,6 @@ export class SurveyForm extends Interaction {
                         if (!data[questionId]) {
                             errors[questionId] = constrErrorMsg;
                         } else if (data[questionId] === "-1" && !textareaEl.value) {
-                            // if other has been checked and value is null
                             errors[questionId] = constrErrorMsg;
                         }
                     }
@@ -1026,7 +927,6 @@ export class SurveyForm extends Interaction {
                         const subQuestionsIds = JSON.parse(
                             inputEl.dataset.subQuestions,
                         );
-                        // Highlight unanswered rows' header
                         const questionBodySelector = `div[id="${questionId}"] > .o_survey_question_matrix > tbody`;
                         for (const subQuestionId of subQuestionsIds) {
                             if (!(`${questionId}_${subQuestionId}` in data)) {
@@ -1049,16 +949,11 @@ export class SurveyForm extends Interaction {
         return true;
     }
 
-    /**
-     * Check if the email has an '@', a left part and a right part
-     */
     validateEmail(email) {
         const emailParts = email.split("@");
         return emailParts.length === 2 && emailParts[0] && emailParts[1];
     }
 
-    // PREPARE SUBMIT TOOLS
-    // -------------------------------------------------------------------------
     /**
      * For each type of question, extract the answer from inputs or textarea (comment or answer)
      * @param {FormData} formData
@@ -1071,7 +966,6 @@ export class SurveyForm extends Interaction {
             }
         }
 
-        // Get all question answers by question type
         for (const el of this.el.querySelectorAll("[data-question-type]")) {
             switch (el.dataset.questionType) {
                 case "text_box":
@@ -1127,13 +1021,6 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     *   Prepare ranking / constant sum answers before submitting form.
-     *   Both types collect one number per suggested answer rather than a
-     *   selection, so they submit a mapping instead of a value or a list:
-     *   params = { 'questionId': { 'answerId1': 1, 'answerId2': 2 } }
-     *   which is the shape `_save_line_per_answer` reads on the server.
-     */
     prepareSubmitPerAnswerValues(params, wrapperEl) {
         const values = {};
         for (const inputEl of wrapperEl.querySelectorAll("[data-answer-id]")) {
@@ -1152,12 +1039,6 @@ export class SurveyForm extends Interaction {
         return params;
     }
 
-    /**
-     *   Prepare a file upload answer before submitting form.
-     *   The file itself is uploaded ahead of submit by `uploadQuestionFile`,
-     *   which stamps the resulting ir.attachment id on the wrapper; only that
-     *   id travels with the answer.
-     */
     prepareSubmitFileUpload(params, wrapperEl) {
         const attachmentId = wrapperEl.dataset.attachmentId;
         if (attachmentId) {
@@ -1166,11 +1047,6 @@ export class SurveyForm extends Interaction {
         return params;
     }
 
-    /**
-     *   Prepare choice answer before submitting form.
-     *   If the answer is not the 'comment selection' (=Other), calls the prepareSubmitAnswer method to add the answer to the params
-     *   If there is a comment linked to that question, calls the prepareSubmitComment method to add the comment to the params
-     */
     prepareSubmitChoices(params, parentEl, questionId) {
         for (const el of parentEl.querySelectorAll("input:checked")) {
             if (el.value !== "-1") {
@@ -1181,11 +1057,6 @@ export class SurveyForm extends Interaction {
         return params;
     }
 
-    /**
-     *   Prepare matrix answers before submitting form.
-     *   This method adds matrix answers one by one and add comment if any to a params key,value like :
-     *   params = { 'matrixQuestionId' : {'rowId1': [colId1, colId2,...], 'rowId2': [colId1, colId3, ...], 'comment': comment }}
-     */
     prepareSubmitAnswersMatrix(params, matrixTable) {
         for (const el of matrixTable.querySelectorAll("input:checked")) {
             params = this.prepareSubmitAnswerMatrix(
@@ -1204,11 +1075,6 @@ export class SurveyForm extends Interaction {
         return params;
     }
 
-    /**
-     *   Prepare answer before submitting form if question type is matrix.
-     *   This method regroups answers by question and by row to make an object like :
-     *   params = { 'matrixQuestionId' : { 'rowId1' : [colId1, colId2,...], 'rowId2' : [colId1, colId3, ...] } }
-     */
     prepareSubmitAnswerMatrix(params, questionId, rowId, colId, isComment) {
         const value = questionId in params ? params[questionId] : {};
         if (isComment) {
@@ -1224,12 +1090,6 @@ export class SurveyForm extends Interaction {
         return params;
     }
 
-    /**
-     *   Prepare answer before submitting form (any kind of answer - except Matrix -).
-     *   This method regroups answers by question.
-     *   Lonely answer are directly assigned to questionId. Multiple answers are regrouped in an array:
-     *   params = { 'questionId1' : lonelyAnswer, 'questionId2' : [multipleAnswer1, multipleAnswer2, ...] }
-     */
     prepareSubmitAnswer(params, questionId, value) {
         if (questionId in params) {
             if (params[questionId].constructor === Array) {
@@ -1243,12 +1103,6 @@ export class SurveyForm extends Interaction {
         return params;
     }
 
-    /**
-     *   Prepare comment before submitting form.
-     *   This method extract the comment, encapsulate it in a dict and calls the prepareSubmitAnswer methods
-     *   with the new value. At the end, the result looks like :
-     *   params = { 'questionId1' : {'comment': commentValue}, 'questionId2' : [multipleAnswer1, {'comment': commentValue}, ...] }
-     */
     prepareSubmitComment(params, parentEl, questionId, isMatrix) {
         for (const el of parentEl.querySelectorAll("textarea")) {
             if (el.value) {
@@ -1269,12 +1123,6 @@ export class SurveyForm extends Interaction {
         return params;
     }
 
-    // INIT FIELDS TOOLS
-    // -------------------------------------------------------------------------
-
-    /**
-     * Will allow the textarea to resize on carriage return instead of showing scrollbar.
-     */
     initTextArea() {
         for (const el of this.el.querySelectorAll("textarea")) {
             resizeTextArea(el);
@@ -1293,9 +1141,6 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Will initialize the breadcrumb that handles navigation to a previously filled in page.
-     */
     initBreadcrumb() {
         this.breadcrumbEl = this.el.querySelector(".o_survey_breadcrumb_container");
         if (!this.breadcrumbEl) {
@@ -1310,9 +1155,6 @@ export class SurveyForm extends Interaction {
         this.updateBreadcrumb();
     }
 
-    /**
-     * Called after survey submit to update the breadcrumb to the right page.
-     */
     updateBreadcrumb() {
         if (!this.breadcrumbEl) {
             this.initBreadcrumb();
@@ -1366,9 +1208,6 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    // OTHER TOOLS
-    // -------------------------------------------------------------------------
-
     /**
      * Checks, if the 'other' choice is checked. Applies only if the comment count as answer.
      *   If not checked : Clear the comment textarea, hide and disable it
@@ -1407,11 +1246,6 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Will automatically focus on the first input to allow the user to complete directly the survey,
-     * without having to manually get the focus (only if the input has the right type - can write something inside -
-     * and if the device is not a mobile device to avoid missing information when the soft keyboard is opened)
-     */
     focusOnFirstInput() {
         const inputEls =
             this.el
@@ -1437,7 +1271,6 @@ export class SurveyForm extends Interaction {
     async checkIsOnMainTab() {
         const check = async (shouldReloadMasterTab) => {
             if (await this.services.multi_tab.isOnMainTab()) {
-                // Force reload the page when survey is ready to be followed, to force restart long polling
                 if (shouldReloadMasterTab) {
                     window.location.reload();
                 }
@@ -1457,9 +1290,6 @@ export class SurveyForm extends Interaction {
         };
         return check(false);
     }
-
-    // CONDITIONAL QUESTIONS MANAGEMENT TOOLS
-    // -------------------------------------------------------------------------
 
     /**
      * For single and multiple choice questions, propagate questions visibility
@@ -1545,7 +1375,6 @@ export class SurveyForm extends Interaction {
                 }
             }
         } else {
-            // targetEl.type === "checkbox"
             if (matrixButtonEl) {
                 matrixButtonEl.classList.toggle("o_survey_selected");
             } else {
@@ -1582,13 +1411,11 @@ export class SurveyForm extends Interaction {
         if (!questionIds || (!questionIds.length && !questionIds.size)) {
             return;
         }
-        // Questions visibility
         for (const questionId of questionIds) {
             const dependingQuestionEl = this.el.querySelector(
                 `.js_question-wrapper[id="${questionId}"]`,
             );
             if (!dependingQuestionEl) {
-                // Could be on different page
                 continue;
             }
             const hasNoSelectedTriggers = !this.options.triggeringAnswersByQuestion[
@@ -1596,8 +1423,6 @@ export class SurveyForm extends Interaction {
             ].some((answerId) => this.selectedAnswers.includes(parseInt(answerId)));
             dependingQuestionEl.classList.toggle("d-none", hasNoSelectedTriggers);
             if (hasNoSelectedTriggers) {
-                // Clear / Un-select all the input from the given question
-                // + propagate conditional hierarchy by triggering change on choice inputs.
                 for (const el of dependingQuestionEl.querySelectorAll("input")) {
                     if (el.type === "text" || el.type === "number") {
                         el.value = "";
@@ -1611,7 +1436,6 @@ export class SurveyForm extends Interaction {
                 }
             }
         }
-        // Sections visibility
         if (this.options.questionsLayout === "one_page") {
             const sections = this.el.querySelectorAll(".js_section_wrapper");
             for (const section of sections) {
@@ -1625,10 +1449,6 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * Get questions that are not supposed to be answered by the user.
-     * Those are the ones triggered by answers that the user did not selected.
-     */
     getInactiveConditionalQuestionIds() {
         const inactiveQuestionIds = [];
         for (const [questionId, answerIds] of Object.entries(
@@ -1645,27 +1465,20 @@ export class SurveyForm extends Interaction {
         return inactiveQuestionIds;
     }
 
-    // ANSWERS TOOLS
-    // -------------------------------------------------------------------------
-
     showCorrectAnswers(correctAnswers, submitPromise, options) {
-        // Display the correct answers
         for (const questionId of Object.keys(correctAnswers)) {
             this.showQuestionAnswer(correctAnswers, questionId);
         }
-        // Make the form completely readonly
         const formEl = document.querySelector("form");
         for (const el of formEl.querySelectorAll("input, textarea, label, td")) {
             el.blur();
             el.classList.add("pe-none");
         }
 
-        // This is used to adapt behaviour of onKeyDown
         this.nextScreenPromise = submitPromise;
         this.nextScreenOptions = options;
         this.showingCorrectAnswers = true;
 
-        // Replace the Submit button by a Next button
         formEl.querySelector("button[type='submit']").classList.add("d-none");
         const nextPageButtonEl = formEl.querySelector("button[id='next_page']");
         nextPageButtonEl.classList.remove("d-none");
@@ -1688,7 +1501,6 @@ export class SurveyForm extends Interaction {
             questionWrapperEl.querySelector("[data-question-type]").dataset
                 .questionType;
 
-        // Only questions supporting correct answer are present here (ex.: scale question doesn't support it)
         if (["numerical_box", "date", "datetime"].includes(questionType)) {
             const inputEl = answerWrapperEl.querySelector("input");
             let isCorrect;
@@ -1722,13 +1534,12 @@ export class SurveyForm extends Interaction {
                     `bg-${isCorrect ? "success" : "danger"}`,
                     "text-white",
                 );
-                // For the user incorrect answers, replace the empty check icon by a crossed check icon
                 if (!isCorrect && buttonEl.classList.contains("o_survey_selected")) {
                     let fromIcon = "fa-check-circle";
                     let toIcon = "fa-times-circle";
                     if (questionType === "multiple_choice") {
                         fromIcon = "fa-check-square";
-                        toIcon = "fa-times-rectangle"; // fa-times-square doesn't exist in fontawesome 4.7
+                        toIcon = "fa-times-rectangle";
                     }
                     buttonEl
                         .querySelector(`i.${fromIcon}`)
@@ -1737,9 +1548,6 @@ export class SurveyForm extends Interaction {
             }
         }
     }
-
-    // ERRORS TOOLS
-    // -------------------------------------------------------------------------
 
     showErrors(errors) {
         const errorKeys = Object.keys(errors || {});
@@ -1764,18 +1572,11 @@ export class SurveyForm extends Interaction {
         }
     }
 
-    /**
-     * This method is used to scroll to error generated in the backend.
-     * (Those errors are displayed when the user skip mandatory question(s))
-     */
     scrollToFirstError() {
         const errorEl = this.el.querySelector(".o_survey_question_error :not(:empty)");
         errorEl?.scrollIntoView();
     }
 
-    /**
-     * Clean all form errors in order to clean DOM before a new validation
-     */
     resetErrors() {
         for (const el of this.el.querySelectorAll(".o_survey_question_error")) {
             el.replaceChildren();

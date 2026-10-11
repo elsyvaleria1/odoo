@@ -625,8 +625,6 @@ export class DomPlugin extends Plugin {
         ];
         return targetedBlocks.filter(
             (block) =>
-                // If the selection ends in a block, the block is not visibly
-                // selected so exclude it.
                 (isCollapsed || block !== lastTargetedNode) &&
                 this.isRetaggingSafe(block) &&
                 !descendants(block).some((descendant) =>

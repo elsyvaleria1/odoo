@@ -19,7 +19,6 @@ export function selectTable(table) {
             content: `Select table ${table}`,
             trigger: `.self_order_popup_table select`,
             run: (helpers) => {
-                // The default select (run: select 3) doesn't work here
                 const options = document.querySelectorAll(
                     ".self_order_popup_table option",
                 );
@@ -46,7 +45,6 @@ export function selectRandomValueInInput(inputSelector) {
         run: (helpers) => {
             const options = document.querySelectorAll(`${inputSelector} option`);
             for (const option of options) {
-                // Verify if the option is not disabled
                 if (option.disabled || option.value === "") {
                     continue;
                 }

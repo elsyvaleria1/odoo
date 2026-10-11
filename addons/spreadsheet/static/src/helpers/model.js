@@ -235,11 +235,6 @@ function exportGlobalFiltersToSheet(model, data) {
     }
 }
 
-/**
- * copy-pasted from o-spreadsheet. Should be exported
- * Get the id of the given item (its key in the given dictionnary).
- * If the given item does not exist in the dictionary, it creates one with a new id.
- */
 export function getItemId(item, itemsDic) {
     for (const [key, value] of Object.entries(itemsDic)) {
         if (value === item) {
@@ -247,7 +242,6 @@ export function getItemId(item, itemsDic) {
         }
     }
 
-    // Generate new Id if the item didn't exist in the dictionary
     const ids = Object.keys(itemsDic);
     const maxId = ids.length === 0 ? 0 : Math.max(...ids.map((id) => parseInt(id, 10)));
 
@@ -309,8 +303,6 @@ function isLoaded(model) {
  */
 function odooChartToImage(model, figure, chartId) {
     const runtime = model.getters.getChartRuntime(chartId);
-    // wrap the canvas in a div with a fixed size because chart.js would
-    // fill the whole page otherwise
     const div = document.createElement("div");
     div.style.width = `${figure.width}px`;
     div.style.height = `${figure.height}px`;
@@ -321,7 +313,6 @@ function odooChartToImage(model, figure, chartId) {
     if (!("chartJsConfig" in runtime)) {
         return "";
     }
-    // we have to add the canvas to the DOM otherwise it won't be rendered
     document.body.append(div);
     runtime.chartJsConfig.plugins = [backgroundColorPlugin];
     // @ts-ignore
@@ -332,10 +323,6 @@ function odooChartToImage(model, figure, chartId) {
     return img;
 }
 
-/**
- * Custom chart.js plugin to set the background color of the canvas
- * https://github.com/chartjs/Chart.js/blob/8fdf76f8f02d31684d34704341a5d9217e977491/docs/configuration/canvas-background.md
- */
 const backgroundColorPlugin = {
     id: "customCanvasBackgroundColor",
     beforeDraw: (chart, args, options) => {

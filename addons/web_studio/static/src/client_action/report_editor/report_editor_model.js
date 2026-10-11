@@ -70,7 +70,6 @@ export class ReportEditorModel extends SignalStore {
             },
             attachment_use: { name: "attachment_use", type: "boolean" },
             attachment: { name: "attachment", type: "char" },
-            // fake field
             display_in_print_menu: { name: "display_in_print_menu", type: "boolean" },
         });
         this.reportActiveFields = markRaw({
@@ -89,7 +88,6 @@ export class ReportEditorModel extends SignalStore {
             binding_model_id: makeActiveField(),
             attachment_use: makeActiveField(),
             attachment: makeActiveField(),
-            // fake field
             display_in_print_menu: makeActiveField(),
         });
         this.reportEnv = {};
@@ -164,9 +162,7 @@ export class ReportEditorModel extends SignalStore {
     }
 
     setInEdition(value) {
-        // Reactivity limitation: if we used a setter, the reactivity will trigger the getter
-        // thus subscribing us to the key. This is not what we want here.
-        value = !!value; // enforce boolean
+        value = !!value;
         if (proxy(this)._isInEdition === value) {
             return;
         }
@@ -179,11 +175,6 @@ export class ReportEditorModel extends SignalStore {
     }
 
     _resetInternalArchs() {
-        // We do this by explicitly bypassing reactivity, we don't want any re-render doing this.
-        // _reportsArchs acts as flag, meaning that if one of the arch is not present
-        // the relevant function will fetch them. see @loadReportQweb and @loadReportHtml
-        // The object is emptied, not replaced: whoever read an arch is subscribed
-        // to this object, and the next arch written must reach them
         const archs = toRaw(toRaw(this)._reportArchs);
         for (const key of Object.keys(archs)) {
             delete archs[key];
@@ -201,7 +192,6 @@ export class ReportEditorModel extends SignalStore {
     }
 
     async loadReportData() {
-        // FIXME introduce alive?
         const data = await rpc("/web_studio/load_report_editor", {
             report_id: this.editedReportId,
             fields: Object.keys(omit(this.reportActiveFields, "display_in_print_menu")),

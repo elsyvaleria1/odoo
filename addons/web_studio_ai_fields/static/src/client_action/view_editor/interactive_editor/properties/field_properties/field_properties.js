@@ -6,7 +6,6 @@ import { FieldProperties } from "@web_studio/client_action/view_editor/interacti
 
 Object.assign(FieldProperties.components, { AiPrompt });
 
-// todo: ideally should apply them by default for ai fields
 const aiWidgetForFieldType = {
     char: "ai_char",
     text: "ai_text",

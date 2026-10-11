@@ -37,8 +37,6 @@ const ZOOM_MIN = 0.2;
 const ZOOM_MAX = 3;
 const CANVAS_MARGIN = 16;
 const CANVAS_MIN_HEIGHT = 420;
-// Small networks are drawn above their natural size rather than marooned in
-// the middle of a large canvas.
 const FIT_MAX_SCALE = 1.25;
 
 export class PartnerNetwork extends Component {
@@ -332,21 +330,6 @@ export class PartnerNetwork extends Component {
         }
     }
 
-    // Put the CONTACT BEING LOOKED AT in the middle, not the middle of the ink.
-    //
-    // transformToFitContent centres the content's bounding box, which is only
-    // the focus when the graph is balanced around it. It rarely is: open a
-    // contact who sits at the edge of someone else's family -- reached through
-    // one cousin, whose own subtree carries nine of the eleven contacts -- and
-    // the mass sits to one side, so the box centres on the hub and the contact
-    // whose page this is drifts to the rim.
-    //
-    // Fitting a box centred on the focus fixes that by construction: the focus
-    // is the origin of the layout, so it lands dead centre and empty space
-    // opens opposite whatever branch is heaviest. It costs a little scale --
-    // measured across three real networks, 125/125/109% became 125/114/99% --
-    // which is a fair price for the diagram answering the question it was
-    // opened to answer.
     fit() {
         const element = this.paper.el;
         const width = element.clientWidth;
@@ -363,8 +346,6 @@ export class PartnerNetwork extends Component {
             FIT_MAX_SCALE,
         );
         this.paper.scale(scale, scale);
-        // The focus sits at the layout's origin, and a point at the origin lands
-        // wherever the translation puts it, so this IS "centre the focus".
         this.paper.translate(width / 2, height / 2);
         this.state.zoom = scale;
     }

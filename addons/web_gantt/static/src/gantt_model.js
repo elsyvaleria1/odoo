@@ -136,11 +136,6 @@ export class GanttModel extends Model {
 
     static services = ["notification"];
 
-    // data and metaData are published whole by a fetch's single commit, and
-    // are then changed in place only ahead of a notify() (a closed row, a
-    // project's colour field): both are held raw, and reading either reads the
-    // revision notify() publishes.
-
     /** @returns {Data} */
     get data() {
         void this.updateEpoch;
@@ -165,8 +160,6 @@ export class GanttModel extends Model {
         this.notification = services.notification;
 
         this.data = {};
-        // copies: the view's modelParams are its props, and a reactive model
-        // writing into them would re-render the view and reload
         this.metaData = { ...params.metaData };
         this.displayParams = { ...params.displayParams };
 
@@ -175,8 +168,6 @@ export class GanttModel extends Model {
         /** @type {Set<RowId>} */
         this.closedRows = markRaw(new Set());
 
-        // concurrency management. A superseded fetch rejects rather than
-        // hanging, so a mutator awaiting its reload always settles.
         this.keepLast = new KeepLast({ rejectSuperseded: true });
         this.mutex = new Mutex();
         /** @type {MetaData | null} */
@@ -219,10 +210,6 @@ export class GanttModel extends Model {
 
         await this._fetchData(this._buildMetaData(params));
     }
-
-    //-------------------------------------------------------------------------
-    // Public
-    //-------------------------------------------------------------------------
 
     get hasMultiCreate() {
         return (
@@ -344,11 +331,6 @@ export class GanttModel extends Model {
         return Object.assign({}, this.searchParams.context, context);
     }
 
-    /**
-     * How many periods of the picked range are shown, and how many of them sit
-     * before the one holding the focus date. Consumers showing one period
-     * override this rather than `rangeAround`.
-     */
     get rangeSpan() {
         return { before: 1, count: 3 };
     }
@@ -524,7 +506,6 @@ export class GanttModel extends Model {
         for (const fieldName in data) {
             const field = this.metaData.fields[fieldName];
             if (records.every((rec) => isSameValue(rec, field))) {
-                // All the records already have the given value.
                 delete trimmed[fieldName];
             }
         }
@@ -552,10 +533,6 @@ export class GanttModel extends Model {
      * @param {(result: any) => any} [callback]
      */
     async reschedule(ids, schedule, callback) {
-        // `data` is a schedule snapshot taken at drag-start (client-side
-        // only): there is no write_date/version check against the record's
-        // live server state, so a concurrent edit from another tab/user is
-        // silently overwritten -- last write wins, with no conflict warning.
         let data, context;
         [ids, data, context] = this._getRescheduleData(ids, schedule);
         log.logic("reschedule", () => ({
@@ -644,10 +621,6 @@ export class GanttModel extends Model {
         await this.fetchData({ pagerLimit: limit, pagerOffset: offset });
     }
 
-    //-------------------------------------------------------------------------
-    // Protected
-    //-------------------------------------------------------------------------
-
     /**
      * Return a copy of this.metaData or of the last copy, extended with optional
      * params. This is useful for async methods that need to modify this.metaData,
@@ -701,15 +674,12 @@ export class GanttModel extends Model {
         }
 
         if ("rangeId" in params || "startDate" in params || "stopDate" in params) {
-            // Another range is another group set: an offset kept from the
-            // previous one pages past the end of it.
             if (!("pagerOffset" in params)) {
                 this._nextMetaData.pagerOffset = 0;
             }
             if (this._nextMetaData.rangeId === "custom") {
                 this._nextMetaData.scale = getScaleForCustomRange(this._nextMetaData);
             }
-            // we assume that scale, startDate, and stopDate are already set in this._nextMetaData
             Object.assign(
                 this._nextMetaData,
                 normalizeRange({
@@ -791,10 +761,8 @@ export class GanttModel extends Model {
         } catch (error) {
             if (error instanceof SupersededError) {
                 endFetch({ superseded: true });
-                // The fetch that superseded this one commits its own params.
                 return;
             }
-            // The params of a fetch that failed must not seed the next build.
             this._nextMetaData = null;
             endFetch({ failed: true });
             throw error;
@@ -934,20 +902,10 @@ export class GanttModel extends Model {
         /** @type {Row[]} */
         const rows = [];
 
-        // Some groups might be empty (thanks to expand_groups), so we can't
-        // simply group the data, we need to keep all returned groups
         const groupedByField = groupedBy[0];
-        // A Map keeps the server's group order; a plain object would hoist
-        // every integer-like key (an integer field, a numeric selection key)
-        // to the front in ascending order.
         const currentLevelGroups = new Map();
         for (const g of groups) {
             if (g[groupedByField] === undefined) {
-                // we want to group the groups with undefined values for groupedByField with the ones
-                // with false value for the same field.
-                // we also want to be sure that stringification keeps groupedByField:
-                // JSON.stringify({ key: undefined }) === "{}"
-                // see construction of id below.
                 g[groupedByField] = false;
             }
             const key = String(g[groupedByField]);
@@ -965,7 +923,7 @@ export class GanttModel extends Model {
             part[groupedByField] = value;
             const fakeGroup = [...parentGroup, part];
             const id = JSON.stringify(fakeGroup);
-            const resId = Array.isArray(value) ? value[0] : value; // not really a resId
+            const resId = Array.isArray(value) ? value[0] : value;
             const fromServer = subGroups.some((g) => g.fromServer);
             const recordIds = [];
             for (const g of subGroups) {
@@ -979,7 +937,7 @@ export class GanttModel extends Model {
                 groupLevel,
                 id,
                 name: this._getRowName(metaData, groupedByField, value),
-                resId, // not really a resId
+                resId,
                 recordIds: unique(recordIds),
             };
             if (generateSubRow) {
@@ -1015,14 +973,9 @@ export class GanttModel extends Model {
             this.searchParams.domain,
             [
                 "&",
-                // Each leaf is serialised as the field IT constrains: the two
-                // predicates used to be crossed, which only agreed with itself
-                // while both fields shared a type.
                 [dateStartField, "<", serializeDateForField(startField, globalStop)],
                 [
                     dateStopField,
-                    // A date-typed stop covers its whole day, so a record
-                    // ending on the first visible day is still in range.
                     stopField.type === "date" ? ">=" : ">",
                     serializeDateForField(stopField, globalStart),
                 ],
@@ -1147,9 +1100,6 @@ export class GanttModel extends Model {
         };
     }
 
-    // `viewId` alone is not a key: it is `false` for every inline or dialog
-    // gantt, so two such views on two different models shared one stored
-    // preference. The model name disambiguates them.
     _getLocalStorageKey() {
         return `rangeOf-${this.metaData.resModel}-viewId-${this.viewContext.config.viewId}`;
     }
@@ -1187,7 +1137,6 @@ export class GanttModel extends Model {
         return this._getStoredChoice(this._getLocalStorageKey(), metaData.ranges);
     }
 
-    /** The value stored under `key`, if it names an entry of `allowed`. */
     _getStoredChoice(key, allowed) {
         const stored = browser.localStorage.getItem(key);
         return Object.hasOwn(allowed, stored) ? stored : null;

@@ -1,6 +1,3 @@
-// Driver screen plugin: the customer at the door confirms a full delivery with a
-// code sent to their own channels. Registered for stock_fleet_trace's app.js.
-
 const ROUTE = "/stock_fleet_trace/driver/confirm_code";
 
 function confirmCode(kind, stop, api) {
@@ -73,8 +70,6 @@ function confirmCode(kind, stop, api) {
         T.confirm_code_send,
     );
     input.hidden = true;
-    // the code box sits in the Delivered form: Enter checks the code, it does
-    // not file the delivery
     input.addEventListener("keydown", (ev) => {
         if (ev.key === "Enter") {
             ev.preventDefault();

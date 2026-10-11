@@ -50,10 +50,8 @@ test("should delete text forward", async () => {
     const p = editor.editable.querySelector("p");
     editor.shared.selection.setSelection({ anchorNode: p, anchorOffset: 1 });
     await keyPress(editor, "delete");
-    // paragraphs get merged
     expect(p).toHaveInnerHTML("abcdef");
     await keyPress(editor, "delete");
-    // following character gets deleted
     expect(p).toHaveInnerHTML("abcef");
 });
 
@@ -77,7 +75,6 @@ test("should set contenteditable to false on .o_not_editable elements", async ()
     const div = editor.editable.querySelector("div.o_not_editable");
     expect(div).toHaveAttribute("contenteditable", "false");
 
-    // Add a snippet-like element
     const snippetHtml = `
         <section class="o_not_editable">
             <p>abc</p>
@@ -86,7 +83,6 @@ test("should set contenteditable to false on .o_not_editable elements", async ()
     const snippet = parseHTML(editor.document, snippetHtml).firstChild;
     div.after(snippet);
     editor.shared.history.addStep();
-    // Normalization should set contenteditable to false
     expect(snippet).toHaveAttribute("contenteditable", "false");
 });
 
@@ -102,10 +98,8 @@ test("should preserve iframe in the toolbar's font size input", async () => {
     const editor = getEditor();
     const p = editor.editable.querySelector("p");
     const p2 = p.nextElementSibling;
-    // Activate the text block snippet.
     click(p);
 
-    // Select the word "more".
     editor.shared.selection.setSelection({
         anchorNode: p2.firstChild,
         anchorOffset: 5,
@@ -113,18 +107,15 @@ test("should preserve iframe in the toolbar's font size input", async () => {
         focusOffset: 9,
     });
     await waitFor(".o-we-toolbar");
-    // Get the font size selector input.
     let iframeEl = queryOne(".o-we-toolbar [name='font_size_selector'] iframe");
     let inputEl = iframeEl.contentWindow.document?.querySelector("input");
-    // Change the font style from paragraph to paragraph.
     await contains(".o-we-toolbar .btn[name='font'].dropdown-toggle").click();
     await waitFor(".btn[name='font'].dropdown-toggle.show");
     await contains(".dropdown-menu [name='p']").click();
     iframeEl = queryOne(".o-we-toolbar [name='font_size_selector'] iframe");
     let newInputEl = iframeEl.contentWindow.document?.querySelector("input");
-    expect(newInputEl).toBe(inputEl); // The input shouldn't have been changed.
+    expect(newInputEl).toBe(inputEl);
 
-    // Select the first word "text".
     editor.shared.selection.setSelection({
         anchorNode: p.firstChild,
         anchorOffset: 5,
@@ -132,16 +123,14 @@ test("should preserve iframe in the toolbar's font size input", async () => {
         focusOffset: 9,
     });
     await waitFor(".o-we-toolbar");
-    // Get the font size selector input.
     iframeEl = queryOne(".o-we-toolbar [name='font_size_selector'] iframe");
     inputEl = iframeEl.contentWindow.document?.querySelector("input");
-    // Change the font style from paragraph to header 2.
     await contains(".o-we-toolbar .btn[name='font'].dropdown-toggle").click();
     await waitFor(".btn[name='font'].dropdown-toggle.show");
     await contains(".dropdown-menu [name='h2']").click();
     iframeEl = queryOne(".o-we-toolbar [name='font_size_selector'] iframe");
     newInputEl = iframeEl.contentWindow.document?.querySelector("input");
-    expect(newInputEl).toBe(inputEl); // The input shouldn't have been changed.
+    expect(newInputEl).toBe(inputEl);
 });
 
 test("should apply default table classes on paste", async () => {
@@ -210,8 +199,6 @@ describe("toolbar dropdowns", () => {
         manuallyDispatchProgrammaticEvent(target, "mousedown");
         manuallyDispatchProgrammaticEvent(target, "focus");
         await animationFrame();
-        // Dropdown menu needs another animation frame to be closed after the
-        // toolbar is closed.
         await animationFrame();
         expect(target).toBeVisible();
         manuallyDispatchProgrammaticEvent(target, "mouseup");
@@ -344,7 +331,6 @@ describe("font types", () => {
         `);
         const editor = getEditor();
         const emptyStructureEl = editor.editable.querySelector(".oe_empty");
-        // The snippet is surrounded by new line text nodes.
         expect(emptyStructureEl.childNodes.length).toBe(3);
         await contains(":iframe .test_snippet").click();
         await contains(".overlay .oe_snippet_remove").click();

@@ -98,8 +98,6 @@ export function parse(string) {
             try {
                 params[key] = decodefield(value);
             } catch (error) {
-                // RFC 6266 4.3: an undecodable ext-value is ignored when the
-                // plain parameter names the file; alone, it is still an error
                 undecodable[key] = /** @type {Error} */ (error);
             }
             continue;

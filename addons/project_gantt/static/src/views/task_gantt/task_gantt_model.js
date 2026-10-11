@@ -11,8 +11,6 @@ const MAP_MANY_2_MANY_FIELDS = [
 ];
 
 export class TaskGanttModel extends TaskGanttModelCommon {
-    // Public
-
     getDialogContext() {
         const context = super.getDialogContext(...arguments);
         this._replaceSpecialMany2manyKeys(context);
@@ -69,8 +67,6 @@ export class TaskGanttModel extends TaskGanttModelCommon {
             context,
         });
     }
-
-    // Protected
 
     /** @override */
     async _fetchHighlightIds() {

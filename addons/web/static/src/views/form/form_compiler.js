@@ -122,7 +122,6 @@ export class FormCompiler extends ViewCompiler {
     compile(key, params = {}) {
         const compiled = super.compile(/** @type {any} */ (key), params);
         const root = compiled.children[0];
-        // a plain <t> renders no element to reference
         if (!params.isSubView && (root.tagName !== "t" || root.hasAttribute("t-tag"))) {
             root.setAttribute("t-ref", "__comp__.rootRef");
         }
@@ -331,8 +330,6 @@ export class FormCompiler extends ViewCompiler {
         const replace = el.getAttribute("replace");
         if (replace && !exprToBoolean(replace)) {
             footer.append(
-                // its t-call-slot reads the slots from the context's component
-                // node, which the arch's own context does not expose
                 createElement("t", {
                     "t-call": "web.DefaultButtonsSlot",
                     "t-call-context": "{ __owl__: { props: __comp__.props } }",

@@ -27,8 +27,6 @@ export class DisableSnippetsPlugin extends Plugin {
         this.snippetModel = this.config.snippetModel;
         this._disableSnippets = this.disableUndroppableSnippets.bind(this);
 
-        // TODO only for website ?
-        // TODO improve to add case when "+" menu appears (resize event ?)
         const editableDropdownEls = this.editable.querySelectorAll(
             ".dropdown-menu.o_editable",
         );
@@ -64,21 +62,14 @@ export class DisableSnippetsPlugin extends Plugin {
         this.disableUndroppableSnippets();
     }
 
-    /**
-     * Makes the snippet that cannot be dropped anywhere appear disabled.
-     * TODO: trigger the computation in the situation that needs it.
-     */
     disableUndroppableSnippets() {
         const editableAreaEls =
             this.dependencies.setup_editor_plugin.getEditableAreas();
         const rootEl = this.dependencies.dropzone.getDropRootElement();
         const dropAreasBySelector = this.getDropAreas(editableAreaEls, rootEl);
 
-        // A snippet can only be dropped next/inside elements that are editable
-        // and that do not explicitly block them.
         const checkSanitize = (el, snippetEl) => {
             let forbidSanitize = false;
-            // Check if the snippet is sanitized/contains such snippets.
             for (const el of [
                 snippetEl,
                 ...snippetEl.querySelectorAll("[data-snippet"),
@@ -111,7 +102,6 @@ export class DisableSnippetsPlugin extends Plugin {
             );
         };
 
-        // Disable the snippets that cannot be dropped.
         const snippetGroups = this.snippetModel.snippetsByCategory["snippet_groups"];
         let areGroupsDisabled = false;
         if (snippetGroups.length && !canDrop(snippetGroups[0])) {
@@ -134,7 +124,6 @@ export class DisableSnippetsPlugin extends Plugin {
             snippet.isDisabled = !canDrop(snippet);
         });
 
-        // Disable the groups containing only disabled snippets.
         if (!areGroupsDisabled) {
             snippetGroups.forEach((snippetGroup) => {
                 if (snippetGroup.groupName !== "custom") {

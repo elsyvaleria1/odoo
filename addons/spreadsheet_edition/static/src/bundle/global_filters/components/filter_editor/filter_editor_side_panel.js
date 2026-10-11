@@ -24,10 +24,6 @@ const { useLocalStore } = stores;
  * @property {string} label label of the filter
  */
 
-/**
- * This is the side panel to define/edit a global filter.
- * It can be of several types: text, date, relation, boolean, selection and numeric.
- */
 export class AbstractFilterEditorSidePanel extends Component {
     static template = "";
     static components = {

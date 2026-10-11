@@ -3,7 +3,6 @@ import { rpc } from "@web/core/network";
 import { session } from "@web/session";
 import mobile from "@web_mobile/js/services/core";
 
-//Send info only if client is mobile
 if (mobile.methods.getFCMKey) {
     const registerDevice = function (fcm_project_id) {
         mobile.methods

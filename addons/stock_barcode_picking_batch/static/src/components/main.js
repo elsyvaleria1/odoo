@@ -5,10 +5,6 @@ import BarcodePickingBatchModel from "@stock_barcode_picking_batch/models/barcod
 import { patch } from "@web/core/utils/patch";
 
 patch(MainComponent.prototype, {
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
     confirm: function (ev) {
         ev.stopPropagation();
         this.model.confirmSelection();
@@ -35,10 +31,6 @@ patch(MainComponent.prototype, {
     get displayActionButtons() {
         return super.displayActionButtons && !this.isConfiguring;
     },
-
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
 
     _getBarcodeModel() {
         if (this.resModel === "stock.picking.batch") {

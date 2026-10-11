@@ -4782,7 +4782,6 @@ test("user without permission cannot drag and drop a record thus sequence remain
     expect(".o_kanban_record:first").toHaveText("yop", {
         message: "Do not let the user d&d the record without permission",
     });
-    // the refusal is reported in a dialog, dismissed before the next drag
     await contains(".o_dialog .btn-close").click();
 
     await contains(".o_kanban_record").dragAndDrop(".o_kanban_record:nth-child(3)");
@@ -10664,7 +10663,6 @@ test(`kanban should ask to scroll to top on page changes (mobile)`, async () => 
     await pagerPrevious();
     expect.verifySteps(["scroll", "scroll"]);
 
-    // a page is built a screenful at a time
     await waitFor(".o_kanban_record:not(.o_kanban_ghost):eq(39)");
     await contains(".o_kanban_view").scroll({ top: 250 });
     expect(".o_kanban_view").toHaveProperty("scrollTop", 250);
@@ -14481,7 +14479,6 @@ test("drag and drop records and quickly open a record", async () => {
     );
     await contains(".o_kanban_record:eq(0)").click();
     expect(".o_kanban_view").toHaveCount(1);
-    // The second move waits for the first save and its possible rollback.
     expect(".o_kanban_group:first-child .o_kanban_record").toHaveCount(1);
     expect(".o_kanban_group:nth-child(2) .o_kanban_record").toHaveCount(3);
     expect.verifySteps(["web_save"]);
@@ -15519,7 +15516,6 @@ test("scroll position is restored when coming back to kanban view (grouped, mobi
     });
 
     expect(".o_kanban_view").toHaveCount(1);
-    // a column is built a screenful at a time
     await waitFor(".o_kanban_group:eq(2) .o_kanban_record:eq(18)");
     queryOne(".o_kanban_renderer").scrollLeft = 656;
     queryAll(".o_kanban_group")[2].scrollTop = 200;
@@ -15583,7 +15579,6 @@ test("column scroll position is restored when grouped by a many2many (mobile)", 
     });
 
     expect(".o_kanban_group").toHaveCount(4);
-    // a column is built a screenful at a time
     await waitFor(".o_kanban_group:eq(2) .o_kanban_record:eq(18)");
     queryAll(".o_kanban_group")[2].scrollTop = 200;
 

@@ -39,14 +39,10 @@ export class ListDetailsSidePanel extends Component {
             this.isModelValid = dataSource.isModelValid();
             if (this.isModelValid) {
                 this.modelDisplayName = await dataSource.getModelLabel();
-                // Store the fields here because the data source can be reset when updating the list.
-                // Forcing a reload with onWillUpdateProps would introduce flickering
-                // and the fields never change anyway.
                 this.listFields = dataSource.getFields();
             }
         };
         onWillStart(async () => {
-            // it's assumed `this.props.listId` never changes (t-key is required when using this component)
             await loadData(this.props.listId);
         });
         useHighlights(this);

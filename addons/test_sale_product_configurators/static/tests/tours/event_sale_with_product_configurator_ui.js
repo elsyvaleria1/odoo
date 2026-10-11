@@ -44,7 +44,7 @@ registry.category("web_tour.tours").add("event_sale_with_product_configurator_to
             trigger: "body:not(:has(.modal))",
         },
         {
-            trigger: 'td[name="price_subtotal"]:contains("16.50")', // wait for the optional product line
+            trigger: 'td[name="price_subtotal"]:contains("16.50")',
         },
         ...tourUtils.addProduct("Registration Event (TEST variants)"),
         {
@@ -87,7 +87,7 @@ registry.category("web_tour.tours").add("event_sale_with_product_configurator_to
             trigger: "body:not(:has(.modal))",
         },
         {
-            trigger: 'td[name="price_subtotal"]:contains("150.00")', // wait for the adult tickets line
+            trigger: 'td[name="price_subtotal"]:contains("150.00")',
         },
         ...tourUtils.addProduct("Registration Event (TEST variants)"),
         {

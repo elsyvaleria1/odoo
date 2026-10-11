@@ -202,7 +202,6 @@ beforeEach(() => {
 describe("field HTML", () => {
     beforeEach(() => {
         patchWithCleanup(MassMailingIframe.prototype, {
-            // Css assets are not needed for these tests.
             loadIframeAssets() {
                 return {
                     "mass_mailing.assets_inside_builder_iframe": {
@@ -247,19 +246,12 @@ describe("field HTML", () => {
         await waitFor(".o_mass_mailing_iframe_wrapper iframe:not(.d-none)");
         const tElement = await waitFor(":iframe t", { timeout: 3000 });
 
-        // assert that we are in readonly mode (sanity check)
         expect(":iframe .o_mass_mailing_value.o_readonly").toHaveCount(1);
 
-        // assert that tElement style has inline attibute
         expect(tElement).toHaveAttribute("data-oe-t-inline", "true");
     });
 
     test("builder in modal -- owl reconciliation iframe unload", async () => {
-        // Related to ad-hoc fix where in modal, some editor's popovers
-        // get to be spawned before the modal in the DOM and in OWL
-        // When those popovers are killed, OWL tries to reconcile its element List
-        // in OverlayContainer, displaces the node that contains the iframe
-        // and the editor subsequently crashes
         const base64Img =
             "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII=";
         onRpc("/html_editor/get_image_info", () => ({
@@ -346,7 +338,6 @@ describe("field HTML", () => {
             resIds: [3, 4, 5],
             resId: 3,
         });
-        // readonly default
         expect(await waitFor(":iframe .o_layout", { timeout: 3000 })).toHaveClass(
             "o_default_theme",
         );
@@ -356,7 +347,6 @@ describe("field HTML", () => {
         expect(fixture.querySelectorAll(".o_mass_mailing-builder_sidebar")).toHaveCount(
             0,
         );
-        // editable basic
         await contains(`.o_pager_next`).click();
         await waitFor(
             ".o_mass_mailing_iframe_wrapper :iframe .o_layout.o_basic_theme:only-child",
@@ -369,7 +359,6 @@ describe("field HTML", () => {
         expect(fixture.querySelectorAll(".o_mass_mailing-builder_sidebar")).toHaveCount(
             0,
         );
-        // editable builder
         await contains(`.o_pager_next`).click();
         await waitFor(
             ".o_mass_mailing_iframe_wrapper :iframe .o_layout.o_empty_theme:only-child",
@@ -382,7 +371,6 @@ describe("field HTML", () => {
         expect(fixture.querySelectorAll(".o_mass_mailing-builder_sidebar")).toHaveCount(
             1,
         );
-        // readonly default
         await contains(`.o_pager_next`).click();
         await waitFor(
             ".o_mass_mailing_iframe_wrapper :iframe .o_layout.o_default_theme:only-child",

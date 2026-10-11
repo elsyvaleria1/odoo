@@ -117,14 +117,11 @@ test("save actions to dashboard", async () => {
 
     expect(".o_list_view").toHaveCount(1, { message: "should display the list view" });
 
-    // Sort the list
     await contains(".o_column_sortable").click();
 
-    // Group It
     await toggleSearchBarMenu();
     await selectGroup("foo");
 
-    // add this action to dashboard
     await hover(".o_add_to_board button.dropdown-toggle");
     await animationFrame();
     await contains(queryOne("input", { root: getAddToDashboardMenu() })).edit(
@@ -137,7 +134,6 @@ test("save actions to dashboard", async () => {
 });
 
 test("save two searches to dashboard", async () => {
-    // the second search saved should not be influenced by the first
     expect.assertions(2);
 
     Partner._views = {
@@ -177,30 +173,24 @@ test("save two searches to dashboard", async () => {
     });
 
     let filter_count = 0;
-    // Add a first filter
     await toggleSearchBarMenu();
     await toggleMenuItem("Filter on a");
 
-    // Add it to dashboard
     await hover(".o_add_to_board button.dropdown-toggle");
     await animationFrame();
     await contains(queryOne("button", { root: getAddToDashboardMenu() })).click();
 
-    // Remove it
     await removeFacet("Filter on a");
 
-    // Add the second filter
     await toggleSearchBarMenu();
     await toggleMenuItem("Filter on b");
 
-    // Add it to dashboard
     await hover(".o_add_to_board button.dropdown-toggle");
     await animationFrame();
     await contains(queryOne("button", { root: getAddToDashboardMenu() })).click();
 });
 
 test("save an action domain to dashboard", async () => {
-    // View domains are to be added to the dashboard domain
     expect.assertions(1);
 
     const viewDomain = ["name", "ilike", "a"];
@@ -235,14 +225,11 @@ test("save an action domain to dashboard", async () => {
         domain: [viewDomain],
     });
 
-    // Add a filter
     await toggleSearchBarMenu();
     await toggleMenuItem("Filter");
 
-    // Add it to dashboard
     await hover(".o_add_to_board button.dropdown-toggle");
     await animationFrame();
-    // add
     await contains(queryOne("button", { root: getAddToDashboardMenu() })).click();
 });
 
@@ -263,7 +250,6 @@ test("add to dashboard with no action id", async () => {
     await toggleSearchBarMenu();
     expect(".o_add_to_board").toHaveCount(0);
 
-    // Sanity check
     await getService("action").doAction({
         id: 1,
         res_model: "partner",
@@ -278,8 +264,6 @@ test("Add a view to dashboard (keynav)", async () => {
     Partner._views = {
         pivot: '<pivot><field name="foo"/></pivot>',
     };
-
-    // makes mouseEnter work
 
     onRpc("/board/add_to_dashboard", () => {
         expect.step("add to board");
@@ -320,8 +304,6 @@ test("Add a view with dynamic domain", async () => {
             </search>`,
     };
 
-    // makes mouseEnter work
-
     onRpc("/board/add_to_dashboard", async (request) => {
         const { params: args } = await request.json();
         expect(args.domain).toEqual(["&", ["int_field", "<=", 3], ["user_id", "=", 7]]);
@@ -359,7 +341,6 @@ test("Add a view to dashboard doesn't save default filters", async () => {
             </search>`,
     };
 
-    // makes mouseEnter work
     serverState.debug = "1";
 
     onRpc("/board/add_to_dashboard", async (request) => {
@@ -392,16 +373,13 @@ test("Add a view to dashboard doesn't save default filters", async () => {
 
     await switchView("pivot");
 
-    // Remove default filter ['foo', '!=', 'yop']
     await removeFacet("filter");
 
-    // Add a filter ['foo', '=', 'yop']
     await toggleSearchBarMenu();
     await openAddCustomFilterDialog();
     await contains(dsHelpers.SELECTORS.debugArea).edit(`[("foo", "=", "yop")]`);
     await contains(".modal footer button").click();
 
-    // Add to dashboard
     await toggleSearchBarMenu();
     await hover(".o_add_to_board button.dropdown-toggle");
     await animationFrame();
@@ -430,11 +408,9 @@ test("Add to my dashboard is not available in form views", async () => {
 
     expect(".o_list_view").toHaveCount(1, { message: "should display the list view" });
 
-    // sanity check
     await contains(".o_cp_action_menus .dropdown-toggle").click();
     expect(".o-dropdown--menu .o_add_to_board").toHaveCount(1);
 
-    // open form view
     await contains(".o_data_cell").click();
     expect(".o_form_view").toHaveCount(1);
 

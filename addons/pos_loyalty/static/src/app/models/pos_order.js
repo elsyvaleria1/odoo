@@ -45,7 +45,6 @@ function computeFreeQuantity(numberItems, n, m) {
     const factor = Math.trunc(numberItems / (n + m));
     const free = factor * m;
     const charged = numberItems - free;
-    // adjust the calculated free quantities
     const x = (factor + 1) * n;
     const y = x + (factor + 1) * m;
     const adjustment = x <= charged && charged < y ? charged - x : 0;
@@ -68,8 +67,6 @@ patch(PosOrder, {
 patch(PosOrder.prototype, {
     setup() {
         super.setup(...arguments);
-        // Always start with invalid coupons so that coupon for this
-        // order is properly assigned. @see _checkMissingCoupons
         this.invalidCoupons = true;
     },
     initState() {
@@ -84,7 +81,6 @@ patch(PosOrder.prototype, {
         if (Object.keys(this.uiState.couponPointChanges).length === 0) {
             for (const [key, pe] of Object.entries(this.uiState.couponPointChanges)) {
                 if (!this.models["loyalty.program"].get(pe.program_id)) {
-                    // Remove points changes for programs that are not available anymore.
                     delete this.uiState.couponPointChanges[key];
                     continue;
                 }
@@ -125,8 +121,6 @@ patch(PosOrder.prototype, {
         const oldPartner = this.getPartner();
         super.setPartner(partner);
         if (this.uiState.couponPointChanges && oldPartner !== this.getPartner()) {
-            // Remove couponPointChanges for cards in is_nominative programs.
-            // This makes sure that counting of points on loyalty and ewallet programs is updated after partner changes.
             const loyaltyProgramIds = new Set(
                 this.models["loyalty.program"]
                     .filter((program) => program.is_nominative)
@@ -148,7 +142,6 @@ patch(PosOrder.prototype, {
             super.waitForPushOrder(...arguments)
         );
     },
-    //@override
     _getIgnoredProductIdsTotalDiscount() {
         const productIds = super._getIgnoredProductIdsTotalDiscount(...arguments);
         const giftCardPrograms = this.models["loyalty.program"].filter(
@@ -199,8 +192,6 @@ patch(PosOrder.prototype, {
         const oldPricelist = this.pricelist_id;
         super.setPricelist(...arguments);
         if (this.uiState.couponPointChanges && oldPricelist !== pricelist) {
-            // Remove couponPointChanges for cards in no longer available programs.
-            // This makes sure that counting of points on loyalty and ewallet programs is updated after pricelist changes.
             const loyaltyProgramIds = new Set(
                 this.models["loyalty.program"]
                     .filter(
@@ -231,9 +222,6 @@ patch(PosOrder.prototype, {
         }
         this._code_activated_coupon_ids = [["clear"]];
     },
-    /**
-     * Refreshes the currently applied rewards, if they are not applicable anymore they are removed.
-     */
     _updateRewardLines() {
         if (!this.lines.length) {
             return;
@@ -244,7 +232,7 @@ patch(PosOrder.prototype, {
         }
         const productRewards = [];
         const otherRewards = [];
-        const paymentRewards = []; // Gift card and ewallet rewards are considered payments and must stay at the end
+        const paymentRewards = [];
         for (const line of rewardLines) {
             const claimedReward = {
                 reward: line.reward_id,
@@ -297,7 +285,6 @@ patch(PosOrder.prototype, {
         });
         let changed = false;
         for (const claimedReward of allRewardsMerged) {
-            // For existing coupons check that they are still claimed, they can exist in either `couponPointChanges` or `codeActivatedCoupons`
             if (
                 !this._code_activated_coupon_ids.find(
                     (coupon) => coupon.id === claimedReward.coupon_id,
@@ -316,7 +303,6 @@ patch(PosOrder.prototype, {
                 continue;
             }
 
-            //If there is only one possible reward we try to claim the most possible out of it
             if (
                 claimedReward.reward.reward_product_ids?.length === 1 &&
                 allRewardsMerged.filter(
@@ -353,13 +339,11 @@ patch(PosOrder.prototype, {
      * @returns {Array<LoyaltyStat>}
      */
     getLoyaltyPoints() {
-        // map: couponId -> LoyaltyPoints
         const loyaltyPoints = {};
         for (const pointChange of Object.values(this.uiState.couponPointChanges)) {
             const { coupon_id, points, program_id } = pointChange;
             const program = this.models["loyalty.program"].get(program_id);
             if (program.program_type !== "loyalty") {
-                // Not a loyalty program, skip
                 continue;
             }
             const loyaltyCard =
@@ -385,9 +369,7 @@ patch(PosOrder.prototype, {
             loyaltyPoints[coupon_id] = {
                 won: parseFloat(won.toFixed(2)),
                 spent: parseFloat(spent.toFixed(2)),
-                // Display total when order is ongoing.
                 total: parseFloat(total.toFixed(2)),
-                // Display balance when order is done.
                 balance: parseFloat(balance.toFixed(2)),
                 name,
                 program,
@@ -432,33 +414,21 @@ patch(PosOrder.prototype, {
         }
         return res;
     },
-    /**
-     * Checks if a reward line is valid for points correction.
-     *
-     * The function evaluates three conditions:
-     * 1. The reward type must be 'product'.
-     * 2. The reward line must be part of the rule.
-     * 3. The reward line and the rule must be associated with the same program.
-     */
     _validForPointsCorrection(reward, line, rule) {
-        // Check if the reward type is free product
         if (reward.reward_type !== "product") {
             return false;
         }
 
-        // Check if the rule's reward point mode is order then not valid for correction
         if (rule.reward_point_mode === "order") {
             return false;
         }
 
-        // Check if the reward line is part of the rule
         if (
             !(rule.any_product || rule.validProductIds.has(line._reward_product_id?.id))
         ) {
             return false;
         }
 
-        // Check if the reward line and the rule are associated with the same program
         if (rule.program_id.id !== reward.program_id.id) {
             return false;
         }
@@ -481,7 +451,6 @@ patch(PosOrder.prototype, {
                 ) {
                     points += pe.points;
                 }
-                // couponPointChanges is not supposed to have a coupon multiple times
                 return true;
             }
             return false;
@@ -534,7 +503,6 @@ patch(PosOrder.prototype, {
         return true;
     },
     isLineValidForLoyaltyPoints(line) {
-        // This method should be overriden in other modules
         return true;
     },
     /**
@@ -556,7 +524,6 @@ patch(PosOrder.prototype, {
             const reward = line.reward_id;
             const isDiscount = reward && reward.reward_type === "discount";
             const rewardProgram = reward && reward.program_id;
-            // Skip lines for automatic discounts.
             if (isDiscount && rewardProgram.trigger === "auto") {
                 continue;
             }
@@ -565,12 +532,10 @@ patch(PosOrder.prototype, {
                 continue;
             }
             for (const program of programs) {
-                // Skip lines for the current program's discounts.
                 if (isDiscount && rewardProgram.id === program.id) {
                     continue;
                 }
                 for (const rule of program.rule_ids) {
-                    // Skip lines to which the rule doesn't apply.
                     if (
                         rule.any_product ||
                         rule.validProductIds.has(line.product_id.id)
@@ -610,7 +575,6 @@ patch(PosOrder.prototype, {
                     continue;
                 }
                 let totalProductQty = 0;
-                // Only count points for paid lines.
                 const qtyPerProduct = {};
                 let orderedProductPaid = 0;
                 for (const line of orderLines) {
@@ -625,7 +589,6 @@ patch(PosOrder.prototype, {
                                     )))) &&
                         !line.ignoreLoyaltyPoints({ program })
                     ) {
-                        // We only count reward products from the same program to avoid unwanted feedback loops
                         if (line.is_reward_line) {
                             const reward = line.reward_id;
                             if (
@@ -660,8 +623,6 @@ patch(PosOrder.prototype, {
                     }
                 }
                 if (totalProductQty < rule.minimum_qty) {
-                    // Should also count the points from negative quantities.
-                    // For example, when refunding an ewallet payment. See TicketScreen override in this addon.
                     continue;
                 }
                 if (!(program.id in pointsForProgramsCountedRules)) {
@@ -673,7 +634,6 @@ patch(PosOrder.prototype, {
                     rule.reward_point_split &&
                     rule.reward_point_mode !== "order"
                 ) {
-                    // In this case we count the points per rule
                     if (rule.reward_point_mode === "unit") {
                         splitPoints.push(
                             ...Array.apply(null, Array(totalProductQty)).map((_) => ({
@@ -717,11 +677,9 @@ patch(PosOrder.prototype, {
                         }
                     }
                 } else {
-                    // In this case we add on to the global point count
                     if (rule.reward_point_mode === "order") {
                         points += rule.reward_point_amount;
                     } else if (rule.reward_point_mode === "money") {
-                        // NOTE: unlike in sale_loyalty this performs a round half-up instead of round down
                         points += ProductPrice.round(
                             rule.reward_point_amount * orderedProductPaid,
                         );
@@ -828,8 +786,6 @@ patch(PosOrder.prototype, {
                 continue;
             }
             if (program.trigger === "with_code") {
-                // For coupon programs, the rules become conditions.
-                // Points to purchase rewards will only come from the scanned coupon.
                 if (!this._canGenerateRewards(program, totalWithTax, totalWithoutTax)) {
                     continue;
                 }
@@ -845,7 +801,6 @@ patch(PosOrder.prototype, {
                 if (points < reward.required_points) {
                     continue;
                 }
-                // Skip if the reward program is of type 'coupons' and there is already an reward orderline linked to the current reward to avoid multiple reward apply
                 if (
                     reward.program_id.program_type === "coupons" &&
                     this.lines.find(
@@ -857,7 +812,6 @@ patch(PosOrder.prototype, {
                 if (auto && this.uiState.disabledRewards.has(reward.id)) {
                     continue;
                 }
-                // Try to filter out rewards that will not be claimable anyway.
                 if (
                     reward.is_global_discount &&
                     reward.discount <= globalDiscountPercent
@@ -932,7 +886,7 @@ patch(PosOrder.prototype, {
             cost: args["cost"] || null,
         });
         if (!Array.isArray(rewardLines)) {
-            return rewardLines; // Returned an error.
+            return rewardLines;
         }
         if (!rewardLines.length) {
             return _t("The reward could not be applied.");
@@ -955,9 +909,6 @@ patch(PosOrder.prototype, {
             price_type: "manual",
         });
     },
-    /**
-     * Checks if there are any existing manual changes or new coupon additions for the given coupon code
-     */
     duplicateCouponChanges(code) {
         return Object.keys(this.uiState.couponPointChanges).some((key) => {
             const change = this.uiState.couponPointChanges[key];
@@ -988,7 +939,6 @@ patch(PosOrder.prototype, {
             product_id: product_id,
         };
 
-        // Fetch all coupon_ids for the specified points and not manually created, that are associated with the gift card program
         const applicableCouponIds = Object.keys(this.uiState.couponPointChanges).filter(
             (key) => {
                 const change = this.uiState.couponPointChanges[key];
@@ -1208,7 +1158,6 @@ patch(PosOrder.prototype, {
         } else if (reward.reward_type === "product") {
             return this._getRewardLineValuesProduct(args);
         }
-        // NOTE: we may reach this step if for some reason there is a free shipping reward
         return [];
     },
     /**
@@ -1216,7 +1165,6 @@ patch(PosOrder.prototype, {
      * @returns {Array} List of values to create the discount lines
      */
     _getRewardLineValuesDiscount(args) {
-        //LINK
         const reward = args["reward"];
         const coupon_id = args["coupon_id"];
         const rewardAppliesTo = reward.discount_applicability;
@@ -1241,7 +1189,6 @@ patch(PosOrder.prototype, {
         }
         let maxDiscount = reward.discount_max_amount || Infinity;
         if (reward.discount_mode === "per_point") {
-            // Rewards cannot be partially offered to customers
             const points = ["ewallet", "gift_card"].includes(
                 reward.program_id.program_type,
             )
@@ -1262,7 +1209,6 @@ patch(PosOrder.prototype, {
         if (reward.discount_mode === "per_point" && !reward.clear_wallet) {
             pointCost = Math.min(maxDiscount, discountable) / reward.discount;
         }
-        // These are considered payments and do not require to be either taxed or split by tax
         const discountProduct = reward.discount_line_product_id;
         if (["ewallet", "gift_card"].includes(reward.program_id.program_type)) {
             const price = discountProduct.getTaxDetails({
@@ -1292,7 +1238,6 @@ patch(PosOrder.prototype, {
             ? Math.min(1, maxDiscount / discountable)
             : 1;
         const result = Object.entries(discountablePerTax).reduce((lst, entry) => {
-            // Ignore 0 price lines
             if (!entry[1]) {
                 return lst;
             }
@@ -1382,8 +1327,6 @@ patch(PosOrder.prototype, {
                 this._isRewardProductPartOfRules(reward, product) &&
                 reward.program_id.applies_on !== "future"
             ) {
-                // OPTIMIZATION: Pre-calculate the factors for each reward-product combination during the loading.
-                // For points not based on quantity, need to normalize the points to compute free quantity.
                 const appliedRulesIds =
                     this.uiState.couponPointChanges[coupon_id].appliedRules;
                 const appliedRules =
@@ -1445,8 +1388,6 @@ patch(PosOrder.prototype, {
                 this._isRewardProductPartOfRules(reward, product) &&
                 reward.program_id.applies_on !== "future"
             ) {
-                // Compute the correction points once even if there are multiple reward lines.
-                // This is because _getPointsCorrection is taking into account all the lines already.
                 const claimedPoints = this._getPointsCorrection(reward.program_id);
                 return Math.floor(
                     (remainingPoints - claimedPoints) / reward.required_points,
@@ -1499,7 +1440,6 @@ patch(PosOrder.prototype, {
                   claimable_count * reward.required_points,
                   args["cost"] || Infinity,
               );
-        // In case the reward is the product multiple times, give it as many times as possible
         const freeQuantity = Math.min(
             unclaimedQty,
             reward.reward_product_qty * claimable_count,
@@ -1539,7 +1479,6 @@ patch(PosOrder.prototype, {
     },
     removeOrderline(lineToRemove) {
         if (lineToRemove.is_reward_line) {
-            // Remove any line that is part of that same reward aswell.
             const linesToRemove = this.getOrderlines().filter(
                 (line) =>
                     line.reward_id === lineToRemove.reward_id &&
@@ -1556,7 +1495,6 @@ patch(PosOrder.prototype, {
     },
 
     isSaleDisallowed(values, options) {
-        // Allow gift cards to be added to a refund
         return (
             super.isSaleDisallowed(values, options) && !options.eWalletGiftCardProgram
         );

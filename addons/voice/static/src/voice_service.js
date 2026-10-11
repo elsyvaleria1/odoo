@@ -32,10 +32,6 @@ import { VoiceTerms } from "./voice_terms.js";
 
 const MAX_DONE = 5;
 
-/**
- * What to ask when the grammar understood nothing:
- * `({ text, vocabulary }) => Promise<Proposal[]>`, in sequence order.
- */
 export const voiceFallbackRegistry = registry.category("voice_fallbacks");
 const MAX_NAME_SEARCH = 8;
 
@@ -98,11 +94,6 @@ export class VoiceService {
         this.terms = new VoiceTerms(services.orm);
     }
 
-    /**
-     * Read, once, the labels of what is on screen in the user's other
-     * languages and the company's voice terms, so a word said in either
-     * language, or in the company's own words, is understood.
-     */
     async prepare() {
         const menuIds = this.services.menu
             .getAll()

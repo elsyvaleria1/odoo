@@ -38,8 +38,6 @@ export class DependencyManager extends EventBus {
      * @param {Boolean} ignored - if true, do not override a dependency already registered under this id
      */
     add(id, value, ignored = false) {
-        // In case the dependency is added after a dependent try to get it
-        // an event is scheduled to notify the dependent about it.
         if (!ignored || !(id in this.dependenciesMap)) {
             this.triggerDependencyUpdated();
         }

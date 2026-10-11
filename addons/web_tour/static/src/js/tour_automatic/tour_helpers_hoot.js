@@ -143,7 +143,6 @@ patch(TourHelpers.prototype, {
         await hoot.setInputRange(element, value);
     },
 
-    /** @example */
     async press(...args) {
         await hoot.press(
             args.flatMap((arg) => typeof arg === "string" && arg.split("+")),

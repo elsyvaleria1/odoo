@@ -15,7 +15,6 @@ export class OptionsContainerWithSnippetVersionControl extends OptionsContainer 
                 ),
         });
     }
-    // Version control
     replaceElementWithNewVersion() {
         this.callOperation(() => {
             this.builderContext.editor.shared.versionControl.replaceWithNewVersion(

@@ -48,12 +48,6 @@ registry
                 addSectionFromProductCatalog().slice(0, -2);
             return [
                 openCatalog,
-                // A product card is set up once, and on a fresh catalog that
-                // happens while the sections are still loading. Emptying the
-                // kanban and filling it again sets the cards up after the panel
-                // selected "No Section" -- the order a slow machine gives, and
-                // the one in which a card that remembered the selection of its
-                // setup put the product outside the section created afterwards.
                 {
                     content: "Search for a product that does not exist",
                     trigger: ".o_searchview_input",

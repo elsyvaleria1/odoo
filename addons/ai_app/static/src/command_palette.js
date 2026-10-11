@@ -15,10 +15,6 @@ commandCategoryRegistry.add(
     { sequence: 30 },
 );
 
-// Per-env memo of "ai.agent is unavailable for this session" so that the
-// "@" CommandPalette provider doesn't repeatedly RPC and log the same
-// warning on every chat mention trigger. WeakSet so envs can be GC'd
-// normally; status is stable for the lifetime of an env.
 const envsWithoutAi = new WeakSet();
 
 export class AICommand extends Component {
@@ -65,12 +61,6 @@ export class AICommandPalette {
                 { load: false },
             );
         } catch (error) {
-            // ``ai.agent`` may not be reachable for the current user (ACL
-            // restriction) or may not exist in the environment (e.g. core
-            // unit tests that mount CommandPalette without defining the
-            // enterprise model). Degrade gracefully — show no AI commands
-            // rather than crashing the whole palette. Memoise so we don't
-            // re-issue the RPC (and the warning) on every "@" trigger.
             envsWithoutAi.add(this.env);
             console.warn("[ai_app] CommandPalette: ai.agent unavailable", error);
             this.agents = [];

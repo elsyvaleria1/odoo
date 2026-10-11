@@ -4,7 +4,6 @@ import { Component, EventBus, t, useProps, xml } from "@odoo/owl";
 export class AuthUI extends Component {
     static props = { bus: t.instanceOf(EventBus) };
 
-    // Has to be in front of the block UI layer (which is z-index: 1070).
     static template = xml`
         <div
             id="three-ds-container"

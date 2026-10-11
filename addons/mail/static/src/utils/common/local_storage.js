@@ -3,14 +3,6 @@
 import { proxy, toRaw } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 
-/**
- * The store mirrors the localStorage keys the mail client reads in a plain object,
- * `store.localStorageValues`, so a record compute that reads a key through
- * `readLocalStorageItem(this.store, key)` recomputes when another tab writes it (the
- * `storage` event) or this tab does (`setLocalStorageItem`) -- no per-key counter to
- * bump, no per-model `storage` listener.
- */
-
 /** @typedef {import("models").Store} Store */
 
 /**

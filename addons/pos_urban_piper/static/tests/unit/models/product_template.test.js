@@ -15,7 +15,6 @@ test("setFoodDeliveryAvailability and isAvailableForFoodDelivery", async () => {
 
     product.setFoodDeliveryAvailability(true, 1);
     expect(product.isAvailableForFoodDelivery(1)).toBe(true);
-    // For different Config
     product.setFoodDeliveryAvailability(false, 2);
     expect(product.isAvailableForFoodDelivery(1)).toBe(true);
 });

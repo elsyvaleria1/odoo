@@ -41,9 +41,6 @@ export function checkCarouselAutoPlaying() {
         content: `Check that the slideshow is working`,
         trigger: `.carousel-item.active`,
         async run() {
-            // The slideshow advances every 100ms in test mode but a slide
-            // takes bootstrap's 600ms transition to land, so sample until it
-            // moves rather than once at a fixed offset.
             const activeSlideHtml = () =>
                 document.querySelector(".carousel-item.active")?.outerHTML;
             const firstSlideHtml = activeSlideHtml();

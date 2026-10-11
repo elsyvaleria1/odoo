@@ -360,7 +360,6 @@ export class KanbanArchParser extends ViewArchParser {
     parseProgressBar(progressBar, fields) {
         /** @type {KanbanProgressbarAttrs} */
         const nodeAttributes = progressBar.attrs || {};
-        // extractAttributes' contract: an absent attribute reads ""
         const attrs = {
             field: nodeAttributes.field ?? "",
             colors: nodeAttributes.colors ?? "",

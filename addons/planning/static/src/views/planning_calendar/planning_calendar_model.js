@@ -56,7 +56,6 @@ export class PlanningCalendarModel extends CalendarModel {
      * @override
      */
     addFilterFields(record, filterInfo) {
-        // For 'Resource' filters we need the resource_color for the colorIndex, for 'Role' filters we need the colorIndex
         if (filterInfo.fieldName === "resource_id") {
             return {
                 colorIndex:
@@ -221,7 +220,6 @@ export class PlanningCalendarModel extends CalendarModel {
             filterRecord.canRemove = false;
             filterRecord.label = _t("Open Shifts");
         }
-        // We need the resource type to display the correct icon in the filter section in the side panel
         filterRecord.resourceType = rawRecord.resource_type;
         return filterRecord;
     }
@@ -235,7 +233,6 @@ export class PlanningCalendarModel extends CalendarModel {
             !Object.keys(this.data.filterSections).length &&
             loadedFilters.sections.resource_id?.filters
         ) {
-            // This is the first load of the view, we set the 'open shifts' filter to active
             loadedFilters.sections.resource_id.filters[0].active = true;
         }
         return loadedFilters;

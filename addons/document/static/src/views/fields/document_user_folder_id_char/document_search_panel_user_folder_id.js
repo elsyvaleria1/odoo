@@ -62,7 +62,6 @@ export class DocumentsSearchPanelUserFolderId extends Component {
     }
 
     async toggleCategory(category, value) {
-        // shared folders are listed under it, but nothing is moved into it
         if (value.id === UserFolder.SHARED) {
             return this.toggleFold(category, value);
         }
@@ -73,7 +72,6 @@ export class DocumentsSearchPanelUserFolderId extends Component {
         }
     }
 
-    /** The shared category template binds it on every folder header. */
     onCategoryKeydown(ev, category, value) {
         if (!isActivationKey(ev)) {
             return;
@@ -218,7 +216,6 @@ export class DocumentsSearchPanelUserFolderId extends Component {
         }
     }
 
-    /** The values kept, each with the children kept among its own. */
     _setCategoryValues(category, idsToInclude, categoryMap) {
         category.values.clear();
         for (const [id, node] of categoryMap) {

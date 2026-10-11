@@ -1,13 +1,3 @@
-/**
- * Covers the map view against the contracts its collaborators actually have,
- * rather than against the ones the suite next door mocks.
- *
- * `map_view.test.js` patches `_fetchCoordinatesFromAddressMB` and friends, so
- * every failure it exercises is a hand-written `{ status: 401 }` — a shape no
- * real response has ever produced. These tests drive `browser.fetch` instead,
- * which is what the model calls, and assert on what a user of a live database
- * would see.
- */
 import { beforeEach, describe, expect, test } from "@odoo/hoot";
 import { queryAllTexts } from "@odoo/hoot-dom";
 import { animationFrame, tick } from "@odoo/hoot-mock";
@@ -254,9 +244,6 @@ describe("map_view_providers", () => {
     });
 
     test("a route with more points than MapBox allows is refused, not sent", async () => {
-        // The Directions API caps coordinates at 25 and the map's default
-        // `limit` is 80, so a routed map of any size used to spend a call
-        // learning what the count already says.
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
         Partner._records = [];
         Task._records = [];
@@ -290,9 +277,6 @@ describe("map_view_providers", () => {
     });
 
     test("a partner on the prime meridian is located, not geocoded again", async () => {
-        // partner_latitude / partner_longitude are floats defaulting to 0, so
-        // only the pair (0, 0) means "no position": longitude 0 alone runs
-        // through London, Spain and Ghana.
         Partner._records = [
             {
                 id: 1,
@@ -391,10 +375,6 @@ describe("map_view_providers", () => {
     });
 
     test("a reload with the same records still refreshes what the markers show", async () => {
-        // The markers are only rebuilt when what they draw has moved, and a
-        // load that returns the same ids at the same coordinates moves
-        // nothing visible -- while replacing every record object the click
-        // handlers closed over. `data.revision` is what says so.
         Task._records = [{ id: 1, name: "First", stage: "a", partner_id: 1 }];
         mockProvider(async () => jsonResponse([]));
         const view = await mountView({
@@ -449,9 +429,6 @@ describe("map_view_providers", () => {
     });
 
     test('a map on res.partner with sample="1" shows sample pins', async () => {
-        // `useModelWithSampleData` only swaps in the sample ORM when the model
-        // says it found nothing, and `Model.hasData()` answers `true`
-        // unconditionally -- so a map declaring sample="1" used to stay blank.
         Task._records = [];
         Partner._records = [];
         const requested = mockProvider(async () => jsonResponse([]));
@@ -464,8 +441,6 @@ describe("map_view_providers", () => {
 
         expect(getModel(view).useSampleModel).toBe(true);
         expect(".o_view_sample_data").toHaveCount(1);
-        // SampleServer randomises its values, so the count varies per run:
-        // what has to hold is that pins are drawn at all.
         expect(
             document.querySelectorAll(".o-map-renderer--marker").length,
         ).toBeGreaterThan(0, {
@@ -477,11 +452,6 @@ describe("map_view_providers", () => {
     });
 
     test("a map reaching its partner through a many2one samples pins too", async () => {
-        // The coordinates are asked for by the model, not named in the arch,
-        // so `relatedModels` cannot describe them and the sample server used
-        // to answer the many2one with `{id, display_name}` alone -- leaving a
-        // sample map with nothing on it. `getSampleRelatedModels()` is how the
-        // model says which fields it reaches for.
         Task._records = [];
         Partner._records = [];
         const requested = mockProvider(async () => jsonResponse([]));
@@ -521,10 +491,6 @@ describe("map_view_providers", () => {
     });
 
     test("a pin's number counts the located records, not every record", async () => {
-        // The numbers name route legs, and `_fetchRoute` only sends located
-        // records -- so numbering over every record made the list start at 2
-        // whenever the first record had no position, and made a marker's
-        // number point at a leg that was not its own.
         Partner._records.push({
             id: 3,
             name: "Nowhere",
@@ -585,8 +551,6 @@ describe("map_view_providers", () => {
             [7, "list"],
             [9, "form"],
         ]);
-        // the framework rewrites the search view's id, so what is assertable
-        // is that one is carried at all -- it was not, before
         expect(action.search_view_id?.[1]).toBe("search");
         expect(action.domain).toEqual([["id", "in", [1, 2]]]);
         expect(action.res_model).toBe("project.task");
@@ -610,18 +574,9 @@ describe("map_view_providers", () => {
             type: "map",
             resModel: "project.task",
             arch: `<map res_partner="partner_id"/>`,
-            // the action service hands this over as markup, and `Markup`
-            // extends `String`, so a plain string here would render escaped
-            // and prove nothing about production
             noContentHelp: markup("<p>Add a task with a customer to see it here</p>"),
         });
 
-        // `toBeVisible` reads display/visibility/opacity, NOT stacking, and
-        // `.o_view_nocontent` is `position: absolute; inset: 0` at z-index 1
-        // against Leaflet panes at 400. Measured: this assertion passes with
-        // the z-index rule in map_renderer.scss deleted and the helper wholly
-        // behind the map. What guards that is the rule's comment and a
-        // browser; this only guards that the helper is rendered and shown.
         expect(".o_view_nocontent").toBeVisible();
         expect(".o_nocontent_help").toHaveText(
             "Add a task with a customer to see it here",
@@ -640,15 +595,10 @@ describe("map_view_providers", () => {
             arch: `<map res_partner="partner_id"/>`,
         });
 
-        // EmptyState's own default, rather than a blank panel.
         expect(".o_view_nocontent_empty_folder").toBeVisible();
     });
 
     test("a record the map cannot place is listed, greyed and inert", async () => {
-        // It used to be dropped by a `t-if`, which left a user with four tasks
-        // looking at three and no account of the fourth -- and left the
-        // stylesheet's `:not(.o-map-renderer--pin-located)` rule describing a
-        // state the template could not produce.
         Partner._records.push({
             id: 3,
             name: "Nowhere",
@@ -674,7 +624,6 @@ describe("map_view_providers", () => {
         expect(queryAllTexts(".o-map-renderer--pin-located")).toEqual(["First"]);
         expect(".o-map-renderer--marker").toHaveCount(1);
 
-        // clicking it must not try to centre a map on a place it has not got
         const unplaceable =
             ".o-map-renderer--pin-list-details li:not(.o-map-renderer--pin-located)";
         expect(unplaceable).toHaveClass("text-muted");
@@ -694,7 +643,6 @@ describe("map_view_providers", () => {
             arch: `<map res_partner="partner_id"/>`,
         });
 
-        // `dir/?api=1` renders nothing at all without one.
         expect(getRenderer(view).googleMapParams.destination).toBe("Rue B 2");
         expect("a[data-hotkey=m]").toHaveAttribute(
             "href",

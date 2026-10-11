@@ -28,26 +28,12 @@ export function checkNewOrderCount(expectedCount) {
     ];
 }
 
-/**
- * Function to fetch delivery data for the POS system.
- * This function simulates the behavior of a delivery order data retrieval process
- * that integrates with the POS system. It is used to manually trigger updates when
- * webhook notifications (bus) are not functioning during tours.
- */
 export function fetchDeliveryData() {
     return [
         {
             content: "Fetching Delivery order data",
             trigger: ".pos",
             run: async function () {
-                /**
-                 * Normally, when the POS webhook controllers receive a notification (e.g., Order placed),
-                 * the POS client would be updated via the bus (real-time notification system).
-                 * However, during tours or test scenarios, the bus may not function.
-                 * To ensure updates occur during these scenarios, we manually trigger the method
-                 * that would typically handle the callback from the bus event.
-                 * This method fetches delivery-related data from the backend using the `call` method.
-                 */
                 const response = await posmodel.data.call(
                     "pos.config",
                     "get_delivery_data",

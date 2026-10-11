@@ -31,7 +31,6 @@ describe("pos_store.js", () => {
         expect(store.getActiveOrdersOnTable(table)).toHaveLength(1);
         expect(store.getTableOrders(table.id)).toHaveLength(1);
 
-        // Avoid doublon
         order2.table_id = table;
         expect(store.tableHasOrders(table)).toBe(true);
         expect(store.getActiveOrdersOnTable(table)).toHaveLength(1);

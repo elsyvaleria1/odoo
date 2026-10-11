@@ -101,9 +101,6 @@ export class SignRequestControlPanel extends Component {
         return needToSign && !["signed", "canceled"].includes(state);
     }
 
-    // In a normal OWL context, this property ensures the dropdown renders fine.
-    // However, in a signing session, the template is used statically and JS is not available
-    // so this will be undefined and the component won't render which is needed.
     get shouldShowDownloadDropdown() {
         return true;
     }

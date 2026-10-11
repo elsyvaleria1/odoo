@@ -8,7 +8,6 @@ patch(KnowledgeHtmlField.prototype, {
     /** @override */
     getConfig() {
         const config = super.getConfig();
-        // Add new plugins:
         config.Plugins.push(SignatureInputPlugin, UploadLinkPlugin);
         return config;
     },

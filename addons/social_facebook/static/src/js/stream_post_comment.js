@@ -5,10 +5,6 @@ import { StreamPostCommentsReplyFacebook } from "./stream_post_comments_reply.js
 import { formatFacebookReactions } from "./utils.js";
 
 export class StreamPostCommentFacebook extends StreamPostComment {
-    //--------
-    // Getters
-    //--------
-
     get authorLink() {
         if (this.comment.from.id) {
             return `/social_facebook/redirect_to_profile/${encodeURIComponent(this.props.mediaSpecificProps.accountId)}/${encodeURIComponent(this.comment.from.id)}?name=${encodeURIComponent(this.comment.from.name)}`;
@@ -41,9 +37,6 @@ export class StreamPostCommentFacebook extends StreamPostComment {
         return `https://www.facebook.com/${encodeURIComponent(this.comment.id)}`;
     }
 
-    /**
-     * Return the reactions and the count for each of them.
-     */
     get facebookReactions() {
         return formatFacebookReactions(this.comment.reactions);
     }

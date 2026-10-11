@@ -91,7 +91,6 @@ test("ai and system prompt are readonly for base fields", async () => {
     expect(".o_web_studio_property input[name='AI']").toBeChecked();
     expect(".o_web_studio_property div#ai_update_prompt").toHaveCount(1);
     expect(".o_web_studio_property div#ai_update_prompt").toHaveText("My prompt");
-    // click on prompt does not open the prompt edition dialog (no step)
     await contains(".o_web_studio_property input[name='AI']").click();
 });
 
@@ -169,7 +168,6 @@ test("make custom field use ai", async () => {
     await insertText(promptEditor, "My prompt");
     await contains(".modal-dialog footer .btn-primary").click();
     expect.verifySteps(["edit_field"]);
-    // ensure default widget is used when removing ai
     await contains(".o_web_studio_property input[name='AI']").uncheck();
     expect.verifySteps(["edit_field", "edit_view"]);
 });
@@ -209,9 +207,7 @@ test("insert ai field", async () => {
     await contains(".o_web_studio_new_fields .o_web_studio_field_ai").dragAndDrop(
         ".o_inner_group .o_web_studio_hook:first-child",
     );
-    // should open the ai field configuration dialog
     await waitFor(".o_web_studio_ai_field_configuration_dialog");
-    // default type is text
     expect(".o_web_studio_ai_field_select_menu_toggler").toHaveText("Text");
     setSelection({ anchorNode: queryOne(".o_ai_prompt .odoo-editor-editable p") });
     await insertText(promptEditor, "My prompt");
@@ -322,7 +318,6 @@ test("insert relational ai field", async () => {
     await contains(".o_web_studio_new_fields .o_web_studio_field_ai").dragAndDrop(
         ".o_inner_group .o_web_studio_hook:first-child",
     );
-    // should open the ai field configuration dialog
     await waitFor(".o_web_studio_ai_field_configuration_dialog");
     expect(
         ".o_web_studio_ai_field_configuration_dialog h5:contains('Relation')",
@@ -333,7 +328,6 @@ test("insert relational ai field", async () => {
     ).click();
     await contains("h5:contains('Relation') + div .o_record_selector input").click();
     await waitFor(".o-autocomplete--dropdown-menu");
-    // should only show models that are not abstract/transient.
     expect(".o-autocomplete .o-autocomplete--dropdown-item").toHaveCount(1);
     await contains(".o-autocomplete .o-autocomplete--dropdown-item").click();
     setSelection({ anchorNode: queryOne(".o_ai_prompt .odoo-editor-editable p") });

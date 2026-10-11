@@ -117,7 +117,6 @@ beforeEach(() => {
 });
 
 async function createRecordsInBatch() {
-    // select the date
     const { drop, moveTo } = await drag(".fc-day[data-date='2019-03-14']");
     await moveTo(".fc-day[data-date='2019-03-15']");
     await animationFrame();
@@ -127,7 +126,6 @@ async function createRecordsInBatch() {
     await click(".o_multi_selection_buttons .btn:contains(Add)");
     await animationFrame();
 
-    // select shift template
     await click("div[name=template_id] input");
     await animationFrame();
     await click(".o-autocomplete--dropdown-item:contains('template')");
@@ -161,7 +159,6 @@ test("planning calendar view: copy previous week", async () => {
         },
     });
 
-    // switch to 'week' scale
     await click(".scale_button_selection");
     await animationFrame();
 
@@ -170,13 +167,11 @@ test("planning calendar view: copy previous week", async () => {
 
     await click(".o_control_panel_main_buttons .o_button_copy_previous_week");
     await animationFrame();
-    // verify action_copy_previous_week() invoked
     expect.verifySteps(["copy_previous_week()"]);
 
     await click(".o_control_panel_main_buttons .o_button_send_all");
     await animationFrame();
 
-    // Switch the view and verify the notification
     expect(".o_notification_body").toHaveCount(1);
     await click(".o_switch_view.o_list");
     await animationFrame();
@@ -184,13 +179,11 @@ test("planning calendar view: copy previous week", async () => {
     await animationFrame();
     expect(".o_notification_body").toHaveCount(0);
 
-    // Check for auto plan
     await click(
         ".btn.btn-secondary[title='Automatically plan open shifts and sales orders']",
     );
     await animationFrame();
 
-    // Switch the view and verify the notification
     expect(".o_notification_body").toHaveCount(1);
     await click(".o_switch_view.o_list");
     await animationFrame();
@@ -208,15 +201,12 @@ test("Resize or Drag-Drop should open recurrence update wizard", async () => {
     await mountWithCleanup(WebClient);
     await getService("action").doAction(1);
 
-    // switch to 'week' scale
     await click(".scale_button_selection");
     await animationFrame();
 
     await click(".o_scale_button_week");
     await animationFrame();
 
-    // Resizing the repeat pill asks which occurrences to update; the wizard
-    // is modal, so the normal pill is resized once it is answered.
     await resizeEventToTime(1, "2019-03-11 14:30:00");
     expect(".modal-content").toHaveCount(1, {
         message: "resizing a recurring shift should open the recurrence update wizard",
@@ -229,7 +219,6 @@ test("Resize or Drag-Drop should open recurrence update wizard", async () => {
         message: "resizing a normal shift should not open the wizard",
     });
 
-    // Open popover of the repeat pill
     await clickEvent(1);
     expect(".o_cw_popover").toHaveCount(1, {
         message: "should open a popover clicking on event",
@@ -242,7 +231,6 @@ test("Resize or Drag-Drop should open recurrence update wizard", async () => {
         message: "should have correct start date",
     });
 
-    // Open popover of the normal pill
     await clickEvent(2);
     expect(".o_cw_popover").toHaveCount(1, {
         message: "should open a popover clicking on event",
@@ -266,7 +254,6 @@ test("should display a popover with an Edit button for users with admin access w
     await mountWithCleanup(WebClient);
     await getService("action").doAction(1);
 
-    // Open popover of the pill
     await clickEvent(1);
     expect(".o_cw_popover").toHaveCount(1, {
         message: "A popover should open when clicking on the event.",
@@ -286,7 +273,6 @@ test("should not display an Edit button in the popover for users without admin a
     await mountWithCleanup(WebClient);
     await getService("action").doAction(1);
 
-    // Open popover of the pill
     await clickEvent(1);
     expect(".o_cw_popover").toHaveCount(1, {
         message: "A popover should open when clicking on the event.",
@@ -332,15 +318,6 @@ test("Display confirm delete modal when deleting non recurrent task", async () =
     expect("h4.modal-title").toHaveText("Bye-bye, record!");
 });
 
-/*
- * This test ensures that :
- * - the 'open shifts' filter is the first one displayed in the filter list
- * - the 'open shifts' filter cannot be deleted
- * - the 'open shifts' filter is checked by default, even if its 'checked' stored value is false
- * - the other filters status depends on the 'checked' stored valued
- * - the input date picker is not present
- * - the material resources have a wrench icon displayed instead of their avatar icon
- */
 test("check filters set up, scale display & cosmetic changes", async () => {
     onRpc("get_or_create_calendar_filters", () => [
         { id: 1, resource_id: false, checked: false, resource_type: false },
@@ -350,21 +327,17 @@ test("check filters set up, scale display & cosmetic changes", async () => {
     await mountWithCleanup(WebClient);
     await getService("action").doAction(1);
 
-    // 'open shifts' filter is the first in the list
     await expect(
         ".o_calendar_filter_items .o_calendar_filter_item:nth-child(1):contains('Open Shifts')",
     ).toHaveCount(1);
     await expect(".o_calendar_filter_items .o_calendar_filter_item").toHaveCount(3);
 
-    // 'open shifts' cannot be deleted
     await expect(
         ".o_calendar_filter_items .o_calendar_filter_item:nth-child(1) .o_remove",
     ).toHaveCount(0);
     await expect(".o_remove").toHaveCount(2);
 
-    // 'open shift' filter is forced to true
     await expect(".o_calendar_filter_item:contains('Open Shifts') input").toBeChecked();
-    // regular filter depends on the store value
     await expect(
         ".o_calendar_filter_item:contains('Kalandra') input",
     ).not.toBeChecked();
@@ -373,7 +346,6 @@ test("check filters set up, scale display & cosmetic changes", async () => {
     await click(".o_calendar_filter .o-autocomplete--input");
     await animationFrame();
 
-    // the material resource has a wrench icon displayed instead of the avatar icon
     await expect(
         ".o_calendar_filter li.o-autocomplete--dropdown-item:contains('atlas') .fa-wrench",
     ).toHaveCount(1);
@@ -381,14 +353,12 @@ test("check filters set up, scale display & cosmetic changes", async () => {
         ".o_calendar_filter li.o-autocomplete--dropdown-item:contains('Maganlal') .fa-wrench",
     ).toHaveCount(0);
 
-    // switch to 'week' scale
     await click(".scale_button_selection");
     await animationFrame();
 
     await click(".o_scale_button_week");
     await animationFrame();
 
-    // the calendar is displayed in 'week' scale
     await expect(".o_datetime_picker").toHaveCount(1);
 });
 
@@ -474,11 +444,7 @@ test("check creation of records while no filter is selected", async () => {
     onRpc("get_or_create_calendar_filters", () => [
         { id: 1, resource_id: false, checked: false, resource_type: false },
     ]);
-    onRpc("write", () =>
-        // there's no need to update the data set. The 'checked' value is already set to false in the
-        // get_or_create_calendar_filters and since the view was already loaded, the value will not get overwritten to true.
-        [],
-    );
+    onRpc("write", () => []);
     onRpc("create_batch_from_calendar", ({ args: [, records] }) => {
         expect.step("create_batch_from_calendar");
     });

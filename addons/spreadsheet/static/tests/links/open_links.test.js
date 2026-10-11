@@ -44,8 +44,6 @@ test("click a menu link", async () => {
         doAction(action) {
             expect.step(action);
         },
-        // TODO: this is the conversion 1/1 of the old test, where the mock action service didn't contain a loadAction
-        // method, but that's not something that happens in the real world, so we should probably refactor this test
         loadAction: undefined,
     };
     mockService("action", fakeActionService);
@@ -103,7 +101,6 @@ test("click a menu link [2]", async () => {
                 views: [[false, "list"]],
             });
         },
-        // TODO: same as the above test
         loadAction: undefined,
     };
     mockService("action", fakeActionService);

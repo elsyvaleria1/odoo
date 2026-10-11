@@ -165,9 +165,6 @@ export class DynamicSnippet extends Interaction {
     }
 
     onWindowResize() {
-        // The output reads the viewport only through the small-device
-        // breakpoint. Re-rendering on every resize looped in the website
-        // preview: new content resized the iframe, which fired resize again.
         if (uiUtils.isSmall() !== this.renderedForSmallDevices) {
             this.render();
         }

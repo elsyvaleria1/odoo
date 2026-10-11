@@ -11,8 +11,6 @@ export class EventMailTemplateReferenceField extends ReferenceField {
 
     setup() {
         const returnVal = super.setup();
-        // select the first value by default
-        // selection is [['mail', 'Mail Template'], ['sms', 'Sms Template'], ...]
         const defaultSelect = this.selection?.[0][0];
         if (defaultSelect) {
             this.state.currentRelation = defaultSelect;
@@ -20,10 +18,6 @@ export class EventMailTemplateReferenceField extends ReferenceField {
         return returnVal;
     }
 
-    /**
-     * Make not openable in readonly mode
-     * as we expect m2o fields to just be strings in list view
-     */
     get m2oProps() {
         const props = super.m2oProps;
         if (props.readonly) {

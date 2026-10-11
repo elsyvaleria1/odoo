@@ -20,12 +20,9 @@ export class ExpressCheckout extends Interaction {
     }
 
     start() {
-        // the amount changes as the page's cart does (eCommerce's cart routes
-        // send this event with their fragments)
         this.addListener(document, "payment:amount_changed", (ev) =>
             this._updateAmount(ev.detail.amount, ev.detail.minor_amount),
         );
-        // Monitor when the page is restored from the bfcache.
         this.addListener(window, "pageshow", this._onNavigationBack);
     }
 

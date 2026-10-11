@@ -9,17 +9,14 @@ import { patch } from "@web/core/utils/patch";
 patch(PaymentForm.prototype, {
     setup() {
         super.setup();
-        this.paypalData = {}; // Store the component of each instantiated payment method.
+        this.paypalData = {};
         this.selectedOptionId = undefined;
     },
-
-    // #=== DOM MANIPULATION ===#
 
     /**
      * @override
      */
     async willStart() {
-        // Suffix the button IDs to prevent collisions when multiple button containers are present.
         const paypalEnabledButtons = [
             ...document.querySelectorAll("#o_paypal_enabled_button"),
         ];
@@ -86,7 +83,6 @@ patch(PaymentForm.prototype, {
             paypalLoading.classList.remove("d-none");
         }
 
-        // Check if instantiation of the component is needed.
         if (this.selectedOptionId && this.selectedOptionId !== paymentOptionId) {
             Object.entries(this.paypalData).forEach(([, value]) => {
                 value.enabledButtons.forEach((btn) => btn.hide());
@@ -115,7 +111,6 @@ patch(PaymentForm.prototype, {
                 paypalColor = radio.dataset["paypalColor"];
             }
 
-            // https://developer.paypal.com/sdk/js/configuration/#link-queryparameters
             const { client_id, currency_code } = inlineFormValues;
             const paypalSDKURL = `https://www.paypal.com/sdk/js?client-id=${
                 client_id
@@ -123,8 +118,6 @@ patch(PaymentForm.prototype, {
             this.paypalData[paymentOptionId]["sdkURL"] = paypalSDKURL;
             await this.waitFor(this._paypalLoadSDK(paypalSDKURL));
 
-            // Create the two sets of PayPal buttons.
-            // See https://developer.paypal.com/sdk/js/reference.
             this.paypalData[paymentOptionId]["enabledButtons"] = [];
             document
                 .querySelectorAll('[id^="o_paypal_enabled_button"]')
@@ -132,7 +125,6 @@ patch(PaymentForm.prototype, {
                     const enabledButton = paypal.Buttons({
                         fundingSource: paypal.FUNDING.PAYPAL,
                         style: {
-                            // https://developer.paypal.com/sdk/js/reference/#link-style
                             color: paypalColor,
                             label: "paypal",
                             disableMaxWidth: true,
@@ -156,13 +148,12 @@ patch(PaymentForm.prototype, {
                     const disabledButton = paypal.Buttons({
                         fundingSource: paypal.FUNDING.PAYPAL,
                         style: {
-                            // https://developer.paypal.com/sdk/js/reference/#link-style
                             color: "silver",
                             label: "paypal",
                             disableMaxWidth: true,
                             borderRadius: 6,
                         },
-                        onInit: (data, actions) => actions.disable(), // Permanently disable the button.
+                        onInit: (data, actions) => actions.disable(),
                     });
                     disabledButton.render(`#${domButton.id}`);
                     this.paypalData[paymentOptionId]["disabledButtons"].push(
@@ -197,8 +188,6 @@ patch(PaymentForm.prototype, {
             sdk.setAttribute("data-partner-attribution-id", "OdooInc_SP_EC");
         });
     },
-
-    // #=== PAYMENT FLOW ===#
 
     /**
      * Handle the click event of the component and initiate the payment.
@@ -241,7 +230,6 @@ patch(PaymentForm.prototype, {
                     reference: this.paypalData[this.selectedOptionId].paypalTxRef,
                 }),
             );
-            // Close the PayPal buttons that were rendered
             for (const enabledButton of this.paypalData[this.selectedOptionId][
                 "enabledButtons"
             ]) {
@@ -254,7 +242,7 @@ patch(PaymentForm.prototype, {
                     _t("Payment processing failed"),
                     error.data.message,
                 );
-                this._enableButton(); // The button has been disabled before initiating the flow.
+                this._enableButton();
             }
             return Promise.reject(error);
         }
@@ -278,8 +266,6 @@ patch(PaymentForm.prototype, {
     _paypalOnError(error) {
         const message = error.message;
         this._enableButton();
-        // Paypal throws an error if the popup is closed before it can load;
-        // this case should be treated as an onCancel event.
         if (message !== "Detected popup close" && !(error instanceof RPCError)) {
             this._displayErrorDialog(_t("Payment processing failed"), message);
         }

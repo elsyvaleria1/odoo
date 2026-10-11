@@ -19,9 +19,7 @@ export function rememberDocumentsViewType(viewType) {
         if (browser.localStorage.getItem(VIEW_TYPE_KEY) !== viewType) {
             browser.localStorage.setItem(VIEW_TYPE_KEY, viewType);
         }
-    } catch {
-        // a preference, not state: without storage the app opens on its default view
-    }
+    } catch {}
 }
 
 async function documentActionPreference(env, action, options) {

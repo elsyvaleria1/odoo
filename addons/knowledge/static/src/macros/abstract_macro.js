@@ -6,10 +6,6 @@ import { AlertDialog } from "@web/ui/dialog";
 
 class KnowledgeMacroError extends Error {}
 
-/**
- * Abstract class for Knowledge macros, that will be used to interact like a
- * tour with a Form view chatter and/or html field.
- */
 export class AbstractMacro extends Macro {
     /**
      * @param {Object} options
@@ -37,32 +33,21 @@ export class AbstractMacro extends Macro {
     }
 
     buildSteps() {
-        // Build the desired macro action
         const steps = this.getSteps();
         if (!steps.length) {
             return [];
         }
-        /**
-         * Preliminary breadcrumbs macro. It will use the target's jsId
-         * (@see KnowledgeCommandsService) to switch back to the view related
-         * to the stored record via services.action.restore. Once and if the
-         * view of the target record is correctly loaded, run the specific
-         * macroAction.
-         */
         return [
             {
                 action: () => this.blockUI(),
             },
             {
-                // Restore the previous view:
                 action: async () => {
                     try {
-                        // Try to restore the target controller.
                         await this.services.action.restore(
                             this.targetBreadcrumbs.at(-1).jsId,
                         );
                     } catch {
-                        // If the controller is unreachable, abort the macro.
                         throw new KnowledgeMacroError(
                             _t(
                                 "The record that this macro is targeting could not be found.",
@@ -72,8 +57,6 @@ export class AbstractMacro extends Macro {
                 },
             },
             {
-                // Start the requested macro when the current breadcrumbs
-                // match the target Form view.
                 trigger: () => {
                     const controllerBreadcrumbs =
                         this.services.action.currentController.config.breadcrumbs;
@@ -153,12 +136,6 @@ export class AbstractMacro extends Macro {
         }
     }
 
-    /**
-     * Validate that the macro is still on the correct Form view by checking
-     * that the target breadcrumbs are the same as the current ones. To be used
-     * at each step inside the target Form view. Throwing an error will
-     * terminate the macro.
-     */
     validatePage() {
         const controllerBreadcrumbs =
             this.services.action.currentController.config.breadcrumbs;

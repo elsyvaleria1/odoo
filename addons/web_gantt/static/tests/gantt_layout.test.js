@@ -21,9 +21,7 @@ test("assignPillLevels stacks overlapping pills and reuses a level once it is fr
     const pills = [pill(1, 5), pill(3, 7), pill(5, 9), pill(7, 8), pill(9, 12)];
     expect(assignPillLevels(pills)).toBe(2);
     expect(pills.map((p) => p.level)).toEqual([0, 1, 0, 1, 0]);
-    // Touching at a line is not overlapping: [1,5) then [5,9) share a level.
     expect(assignPillLevels([pill(1, 5), pill(5, 9)])).toBe(1);
-    // Three pills all covering column 2 need three levels.
     const three = [pill(1, 4), pill(2, 4), pill(2, 3)];
     expect(assignPillLevels(three)).toBe(3);
     expect(three.map((p) => p.level)).toEqual([0, 1, 2]);
@@ -52,14 +50,11 @@ test("firstSelectedRun extends the first block over its right-hand neighbours on
         startCol: c1,
         endCol: c2,
     });
-    // Unordered input; the run is the lowest row's leftmost block plus what abuts it.
     expect(firstSelectedRun([b(3, 5, 6), b(1, 4, 5), b(1, 2, 3), b(1, 3, 4)])).toEqual(
         b(1, 2, 5),
     );
-    // A gap ends the run; a block on another row never joins it.
     expect(firstSelectedRun([b(1, 2, 3), b(1, 4, 5), b(1, 5, 6)])).toEqual(b(1, 2, 3));
     expect(firstSelectedRun([b(1, 2, 3), b(3, 3, 4)])).toEqual(b(1, 2, 3));
-    // The input blocks are left untouched.
     const blocks = [b(1, 2, 3), b(1, 3, 4)];
     firstSelectedRun(blocks);
     expect(blocks[0].endCol).toBe(3);
@@ -93,22 +88,18 @@ test("columnWidths shares the content width and reports an overflow", () => {
         columnCount: 8,
         foldedGridColumnCount: 8,
     };
-    // 800px over 8 columns.
     let w = columnWidths(base);
     expect(w).toMatchObject({ cellPartWidth: 50, columnWidth: 100, totalWidth: null });
     expect(w.columnWidths).toEqual(new Array(8).fill(100));
-    // A single column takes it all.
     w = columnWidths({ ...base, columnCount: 1, foldedGridColumnCount: 1 });
     expect(w).toMatchObject({
         columnWidth: 800,
         columnWidths: [800],
         totalWidth: null,
     });
-    // Too many columns for the width: the minimum applies and the grid overflows.
     w = columnWidths({ ...base, columnCount: 40, foldedGridColumnCount: 40 });
     expect(w.columnWidth).toBe(40);
     expect(w.totalWidth).toBe(40 * 40 + 200);
-    // Two folded columns in one run: 7 folded-grid columns, one of them 36px.
     const foldedColumns = [0, 0, 1, 1, 0, 0, 0, 0];
     w = columnWidths({ ...base, foldedGridColumnCount: 7, foldedColumns });
     expect(w.columnWidths).toEqual([
@@ -117,7 +108,6 @@ test("columnWidths shares the content width and reports an overflow", () => {
         FOLDED_COLUMN_WIDTH,
         ...new Array(4).fill(w.columnWidth),
     ]);
-    // The open columns share what the folded one leaves: (800 - 36) / 6.
     expect(w.columnWidth).toBe(Math.floor(Math.floor((800 - 36) / 6) / 2) * 2);
 });
 
@@ -137,7 +127,6 @@ test("focusFactorAt reads a position off the container, or off the folded widths
     };
     expect(focusFactorAt(400, open)).toBe(0.5);
     expect(focusFactorAt(0, open)).toBe(0);
-    // Columns 2 and 3 folded into one 36px column: 7 folded-grid columns.
     const toTotal = [0, 1, 2, 4, 5, 6, 7];
     const folded = {
         cellContainerWidth: 636,
@@ -145,11 +134,8 @@ test("focusFactorAt reads a position off the container, or off the folded widths
         columnCount: 8,
         indexInTotalGrid: (i) => toTotal[i],
     };
-    // 150px is inside the second column: its end is 2/8 of the range.
     expect(focusFactorAt(150, folded)).toBe(2 / 8);
-    // 220px is inside the folded column, which stands for total columns 2-3.
     expect(focusFactorAt(220, folded)).toBe(3 / 8);
-    // Past the last column: the plain ratio.
     expect(focusFactorAt(700, folded)).toBe(700 / 636);
 });
 
@@ -161,8 +147,6 @@ test("subColumnsDistance counts open sub-columns at their width and folded ones 
         indexInTotalGrid: (i) => i,
     });
     expect(unfolded).toEqual({ distance: 200, flexible: true });
-    // Total columns 0..3 at cellPart 2; column 1 folded. Folded grid: [1,1,1,1]
-    // spans over 4 columns. Sub-column lines are 1..9 in both grids here.
     const params = {
         cellPart: 2,
         cellPartWidth: 50,
@@ -171,11 +155,8 @@ test("subColumnsDistance counts open sub-columns at their width and folded ones 
         colNumberInFoldedGrid: (c) => c,
         indexInTotalGrid: (i) => i,
     };
-    // Lines 1 -> 3: column 0, open: 2 x 50.
     expect(subColumnsDistance(1, 3, params)).toEqual({ distance: 100, flexible: true });
-    // Lines 3 -> 5: column 1, folded: 2 x 18, and the track is pinned.
     expect(subColumnsDistance(3, 5, params)).toEqual({ distance: 36, flexible: false });
-    // Lines 1 -> 9: 3 open columns and the folded one.
     expect(subColumnsDistance(1, 9, params)).toEqual({
         distance: 336,
         flexible: false,

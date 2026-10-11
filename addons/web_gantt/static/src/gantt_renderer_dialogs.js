@@ -48,7 +48,6 @@ export class GanttRendererDialogs extends GanttRendererInteractions {
             const archXmlDoc = irToElement(result.views.kanban.ir, {
                 text: literalNbsp,
             });
-            // remove some elements/attributes from archXmlDoc
             archXmlDoc.removeAttribute("highlight_color");
             const menu = archXmlDoc.querySelector(
                 `templates [t-name=${KanbanRecord.KANBAN_MENU_ATTRIBUTE}]`,
@@ -68,7 +67,6 @@ export class GanttRendererDialogs extends GanttRendererInteractions {
             };
         }
         if (!this.defaultkanbanViewParams) {
-            // These values to be assigned outside of arch to properly generate POT files.
             const nameString = _t("Name");
             const startString = _t("Start");
             const stopString = _t("Stop");
@@ -144,11 +142,8 @@ export class GanttRendererDialogs extends GanttRendererInteractions {
                     id: "open_view_edit_dialog",
                     text: canEdit ? _t("Edit") : _t("View"),
                     class: "btn btn-sm btn-primary",
-                    // Sync with the mutex to wait for potential changes on the view
                     onClick: () =>
-                        this.model.mutex.exec(
-                            () => this.props.openDialog({ resId }), // (canEdit is also considered in openDialog)
-                        ),
+                        this.model.mutex.exec(() => this.props.openDialog({ resId })),
                 },
             ],
         };

@@ -3,7 +3,6 @@ import { InternalNoteButton } from "@point_of_sale/app/screens/product_screen/co
 import { patch } from "@web/core/utils/patch";
 
 patch(InternalNoteButton.prototype, {
-    // Override
     async onClick() {
         const { confirmed, inputNote, oldNote } = await super.onClick();
         const selectedOrderline = this.pos.getOrder().getSelectedOrderline();

@@ -102,7 +102,6 @@ export class SpreadsheetSelectorPanel extends Component {
         const currentSearch = ev.target.value;
         this.domain = currentSearch !== "" ? [["name", "ilike", currentSearch]] : [];
 
-        // Reset pager offset and get the total count based on the search criteria
         this.state.pagerProps.offset = 0;
         this._debouncedFetchSpreadsheets();
     }

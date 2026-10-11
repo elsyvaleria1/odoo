@@ -1,13 +1,3 @@
-/**
- * Global Knowledge flow tour.
- * Features tested:
- * - Create an article
- * - Change its title / content
- * - Share an article with a created partner
- * - Create 2 children articles and invert their order
- * - Favorite 2 different articles and invert their order in the favorite section
- */
-
 import {
     dragAndDropArticle,
     endKnowledgeTour,
@@ -20,22 +10,18 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
     steps: () => [
         stepUtils.showAppsMenuItem(),
         {
-            // open Knowledge App
             trigger: '.o_app[data-menu-xmlid="knowledge.knowledge_menu_root"]',
             run: "click",
         },
         {
-            // click on the "New Article" action
             trigger: ".o_knowledge_create_article",
             run: "click",
         },
         {
-            // check that the article is correctly created (private section)
             trigger:
                 'section[data-section="private"] .o_article .o_article_name:contains("Untitled")',
         },
         {
-            // check the autofocus
             trigger: ".note-editable.odoo-editor-editable",
             run: function () {
                 const selection = document.getSelection();
@@ -46,7 +32,7 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
         },
         {
             trigger: ".note-editable.odoo-editor-editable h1",
-            run: "editor My Private Article", // modify the article content
+            run: "editor My Private Article",
         },
         {
             trigger: 'section[data-section="workspace"]',
@@ -57,13 +43,10 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
                 'section[data-section="private"] .o_article .o_article_name:contains("My Private Article")',
         },
         {
-            // check that the article is correctly created (workspace section), and that the previous
-            // article has been renamed using its title (first h1 in body).
             trigger:
                 'section[data-section="workspace"] .o_article .o_article_name:contains("Untitled")',
         },
         {
-            // check the autofocus
             trigger: ".note-editable.odoo-editor-editable",
             run: function () {
                 const selection = document.getSelection();
@@ -74,34 +57,11 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
         },
         {
             trigger: ".o_hierarchy_article_name > input",
-            run: "edit My Workspace Article && click body", // modify the article name
+            run: "edit My Workspace Article && click body",
         },
         {
             trigger: ".note-editable.odoo-editor-editable",
-            run: "editor Content of My Workspace Article", // modify the article content
-        },
-        {
-            trigger: '.o_article:contains("My Workspace Article")',
-            run: "hover && click .o_article:contains(My Workspace Article) a.o_article_create",
-        },
-        {
-            // check that the article is correctly created (workspace section)
-            trigger:
-                'section[data-section="workspace"] .o_article .o_article_name:contains("Untitled")',
-        },
-        {
-            // check the autofocus
-            trigger: ".note-editable.odoo-editor-editable",
-            run: function () {
-                const selection = document.getSelection();
-                if (!this.anchor.contains(selection.anchorNode)) {
-                    throw new Error("The autofocus doesn't work");
-                }
-            },
-        },
-        {
-            trigger: ".o_hierarchy_article_name > input",
-            run: "edit Child Article 1 && click body", // modify the article name
+            run: "editor Content of My Workspace Article",
         },
         {
             trigger: '.o_article:contains("My Workspace Article")',
@@ -112,7 +72,6 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
                 'section[data-section="workspace"] .o_article .o_article_name:contains("Untitled")',
         },
         {
-            // check the autofocus
             trigger: ".note-editable.odoo-editor-editable",
             run: function () {
                 const selection = document.getSelection();
@@ -123,10 +82,30 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
         },
         {
             trigger: ".o_hierarchy_article_name > input",
-            run: "edit Child Article 2 && click body", // modify the article name
+            run: "edit Child Article 1 && click body",
         },
         {
-            // move child article 2 above child article 1
+            trigger: '.o_article:contains("My Workspace Article")',
+            run: "hover && click .o_article:contains(My Workspace Article) a.o_article_create",
+        },
+        {
+            trigger:
+                'section[data-section="workspace"] .o_article .o_article_name:contains("Untitled")',
+        },
+        {
+            trigger: ".note-editable.odoo-editor-editable",
+            run: function () {
+                const selection = document.getSelection();
+                if (!this.anchor.contains(selection.anchorNode)) {
+                    throw new Error("The autofocus doesn't work");
+                }
+            },
+        },
+        {
+            trigger: ".o_hierarchy_article_name > input",
+            run: "edit Child Article 2 && click body",
+        },
+        {
             trigger: '.o_article_handle:contains("Child Article 2")',
             run: ({ queryOne }) => {
                 dragAndDropArticle(
@@ -136,22 +115,18 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             },
         },
         {
-            // verify that the move was done
             trigger:
                 ".o_article:has(.o_article_name:contains(My Workspace Article)) ul li:first:contains(Child Article 2)",
         },
         {
-            // go back to main workspace article
             trigger:
                 'section[data-section="workspace"] .o_article .o_article_name:contains("My Workspace Article")',
             run: "click",
         },
         {
             trigger: '.o_knowledge_editor:contains("Content of My Workspace Article")',
-            // wait for article to be correctly loaded
         },
         {
-            // check the autofocus
             trigger: ".note-editable.odoo-editor-editable",
             run: function () {
                 const selection = document.getSelection();
@@ -161,7 +136,6 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             },
         },
         {
-            // open the share dropdown
             trigger: '.o_knowledge_header .btn:contains("Share")',
             run: "click",
         },
@@ -210,27 +184,22 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
                 ".o_knowledge_permission_panel_members span:contains('micheline@knowledge.com')",
         },
         {
-            // add to favorite
             trigger: ".o_knowledge_toggle_favorite",
             run: "click",
         },
         {
-            // check article was correctly added into favorites
             trigger:
                 'section[data-section="favorites"] .o_article .o_article_name:contains("My Workspace Article")',
         },
         {
-            // go back to private article
             trigger:
                 'section[data-section="private"] .o_article .o_article_name:contains("My Private Article")',
             run: "click",
         },
         {
             trigger: '.o_knowledge_editor:contains("My Private Article")',
-            // wait for article to be correctly loaded
         },
         {
-            // check the autofocus
             trigger: ".note-editable.odoo-editor-editable",
             run: function () {
                 const selection = document.getSelection();
@@ -240,16 +209,13 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             },
         },
         {
-            // add to favorite
             trigger: ".o_knowledge_toggle_favorite",
             run: "click",
         },
         {
-            // wait for the article to be registered as favorited
             trigger: ".o_knowledge_toggle_favorite .fa-star",
         },
         {
-            // move private article above workspace article in the favorite section
             trigger:
                 'section[data-section="favorites"] .o_article_handle:contains("My Private Article")',
             run: ({ queryOne }) => {
@@ -264,12 +230,10 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             },
         },
         {
-            // verify that the move was done
             trigger:
                 'section[data-section="favorites"] ul li:first:contains(My Private Article)',
         },
         {
-            // go back to main workspace article
             trigger:
                 'section[data-section="workspace"] .o_article .o_article_name:contains("My Workspace Article")',
             run: "click",
@@ -278,7 +242,6 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             trigger: ':contains("Content of My Workspace Article")',
         },
         {
-            // check the autofocus
             trigger: ".note-editable.odoo-editor-editable",
             run: function () {
                 const selection = document.getSelection();
@@ -288,17 +251,14 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             },
         },
         {
-            // click on the "New Article" action
             trigger: ".o_knowledge_create_article",
             run: "click",
         },
         {
             trigger:
                 'section[data-section="private"] .o_article .o_article_name:contains("Untitled")',
-            // check that the article is correctly created (private section)
         },
         {
-            // check the autofocus
             trigger: ".note-editable.odoo-editor-editable",
             run: function () {
                 const selection = document.getSelection();
@@ -309,10 +269,9 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
         },
         {
             trigger: ".o_hierarchy_article_name > input",
-            run: "edit Article to be moved && click body", // modify the article name
+            run: "edit Article to be moved && click body",
         },
         {
-            // move article
             trigger: ".o_knowledge_header .dropdown-toggle",
             run: "click",
         },
@@ -337,7 +296,6 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             run: "click",
         },
         {
-            // open the trash
             trigger: '.o_knowledge_sidebar_trash a:contains("Open the Trash")',
             run: "click",
         },
@@ -345,7 +303,6 @@ registry.category("web_tour.tours").add("knowledge_main_flow_tour", {
             trigger: '.o_breadcrumb .active:contains("Trash")',
         },
         {
-            // verify that the trash list has been opened correctly and that items are correctly ordered
             trigger:
                 '.o_data_row:first .o_data_cell[name="display_name"]:contains("Article 2")',
         },

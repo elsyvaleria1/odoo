@@ -21,13 +21,11 @@ export class ProjectTaskMapRenderer extends MapRenderer {
         });
     }
 
-    /** An unplanned task is greyed out, on top of whatever the base decides. */
     getPinListItemClass(record) {
         const classes = super.getPinListItemClass(record);
         return record.date_start ? classes : `${classes} text-muted`;
     }
 
-    /** Only a project manager can act on the invitation to set a token. */
     get displayNoMapTokenAlert() {
         return super.displayNoMapTokenAlert && this.isProjectManager;
     }

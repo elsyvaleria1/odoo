@@ -57,10 +57,8 @@ export class StudioActionContainer extends Component {
                 this.actionKey = actionKey;
             } catch (e) {
                 if (action !== "web_studio.action_editor") {
-                    // Fallback on the actionEditor, except if the actionEditor crashes
                     this.studio.setParams({ editorTab: "views" });
                 }
-                // Rethrow anyway: the error doesn't originates from a user's action
                 throw e;
             }
         };
@@ -118,7 +116,7 @@ export class StudioActionContainer extends Component {
             const action = await rpc("/web_studio/get_studio_action", {
                 action_name: editorTab,
                 model: editedAction.res_model,
-                view_id: editedAction.view_id && editedAction.view_id[0], // Not sure it is correct or desirable
+                view_id: editedAction.view_id && editedAction.view_id[0],
             });
             action.help = action.help && markup(action.help);
             return action;

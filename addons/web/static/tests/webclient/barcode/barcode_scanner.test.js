@@ -338,7 +338,6 @@ test("a successful read clears the failure count", async () => {
     const errors = [];
     await mountScanner({ onError: (/** @type {any} */ e) => errors.push(e) });
 
-    // Startup may schedule the first frame after the first clock advance.
     for (let i = 0; i < 12 && attempts < 9; i++) {
         await advanceTime(100);
     }
@@ -449,7 +448,6 @@ function makeFakeZXing(found) {
             setHints() {}
             decodeWithState() {
                 if (!found) {
-                    // As the bundled library throws it: renamed class, intact kind.
                     const err = Object.assign(new Error("no symbol"), {
                         name: "NotFoundException2",
                         getKind: () => "NotFoundException",

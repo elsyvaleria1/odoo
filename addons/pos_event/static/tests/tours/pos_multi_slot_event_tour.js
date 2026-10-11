@@ -13,7 +13,6 @@ registry.category("web_tour.tours").add("SellingMultiSlotEventInPos", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Confirm popup - Not enough tickets available for this choice
             ProductScreen.clickDisplayedProduct("My Awesome Event"),
             SlotSelectionScreen.clickDisplayedSlot("08:00"),
             Dialog.confirm(),
@@ -21,7 +20,6 @@ registry.category("web_tour.tours").add("SellingMultiSlotEventInPos", {
             Dialog.confirm(),
             Dialog.confirm(),
 
-            // Confirm popup - Not enough tickets available for this ticket
             ProductScreen.clickDisplayedProduct("My Awesome Event"),
             SlotSelectionScreen.clickDisplayedSlot("10:00"),
             Dialog.confirm(),
@@ -30,7 +28,6 @@ registry.category("web_tour.tours").add("SellingMultiSlotEventInPos", {
             Dialog.confirm(),
             Dialog.confirm(),
 
-            // Confirm popup - Enough availability
             ProductScreen.clickDisplayedProduct("My Awesome Event"),
             SlotSelectionScreen.clickDisplayedSlot("08:00"),
             Dialog.confirm(),
@@ -48,7 +45,6 @@ registry.category("web_tour.tours").add("SellingMultiSlotEventInPos", {
             EventTourUtils.printTicket("badge"),
             ReceiptScreen.clickNextOrder(),
 
-            // Slot is now unavailable
             ProductScreen.clickDisplayedProduct("My Awesome Event"),
             SlotSelectionScreen.assertDisabledSlot("08:00"),
         ].flat(),

@@ -14,7 +14,6 @@ patch(ChatWindow.prototype, {
         if (thread.channel_type !== "livechat") {
             return;
         }
-        // Forwarding can only happen on persisted threads.
         if (thread.isTransient) {
             thread =
                 await this.store.env.services["im_livechat.livechat"].persist(thread);

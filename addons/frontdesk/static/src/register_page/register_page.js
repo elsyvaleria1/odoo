@@ -25,12 +25,10 @@ export class RegisterPage extends Component {
 
         onWillStart(async () => {
             if (!this.props.plannedVisitorData) {
-                // Check if a visitor has already been created
                 const visitorCreated = sessionStorage.getItem("visitorCreated");
                 if (!visitorCreated) {
                     await this.props.createVisitor();
                     if (this.props.isMobile) {
-                        // Set the flag in sessionStorage
                         sessionStorage.setItem("visitorCreated", "true");
                     }
                 }
@@ -39,7 +37,6 @@ export class RegisterPage extends Component {
 
         onWillUnmount(() => {
             if (this.props.isMobile) {
-                // Clear the visitorCreated flag
                 sessionStorage.removeItem("visitorCreated");
             }
         });

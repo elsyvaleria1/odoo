@@ -1,9 +1,3 @@
-// Every patch(target, extension) call of the given sources, with the target
-// named by the module that exports it and the keys the extension defines.
-// argv[2]: a JSON file of [{addon, module, path}], module being "@addon/path" without ".js";
-// stdout: {patches: [{addon, path, line, target, keys}], errors: [...]}.
-// A target or an extension it cannot name statically is reported with
-// target or keys null: the caller decides what that means.
 import { parse } from "acorn";
 import { readFileSync } from "node:fs";
 import { posix } from "node:path";
@@ -41,7 +35,6 @@ function objectKeys(node) {
     for (const prop of node.properties) {
         const name = propertyName(prop);
         if (name === null) {
-            // a spread or a computed key: what it adds is unknown
             return null;
         }
         keys.push(name);
@@ -63,9 +56,7 @@ function scan({ addon, module, path }) {
     const imports = new Map();
     const localObjects = new Map();
     const localNames = new Set();
-    // a function whose body is an object literal, or returns one
     const localFactories = new Map();
-    // const reg = registry.category("c"): its entries are named by "c"
     const localRegistries = new Map();
     const exportedNames = new Set();
     const destructured = new Map();
@@ -107,7 +98,6 @@ function scan({ addon, module, path }) {
         const exported = node.type === "ExportNamedDeclaration";
         if (declaration.type === "VariableDeclaration") {
             for (const decl of declaration.declarations) {
-                // const { a, b: c } = X: a is X.a, c is X.b
                 if (decl.id.type === "ObjectPattern" && decl.init) {
                     for (const prop of decl.id.properties) {
                         const key = propertyName(prop);
@@ -172,7 +162,6 @@ function scan({ addon, module, path }) {
             .filter(([, i]) => i.from === PATCH_MODULE && i.imported === "patch")
             .map(([local]) => local),
     );
-    // what another module's patch may import as its extension
     const exported = { registries: {} };
     for (const name of exportedNames) {
         if (localRegistries.has(name)) {
@@ -186,8 +175,6 @@ function scan({ addon, module, path }) {
     if (!patchNames.size) {
         return { found: [], exported };
     }
-    // a member of a namespace import is the export of that name, so
-    // `ns.components.X` and `import { components }` name one target
     const member = (owner, key) =>
         owner.endsWith(":*") ? `${owner.slice(0, -1)}${key}` : `${owner}.${key}`;
     const nameOf = (node) => {
@@ -211,7 +198,6 @@ function scan({ addon, module, path }) {
             const owner = nameOf(node.object);
             return owner && member(owner, node.property.name);
         }
-        // registry.category("c").get("k"): the entry, named by its keys
         const literal = (arg) =>
             arg?.type === "Literal" && typeof arg.value === "string";
         if (
@@ -268,7 +254,6 @@ function scan({ addon, module, path }) {
         ) {
             return objectKeys(localFactories.get(node.callee.name));
         }
-        // imported: resolved once every module's exports are known
         const ref =
             node.type === "Identifier"
                 ? imports.get(node.name)

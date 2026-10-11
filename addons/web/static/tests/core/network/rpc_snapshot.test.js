@@ -298,8 +298,6 @@ test("parameter serialization cannot mutate the captured retry options", async (
         },
         settings,
     );
-    // Attach before advancing the clock so a regression does not create an
-    // unrelated unhandled rejection in the test runner.
     const outcome = pending.catch((error) => error);
     await tick();
     expect(await outcome).toBe(true);

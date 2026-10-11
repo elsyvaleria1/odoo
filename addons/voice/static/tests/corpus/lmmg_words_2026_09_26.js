@@ -1,8 +1,5 @@
 // @ts-check
 
-// LMMG, 2026-09-26, the word-choice recording: candidate phrases per command, each
-// read twice, as written and as each local Whisper model heard them. The barcode
-// lines (validate, quantities) live in stock_barcode_voice.
 export const LMMG_WORDS_2026_09_26 = [
     {
         file: "w007.wav",

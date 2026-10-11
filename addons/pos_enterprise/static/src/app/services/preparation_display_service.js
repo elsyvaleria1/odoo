@@ -132,7 +132,6 @@ export class PrepDisplay extends WithLazyGetterTrap {
         return this.data.models["pos.category"].getAll();
     }
     removeOrdersByPosOrderIds(posOrderIds = []) {
-        // Remove orders and their dependent records
         if (!posOrderIds.length) {
             return;
         }
@@ -142,8 +141,6 @@ export class PrepDisplay extends WithLazyGetterTrap {
         const prepLineIds = prepOrders.flatMap(({ prep_line_ids }) =>
             prep_line_ids.map(({ id }) => id),
         );
-        // Prep states must be removed explicitly since they have no cascade relation
-        // with prep lines or preparation orders.
         this.data.models["pos.prep.state"]
             .filter(({ prep_line_id }) => prepLineIds.includes(prep_line_id.id))
             .forEach((state) => state.delete());
@@ -377,12 +374,11 @@ export class PrepDisplay extends WithLazyGetterTrap {
             const stageA = a.stage;
             const stageB = b.stage;
             const stageDiff =
-                stageA.sequence - stageB.sequence || stageA.id - stageB.id; // sort by stage
+                stageA.sequence - stageB.sequence || stageA.id - stageB.id;
 
             if (stageDiff) {
                 return stageDiff;
             }
-            // within the stage, keep the default order unless the state is done then show most recent first.
             let difference;
             const aWriteDate = Math.max(
                 ...a.states.map((sate) => sate.write_date.epochMilliseconds),

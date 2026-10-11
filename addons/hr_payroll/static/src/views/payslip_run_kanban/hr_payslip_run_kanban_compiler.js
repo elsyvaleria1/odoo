@@ -28,10 +28,6 @@ export class PayRunKanbanCompiler extends KanbanCompiler {
         }
     }
 
-    //-----------------------------------------------------------------------------
-    // Compilers
-    //-----------------------------------------------------------------------------
-
     /**
      * @param {Element} el
      * @param {Record<string, any>} params

@@ -234,9 +234,7 @@ export function detectGeometryType(layerConfig, data) {
                 if (type.includes("polygon")) {
                     return "polygon";
                 }
-            } catch {
-                // an unreadable geometry falls back to a polygon below
-            }
+            } catch {}
         }
     }
 

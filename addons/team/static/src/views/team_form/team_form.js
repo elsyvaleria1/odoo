@@ -25,9 +25,6 @@ export class TeamFormController extends FormController {
                 { flags },
             );
         } catch (error) {
-            // the button only shows to administrators of the team's usages, so
-            // what reaches here is a concurrent update or a failing write, and
-            // the server's own message says which
             this.notification.add(
                 error.data?.message ||
                     error.message ||
@@ -37,9 +34,6 @@ export class TeamFormController extends FormController {
             return false;
         }
         if (record.isNew || (await record.isDirty())) {
-            // the banner is raised by the very edit that is still unsaved:
-            // reloading would discard it, and saving first would evict the
-            // member from their other team before the option is on
             const changes = { member_warning: false };
             if ("is_membership_multi" in record.fields) {
                 changes.is_membership_multi = true;

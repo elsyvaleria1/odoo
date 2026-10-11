@@ -5,11 +5,6 @@ const { DEFAULT_LOCALE } = constants;
 const { pivotNormalizationValueRegistry } = registries;
 const { toString, toNumber } = helpers;
 
-/**
- * Add pivot normalizaton functions to support odoo specific fields
- * in spreadsheet
- */
-
 pivotNormalizationValueRegistry
     .add("text", (value) => toString(value))
     .add("reference", (value) => toString(value))

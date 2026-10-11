@@ -6,8 +6,6 @@ import { getFilledOrder, setupPosEnv } from "../utils.js";
 
 definePosModels();
 
-/** The ticket screen's own shape: the detail is stored on the order that owns
- * the line being refunded, keyed by that line's uuid. */
 async function anOrderBeingRefunded(store) {
     const original = await getFilledOrder(store);
     const originalLine = original.lines[0];
@@ -54,8 +52,6 @@ describe("the till counts a draft refund made elsewhere", () => {
     test("it refuses what the server's guard, which counts only settled refunds, would accept", async () => {
         const store = await setupPosEnv();
         const { originalLine, refundLine } = await anOrderBeingRefunded(store);
-        // the server's refunded_qty includes a 2-unit draft refund on another till;
-        // the cash of a till refund is handed back at once, so the till stays stricter
         originalLine.refunded_qty = 2;
 
         expect(originalLine.qty).toBe(3);
@@ -65,7 +61,6 @@ describe("the till counts a draft refund made elsewhere", () => {
     });
 });
 
-/** A synced refund line of `originalLine`: the server's refunded_qty counts it. */
 async function aSyncedRefund(store, originalLine, id, qty) {
     const refundOrder = store.addNewOrder();
     return store.models["pos.order.line"].create({
@@ -109,7 +104,6 @@ describe("a synced refund line edited on this till", () => {
         );
         const other = await aSyncedRefund(store, originalLine, 9102, -1);
         const refund = await aSyncedRefund(store, originalLine, 9103, -1);
-        // 1 more was refunded in a session this till has not loaded
         originalLine.refunded_qty = 3;
         expect(originalLine.refundedQty).toBe(3);
 
@@ -133,7 +127,6 @@ describe("a synced refund line edited on this till", () => {
         const row = JSON.parse(JSON.stringify(refund.serializeForIndexedDB()));
         expect(row.__dirty).toBe(true);
 
-        // a reload restores the row; under new keys, as the deleted ones stay pending
         const refundOrder = refund.order_id;
         refund.delete({ silent: true });
         store.models["pos.order.line"].create({
@@ -203,7 +196,6 @@ test("refundedQty never undercounts a synced refund edited since", async () => {
         price_unit: line.price_unit,
         refunded_orderline_id: line,
     });
-    // the server counts the synced -2 and 3 refunded in another session
     line.refunded_qty = 5;
     expect(refund.isSynced).toBe(true);
     expect(line.refundedQty).toBe(5);

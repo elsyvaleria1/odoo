@@ -26,8 +26,6 @@ const startWebSocketWorker = async (onBroadcast) => {
                 onBroadcast(...args);
                 return super.broadcast(...args);
             },
-            // a batch is handed to the tabs it is for, not broadcast: still
-            // the one event the tests mean by a batch reaching the clients
             _deliverNotifications(notifications, highestId) {
                 onBroadcast("BUS:NOTIFICATION", notifications);
                 return super._deliverNotifications(notifications, highestId);
@@ -36,9 +34,6 @@ const startWebSocketWorker = async (onBroadcast) => {
     }
     worker._start();
     await runAllTimers();
-    // The mock WebSocket dispatches its `open` on a task tick, so the socket may
-    // still be CONNECTING here; wait for the connection to settle so callers get
-    // a genuinely CONNECTED worker.
     await waitUntil(() => worker.state !== "CONNECTING");
     return worker;
 };
@@ -78,8 +73,6 @@ test("reconnecting/reconnect event is broadcasted", async () => {
 });
 
 test("a connection back after a stop is a reconnect too", async () => {
-    // offline -> BUS:STOP, online -> BUS:START: the tabs were connected before,
-    // and what listens for a reconnect (resync, refetch) must hear one.
     const worker = await startWebSocketWorker((type) => {
         if (["BUS:CONNECT", "BUS:RECONNECT"].includes(type)) {
             asyncStep(type);
@@ -106,7 +99,6 @@ test("a user switch after an expired session connects, not reconnects", async ()
         startTs: 1,
     });
     await waitForSteps(["BUS:CONNECT"]);
-    // the retry is still pending when the next user's tab initializes
     worker.websocket.close(WEBSOCKET_CLOSE_CODES.SESSION_EXPIRED);
     await waitUntil(() => worker.isReconnecting);
     worker._initializeConnection(client, {
@@ -183,10 +175,6 @@ test("a notification goes to the tabs that claimed a name of its channel, an unn
 });
 
 test("non-array JSON frame is ignored, not thrown on", async () => {
-    // A frame that is valid JSON but not a notification array (e.g. an echoed
-    // control frame) must be ignored rather than throwing out of the message
-    // listener on `payload.filter`. Regression test for the `Array.isArray`
-    // guard in `_onWebsocketMessage`.
     const notifications = [{ id: 71, message: { type: "bundle_changed" } }];
     const worker = await startWebSocketWorker((type) => {
         if (["BUS:CONNECT", "BUS:NOTIFICATION"].includes(type)) {
@@ -194,13 +182,10 @@ test("non-array JSON frame is ignored, not thrown on", async () => {
         }
     });
     await waitForSteps(["broadcast BUS:CONNECT"]);
-    // Non-array JSON payloads: an object and a bare number. Neither should
-    // throw nor broadcast a notification.
     for (const frame of ['{"foo": "bar"}', "123", '"a string"']) {
         worker.websocket.dispatchEvent(new MessageEvent("message", { data: frame }));
     }
     await runAllTimers();
-    // The worker is still alive and processes a subsequent valid batch.
     for (const serverWs of MockServer.current._websockets) {
         serverWs.send(JSON.stringify(notifications));
     }
@@ -268,15 +253,9 @@ test("check connection health during inactivity", async () => {
 });
 
 test("last notification id adopts the new DB's watermark on a database change", async () => {
-    // `bus_bus.id` is a per-database sequence, so the old DB's watermark must be
-    // dropped. But the incoming tab's `lastNotificationId` is read from the NEW
-    // DB's (db-scoped) localStorage key, so it is the correct baseline and must
-    // be adopted — resetting to 0 would subscribe with `last: 0` ("from now")
-    // and skip notifications committed before the resubscribe.
     const worker = await startWebSocketWorker();
     const client = { postMessage() {}, addEventListener() {} };
     worker.registerClient(client);
-    // First DB: establish `currentDB` and a high watermark + a stale queued msg.
     worker._initializeConnection(client, {
         db: "db1",
         uid: 1,
@@ -285,7 +264,6 @@ test("last notification id adopts the new DB's watermark on a database change", 
     });
     worker.lastNotificationId = 100;
     worker.pendingMessages.set("some_event", "stale-from-db1");
-    // Switch to a different DB, carrying that DB's own watermark.
     worker._initializeConnection(client, {
         db: "db2",
         uid: 1,
@@ -296,7 +274,6 @@ test("last notification id adopts the new DB's watermark on a database change", 
     expect(worker.currentDB).toBe("db2");
     expect(worker.lastNotificationId).toBe(5);
     expect(worker.pendingMessages.size).toBe(0);
-    // A DB change with no known watermark for the new DB falls back to 0.
     worker._initializeConnection(client, {
         db: "db3",
         uid: 1,
@@ -307,11 +284,6 @@ test("last notification id adopts the new DB's watermark on a database change", 
 });
 
 test("a uid/db switch asks every client to replay its channels", async () => {
-    // Switching uid (logout/login) or db wipes every client's worker-side
-    // channel map. The other tabs keep their page-side claims but are not
-    // re-initialized, so without a broadcast RESYNC their channels vanish from
-    // the next subscribe and never come back — a silently dead bus for those
-    // tabs. Every registered client must be asked to replay its snapshot.
     const worker = await startWebSocketWorker();
     const receivedByOther = [];
     const other = {
@@ -321,7 +293,6 @@ test("a uid/db switch asks every client to replay its channels", async () => {
     const switcher = { addEventListener: () => {}, postMessage() {} };
     worker.registerClient(other);
     worker.registerClient(switcher);
-    // Establish the first uid/db and give the other tab a channel claim.
     worker._initializeConnection(switcher, {
         db: "db1",
         uid: 1,
@@ -330,7 +301,6 @@ test("a uid/db switch asks every client to replay its channels", async () => {
     });
     worker._addChannel(other, "chA");
     receivedByOther.length = 0;
-    // The switcher re-initializes as a different user.
     worker._initializeConnection(switcher, {
         db: "db1",
         uid: 2,
@@ -342,11 +312,6 @@ test("a uid/db switch asks every client to replay its channels", async () => {
 });
 
 test("every reconnect re-subscribes with the current channels", async () => {
-    // A new connection is a fresh `Connection` whose `lastSubscription` starts
-    // null, so the open-time `_updateChannels` always (re)subscribes — even when
-    // the channel set is unchanged from the previous connection. This makes the
-    // "always subscribe on a fresh connection" invariant structural (it used to
-    // depend on nulling a worker field on every open/close/stop).
     const subscriptions = [];
     onWebsocketEvent("subscribe", ({ channels }) => subscriptions.push(channels));
     const worker = await startWebSocketWorker((type) => {
@@ -359,25 +324,16 @@ test("every reconnect re-subscribes with the current channels", async () => {
     worker._addChannel(client, "chA");
     await runAllTimers();
     expect(subscriptions).toEqual([["chA"]]);
-    // Force an unclean close → automatic reconnect, WITHOUT changing channels.
     subscriptions.length = 0;
     worker.websocket.close(WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
     await waitForSteps(["BUS:DISCONNECT"]);
     await runAllTimers();
     await waitForSteps(["BUS:RECONNECT"]);
-    // The open-time subscribe is debounced (~300ms after reopen); fire it.
     await runAllTimers();
-    // The brand-new connection re-subscribed despite the unchanged channel set.
     expect(subscriptions).toEqual([["chA"]]);
 });
 
 test("an added channel and a forced update in one window send one subscribe", async () => {
-    // Discuss pins a thread and does both at once: `bus_service.addChannel()`
-    // arms the plain update, while mail's store patch calls
-    // `forceUpdateChannels()`. These used to be two independent debouncers, so
-    // both fired in the same window and the server received the identical
-    // subscription twice — `force` bypasses the dedup guard in
-    // `_updateChannels`, so the second frame was never filtered out.
     const subscriptions = [];
     onWebsocketEvent("subscribe", ({ channels }) => subscriptions.push(channels));
     const worker = await startWebSocketWorker();
@@ -392,9 +348,6 @@ test("an added channel and a forced update in one window send one subscribe", as
 });
 
 test("a forced update on its own still re-subscribes unchanged channels", async () => {
-    // The counterpart of the test above: collapsing the two debouncers must not
-    // cost `BUS:FORCE_UPDATE_CHANNELS` its reason to exist. Bypassing the dedup
-    // guard on an explicit force is the whole point of the action.
     const subscriptions = [];
     onWebsocketEvent("subscribe", ({ channels }) => subscriptions.push(channels));
     const worker = await startWebSocketWorker();
@@ -409,11 +362,8 @@ test("a forced update on its own still re-subscribes unchanged channels", async 
 });
 
 test("a late event from a superseded socket is ignored (epoch guard)", async () => {
-    // Once a newer connection replaces the socket, a straggler `message`/`close`
-    // from the old socket must not act on the current connection.
     const worker = await startWebSocketWorker();
     const staleSocket = worker.websocket;
-    // Supersede the connection with a different socket (mimics a new `_start`).
     worker._connection = {
         socket: { readyState: 1 },
         subscribeDeferred: new Deferred(),
@@ -426,24 +376,17 @@ test("a late event from a superseded socket is ignored (epoch guard)", async () 
             return super.broadcast(type, ...rest);
         },
     });
-    // A stale message from the OLD socket: ignored → no BUS:NOTIFICATION.
     worker._onWebsocketMessage({
         type: "message",
         currentTarget: staleSocket,
         data: JSON.stringify([{ id: 1, message: "x" }]),
     });
     expect(broadcasts).not.toInclude("BUS:NOTIFICATION");
-    // A stale close from the OLD socket: ignored → no disconnect/reconnect.
     worker._onWebsocketClose({ type: "close", currentTarget: staleSocket, code: 1006 });
     expect(broadcasts).not.toInclude("BUS:DISCONNECT");
 });
 
 test("client that sent BUS:LEAVE can come back", async () => {
-    // `bus_service.stop()` sends BUS:LEAVE, dropping the client from
-    // `channelsByClient`. A later `start()`/`addChannel()` from the same
-    // (still alive) port must re-register it: without the re-registration,
-    // BUS:ADD_CHANNEL crashes on the missing channel list and the tab stays
-    // permanently deaf to broadcasts.
     const worker = await startWebSocketWorker();
     const received = [];
     const client = {
@@ -455,31 +398,21 @@ test("client that sent BUS:LEAVE can come back", async () => {
     expect(worker.channelsByClient.has(client)).toBe(false);
     worker._onClientMessage(client, { action: "BUS:ADD_CHANNEL", data: "chA" });
     await runAllTimers();
-    // `channelsByClient` values are now `Map<channel, refcount>`, not string[].
     expect(worker.channelsByClient.get(client)).toEqual(new Map([["chA", 1]]));
     worker.broadcast("BUS:NOTIFICATION", []);
     expect(received.some(({ type }) => type === "BUS:NOTIFICATION")).toBe(true);
 });
 
 test("reconnect sends exactly one fresh subscribe and flushes queued app messages", async () => {
-    // Subscribes are never queued: `_updateChannels` only subscribes on an open
-    // socket (sending directly), so the wait queue holds application messages
-    // only. A reconnect therefore emits exactly one fresh subscribe, then
-    // flushes the queued application messages after it.
     const worker = await startWebSocketWorker();
     const client = { postMessage() {}, addEventListener() {} };
     worker.registerClient(client);
     worker._addChannel(client, "chA");
     await runAllTimers();
     worker._stop();
-    // An application message sent while stopped is queued; a subscribe is not
-    // (nothing subscribes while the socket is down).
     worker._sendToServer({ event_name: "some_event", data: 1 });
     expect(worker.pendingMessages.size).toBe(1);
     worker._start();
-    // Intercept at the socket-instance level: the open-time subscribe from
-    // `_updateChannels` AND the queue flush (which calls `websocket.send`
-    // directly) both go through this instance.
     const sentFrames = [];
     const ogSend = worker.websocket.send.bind(worker.websocket);
     worker.websocket.send = (message) => {
@@ -488,28 +421,20 @@ test("reconnect sends exactly one fresh subscribe and flushes queued app message
         }
         ogSend(message);
     };
-    // Let the reconnect's `open` settle (dispatched on a task tick), then flush
-    // the debounced open-time `_updateChannels` (fresh subscribe + queue flush).
     await waitUntil(() => worker.state !== "CONNECTING");
     await runAllTimers();
     const subscribes = sentFrames.filter((f) => f.event_name === "subscribe");
     expect(subscribes).toHaveLength(1);
     expect(subscribes[0].data.last).toBe(worker._resumeFrom());
-    // The queued application message went through, after the subscribe.
     expect(sentFrames.some((f) => f.event_name === "some_event")).toBe(true);
     expect(worker.pendingMessages.size).toBe(0);
 });
 
 test("a send chained on the subscribe gate is re-queued when the connection is torn down", async () => {
-    // A non-subscribe message sent on a connected-but-not-yet-subscribed socket
-    // waits on the connection's subscribe gate. If the connection is stopped
-    // before subscribing, resolving the gate must re-queue the message for the
-    // next open — not write it to the dead/superseded socket and lose it.
     const worker = await startWebSocketWorker();
-    // Connected socket whose subscribe has not gone out yet: reset the gate.
     worker._connection.subscribeDeferred = new Deferred();
     worker._sendToServer({ event_name: "some_event", data: 1 });
-    worker._stop(); // resolves the gate and drops the connection
+    worker._stop();
     await runAllTimers();
     expect([...worker.pendingMessages.values()]).toEqual([
         JSON.stringify({ event_name: "some_event", data: 1 }),
@@ -517,10 +442,6 @@ test("a send chained on the subscribe gate is re-queued when the connection is t
 });
 
 test("non-BUS port traffic does not resurrect a client that sent BUS:LEAVE", async () => {
-    // The websocket worker sees EVERY message on the shared port, including
-    // BASE:* init traffic. A client dropped via BUS:LEAVE (`bus_service.stop()`)
-    // must only be re-registered by a BUS action it sends itself — not by an
-    // unrelated non-BUS message, which would silently undo `stop()`.
     const worker = await startWebSocketWorker();
     const client = {
         postMessage: () => {},
@@ -532,7 +453,6 @@ test("non-BUS port traffic does not resurrect a client that sent BUS:LEAVE", asy
     expect(worker.channelsByClient.has(client)).toBe(false);
     worker._onClientMessage(client, { action: "BASE:SOMETHING" });
     expect(worker.channelsByClient.has(client)).toBe(false);
-    // A BUS action from the client itself re-registers it.
     worker._onClientMessage(client, { action: "BUS:ADD_CHANNEL", data: "chB" });
     expect(worker.channelsByClient.has(client)).toBe(true);
 });
@@ -540,14 +460,9 @@ test("non-BUS port traffic does not resurrect a client that sent BUS:LEAVE", asy
 test("stop reports DISCONNECTED and re-queues sends pending on the first subscribe", async () => {
     const worker = await startWebSocketWorker();
     expect(worker.state).toBe("CONNECTED");
-    // Connected socket whose first subscribe has not been sent yet: the
-    // message below is chained on the connection's subscribe gate.
     worker._connection.subscribeDeferred = new Deferred();
     worker._sendToServer({ event_name: "some_event", data: 1 });
     worker._stop();
-    // `_stop` removed the socket listeners (no close event will fire), so it
-    // must itself resolve the gate (re-queueing the pending message) and
-    // report DISCONNECTED to newly opened tabs.
     await runAllTimers();
     expect(worker.state).toBe("DISCONNECTED");
     expect([...worker.pendingMessages.values()]).toEqual([
@@ -556,9 +471,6 @@ test("stop reports DISCONNECTED and re-queues sends pending on the first subscri
 });
 
 test("liveness sweep pings silent clients and evicts dead ones", async () => {
-    // A crashed/OOM-killed tab never sends BUS:LEAVE: after
-    // CLIENT_LIVENESS_TIMEOUT of silence (with an unanswered BUS:PING at the
-    // halfway mark) the sweep must drop its port while responsive clients stay.
     const worker = await startWebSocketWorker();
     const pings = [];
     const liveClient = {
@@ -584,8 +496,6 @@ test("liveness sweep pings silent clients and evicts dead ones", async () => {
     worker.lastSeenByClient.set(liveClient, pastPingThreshold);
     worker.lastSeenByClient.set(deadClient, pastPingThreshold);
     worker._sweepClientLiveness();
-    // Both got pinged; the live one answered (BUS:PONG refreshed its
-    // lastSeen), the dead one stayed silent.
     expect(pings.sort()).toEqual(["dead", "live"]);
     worker.lastSeenByClient.set(
         deadClient,
@@ -603,20 +513,12 @@ test("BUS:PONG proves liveness but does not resurrect an evicted client", async 
     worker._onClientMessage(client, { action: "BUS:ADD_CHANNEL", data: "chA" });
     expect(worker.channelsByClient.has(client)).toBe(true);
     worker._unregisterClient(client);
-    // A pong racing the eviction must not re-register the client with an
-    // empty channel list while its tab still believes it is subscribed.
     worker._onClientMessage(client, { action: "BUS:PONG" });
     expect(worker.channelsByClient.has(client)).toBe(false);
-    // Nor recreate a ghost liveness entry: the sweep iterates lastSeenByClient,
-    // so a ghost would be pinged (and auto-ponged) forever, never reclaimed.
     expect(worker.lastSeenByClient.has(client)).toBe(false);
 });
 
 test("non-participatory actions do not resurrect an evicted/stopped client", async () => {
-    // Re-registration is an allowlist (START/ADD_CHANNEL/SET_CHANNELS/
-    // INITIALIZE_CONNECTION). Actions that do not express intent to receive —
-    // BUS:STOP (an `offline` event), BUS:SEND — must never bring a stopped
-    // client back, or `stop()` silently stops sticking.
     const worker = await startWebSocketWorker();
     const client = { addEventListener: () => {}, postMessage: () => {} };
     worker._onClientMessage(client, { action: "BUS:ADD_CHANNEL", data: "chA" });
@@ -632,11 +534,6 @@ test("non-participatory actions do not resurrect an evicted/stopped client", asy
 });
 
 test("re-registering an evicted client requests a channel RESYNC", async () => {
-    // A client evicted by the liveness sweep while its tab was frozen (Page
-    // Lifecycle freeze / system suspend) resumes and sends BUS:START. The
-    // worker re-registers it with an empty map and asks it to replay its
-    // channels — resume fires `resume`/`visibilitychange`, never `pageshow`,
-    // so this worker-driven RESYNC is the only recovery signal.
     const worker = await startWebSocketWorker();
     const received = [];
     const client = {
@@ -652,12 +549,9 @@ test("re-registering an evicted client requests a channel RESYNC", async () => {
 });
 
 test("an outdated worker signals OUTDATED even on the older-startTs early return", async () => {
-    // Regression: the early-return path of `_initializeConnection` used to omit
-    // BUS:OUTDATED, so a late/lazy tab initializing after a server upgrade got a
-    // silently dead bus and could still win the main-tab election.
     const worker = await startWebSocketWorker();
     worker.active = false;
-    worker.newestStartTs = 100; // a newer tab already initialized
+    worker.newestStartTs = 100;
     const received = [];
     const client = {
         addEventListener: () => {},
@@ -668,16 +562,13 @@ test("an outdated worker signals OUTDATED even on the older-startTs early return
         db: "db1",
         uid: 1,
         websocketURL: worker.websocketURL,
-        startTs: 1, // older -> early return
+        startTs: 1,
     });
     expect(received.some(({ type }) => type === "BUS:INITIALIZED")).toBe(true);
     expect(received.some(({ type }) => type === "BUS:OUTDATED")).toBe(true);
 });
 
 test("a wall-clock jump (system suspend) does not mass-evict live clients", async () => {
-    // Timers do not fire while the machine is asleep: on wake, the single
-    // delayed sweep sees every client's `lastSeen` predating the sleep. It must
-    // refresh their windows, not evict them all before they can send.
     const worker = await startWebSocketWorker();
     const client = { addEventListener: () => {}, postMessage: () => {} };
     worker.registerClient(client);
@@ -686,26 +577,16 @@ test("a wall-clock jump (system suspend) does not mass-evict live clients", asyn
     worker._lastLivenessSweepTs = now - worker.CLIENT_LIVENESS_TIMEOUT - 5000;
     worker._sweepClientLiveness();
     expect(worker.channelsByClient.has(client)).toBe(true);
-    // The sweep reads its own `Date.now()`: asserting equality with the one
-    // captured above fails whenever a millisecond passes between the two.
     expect(worker.lastSeenByClient.get(client)).toBeGreaterThanOrEqual(now);
 });
 
 test("a moderate suspend (under the liveness timeout) does not evict live clients", async () => {
-    // A laptop sleep of a few minutes skips sweeps without exceeding
-    // CLIENT_LIVENESS_TIMEOUT. Ages still inflate by the lost time and no tab
-    // could answer a ping while asleep, so a tab already past TIMEOUT/2 would
-    // jump past TIMEOUT and be evicted in a single post-wake sweep. Any skipped
-    // sweep interval must be treated as lost time and grant a fresh window.
     const worker = await startWebSocketWorker();
     const client = { addEventListener: () => {}, postMessage: () => {} };
     worker.registerClient(client);
     const now = Date.now();
-    // Gap between one sweep interval and the full timeout: the old
-    // `> CLIENT_LIVENESS_TIMEOUT` guard missed it.
     const gap = worker.CLIENT_LIVENESS_TIMEOUT - worker.CLIENT_LIVENESS_SWEEP_DELAY;
     expect(gap).toBeGreaterThan(worker.CLIENT_LIVENESS_SWEEP_DELAY * 2);
-    // The client was past the half-timeout (ping) mark just before the sleep.
     worker.lastSeenByClient.set(
         client,
         now - gap - worker.CLIENT_LIVENESS_TIMEOUT / 2 - 1000,
@@ -713,8 +594,6 @@ test("a moderate suspend (under the liveness timeout) does not evict live client
     worker._lastLivenessSweepTs = now - gap;
     worker._sweepClientLiveness();
     expect(worker.channelsByClient.has(client)).toBe(true);
-    // The sweep reads its own `Date.now()`: asserting equality with the one
-    // captured above fails whenever a millisecond passes between the two.
     expect(worker.lastSeenByClient.get(client)).toBeGreaterThanOrEqual(now);
 });
 
@@ -734,9 +613,6 @@ function feedNotifications(worker, batch) {
 }
 
 test("J1: a lower unseen id after a higher one is still broadcast", async () => {
-    // The server may re-deliver LOWER ids in LATER batches (its hold-back
-    // window for out-of-order commits). A monotonic watermark filter would
-    // silently drop them; the id-level seen check must let them through.
     const broadcast = [];
     const worker = await startWebSocketWorker((type, data) => {
         if (type === "BUS:NOTIFICATION") {
@@ -756,8 +632,6 @@ test("J1: an exact-duplicate id within the retention window is dropped", async (
         }
     });
     feedNotifications(worker, [{ id: 5, message: { type: "t" } }]);
-    // Same id again, still within SEEN_NOTIFICATION_RETENTION_MS: dropped, so
-    // no second broadcast.
     feedNotifications(worker, [{ id: 5, message: { type: "t" } }]);
     expect(broadcast).toEqual([[5]]);
 });
@@ -779,8 +653,6 @@ test("J1: the seen-id set is cleared on a database change", async () => {
     });
     feedNotifications(worker, [{ id: 5, message: { type: "t" } }]);
     expect(worker.seenNotificationIds.has(5)).toBe(true);
-    // Switching DB invalidates the per-DB id sequence: the seen-set must reset
-    // so a colliding id from the new DB is not wrongly dropped.
     worker._initializeConnection(client, {
         db: "db2",
         uid: 1,
@@ -800,9 +672,6 @@ test("J1: seen ids older than the retention window are pruned", async () => {
         }
     });
     feedNotifications(worker, [{ id: 5, message: { type: "t" } }]);
-    // Age id 5 past the retention window, then feed another frame (which prunes
-    // at its start). Id 5 can no longer be legitimately re-sent, so it is
-    // forgotten — a later id 5 would be treated as fresh again.
     await advanceTime(worker.SEEN_NOTIFICATION_RETENTION_MS + 1000);
     feedNotifications(worker, [{ id: 9, message: { type: "t" } }]);
     expect(worker.seenNotificationIds.has(5)).toBe(false);
@@ -813,16 +682,12 @@ test("J1: seen ids older than the retention window are pruned", async () => {
 test("J1: the seen-id set is capped at SEEN_NOTIFICATION_MAX_COUNT", async () => {
     const worker = await startWebSocketWorker();
     patchWithCleanup(worker, { SEEN_NOTIFICATION_MAX_COUNT: 3 });
-    // One batch overflows the cap; the prune only runs at the NEXT frame start,
-    // trimming the oldest back down to the cap BEFORE that frame's ids are
-    // added (so the size settles at cap + latest-batch-size, never unbounded).
     feedNotifications(
         worker,
         [1, 2, 3, 4, 5].map((id) => ({ id, message: { type: "t" } })),
     );
     expect(worker.seenNotificationIds.size).toBe(5);
     feedNotifications(worker, [{ id: 6, message: { type: "t" } }]);
-    // Pruned back to cap (3) then id 6 added -> 4; the oldest ids were evicted.
     expect(worker.seenNotificationIds.size).toBe(4);
     expect(worker.seenNotificationIds.has(1)).toBe(false);
     expect(worker.seenNotificationIds.has(2)).toBe(false);
@@ -837,7 +702,6 @@ test("J2: per-client channel refcount keeps the channel until fully released", a
     worker._addChannel(client, "chA");
     expect(worker.channelsByClient.get(client)).toEqual(new Map([["chA", 2]]));
     worker._deleteChannel(client, "chA");
-    // One claim remains: the channel stays.
     expect(worker._getAllChannels()).toEqual(["chA"]);
     worker._deleteChannel(client, "chA");
     expect(worker._getAllChannels()).toEqual([]);
@@ -854,7 +718,6 @@ test("J2: BUS:SET_CHANNELS replaces the map atomically and drops count<=0", asyn
         ["dropped", 0],
         ["negative", -3],
     ]);
-    // "old" is gone (atomic replace), count<=0 entries are not kept.
     expect(worker.channelsByClient.get(client)).toEqual(
         new Map([
             ["chA", 2],
@@ -870,13 +733,10 @@ test("J4: BUS:STOP after a scheduled retry prevents the reconnect", async () => 
         }
     });
     await waitForSteps(["BUS:CONNECT"]);
-    // Abnormal close schedules an exponential-backoff retry.
     worker.websocket.close(WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE);
     await waitForSteps(["BUS:DISCONNECT"]);
-    // A BUS:STOP (e.g. going offline) must cancel that pending timer.
     worker._stop();
     await runAllTimers();
-    // The retry never fired: no reconnection, socket stays down.
     await waitForSteps([]);
     expect(worker.websocket).toBe(null);
     expect(worker.state).toBe("DISCONNECTED");
@@ -884,21 +744,15 @@ test("J4: BUS:STOP after a scheduled retry prevents the reconnect", async () => 
 
 test("S3: reconnect delay backs off from the 0 fast-path to INITIAL then x1.5, capped", async () => {
     const worker = await startWebSocketWorker();
-    // Isolate the backoff math from an actual (re)connection, which would reset
-    // the base to INITIAL on open.
     patchWithCleanup(worker, { _start() {} });
     expect(worker.INITIAL_RECONNECT_DELAY).toBeGreaterThan(0);
-    // 0 fast-path (set on keep-alive / aborted closes): the base advances to
-    // INITIAL rather than hot-looping at 0.
     worker.connectRetryDelay = 0;
     worker._retryConnectionWithDelay();
     expect(worker.connectRetryDelay).toBe(worker.INITIAL_RECONNECT_DELAY);
-    // Exponential growth x1.5 from there.
     worker._retryConnectionWithDelay();
     expect(worker.connectRetryDelay).toBe(worker.INITIAL_RECONNECT_DELAY * 1.5);
     worker._retryConnectionWithDelay();
     expect(worker.connectRetryDelay).toBe(worker.INITIAL_RECONNECT_DELAY * 1.5 * 1.5);
-    // Cap at MAXIMUM_RECONNECT_DELAY (60_000).
     worker.connectRetryDelay = 50_000;
     worker._retryConnectionWithDelay();
     expect(worker.connectRetryDelay).toBe(60_000);
@@ -907,8 +761,6 @@ test("S3: reconnect delay backs off from the 0 fast-path to INITIAL then x1.5, c
 });
 
 test("worker answers BUS:PING probes... only pings silent clients", async () => {
-    // Guardrail companion to the liveness-sweep test: a freshly-seen client is
-    // NOT pinged (only clients silent past half the timeout are).
     const worker = await startWebSocketWorker();
     const pinged = [];
     const client = {
@@ -925,9 +777,6 @@ test("worker answers BUS:PING probes... only pings silent clients", async () => 
 });
 
 test("what is sent while offline goes out once per event name, in the order last sent", async () => {
-    // A long outage with a chatty sender held every message, stale by the
-    // time it ended, and the flush had to be paced under the server's rate
-    // limit. Only the last message of each event name is worth sending.
     const worker = await startWebSocketWorker();
     const client = { postMessage() {}, addEventListener() {} };
     worker.registerClient(client);
@@ -949,7 +798,7 @@ test("what is sent while offline goes out once per event name, in the order last
         ogSend(message);
     };
     await waitUntil(() => worker.state !== "CONNECTING");
-    await advanceTime(300); // debounced open-time `_updateChannels`
+    await advanceTime(300);
     expect(sentFrames.map((f) => [f.event_name, f.data.channels ?? f.data])).toEqual([
         ["subscribe", ["chA"]],
         ["update_presence", 19],
@@ -959,8 +808,6 @@ test("what is sent while offline goes out once per event name, in the order last
 });
 
 test("a fresh connection resumes where the server's last_id would stand", async () => {
-    // The server holds an id back for NOTIFICATION_HOLD_BACK_MS: a lower id
-    // committed after the drop would be skipped by `last = highest seen`.
     const worker = await startWebSocketWorker();
     const client = { postMessage() {}, addEventListener() {} };
     worker.registerClient(client);
@@ -977,16 +824,13 @@ test("a fresh connection resumes where the server's last_id would stand", async 
                 data: JSON.stringify(ids.map((id) => ({ id, message: { type: "x" } }))),
             }),
         );
-    // 41 drawn, 42 committed first: nothing below 42 is settled yet.
     receive(40, 42);
     expect(worker.lastNotificationId).toBe(42);
     expect(worker._resumeFrom()).toBe(30);
     await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS + 1);
     expect(worker._resumeFrom()).toBe(42);
-    // A lone late id: 95 still in flight when 96 arrives alone.
     receive(96);
     expect(worker._resumeFrom()).toBe(42);
-    // An id seen recently blocks every older one above it, as on the server.
     await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS / 2);
     receive(94);
     await advanceTime(worker.NOTIFICATION_HOLD_BACK_MS / 2 + 1);
@@ -1007,7 +851,6 @@ test("pruning seen ids keeps the resume floor below what is still held back", as
     await advanceTime(worker.SEEN_NOTIFICATION_RETENTION_MS - 2000);
     receive(94);
     await advanceTime(3000);
-    // 96 is pruned, 94 is still held back: nothing above 0 is settled.
     receive(200);
     expect(worker.seenNotificationIds.has(96)).toBe(false);
     expect(worker._resumeFrom()).toBe(0);
@@ -1034,10 +877,6 @@ test("the server's watermark reset lowers the worker's and the tabs' watermark",
 });
 
 test("a very large notification batch is broadcast, not swallowed", async () => {
-    // `Math.max(this.lastNotificationId, ...ids)` passed one argument per
-    // notification and threw `RangeError: Maximum call stack size exceeded`
-    // past ~130k of them, between marking the ids as seen and broadcasting.
-    // The batch was then lost with no error surfaced anywhere.
     const worker = await startWebSocketWorker((type) => {
         if (type === "BUS:NOTIFICATION") {
             asyncStep("broadcast BUS:NOTIFICATION");
@@ -1055,9 +894,6 @@ test("a very large notification batch is broadcast, not swallowed", async () => 
 });
 
 test("notification ids are recorded as seen only once delivered", async () => {
-    // Marking first meant that anything throwing in between lost the batch for
-    // good: the ids counted as delivered while no client had received them, so
-    // the dedup filter discarded the server's redelivery too.
     const worker = await startWebSocketWorker();
     const notifications = [
         { id: 11, message: { type: "probe", payload: {} } },
@@ -1090,35 +926,23 @@ test("a batch whose delivery throws is not remembered as delivered", async () =>
             new MessageEvent("message", { data: JSON.stringify(notifications) }),
         ),
     ).toThrow();
-    // Nothing was marked seen, so a redelivery can still reach the clients.
     expect([...worker.seenNotificationIds.keys()]).toEqual([]);
     expect(worker.lastNotificationId).toBe(0);
 });
 
 test("aborted closing handshake during a reconnect resets the retry delay", async () => {
     const worker = await startWebSocketWorker();
-    // A reconnect sequence already in progress, with the delay backed off.
     worker.isReconnecting = true;
     worker.connectRetryDelay = 40_000;
-    // Wedge the socket in CLOSING: the mock defers the close dispatch to a tick,
-    // so `_start` runs while the handshake is still open -- upstream's scenario.
     worker.websocket.close();
     expect(worker.websocket.readyState).toBe(2);
     worker._start();
-    // The client explicitly asked to connect and found the socket wedged, so
-    // the retry should be immediate: the 0 fast-path advances the base to
-    // INITIAL. Without the reset the base is min(40_000 * 1.5, 60_000).
     expect(worker.connectRetryDelay).toBe(worker.INITIAL_RECONNECT_DELAY);
 });
 
 test("reconnect spread widens with the attempt and never delays the first retry", async () => {
     const worker = await startWebSocketWorker();
     const armed = [];
-    // Isolate the delay arithmetic from an actual (re)connection, which would
-    // reset the base on open, and give the worker a production-shaped jitter:
-    // the suite-wide patch pins a tiny one so `runAllTimers` stays cheap.
-    // `_logDebug` already receives the armed delay, so capture it there rather
-    // than intercepting the bare `setTimeout` the worker calls.
     patchWithCleanup(worker, {
         _start() {},
         RECONNECT_JITTER: 30_000,
@@ -1128,7 +952,6 @@ test("reconnect spread widens with the attempt and never delays the first retry"
             }
         },
     });
-    // Worst-case spread: Math.random() at its ceiling.
     patchWithCleanup(Math, { random: () => 0.999999 });
 
     const bases = [];
@@ -1138,18 +961,11 @@ test("reconnect spread widens with the attempt and never delays the first retry"
     }
     expect(armed).toHaveLength(8);
 
-    // The spread is proportional to the base, so it never inflates the first
-    // retry: a lone client whose socket blips reconnects about as fast as it
-    // did before the spread existed. A flat 30s window would put this at ~31s.
     expect(armed[0]).toBeLessThan(2 * worker.INITIAL_RECONNECT_DELAY);
-    // ...and it widens as attempts accumulate, which is what breaks up a herd
-    // of clients all reconnecting to a bus process that just restarted.
     const spreads = armed.map((delay, i) => delay - bases[i]);
     for (let i = 1; i < spreads.length; i++) {
         expect(spreads[i]).toBeGreaterThan(spreads[i - 1]);
     }
-    // The armed delay is always the base plus a spread bounded by the base
-    // itself, so it can never exceed twice MAXIMUM_RECONNECT_DELAY.
     for (const delay of armed) {
         expect(delay).toBeLessThan(2 * 60_000);
     }
@@ -1189,8 +1005,6 @@ test("the backoff starts over only once a connection stayed open", async () => {
 });
 
 test("each database and user logs to a store of their own", async () => {
-    // the logs hold notification payloads: the next user of the browser must
-    // not download them
     const worker = await startWebSocketWorker();
     const client = { postMessage() {}, addEventListener() {} };
     worker.registerClient(client);

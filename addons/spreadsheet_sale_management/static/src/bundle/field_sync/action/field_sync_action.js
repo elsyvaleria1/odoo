@@ -61,12 +61,6 @@ export class SpreadsheetFieldSyncAction extends AbstractSpreadsheetAction {
 
     async execInitCallbacks() {
         await super.execInitCallbacks();
-        /**
-         * Upon the first time we open the spreadsheet we want to resize the columns
-         * of the main list to fit all the data.
-         * The catch is we need to have the list data loaded to know the content and resize
-         * the columns accordingly.
-         */
         if (
             this.spreadsheetData.revisionId === "START_REVISION" &&
             this.stateUpdateMessages.length === 1
@@ -109,12 +103,8 @@ export class SpreadsheetFieldSyncAction extends AbstractSpreadsheetAction {
         super._initializeWith(data);
         this.orderId = data.order_id;
 
-        // ensure the data is upgraded to the latest version
         this.spreadsheetData = load(this.spreadsheetData);
 
-        // Then, update the filter directly in the raw data instead of later updating
-        // the model to avoid loading the list twice (without the filter, then again
-        // with the filter applied).
         const orderFilter = this.spreadsheetData.globalFilters?.find(
             (filter) => filter.modelName === "sale.order",
         );

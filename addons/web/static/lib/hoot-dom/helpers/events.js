@@ -983,12 +983,6 @@ async function triggerClick(target, pointerInit) {
     if (isFirefox()) {
         switch (getTag(target)) {
             case "label": {
-                /**
-                 * @firefox
-                 * Special action: label 'Click'
-                 *  On: unprevented 'click' on a <label/>
-                 *  Do: triggers a 'click' event on the first <input/> descendant
-                 */
                 target = target.control;
                 if (target) {
                     await triggerClick(target, pointerInit);
@@ -996,12 +990,6 @@ async function triggerClick(target, pointerInit) {
                 break;
             }
             case "option": {
-                /**
-                 * @firefox
-                 * Special action: option 'Click'
-                 *  On: unprevented 'click' on an <option/>
-                 *  Do: triggers a 'change' event on the parent <select/>
-                 */
                 const parent = target.parentElement;
                 if (parent && getTag(parent) === "select") {
                     await _dispatch(parent, "change");
@@ -1208,11 +1196,6 @@ async function _hover(target, options, hoverOptions) {
         return;
     }
     if (runTime.canStartDrag) {
-        /**
-         * Special action: drag start
-         *  On: unprevented 'pointerdown' on a draggable element (DESKTOP ONLY)
-         *  Do: triggers a 'dragstart' event
-         */
         const dragStartEvent = await _dispatch(previousPT, "dragstart", {
             dataTransfer: runTime.dataTransfer,
         });
@@ -1456,22 +1439,11 @@ async function _keyDown(targetResolver, eventInit) {
             const tag = getTag(target);
             const parentForm = target.closest("form");
             if (parentForm && target.type !== "button") {
-                /**
-                 * Special action: <form> 'Enter'
-                 *  On: unprevented 'Enter' keydown on any element that
-                 *      is not a <button type="button"/> in a form element
-                 *  Do: triggers a 'submit' event on the form
-                 */
                 await _dispatch(parentForm, "submit");
             } else if (
                 !keyDownEvent.repeat &&
                 (tag === "a" || tag === "button" || (tag === "input" && target.type === "button"))
             ) {
-                /**
-                 * Special action: <a>, <button> or <input type="button"> 'Enter'
-                 *  On: unprevented and unrepeated 'Enter' keydown on mentioned elements
-                 *  Do: triggers a 'click' event on the element
-                 */
                 await _dispatch(target, "click", { button: btn.LEFT });
             }
             break;
@@ -1481,11 +1453,6 @@ async function _keyDown(targetResolver, eventInit) {
             runTime.isDragging = false;
             break;
         }
-        /**
-         * Special action: shift focus
-         *  On: unprevented 'Tab' keydown
-         *  Do: focus next (or previous with 'Shift') focusable element
-         */
         case "Tab": {
             const next = shiftKey
                 ? getPreviousFocusableElement({ tabbable: true })
@@ -1495,11 +1462,6 @@ async function _keyDown(targetResolver, eventInit) {
             }
             break;
         }
-        /**
-         * Special action: paste
-         *  On: unprevented 'Control + v' keydown on editable element
-         *  Do: paste current clipboard content to current element
-         */
         case "v": {
             if (ctrlKey && isEditable(target)) {
                 try {
@@ -1515,11 +1477,6 @@ async function _keyDown(targetResolver, eventInit) {
             }
             break;
         }
-        /**
-         * Special action: cut
-         *  On: unprevented 'Control + x' keydown on editable element
-         *  Do: cut current selection to clipboard and remove selection
-         */
         case "x": {
             if (ctrlKey && isEditable(target)) {
                 const text = globalThis.getSelection().toString();
@@ -1570,11 +1527,6 @@ async function _keyUp(targetResolver, eventInit) {
 
     const target = resolve(targetResolver);
     if (eventInit.key === " " && getTag(target) === "input" && target.type === "checkbox") {
-        /**
-         * Special action: input[type=checkbox] 'Space'
-         *  On: unprevented ' ' keydown on an <input type="checkbox"/>
-         *  Do: triggers a 'click' event on the input
-         */
         await triggerClick(target, { button: btn.LEFT });
     }
 }
@@ -1630,12 +1582,6 @@ async function _pointerDown(options) {
     ) {
         runTime.canStartDrag = true;
     } else if (eventInit.button === btn.RIGHT) {
-        /**
-         * Special action: context menu
-         *  On: unprevented 'pointerdown' with right click and its related
-         *      event on an element
-         *  Do: triggers a 'contextmenu' event
-         */
         await _dispatch(pointerDownTarget, "contextmenu", eventInit);
     }
 }
@@ -1661,11 +1607,6 @@ async function _pointerUp(options) {
         runTime.dataTransfer = null;
         runTime.isDragging = false;
         if (runTime.lastDragOverCancelled) {
-            /**
-             * Special action: drop
-             * - On: pointer up after a prevented 'dragover' or 'dragenter'
-             * - Do: triggers a 'drop' event on the target
-             */
             await _dispatch(pointerUpTarget, "drop", eventInitWithDT);
         }
 

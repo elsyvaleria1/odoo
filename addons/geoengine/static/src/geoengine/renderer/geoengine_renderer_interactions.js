@@ -32,11 +32,6 @@ export class GeoengineRendererInteractions {
         this._onKeyDown = this._onKeyDown.bind(this);
     }
 
-    /**
-     * Rebinds the active tool to freshly drawn layers: selection is
-     * re-registered, while drawing and editing keep their interaction and
-     * only drop what pointed at the previous layers' sources.
-     */
     refreshForLayers() {
         if (this.tool === "select") {
             this.registerInteraction();
@@ -859,7 +854,6 @@ export class GeoengineRendererInteractions {
                 );
             this.renderer.map.once("click", this._shapeClick);
         } else {
-            // stopClick: the double click that ends the outline must not zoom the map
             this._shapeDraw = new ol.interaction.Draw({
                 type: edit === "split" ? "LineString" : "Polygon",
                 stopClick: true,
@@ -962,7 +956,6 @@ export class GeoengineRendererInteractions {
      * @param {ol.geom.Geometry} sketch
      */
     async _applyShapeEdit(feature, edit, sketch) {
-        // the drawn outline leaves the map once drawend's handlers return
         setTimeout(() => this._stopShapeEdit());
         const geoField = feature.get("geoField");
         const before = feature.getGeometry().clone();

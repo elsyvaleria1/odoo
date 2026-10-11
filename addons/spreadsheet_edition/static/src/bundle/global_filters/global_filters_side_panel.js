@@ -10,10 +10,6 @@ import { GlobalFilterSuggestions } from "./global_filter_suggestions/global_filt
 
 const { Section } = components;
 
-/**
- * This is the side panel to define/edit a global filter.
- * It can be of several types: text, date, relation, boolean, selection and numeric.
- */
 export class GlobalFiltersSidePanel extends Component {
     static template = "spreadsheet_edition.GlobalFiltersSidePanel";
     static components = { FilterValue, GlobalFilterSuggestions, Section };

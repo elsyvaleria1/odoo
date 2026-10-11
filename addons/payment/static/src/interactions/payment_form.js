@@ -16,10 +16,7 @@ export class PaymentForm extends Interaction {
         '[name="o_payment_submit_button"]': { "t-on-click": this.submitForm },
     };
 
-    // #=== INTERACTION LIFECYCLE ===#
-
     setup() {
-        // Load the payment context from the payment form dataset.
         this.paymentContext = {};
         Object.assign(this.paymentContext, this.el.dataset);
 
@@ -27,7 +24,6 @@ export class PaymentForm extends Interaction {
             'button[name="o_payment_submit_button"]',
         )?.textContent;
 
-        // Enable tooltips.
         this.el.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
             const tooltip = Tooltip.getOrCreateInstance(el);
             this.registerCleanup(() => tooltip.dispose());
@@ -35,7 +31,6 @@ export class PaymentForm extends Interaction {
     }
 
     async willStart() {
-        // Expand the payment form of the selected payment option if there is only one.
         const checkedRadio = document.querySelector(
             'input[name="o_payment_radio"]:checked',
         );
@@ -43,11 +38,9 @@ export class PaymentForm extends Interaction {
             await this.waitFor(this._expandInlineForm(checkedRadio));
             this._enableButton(false);
         } else {
-            this._setPaymentFlow(); // Initialize the payment flow to let providers overwrite it.
+            this._setPaymentFlow();
         }
     }
-
-    // #=== EVENT HANDLERS ===#
 
     /**
      * Open the inline form of the selected payment option, if any.
@@ -56,17 +49,13 @@ export class PaymentForm extends Interaction {
      * @return {void}
      */
     async selectPaymentOption(ev) {
-        // Show the inputs in case they have been hidden.
         this._showInputs();
 
-        // Disable the submit button while preparing the inline form.
         this._disableButton();
 
-        // Unfold and prepare the inline form of the selected payment option.
         const checkedRadio = ev.target;
         await this.waitFor(this._expandInlineForm(checkedRadio));
 
-        // Re-enable the submit button after the inline form has been prepared.
         this._enableButton(false);
     }
 
@@ -127,18 +116,14 @@ export class PaymentForm extends Interaction {
             'input[name="o_payment_radio"]:checked',
         );
 
-        // Block the entire UI to prevent fiddling with other interactions.
         this._disableButton(true);
 
-        // Initiate the payment flow of the selected payment option.
         const flow = (this.paymentContext.flow = this._getPaymentFlow(checkedRadio));
         const paymentOptionId = (this.paymentContext.paymentOptionId =
             this._getPaymentOptionId(checkedRadio));
         if (flow === "token" && this.paymentContext["assignTokenRoute"]) {
-            // Assign token flow.
             await this._assignToken(paymentOptionId);
         } else {
-            // Both tokens and payment methods must process a payment operation.
             const providerCode = (this.paymentContext.providerCode =
                 this._getProviderCode(checkedRadio));
             const pmCode = (this.paymentContext.paymentMethodCode =
@@ -147,7 +132,6 @@ export class PaymentForm extends Interaction {
             if (this._getPaymentOptionType(checkedRadio) === "token") {
                 this.paymentContext.tokenId = paymentOptionId;
             } else {
-                // 'payment_method'
                 this.paymentContext.paymentMethodId = paymentOptionId;
             }
             const inlineForm = this._getInlineForm(checkedRadio);
@@ -162,8 +146,6 @@ export class PaymentForm extends Interaction {
             );
         }
     }
-
-    // #=== DOM MANIPULATION ===#
 
     /**
      * Enable the submit button.
@@ -200,13 +182,11 @@ export class PaymentForm extends Interaction {
      * @return {void}
      */
     _showInputs() {
-        // Show the tokenization checkbox and its label.
         const tokenizeContainer = this.el.querySelector(
             '[name="o_payment_tokenize_container"]',
         );
         tokenizeContainer?.classList.remove("d-none");
 
-        // Show the submit button.
         this.env.bus.trigger("showPaymentButton");
     }
 
@@ -221,13 +201,11 @@ export class PaymentForm extends Interaction {
      * @return {void}
      */
     _hideInputs() {
-        // Hide the tokenization checkbox and its label.
         const tokenizeContainer = this.el.querySelector(
             '[name="o_payment_tokenize_container"]',
         );
         tokenizeContainer?.classList.add("d-none");
 
-        // Hide the submit button.
         this.env.bus.trigger("hidePaymentButton");
     }
 
@@ -239,10 +217,9 @@ export class PaymentForm extends Interaction {
      * @return {void}
      */
     async _expandInlineForm(radio) {
-        this._collapseInlineForms(); // Collapse previously opened inline forms.
-        this._setPaymentFlow(); // Reset the payment flow to let providers overwrite it.
+        this._collapseInlineForms();
+        this._setPaymentFlow();
 
-        // Prepare the inline form of the selected payment option.
         const providerId = this._getProviderId(radio);
         const providerCode = this._getProviderCode(radio);
         const paymentOptionId = this._getPaymentOptionId(radio);
@@ -258,19 +235,17 @@ export class PaymentForm extends Interaction {
             ),
         );
 
-        // Adapt the payment button's label based on the selected payment method.
         this._adaptSubmitButtonLabel(paymentMethodCode);
 
-        // Display the prepared inline form if it contains visible elements.
         const isVisible = (element) => {
             if (
-                element.getAttribute("name") !== "o_payment_inline_form" && // Skip the container.
+                element.getAttribute("name") !== "o_payment_inline_form" &&
                 element.classList.contains("d-none")
             ) {
                 return false;
             }
             if (element.children.length === 0) {
-                return true; // The element is visible if it has no children.
+                return true;
             }
             return Array.from(element.children).some((child) => isVisible(child));
         };
@@ -377,8 +352,6 @@ export class PaymentForm extends Interaction {
         });
     }
 
-    // #=== PAYMENT FLOW ===#
-
     /**
      * Set the payment flow for the selected payment option.
      *
@@ -423,7 +396,7 @@ export class PaymentForm extends Interaction {
                     _t("Cannot save payment method"),
                     error.data.message,
                 );
-                this._enableButton(); // The button has been disabled before initiating the flow.
+                this._enableButton();
             } else {
                 return Promise.reject(error);
             }
@@ -449,7 +422,6 @@ export class PaymentForm extends Interaction {
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
         try {
-            // Create a transaction and retrieve its processing values.
             const processingValues = await this.waitFor(
                 rpc(
                     this.paymentContext["transactionRoute"],
@@ -461,7 +433,7 @@ export class PaymentForm extends Interaction {
                     _t("Payment processing failed"),
                     processingValues.state_message,
                 );
-                this._enableButton(); // The button has been disabled before initiating the flow.
+                this._enableButton();
                 return;
             }
             if (flow === "redirect") {
@@ -492,7 +464,7 @@ export class PaymentForm extends Interaction {
                     _t("Payment processing failed"),
                     error.data.message,
                 );
-                this._enableButton(); // The button has been disabled before initiating the flow.
+                this._enableButton();
             }
             return Promise.reject(error);
         }
@@ -520,7 +492,6 @@ export class PaymentForm extends Interaction {
             access_token: this.paymentContext["accessToken"],
             csrf_token: odoo.csrf_token,
         };
-        // Generic payment flows (i.e., that are not attached to a document) require extra params.
         if (this.paymentContext["transactionRoute"] === "/payment/transaction") {
             Object.assign(transactionRouteParams, {
                 currency_id: this.paymentContext["currencyId"]
@@ -549,14 +520,12 @@ export class PaymentForm extends Interaction {
         paymentMethodCode,
         processingValues,
     ) {
-        // Create and configure the form element with the content rendered by the server.
         const div = document.createElement("div");
         div.innerHTML = processingValues["redirect_form_html"];
         const redirectForm = div.querySelector("form");
         redirectForm.setAttribute("id", "o_payment_redirect_form");
-        redirectForm.setAttribute("target", "_top"); // Ensures redirections when in an iframe.
+        redirectForm.setAttribute("target", "_top");
 
-        // Submit the form.
         document.body.appendChild(redirectForm);
         redirectForm.submit();
     }
@@ -584,7 +553,6 @@ export class PaymentForm extends Interaction {
      * @return {void}
      */
     _processTokenFlow() {
-        // The flow is already completed as payments by tokens are immediately processed.
         window.location = "/payment/status";
     }
 
@@ -600,8 +568,6 @@ export class PaymentForm extends Interaction {
         form.querySelector('input[name="token_id"]').value = tokenId;
         form.requestSubmit();
     }
-
-    // #=== GETTERS ===#
 
     /**
      * Determine and return the inline form of the selected payment option.
@@ -628,7 +594,6 @@ export class PaymentForm extends Interaction {
      * @return {string} The flow of the selected payment option: 'redirect', 'direct' or 'token'.
      */
     _getPaymentFlow(radio) {
-        // The flow is read from the payment context too in case it was forced in a custom implem.
         if (
             this._getPaymentOptionType(radio) === "token" ||
             this.paymentContext.flow === "token"

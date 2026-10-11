@@ -63,10 +63,6 @@ const DATE_OPTIONS = [
     },
 ];
 
-/**
- * This component is used to select a default value for a date filter.
- * It displays a dropdown with predefined date options.
- */
 export class DefaultDateValue extends Component {
     static template = "spreadsheet.DefaultDateValue";
     static components = { Dropdown, DropdownItem };

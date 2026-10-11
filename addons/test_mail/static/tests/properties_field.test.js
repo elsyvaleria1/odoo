@@ -10,9 +10,6 @@ import { describe, test } from "@odoo/hoot";
 import { defineTestMailModels } from "@test_mail/../tests/test_mail_test_helpers";
 import { asyncStep, onRpc, waitForSteps } from "@web/../tests/web_test_helpers";
 
-/**
- * Open a chat window when clicking on an avatar many2one / many2many properties.
- */
 async function testPropertyFieldAvatarOpenChat(propertyType) {
     const pyEnv = await startServer();
     registerArchs({

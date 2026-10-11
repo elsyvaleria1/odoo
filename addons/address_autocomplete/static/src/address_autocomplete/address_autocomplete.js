@@ -59,7 +59,6 @@ export class AddressAutoComplete extends CharField {
         return [
             {
                 options: async (request) => {
-                    // Keep in sync with MINIMAL_INPUT_SIZE in controllers/main.py.
                     if (!session.address_autocomplete || request.length <= 5) {
                         return [];
                     }

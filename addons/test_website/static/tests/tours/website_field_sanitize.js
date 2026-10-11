@@ -1,6 +1,5 @@
 import { clickOnSave, registerWebsitePreviewTour } from "@website/js/tours/tour_utils";
 
-// As admin, add a YouTube video iframe in a `sanitize_overridable` HTML field.
 registerWebsitePreviewTour(
     "website_designer_iframe_video",
     {
@@ -32,8 +31,6 @@ registerWebsitePreviewTour(
     ],
 );
 
-// Check that a restricted editor can edit the field content (even with
-// a video iframe).
 registerWebsitePreviewTour(
     "website_restricted_editor_iframe_video",
     {

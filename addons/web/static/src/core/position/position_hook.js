@@ -80,10 +80,6 @@ export function usePosition(ref, getTarget, options = {}) {
         try {
             let positioned;
             do {
-                // triggers arriving while a positioning runs are coalesced
-                // into it; while a bail-out runs (on a bus shared with an
-                // ancestor, the ancestor's trigger can reach this element
-                // before it exists) they are retried, not dropped
                 updateRequested = false;
                 positioned = update();
                 await Promise.resolve();

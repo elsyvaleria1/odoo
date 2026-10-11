@@ -204,8 +204,6 @@ describe("classifying the population vs the page (real geostats)", () => {
 });
 
 describe("the exported bindings survive a copy made at registration", () => {
-    // a bridge or strict stub copies a module's exports once; the libraries
-    // load later, so the copy must still reach them
     const copied = { ...geoLibsModule };
 
     before(async () => {
@@ -213,7 +211,6 @@ describe("the exported bindings survive a copy made at registration", () => {
     });
 
     test("the copy is the live export", () => {
-        // compared by identity: a module namespace has no toString to print
         expect(copied.ol === geoLibsModule.ol).toBe(true);
         expect(copied.chroma === geoLibsModule.chroma).toBe(true);
         expect(copied.geostats === geoLibsModule.geostats).toBe(true);

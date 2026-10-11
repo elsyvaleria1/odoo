@@ -17,8 +17,6 @@ const log = makeLogger("error_incident");
 
 export const JOURNEY_NOTIFICATION = "error_incident/journey";
 
-/* What `/error_incident/journey` and the bus send: `error.incident._journey()`. */
-
 /**
  * @typedef {Object} Journey
  * @property {number} incident
@@ -44,12 +42,7 @@ export const JOURNEY_NOTIFICATION = "error_incident/journey";
  * @property {(type: string, callback: (payload: any) => void) => () => void} subscribe
  */
 
-/* The incident of the error one dialog shows, named exactly by the occurrence
- * the server put on the error, and kept current by the bus. */
 export class IncidentJourney {
-    // The error reaches the browser before its occurrence is written, so the
-    // first answer may be "pending". The bus says when it is written; these
-    // re-asks cover a bus that is not connected.
     static RETRY_MS = [1500, 5000, 15000];
 
     /**
@@ -93,10 +86,7 @@ export class IncidentJourney {
                 { occurrence: this.occurrence },
                 { silent: true },
             );
-        } catch {
-            // Opening the dialog must never fail because of this lookup; a
-            // failed ask is retried like a pending one.
-        }
+        } catch {}
         log.logic("ask", this.occurrence, attempt, answer?.state);
         if (!this.alive || this.state.stage !== "waiting") {
             return;
@@ -111,8 +101,6 @@ export class IncidentJourney {
         }
         const delay = IncidentJourney.RETRY_MS[attempt];
         if (delay === undefined) {
-            // Never written: the capture itself failed, and the server logged
-            // why. The dialog stays as it was.
             log.logic("ask.give_up", this.occurrence);
             this.state.stage = "idle";
             return;
@@ -134,9 +122,7 @@ export class IncidentJourney {
                 { stack, location: browser.location.pathname },
                 { silent: true },
             );
-        } catch {
-            // Reporting must never fail the dialog that shows the error.
-        }
+        } catch {}
         log.logic("report", answer?.state, answer?.incident);
         if (!this.alive || this.state.stage !== "waiting") {
             return;
@@ -203,7 +189,6 @@ export class IncidentJourney {
         return journeyNote(this.state);
     }
 
-    /* Only when it happened more than once: once is the error on the screen. */
     get count() {
         const count = this.state.details.count;
         return count > 1 ? countText(count) : null;
@@ -218,8 +203,6 @@ export class IncidentJourney {
             : "o_error_incident_dot";
     }
 
-    /* The steps as the template draws them; the class is the only thing that
-     * drives the animation. */
     get steps() {
         const reached = this.state.steps.indexOf(this.state.step ?? "");
         return this.state.steps.map((id, index) => {

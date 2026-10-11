@@ -18,9 +18,6 @@ export class AccountReportHeader extends Component {
         this.orm = useService("orm");
         this.controller = proxy(this.reportContext.controller);
     }
-    // -----------------------------------------------------------------------------------------------------------------
-    // Headers
-    // -----------------------------------------------------------------------------------------------------------------
     get columnHeaders() {
         const columnHeaders = [];
 
@@ -50,7 +47,6 @@ export class AccountReportHeader extends Component {
         let colspan =
             header.colspan ||
             this.controller.columnHeadersRenderData.level_colspan[column_index];
-        // In case of we need the total column for horizontal we need to increase the colspan of the first row
         if (this.controller.options.show_horizontal_group_total && column_index === 0) {
             colspan += 1;
         }
@@ -63,9 +59,6 @@ export class AccountReportHeader extends Component {
             : 1;
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Subheaders
-    //------------------------------------------------------------------------------------------------------------------
     get subheaders() {
         const columns = JSON.parse(JSON.stringify(this.controller.options.columns));
         const columnsPerGroupKey = {};
@@ -96,9 +89,6 @@ export class AccountReportHeader extends Component {
         });
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Custom subheaders
-    // -----------------------------------------------------------------------------------------------------------------
     get customSubheaders() {
         const customSubheaders = [];
 
@@ -111,9 +101,6 @@ export class AccountReportHeader extends Component {
         return customSubheaders;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Sortable
-    // -----------------------------------------------------------------------------------------------------------------
     sortableClasses(columIndex) {
         switch (this.controller.linesCurrentOrderByColumn(columIndex)) {
             case "ASC":

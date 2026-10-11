@@ -1,11 +1,3 @@
-/**
- * Valence arithmetic and geometry for the sketch editor.
- *
- * This mirrors tools/valence.py, which is the authority for every stored value;
- * here the same rules run in the browser so the panel answers while you draw.
- * Both are asserted against the same fixtures, so they cannot drift silently.
- */
-
 export const ELEMENTS = {
     H: {
         weight: 1.008,
@@ -103,8 +95,6 @@ export function effectiveValences(element, charge) {
     if (element === "H") {
         return [Math.max(0, 1 - Math.abs(charge))];
     }
-    // Up to group 14 either sign costs a bond; from group 15 on a positive
-    // charge buys one (N+ takes four) and a negative charge spends one.
     const data = ELEMENTS[element];
     const shift = data.group <= 14 ? -Math.abs(charge) : charge;
     return data.valences.map((value) => value + shift).filter((value) => value >= 0);
@@ -162,7 +152,6 @@ function componentCount(molecule) {
     return count;
 }
 
-/** A bond is in a ring exactly when it is not a bridge. */
 export function ringBonds(molecule) {
     const links = adjacency(molecule);
     const discovery = new Map();
@@ -212,7 +201,6 @@ function lonePairs(element, charge, used, hydrogens) {
     return Math.max(0, Math.floor(electrons / 2));
 }
 
-/** Every simple cycle of at most eight atoms, as a sorted array of bond indices. */
 export function smallRings(molecule) {
     const inRing = ringBonds(molecule);
     const links = adjacency(molecule).map((list) =>
@@ -260,7 +248,6 @@ function piElectrons(molecule, index, links, inRing) {
         if (inRing.has(doubles[0].bond)) {
             return 1;
         }
-        // exocyclic C=O/N/S pulls its electron out (2-pyridone); C=C breaks the ring (fulvene)
         return ["N", "O", "S"].includes(molecule.atoms[doubles[0].atom].element)
             ? 0
             : null;
@@ -319,11 +306,6 @@ export function aromaticity(molecule) {
     };
 }
 
-/**
- * Give bonds a molblock marks aromatic (type 4) alternating orders, in place.
- * Mirrors valence.kekulize: carbons need a double bond, heteroatoms take one only
- * within their lowest valence.
- */
 export function kekulize(molecule, marked) {
     if (!marked.length) {
         return;
@@ -503,9 +485,7 @@ export function analyse(molecule) {
     };
 }
 
-/* ------------------------------------------------------------------ molfile */
-
-const SKETCH_SCALE = 38; // canvas pixels per ångström-ish unit
+const SKETCH_SCALE = 38;
 
 export function toMolblock(molecule, { title = "molecular-screening", origin } = {}) {
     const centre = origin || { x: 0, y: 0 };
@@ -617,7 +597,6 @@ export function fromMolblock(molblock, viewport = { width: 600, height: 440 }) {
             break;
         }
     }
-    // Fit whatever coordinate system the file used into the canvas
     const xs = raw.map((atom) => atom.x).filter(Number.isFinite);
     const ys = raw.map((atom) => atom.y).filter(Number.isFinite);
     const spanX = Math.max(...xs) - Math.min(...xs) || 1;
@@ -642,8 +621,6 @@ export function fromMolblock(molblock, viewport = { width: 600, height: 440 }) {
     return molecule;
 }
 
-/* ------------------------------------------------------------- 3D geometry */
-
 function bondTarget(model, bond) {
     const ra = ELEMENTS[model.atoms[bond.a].element].radius;
     const rb = ELEMENTS[model.atoms[bond.b].element].radius;
@@ -651,7 +628,6 @@ function bondTarget(model, bond) {
     return (ra + rb) * shrink;
 }
 
-/** sp from a triple bond or two doubles, sp2 from one double, sp3 otherwise. */
 function targetAngle(model, centre) {
     const attached = model.bonds.filter(
         (bond) => bond.a === centre || bond.b === centre,
@@ -667,12 +643,6 @@ function targetAngle(model, centre) {
     return (109.5 * Math.PI) / 180;
 }
 
-/**
- * Build the 3D model of a sketch, implicit hydrogens made explicit.
- *
- * Without the hydrogens benzene relaxes as a bare ring and the picture stops
- * matching the formula.
- */
 export function buildModel(molecule, seed = 1) {
     const atoms = [];
     const bonds = [];

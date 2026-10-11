@@ -104,7 +104,6 @@ test("AI Prompt - Field selector without template editor group", async () => {
     expect(".o-we-command .o-we-command-name").toHaveText("Field Selector");
     await click(".o-we-command");
     await animationFrame();
-    // only display_name is available (see mail_allowed_qweb_expressions)
     expect(".o_model_field_selector_popover_item").toHaveCount(1);
     expect(".o_model_field_selector_popover_item_name").toHaveText("Display name");
     await click(".o_model_field_selector_popover_item_name");
@@ -113,7 +112,6 @@ test("AI Prompt - Field selector without template editor group", async () => {
     expect(updatePromptVal).toBe(
         '<p>Hello <span data-ai-field="display_name" data-oe-protected="true">Display name</span>&nbsp;</p>',
     );
-    // clicking on the field should reopen the field selector
     await click("div.o_ai_prompt span[data-ai-field]");
     await animationFrame();
     expect(".o_model_field_selector_popover").toHaveCount(1);
@@ -151,7 +149,6 @@ test("AI Prompt - Field selector with template editor group", async () => {
     expect(updatePromptVal).toBe(
         `<p>Hello <span data-ai-field="create_date" data-oe-protected="true">Created on</span>, <span data-ai-field="display_name" data-oe-protected="true">Display name</span>&nbsp;</p>`,
     );
-    // clicking on the field should reopen the field selector
     await click("div.o_ai_prompt span[data-ai-field]");
     await animationFrame();
     expect(".o_model_field_selector_popover").toHaveCount(1);
@@ -197,7 +194,6 @@ test("AI Prompt - Without comodel", async () => {
     });
     await insertText(htmlEditor, "/rec");
     await animationFrame();
-    // record selector should not be shown
     expect(".o-we-command").toHaveCount(0);
 });
 
@@ -225,7 +221,6 @@ test("AI Prompt - With comodel", async () => {
     await animationFrame();
     await click(".o_records_selector_popover input");
     await animationFrame();
-    // filtered using the domain
     expect(".o-autocomplete--dropdown-item").toHaveCount(2);
     await click(".o-autocomplete--dropdown-item:contains('Bob')");
     await animationFrame();
@@ -240,7 +235,6 @@ test("AI Prompt - With comodel", async () => {
     expect(updatePromptVal).toBe(
         '<p>Hello <span data-ai-record-id="1" data-oe-protected="true">Bob</span>, <span data-ai-record-id="2" data-oe-protected="true">Patrick</span>&nbsp;</p>',
     );
-    // clicking on the record should reopen the records selector
     await click("div.o_ai_prompt span[data-ai-record-id]");
     await animationFrame();
     expect(".o_records_selector_popover").toHaveCount(1);

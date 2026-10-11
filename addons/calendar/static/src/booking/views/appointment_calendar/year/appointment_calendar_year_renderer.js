@@ -42,9 +42,6 @@ patch(AttendeeCalendarYearRenderer.prototype, {
         return mapRecordsAndSlotsToEvents(this, super.mapRecordsToEvents(...arguments));
     },
 
-    /**
-     * Carries the slot id over to the record built from a fullcalendar event.
-     */
     fcEventToRecord(event) {
         if (!event.extendedProps || !event.extendedProps.slotId) {
             return super.fcEventToRecord(...arguments);
@@ -87,7 +84,7 @@ patch(AttendeeCalendarYearRenderer.prototype, {
                         : "h1";
                 const domParser = new DOMParser();
                 const injectedContentEl = domParser.parseFromString(
-                    /* xml */ `
+                    `
                     <button class="close btn d-flex align-items-center justify-content-center w-100 h-100 m-0 border-0 p-0 bg-success bg-opacity-50 o_hidden">
                         <i class='fa fa-trash ${iconSize}'></i>
                     </button>
@@ -118,7 +115,6 @@ patch(AttendeeCalendarYearRenderer.prototype, {
         }
         const start = parseISO(info.startStr);
         const end = parseISO(info.endStr).subtract({ days: 1 });
-        // 1 day events are handled by onDateClick
         if (start === end) {
             this.unselect();
             return;
@@ -143,7 +139,6 @@ patch(AttendeeCalendarYearRenderer.prototype, {
         if (!this.isSlotCreationMode()) {
             return super.onDateClick(...arguments);
         }
-        // Disabled in month view
         if (this.props.model.scale === "month") {
             return;
         }
@@ -162,9 +157,6 @@ patch(AttendeeCalendarYearRenderer.prototype, {
         }
     },
 
-    /**
-     * Restricts selection to future dates. Bound to the `selectAllow` fullcalendar option.
-     */
     isSelectionAllowed(event) {
         if (!this.isSlotCreationMode()) {
             return super.isSelectionAllowed?.(...arguments) || true;
@@ -172,9 +164,6 @@ patch(AttendeeCalendarYearRenderer.prototype, {
         return compareDates(fromJSDate(event.start), now()) > 0;
     },
 
-    /**
-     * Prevent drag & drop of events in the past in slot creation mode
-     */
     onEventAllow(dropInfo, draggedEvent) {
         if (!this.isSlotCreationMode()) {
             return super.onEventAllow?.(...arguments) || true;

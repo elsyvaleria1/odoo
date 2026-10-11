@@ -7,9 +7,6 @@ import {
 } from "@point_of_sale/app/screens/product_screen/action_pad/action_pad";
 import { _t } from "@web/core/translation";
 import { patch } from "@web/core/utils/patch";
-/**
- * @props partner
- */
 Object.assign(actionpadWidgetProps, {
     setTable: t.function().optional(),
     assignOrder: t.function().optional(),
@@ -84,7 +81,7 @@ patch(ActionpadWidget.prototype, {
         if (!course) {
             return;
         }
-        this.currentOrder.cleanCourses(); //remove empty course on fire course.
+        this.currentOrder.cleanCourses();
         await this.pos.fireCourse(course);
         this.pos.showDefault();
     },

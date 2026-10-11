@@ -92,9 +92,6 @@ export function getValidGranularities(dateFilterValue) {
     }
 }
 
-/**
- * Compute the display name of a date filter value.
- */
 export function dateFilterValueToString(value) {
     switch (value?.type) {
         case "relative":
@@ -550,7 +547,7 @@ function getFixedPeriodFromTo(now, offset, value) {
         case "quarter":
             if (value.quarter !== undefined) {
                 granularity = "quarter";
-                setParam.month = value.quarter * 3 - 2; // start of the quarter
+                setParam.month = value.quarter * 3 - 2;
                 plusParam.months = 3 * offset;
             }
             break;
@@ -829,7 +826,7 @@ export function getNextRangeDateFilterValue(value) {
     if (!from || !to) {
         return { type: "range", from: null, to: null };
     }
-    const days = diff(to, from, "days") + 1; // +1 to include the end date
+    const days = diff(to, from, "days") + 1;
     return {
         type: "range",
         from: toISODate(from.add({ days })),
@@ -852,7 +849,7 @@ export function getPreviousRangeDateFilterValue(value) {
     if (!from || !to) {
         return { type: "range", from: null, to: null };
     }
-    const days = diff(to, from, "days") + 1; // +1 to include the end date
+    const days = diff(to, from, "days") + 1;
     return {
         type: "range",
         from: toISODate(from.subtract({ days })),

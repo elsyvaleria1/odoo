@@ -189,7 +189,7 @@ test("Manager: user change", async () => {
         { id: 2, name: "David Elora" },
     );
     let userInfos = { ...lunchInfos, is_manager: true };
-    let expectedUserId = false; // false as we are requesting for the current user
+    let expectedUserId = false;
     onRpc("/lunch/user_location_get", () => userInfos.user_location[0]);
     onRpc("/lunch/infos", async (request) => {
         const { params } = await request.json();
@@ -365,7 +365,7 @@ test("Confirm existing order", async () => {
     onRpc("/lunch/infos", () => userInfos);
     onRpc("/lunch/pay", async (request) => {
         const { params } = await request.json();
-        expect(params.user_id).toBe(false); // Should confirm order of current user
+        expect(params.user_id).toBe(false);
         userInfos = {
             ...userInfos,
             lines: [

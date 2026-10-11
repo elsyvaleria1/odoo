@@ -42,9 +42,6 @@ test("Display notification for media device permission on barcode scanning", asy
 
 test.tags("desktop");
 test("closing the scanner is not reported back as a failure", async () => {
-    // `scanBarcode` resolves with null when the dialog is closed and rejects
-    // only on a real failure, so the two must not share a branch: backing out
-    // of an attendance kiosk or an event desk is a normal action.
     mockVibrate((pattern) => expect.step(`vibrate:${pattern}`));
     const notified = [];
     const notification = {

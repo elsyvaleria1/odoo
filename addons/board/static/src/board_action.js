@@ -28,7 +28,6 @@ export class BoardAction extends Component {
                 BoardAction.cache[action.actionId] = result;
             }
             if (!result) {
-                // action does not exist
                 this.isValid = false;
                 return;
             }

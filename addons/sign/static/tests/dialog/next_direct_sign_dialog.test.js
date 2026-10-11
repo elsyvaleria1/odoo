@@ -30,8 +30,6 @@ const signInfo = {
     nameList,
 };
 
-// Inside the hook, not at module scope: HOOT imports every test file at
-// collection, and a module-scope mock is the last file's for every suite.
 beforeEach(() => {
     mockService("signInfo", fakeSignInfoService(signInfo));
 });

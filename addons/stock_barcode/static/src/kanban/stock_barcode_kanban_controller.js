@@ -41,8 +41,6 @@ export class StockBarcodeKanbanController extends KanbanController {
         return super.createRecord(...arguments);
     }
 
-    // Handlers
-
     /**
      * Called when the user scans a barcode.
      *

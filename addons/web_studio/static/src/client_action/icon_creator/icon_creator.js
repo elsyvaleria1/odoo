@@ -93,10 +93,6 @@ export class IconCreator extends Component {
         }));
     }
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
     onDesignIconClick() {
         this.props.onIconChange(DEFAULT_ICON);
     }
@@ -106,7 +102,6 @@ export class IconCreator extends Component {
      */
     async onFileUploaded([file]) {
         if (!file) {
-            // Happens when cancelling upload
             return;
         }
         const res = await this.orm.read("ir.attachment", [file.id], ["datas"]);
@@ -124,7 +119,7 @@ export class IconCreator extends Component {
      */
     onPaletteItemClick(palette, value) {
         if (this.props[palette] === value) {
-            return; // same value
+            return;
         }
         this.props.onIconChange({
             backgroundColor: this.props.backgroundColor,

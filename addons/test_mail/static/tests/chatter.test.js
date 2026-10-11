@@ -152,7 +152,6 @@ test("Send message button activation (access rights dependent)", async () => {
         "mail.test.multi.company.read",
         simpleMcId,
     );
-    // Note that rights have no impact on send button for draft record (chatter.isTemporary=true)
     await assertSendButton(true, false, "Draft record", "mail.test.multi.company");
     await assertSendButton(true, true, "Draft record", "mail.test.multi.company.read");
 });
@@ -194,7 +193,7 @@ test("opened attachment box should remain open after adding a new attachment", a
         res_id: recordId,
     });
     onRpc("/mail/thread/data", async (request) => {
-        await new Promise((resolve) => setTimeout(resolve, 1)); // need extra time for useEffect
+        await new Promise((resolve) => setTimeout(resolve, 1));
     });
     patchUiSize({ size: SIZES.XXL });
     await start();

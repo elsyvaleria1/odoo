@@ -16,7 +16,6 @@ test("pos_iot_payment_six", async () => {
     onRpc("/iot_drivers/event", () => true);
     patchWithCleanup(console, { log: () => {} });
 
-    // Fonts
     onRpc("/css", () => "");
     onRpc("/fonts/*", () => "");
     onRpc("/web/static/*", () => "");

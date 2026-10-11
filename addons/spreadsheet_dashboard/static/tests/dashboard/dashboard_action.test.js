@@ -159,7 +159,6 @@ test("display error message", async () => {
     ).toHaveCount(1, {
         message: "It should display an error",
     });
-    // the failure is also reported in a dialog, dismissed before the panel is used again
     await contains(".o_dialog .btn-close").click();
     await contains(".o_search_panel li:eq(0)").click();
     expect(".o-spreadsheet").toHaveCount(1, {
@@ -319,7 +318,7 @@ test("Changing filter values will create a new share", async function () {
     await animationFrame();
     expect(".o_field_CopyClipboardChar").toHaveText(`localhost:8069/share/url/1`);
 
-    await contains("i.fa-share-alt").click(); // close share dropdown
+    await contains("i.fa-share-alt").click();
 
     await contains("i.fa-share-alt").click();
     await animationFrame();
@@ -447,7 +446,7 @@ test("Can open the dialog by clicking on a facet", async function () {
                 type: "relation",
                 label: "Relation Filter",
                 modelName: "product",
-                defaultValue: { operator: "in", ids: [37] }, // xphone
+                defaultValue: { operator: "in", ids: [37] },
             },
         ],
     };
@@ -467,7 +466,7 @@ test("Can open the dialog by clicking on the search bar", async function () {
                 type: "relation",
                 label: "Relation Filter",
                 modelName: "product",
-                defaultValue: { operator: "in", ids: [37] }, // xphone
+                defaultValue: { operator: "in", ids: [37] },
             },
         ],
     };
@@ -554,7 +553,7 @@ test("Unknown value for relation filter is displayed as inaccessible", async fun
                 type: "relation",
                 label: "Relation Filter",
                 modelName: "product",
-                defaultValue: { operator: "in", ids: [9999] }, // unknown product
+                defaultValue: { operator: "in", ids: [9999] },
             },
         ],
     };

@@ -513,7 +513,6 @@ test(`Pdf Manager: splitting on blank pages asks before discarding groups`, asyn
     const manager = await mountPdfManager();
     await animationFrame();
     expect(manager.store.groupIds).toHaveLength(2);
-    // the user's own grouping, which the split would wipe
     const [firstPageId] = manager.store.sortedPageIds;
     manager.store.toggleSeparator(
         firstPageId,
@@ -757,7 +756,6 @@ test(`Pdf Manager: thumbnails arriving do not re-render the whole manager`, asyn
             super.setup();
             onPatched(() => managerRenders++);
         }
-        // pdf.js renders a page over several frames, not in the same tick
         async _renderCanvas() {
             await animationFrame();
             return super._renderCanvas(...arguments);
@@ -788,7 +786,6 @@ test(`Pdf Manager: blank pages are measured when the split asks, once each`, asy
     await animationFrame();
     expect(measured).toBe(0, { message: "loading measures nothing" });
 
-    // the groups the files came in are not asked about; the split is
     await press(["shift", "s"]);
     await animationFrame();
     expect(measured).toBe(12);
@@ -1065,7 +1062,6 @@ test(`Pdf Manager: the area selection takes a page on the move that reaches it`,
     expect(".o_pdf_page_selected").toHaveCount(0);
 
     const viewer = queryOne(".o_documents_pdf_page_viewer");
-    // short enough for pages to wait below the fold
     Object.assign(viewer.style, { flex: "none", height: "300px", width: "400px" });
     await animationFrame();
     const bounds = viewer.getBoundingClientRect();
@@ -1076,7 +1072,6 @@ test(`Pdf Manager: the area selection takes a page on the move that reaches it`,
         );
     mouse("mousedown", bounds.left + 2, bounds.top + 2);
     await animationFrame();
-    // one move, as a quick drag sends: nothing rendered in between
     mouse("mousemove", page.left + page.width / 2, page.top + page.height / 2);
     await animationFrame();
     expect(".o_pdf_page_selected").toHaveCount(1, {
@@ -1100,7 +1095,6 @@ test(`Pdf Manager: the area selection takes a page on the move that reaches it`,
     mouse("mouseup", 0, 0);
 });
 
-/** A manager whose preview renders (wider than a thumbnail) wait for `gate`. */
 function slowPreviewManager(gate) {
     return class SlowPreviewPdfManager extends PdfManagerForTest {
         async _renderCanvas(page, size) {
@@ -1121,7 +1115,7 @@ test(`Pdf Manager: the preview's trash deletes the page shown, not one still arr
     expect(manager.state.viewedPage).toBe(shown);
 
     gate.current = new Deferred();
-    manager.onClickPage(next); // the focus moves now, the preview when it renders
+    manager.onClickPage(next);
     expect(manager.store.focusedPage).toBe(next);
     manager.onArchive();
     await contains(".modal-footer .btn-primary").click();
@@ -1155,7 +1149,6 @@ test(`Pdf Manager: closing the preview by its button cancels a render on its way
 
 test(`Pdf Manager: a landscape turn adds to the page's own /Rotate`, async () => {
     const rotations = [];
-    // a portrait scan stored with /Rotate 90: pdf.js reports it landscape
     const page = {
         getViewport: ({ rotation = 90 } = {}) => {
             rotations.push(rotation);
@@ -1173,7 +1166,6 @@ test(`Pdf Manager: a landscape turn adds to the page's own /Rotate`, async () =>
     });
 });
 
-/** A manager whose thumbnails (160 wide) wait for `gate.current`. */
 function slowThumbnailManager(gate, pages = () => true) {
     return class SlowThumbnailPdfManager extends PdfManagerForTest {
         async _renderCanvas(page, size) {

@@ -135,8 +135,6 @@ function _selectTestSpecifiers(testSpecifiers) {
         return selected;
     };
     const selected = testSpecifiers.filter(isSelected);
-    // Individual test IDs become known only after import. A recognized suite ID
-    // must not prevent another requested test's module from being imported.
     return unresolvedIds.size ? testSpecifiers : selected;
 }
 
@@ -194,8 +192,6 @@ async function _importInFileSuite(specifier) {
     try {
         return await import(specifier);
     } catch (reason) {
-        // a file that does not import registers no test, and a run that only
-        // counts registered tests would report it green: it fails as one
         test("module imports", () => {
             throw reason;
         });

@@ -248,13 +248,6 @@ export class TaskGanttRenderer extends TaskGanttRendererCommon {
         };
     }
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
-    /*
-     * @overwrite
-     */
     onRemoveButtonClick(connectorId) {
         const { sourcePillId, targetPillId } =
             this.mappingConnectorToPills[connectorId];

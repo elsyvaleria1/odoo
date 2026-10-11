@@ -62,8 +62,6 @@ export class TimesheetTimerListController extends ListController {
     beforeUnload(ev) {
         const decisions = [super.beforeUnload(ev)];
         const timesheet = this.timerService.timerState.timesheet;
-        // ungrouped, the timer timesheet is a row of the list, which the list's
-        // own decision already covers
         const standalone = Boolean(timesheet && this.model.root.isGrouped);
         log.logic("timer timesheet unload", () => ({
             hasTimer: Boolean(timesheet),

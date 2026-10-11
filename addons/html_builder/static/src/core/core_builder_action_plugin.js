@@ -82,21 +82,12 @@ function setStyle(
 ) {
     const computedStyle = window.getComputedStyle(el);
     const cssProps = CSS_SHORTHANDS[styleName] || [styleName];
-    // Always reset the inline style first to not put inline style on an
-    // element which already has this style through css stylesheets.
     for (const cssProp of cssProps) {
         el.style.setProperty(cssProp, "");
     }
     el.classList.remove(extraClass);
 
-    // Replacing ', ' by ',' to prevent attributes with internal space separators from being split:
-    // eg: "rgba(55, 12, 47, 1.9) 47px" should be split as ["rgba(55,12,47,1.9)", "47px"]
     const values = value.replace(/,\s/g, ",").split(/\s+/g);
-    // Compute missing values:
-    // "a" => "a a a a"
-    // "a b" => "a b a b"
-    // "a b c" => "a b c b"
-    // "a b c d" => "a b c d d d d"
     while (values.length < cssProps.length) {
         const len = values.length;
         const index = len === 3 ? 1 : len === 1 || len === 2 ? 0 : len - 1;
@@ -123,7 +114,6 @@ function setStyle(
     if (extraClass) {
         el.classList.toggle(extraClass, hasUserValue);
         if (hasUserValue) {
-            // Might have changed because of the class.
             for (const cssProp of cssProps) {
                 el.style.removeProperty(cssProp);
             }
@@ -221,7 +211,6 @@ export class DataAttributeAction extends BuilderAction {
     }
 }
 
-// TODO maybe find a better place for this
 class SetClassRangeAction extends BuilderAction {
     static id = "setClassRange";
     getValue({ editingElement, params: { mainParam: classNames } }) {
@@ -254,17 +243,6 @@ export class StyleAction extends BuilderAction {
             styleName === "--box-border-radius" ||
             CSS_SHORTHANDS["--box-border-radius"].includes(styleName)
         ) {
-            // When reading a CSS variable, we need to get the computed value
-            // of the actual property it controls, ideally. Not only because the
-            // panel should reflect what the user actually sees but also because
-            // the user could have forced its own inline style by himself. Also,
-            // by compatibility with how borders were edited in the past.
-            // See CSS_VARIABLE_EDIT_TODO.
-            //
-            // TODO this should probably be more generic. Note that this was
-            // also done as a fix where reading the actual CSS variable value
-            // was simply not working properly because getStyleValue checks the
-            // CSS_SHORTHANDS which obviously do not magically work.
             styleName = styleName.substring("--box-".length);
         }
 
@@ -287,12 +265,7 @@ export class StyleAction extends BuilderAction {
             if (value.endsWith("px")) {
                 value = value
                     .split(/\s+/g)
-                    .map(
-                        (singleValue) =>
-                            // Rounding value up avoids zoom-in issues.
-                            // Zoom-out issues are not an expected use case.
-                            `${Math.ceil(parseFloat(singleValue))}px`,
-                    )
+                    .map((singleValue) => `${Math.ceil(parseFloat(singleValue))}px`)
                     .join(" ");
             }
             return value;
@@ -329,11 +302,6 @@ export class StyleAction extends BuilderAction {
         params = { ...params };
         const styleName = params.mainParam;
         delete params.mainParam;
-        // Disable all transitions for the duration of the method as many
-        // comparisons will be done on the element to know if applying a
-        // property has an effect or not. Also, changing a css property via the
-        // editor should not show any transition as previews would not be done
-        // immediately, which is not good for the user experience.
         withoutTransition(editingElement, () => {
             setStyle(editingElement, styleName, value, params);
         });

@@ -744,7 +744,7 @@ describe("insert tabulation", () => {
         const tabAfterDinH1 = TAB_WIDTH - (await getCharWidth("h1", "d"));
         const tabInBlockquote = TAB_WIDTH - (await getIndentWidth("blockquote"));
         const tabAfterEinBlockquote =
-            TAB_WIDTH - (await getCharWidth("blockquote", "e")); // in bloquote, after a tab
+            TAB_WIDTH - (await getCharWidth("blockquote", "e"));
 
         await testTabulation({
             contentBefore:
@@ -787,7 +787,7 @@ describe("insert tabulation", () => {
         const tabAfterDinH1 = TAB_WIDTH - (await getCharWidth("h1", "d"));
         const tabInBlockquote = TAB_WIDTH - (await getIndentWidth("blockquote"));
         const tabAfterEinBlockquote =
-            TAB_WIDTH - (await getCharWidth("blockquote", "e")); // in bloquote, after a tab
+            TAB_WIDTH - (await getCharWidth("blockquote", "e"));
 
         await testTabulation({
             contentBefore:
@@ -915,17 +915,16 @@ describe("insert tabulation", () => {
             ((2 * (await getIndentWidth("li")) + (await getCharWidth("li", "c"))) %
                 TAB_WIDTH);
         const tabAfterDinNestedLI =
-            TAB_WIDTH - ((await getCharWidth("li", "d")) % TAB_WIDTH); // in LI, after a tab
+            TAB_WIDTH - ((await getCharWidth("li", "d")) % TAB_WIDTH);
         const tabInDoubleNestedList =
             TAB_WIDTH - ((3 * (await getIndentWidth("li"))) % TAB_WIDTH);
-        const tabAfterE = TAB_WIDTH - (await getCharWidth("li", "e")); // in LI, after a tab
+        const tabAfterE = TAB_WIDTH - (await getCharWidth("li", "e"));
         const tabInBlockquote = TAB_WIDTH - (await getIndentWidth("blockquote"));
         const tabAfterFinBlockquote =
-            TAB_WIDTH - (await getCharWidth("blockquote", "f")); // in blockquote, after a tab
+            TAB_WIDTH - (await getCharWidth("blockquote", "f"));
 
         // prettier-ignore
         await testTabulation({
-            // Obs: cannot use `unformat` for tests with tabs (as it removes the \t chars)
             contentBefore:
                 `<p>${oeTab()}a<br>[${oeTab()}b<br>${oeTab()}</p>` +
                 `<ul>` +
@@ -980,17 +979,16 @@ describe("insert tabulation", () => {
             ((2 * (await getIndentWidth("li")) + (await getCharWidth("li", "c"))) %
                 TAB_WIDTH);
         const tabAfterDinNestedLI =
-            TAB_WIDTH - ((await getCharWidth("li", "d")) % TAB_WIDTH); // in LI, after a tab
+            TAB_WIDTH - ((await getCharWidth("li", "d")) % TAB_WIDTH);
         const tabInDoubleNestedList =
             TAB_WIDTH - ((3 * (await getIndentWidth("li"))) % TAB_WIDTH);
-        const tabAfterE = TAB_WIDTH - (await getCharWidth("li", "e")); // in LI, after a tab
+        const tabAfterE = TAB_WIDTH - (await getCharWidth("li", "e"));
         const tabInBlockquote = TAB_WIDTH - (await getIndentWidth("blockquote"));
         const tabAfterFinBlockquote =
-            TAB_WIDTH - (await getCharWidth("blockquote", "f")); // in blockquote, after a tab
+            TAB_WIDTH - (await getCharWidth("blockquote", "f"));
 
         // prettier-ignore
         await testTabulation({
-            // Obs: cannot use `unformat` for tests with tabs (as it removes the \t chars)
             contentBefore:
                 `<p>${oeTab()}a<br>]${oeTab()}b<br>${oeTab()}</p>` +
                 `<ul>` +

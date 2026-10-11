@@ -28,8 +28,6 @@ export class DynamicGroupList extends DynamicList {
      */
     setup(_config, data, { previousRoot } = {}) {
         super.setup(_config);
-        // A move includes its save, resequence, and rollback. Finish all three
-        // before another drop reads or changes either group's records.
         this.moveMutex = new Mutex();
 
         this.isGrouped = true;
@@ -135,8 +133,6 @@ export class DynamicGroupList extends DynamicList {
         const target = this.groups.find((g) => g.id === targetGroupId);
         const droppedAtEnd = refId && target?.list.records.at(-1)?.id === refId;
         return this.moveMutex.exec(() => {
-            // Rollback can move the last card without removing it. Preserve
-            // the user's end-of-column placement rather than its old anchor.
             if (droppedAtEnd) {
                 const currentTarget = this.groups.find((g) => g.id === targetGroupId);
                 refId = currentTarget?.list.records.at(-1)?.id ?? null;
@@ -151,8 +147,6 @@ export class DynamicGroupList extends DynamicList {
         if (!targetGroup) {
             return;
         }
-        // A preceding failed drop may have removed the DOM anchor while this
-        // move was queued. Keep an end-of-column drop at the end of the column.
         if (refId && !targetGroup.list.records.some((r) => r.id === refId)) {
             refId = targetGroup.list.records.at(-1)?.id ?? null;
         }

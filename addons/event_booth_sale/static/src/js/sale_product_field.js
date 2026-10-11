@@ -7,8 +7,6 @@ import { x2ManyCommands } from "@web/core/network";
 import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 
-// See the note in event_sale: the reader declares the field, and a duplicate across the
-// two event addons is merged by `addFieldDependencies`.
 Object.assign(saleOrderLineProductField, {
     fieldDependencies: [
         ...saleOrderLineProductField.fieldDependencies,
@@ -70,9 +68,7 @@ patch(SaleOrderLineProductField.prototype, {
                     closeInfo.special ||
                     closeInfo.dismiss
                 ) {
-                    // wizard popup closed or 'Cancel' button triggered
                     if (!this.props.record.data.event_ticket_id) {
-                        // remove product if event configuration was cancelled.
                         this.props.record.update({
                             [this.props.name]: undefined,
                         });

@@ -28,12 +28,6 @@ import { defineStudioEnvironment } from "./studio_tests_context.js";
 
 describe.current.tags("desktop");
 
-// `serverState` is JOB-scoped (`createJobScopedGetter`), and an assignment made
-// while the bundle evaluates belongs to the runner -- whose instance is dropped
-// after the FIRST suite of a run, because `Runner.after()` at module scope
-// registers into the global `after-suite` registry. So this reached whichever
-// `@web_studio` suite sorted first and never this one. In `before()` it reaches
-// the suite it was written for.
 before(() => {
     serverState.debug = "1";
 });
@@ -48,9 +42,6 @@ test("Studio not available for non system users", async () => {
 });
 
 test("Studio icon matches the clickbot selector", async () => {
-    // This test looks stupid, but if you ever need to adapt the selector,
-    // you must adapt it as well in the clickbot (in web), otherwise Studio
-    // might not be tested anymore by the click_everywhere test.
     await mountWithCleanup(WebClient);
     await animationFrame();
     expect(".o_web_studio_navbar_item:not(.o_disabled) i").toHaveCount(1);
@@ -136,10 +127,6 @@ test("navigation in Studio with act_window", async () => {
     expect.verifySteps([
         "/web/webclient/translations",
         "/web/webclient/load_menus",
-        // "/mail/data" is deliberately absent: `stepAllNetworkCalls` hides it
-        // as tracker boilerplate (STEP_TRACKER_BOILERPLATE_ROUTES in
-        // mock_server.js) since the mail store stopped fetching eagerly from
-        // service start.
         "/web/action/load",
         "get_views",
         "web_search_read",
@@ -238,7 +225,6 @@ test("user context is unpolluted when entering studio in error", async () => {
     expect(".o_web_studio_kanban_view_editor").toHaveCount(0);
     expect(".o_kanban_view").toHaveCount(1);
     expect.verifyErrors(["Boom"]);
-    // the failure is reported in a dialog, dismissed before navigating on
     await contains(".o_dialog .btn-close").click();
 
     await click(".o_nav_entry[data-menu-xmlid=menu_12]");
@@ -406,20 +392,12 @@ test("open same record when leaving form", async () => {
 test("open Studio with non editable view", async () => {
     onRpc("grid_unavailability", () => ({}));
 
-    // "grid" stands in for ANY view type studio cannot edit (it is not in
-    // studio's SUPPORTED_VIEW_TYPES). The real implementation lives in
-    // web_grid, which is OUTSIDE web_studio's dependency closure, so the
-    // module-scoped run never loads it — register a minimal stand-in then.
-    // The unscoped run keeps the real view (first registration wins is not
-    // relied upon: the stub is only added when the key is absent).
     if (!registry.category("views").contains("grid")) {
         class StubGridController extends Component {
             static template = xml`<div class="o_grid_view"/>`;
             static props = null;
             props = useProps(this.constructor.props);
         }
-        // the view descriptor schema is closed: only keys the framework
-        // reads register (web 63ba6658f144)
         registry.category("views").add("grid", {
             type: "grid",
             Controller: StubGridController,
@@ -560,11 +538,6 @@ test("command palette inside studio", async () => {
     await click(".o_web_studio_navbar_item button");
     await waitFor(".o_studio_home_menu");
 
-    // A namespace character, not any key. This fork's home menu search box
-    // filters the tiles in place, and hands its text to the command palette
-    // only when it opens with a character the palette has claimed as a
-    // namespace -- "/" being menus. Vanilla opened the palette on the first
-    // keystroke, which is what this test used to press Space for.
     await press("/");
     await animationFrame();
 
@@ -763,9 +736,6 @@ test("can edit ir.actions.act_window without id", async () => {
     expect(
         ".o_web_studio_thumbnail_item:not(.disabled.pe-none):has(img[alt='View Form'])",
     ).toHaveCount(1);
-    // How many types the dashboard lists is a fact about which *_studio
-    // bridges are in the bundle; what this test states is that every type but
-    // the form is unclickable for an action that has no id.
     expect(".o_web_studio_thumbnail_item.pe-none").toHaveCount(
         queryAll(".o_web_studio_thumbnail_item").length - 1,
     );
@@ -773,7 +743,6 @@ test("can edit ir.actions.act_window without id", async () => {
     await click(".o_web_studio_leave");
     await waitFor(".o_action_manager:first:not(:has(.o_studio))");
     await waitFor(".o_form_view");
-    // The router pushes its state just after a setTimeout
     await delay(0);
 
     expect(".o_form_view .o_field_widget[name='name'] input").toHaveValue(
@@ -781,7 +750,7 @@ test("can edit ir.actions.act_window without id", async () => {
     );
     expect(".o_breadcrumb").toHaveText("partner Action\nYop\nRainbow Dash");
     expect(browser.location.pathname).toBe("/odoo/action-1/1/m-pony/1");
-    expect(browser.location.search).toBe(""); // no view type in search means the default view type of the action is taken
+    expect(browser.location.search).toBe("");
 });
 
 test("enter and leave with multirecord view (invalid to load)", async () => {

@@ -8,9 +8,6 @@ import {
 
 const VIDEO_URL = "https://www.youtube.com/watch?v=Dpq87YCHmJc";
 
-/**
- * The purpose of this tour is to check the media replacement flow.
- */
 registerWebsitePreviewTour(
     "test_replace_media",
     {
@@ -21,12 +18,6 @@ registerWebsitePreviewTour(
         {
             trigger: "body",
             run: function () {
-                // Patch the VideoDialog so that it does not do external calls
-                // during the test (note that we don't unpatch but as the patch
-                // is only done after the execution of a test_website test and
-                // specific to an URL only, it is acceptable).
-                // TODO if we ever give the possibility to upload its own videos,
-                // this won't be necessary anymore.
                 patch(VideoSelector.prototype, {
                     async _getVideoURLData(src) {
                         if (src === VIDEO_URL || src === "about:blank") {
@@ -70,7 +61,6 @@ registerWebsitePreviewTour(
         },
         {
             content: "ensure the svg does have a shape",
-            // the replaced image already had the shape: wait for the svg itself
             trigger:
                 ":iframe .s_picture figure img[data-shape][data-original-src$='sample.svg']",
         },
@@ -126,12 +116,10 @@ registerWebsitePreviewTour(
         {
             content: "enter a video URL",
             trigger: ".o_select_media_dialog #o_video_text",
-            // Design your first web page.
             run: `edit ${VIDEO_URL}`,
         },
         {
             content: "wait for preview to appear",
-            // "about:blank" because the VideoWidget was patched at the start of this tour
             trigger:
                 ".o_select_media_dialog div.media_iframe_video [src='about:blank']:iframe body",
         },

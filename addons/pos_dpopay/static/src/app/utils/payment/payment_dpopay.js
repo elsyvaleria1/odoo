@@ -10,9 +10,9 @@ import { ConnectionLostError, RPCError } from "@web/core/network";
 import { _t } from "@web/core/translation";
 import { AlertDialog } from "@web/ui/dialog";
 import { isNull } from "@web/views/view_utils";
-const POLLING_REQUEST_MS = 3 * 1000; // 3 seconds
-const CANCEL_REQUEST_TIME_LIMIT_MS = 3 * 60 * 1000; // 3 minutes
-const WAIT_BEFORE_RESULT_FETCH = 3 * 1000; // 3 seconds
+const POLLING_REQUEST_MS = 3 * 1000;
+const CANCEL_REQUEST_TIME_LIMIT_MS = 3 * 60 * 1000;
+const WAIT_BEFORE_RESULT_FETCH = 3 * 1000;
 
 export class PaymentDPOPay extends PaymentInterface {
     setup() {
@@ -53,10 +53,8 @@ export class PaymentDPOPay extends PaymentInterface {
         }
 
         if (paymentLine.transaction_id) {
-            // Possible return values: true, false, null
             const recoveryStatus = await this._attemptTransactionRecovery(paymentLine);
 
-            //  null  → API call failed or could not retrieve transaction status
             if (isNull(recoveryStatus)) {
                 return false;
             }
@@ -83,7 +81,7 @@ export class PaymentDPOPay extends PaymentInterface {
             currency: currency.iso_numeric.toString(),
             amount: Math.round(
                 paymentLine.amount * Math.pow(10, currency.decimal_places),
-            ).toString(), // Convert amount to smallest currency unit
+            ).toString(),
             sourceId: paymentLine.transaction_id,
         };
 
@@ -218,7 +216,6 @@ export class PaymentDPOPay extends PaymentInterface {
         }
 
         if (response.complete) {
-            // Wait 3 seconds for DPO Pay to finalize the payment result.
             await new Promise((resolve) =>
                 setTimeout(resolve, WAIT_BEFORE_RESULT_FETCH),
             );

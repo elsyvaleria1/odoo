@@ -64,8 +64,6 @@ export class DocErrorDialog extends Component {
     }
 
     onClickClipboard() {
-        // `props.message` and `this.contextDetails` never existed: this used to
-        // copy the word "undefined" twice into the reader's clipboard.
         const status = this.props.status ? ` (HTTP ${this.props.status})` : "";
         browser.navigator.clipboard.writeText(
             `${this.title}: ${this.props.name}${status}\n\n${this.traceback}`,

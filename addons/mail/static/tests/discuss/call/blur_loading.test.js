@@ -47,14 +47,12 @@ test("the first blur loads the segmentation script before building the manager",
         after(() => delete window.SelfieSegmentation);
     });
     const manager = await applyBlurEffect();
-    // closing rejects the stream nobody awaits here
     manager.stream.catch(() => {});
     after(() => manager.close());
     expect(manager).toBeInstanceOf(BlurManager);
     expect(manager.backgroundBlur).toBe(5);
     expect(steps).toEqual([
         "load",
-        // the wasm and the model come from the build that was vendored
         "construct https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1.1632777926/model.tflite",
     ]);
 });

@@ -28,9 +28,6 @@ recursive.self = recursive;
 
 describe(parseUrl(import.meta.url), () => {
     describe("createJobScopedGetter", () => {
-        // a suite's instance derives from its own ancestors' — two sibling
-        // suites both registered before either runs (the way test files are
-        // imported) must not read each other's mutations
         const get = createJobScopedGetter((previous) => ({
             value: previous ? previous.value : "root",
         }));

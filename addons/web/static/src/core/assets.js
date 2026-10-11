@@ -70,9 +70,6 @@ function getInjectedImportMapKeys(targetDoc) {
  * @returns {string}
  */
 export function getScriptNonce(targetDoc = document) {
-    // The server hides the nonce from getAttribute() but keeps the property. An
-    // about:blank or srcdoc document inherits this document's policy, so a
-    // document the server never nonced falls back to this one's nonce.
     const nonced =
         targetDoc.querySelector("script[nonce]") ||
         document.querySelector("script[nonce]");
@@ -194,8 +191,6 @@ function addFreshImportMapEntries(targetDoc, importMap, injected) {
  */
 export function importMapWasIgnored(
     specifier,
-    // a page bundle served as a classic script has no import.meta: the module
-    // script that provides its libraries provides the resolver as well
     resolve = (spec) => (import.meta.resolve ?? odoo.loader.resolve)(spec),
 ) {
     try {
@@ -371,9 +366,6 @@ export class AssetsLoadingError extends Error {
  * @returns {Promise<void>}
  */
 function loadESMBundleHere(specifiers, importMap) {
-    // a bundle the page already carries lists every module as a specifier; a
-    // second load re-imported them all (~25 ms for the website builder), which
-    // is a frame a caller like LazyComponent does not expect to lose
     const cacheKey = JSON.stringify(specifiers);
     if (!esmBundleCache.has(cacheKey)) {
         const promise = importESMBundleHere(specifiers, importMap).catch((reason) => {
@@ -421,9 +413,6 @@ async function importESMBundleHere(specifiers, importMap) {
     const results = await runInBundleTransaction(() =>
         Promise.all(
             specifiers.map(async (specifier) => {
-                // a module the page already registered is that module: importing
-                // it again through a bridge would hand the loader a second
-                // namespace object for the same singleton
                 const registered = /** @type {any} */ (
                     globalThis
                 ).odoo?.loader?.modules?.get(specifier);
@@ -706,8 +695,6 @@ function mountAsset(targetDoc, el, url, onError) {
  * @returns {Promise<unknown>}
  */
 function loadOwlCompiler(targetDoc, importMap) {
-    // resolved through the import map at run time: a literal import would be
-    // rewritten by the classic page's @odoo/owl alias
     return assets.loadESMBundle(["@odoo/owl/compiler"], { targetDoc, importMap });
 }
 
@@ -902,16 +889,12 @@ export const assets = {
         const { cssLibs, jsLibs, esmUrl, esmSpecifiers, esmImportMap, owlCompiler } =
             await getBundle(bundleName, { targetDoc });
         if (js && (esmUrl || esmSpecifiers)) {
-            // Runtime modules can import modules registered by a page satellite.
-            // A running service does not mean that satellite has evaluated yet.
             const loader = /** @type {any} */ (targetDoc.defaultView)?.odoo?.loader;
             if (loader?.whenBundlesEvaluated) {
                 await new Promise((resolve) => loader.whenBundlesEvaluated(resolve));
             }
         }
         if (js && owlCompiler && (esmUrl || esmSpecifiers)) {
-            // @odoo/owl is the runtime build: a bundle that may compile a
-            // template installs the compiler module before it runs
             await loadOwlCompiler(targetDoc, esmImportMap);
         }
         const promises = [];

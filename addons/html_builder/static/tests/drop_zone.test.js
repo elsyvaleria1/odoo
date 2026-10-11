@@ -27,7 +27,6 @@ test("drop beside dropzone inserts the snippet", async () => {
         ".o-snippets-menu #snippet_groups .o_snippet_thumbnail",
     ).drag();
     await moveTo(contentEl.ownerDocument.body);
-    // The dropzone is not hovered, so not highlighted.
     expect(contentEl).toHaveInnerHTML(dropzone());
     await drop();
     await confirmAddSnippet();
@@ -61,8 +60,6 @@ test("snippets cannot be dropped next to elements inside excluded parent", async
     await contains(
         ".o-snippets-menu .o_snippet_thumbnail[data-snippet='s_image']",
     ).drag();
-    // Should have 3 dropzones in first-div (not excluded)
     expect(":iframe .first-div .oe_drop_zone").toHaveCount(3);
-    // Should have no dropzones in second-div (excluded by excludeNearParent)
     expect(":iframe .second-div .oe_drop_zone").toHaveCount(0);
 });

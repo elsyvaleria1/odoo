@@ -357,9 +357,6 @@ function onAnchorHrefClick(ev) {
 
     ev.preventDefault();
 
-    // what a browser activates as a navigation of this document, as the
-    // navigation's link activation: a new window, a modified click or an
-    // edited link is not one
     const activates =
         ev.button === 0 &&
         !ev.ctrlKey &&

@@ -69,8 +69,6 @@ export class AlignPlugin extends Plugin {
         post_redo_handlers: this.updateAlignmentParams.bind(this),
         remove_all_formats_handlers: this.removeTextAlignment.bind(this),
 
-        // Alignment belongs to the whole block, so it is only removable when
-        // every aligned block in the selection is selected end to end.
         can_remove_format_predicates: (targetedNodes) => {
             const alignedBlocks = [
                 ...new Set(

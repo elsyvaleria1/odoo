@@ -658,18 +658,9 @@ describe("throttleForAnimation", () => {
 
 describe("throttleForAnimationScrollEvent", () => {
     test("scroll loses target", async () => {
-        // The frame requested inside a scroll listener runs in the SAME
-        // rendering update, after the scroll steps, so on a real clock the
-        // throttle's frame is spent before the next scroll event arrives and
-        // nothing is left to coalesce. Freeze the clock: frames then advance
-        // only through advanceFrame(), which is what the test is about.
         freezeTime();
         let throttled = new Deferred();
         const throttledFn = throttleForAnimation((val, targetEl) => {
-            // Whether `val.currentTarget` still reads after dispatch is the
-            // browser's business (Chrome 153 keeps it on a trusted scroll
-            // event, earlier versions and synthetic events null it), which is
-            // exactly why the target travels as a parameter; assert that.
             const targetName = targetEl && targetEl.nodeName;
             expect.step(`throttled function called with ${targetName} in parameter`);
             throttled.resolve();
@@ -701,9 +692,6 @@ describe("throttleForAnimationScrollEvent", () => {
 
         throttled = new Deferred();
         scrolled = new Deferred();
-        // a second scroll in the same frame: scrollBy would dispatch it in the
-        // next frame, after the animation-frame callback has already run and
-        // released the throttle, so it is dispatched here, before that stage
         el.dispatchEvent(new Event("scroll"));
         await scrolled;
         expect.verifySteps(["before scroll", "after scroll"]);

@@ -84,6 +84,5 @@ test("many2one_avatar_employee widget in kanban view with skills on avatar card"
     ).toBe(`/web/image/hr.employee/${pierreEid}/avatar_128`);
     await click(".o_kanban_record .o_m2o_avatar > img");
     await contains(".o_avatar_card");
-    // Tigrinya lapsed in 2020: the card tags what Pierre has, not what he had.
     await contains(".o_avatar_card .o_employee_skills_tags > .o_tag", { count: 1 });
 });

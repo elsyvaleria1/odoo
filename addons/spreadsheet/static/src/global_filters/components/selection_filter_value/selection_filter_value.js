@@ -26,7 +26,6 @@ export class SelectionFilterValue extends Component {
         useLayoutEffect(
             () => {
                 if (this.inputRef.el) {
-                    // Prevent the user from typing free-text by setting the maxlength to 0
                     this.inputRef.el.setAttribute("maxlength", 0);
                 }
             },

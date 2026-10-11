@@ -1,14 +1,3 @@
-/**
- * QWeb mode for Ace — fork-local, not upstream.
- *
- * The XML mode with Odoo's attributes (domain/attrs/options, the t-*
- * directives, groups) highlighted. An ES module since the ace ESM build: it
- * extends the XML highlight rules the "ace" external lib exports. Its $id is
- * "ace/mode/qweb", so onModeChanged reports "qweb" as it did when the mode was
- * set by path.
- * Re-check it against the XML rules on every Ace bump: it reads
- * $rules.attributes[0].regex.
- */
 import {
     lang,
     oop,
@@ -138,7 +127,5 @@ oop.inherits(Mode, TextMode);
         return worker;
     };
 
-    // setMode("ace/mode/qweb") used to leave that path in $modeId; handed as an
-    // object, the mode's own $id is what onModeChanged reports
     this.$id = "ace/mode/qweb";
 }).call(Mode.prototype);

@@ -6,9 +6,6 @@ import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 describe.current.tags("headless");
 
 function makeLongpolling() {
-    // startPolling/stopPolling are patched out so bookkeeping tests never
-    // trigger a real _poll()/fetch() cycle; the actual poll handling is
-    // exercised separately below via a patched _rpcIoT.
     patchWithCleanup(IoTLongpolling.prototype, {
         startPolling: () => {},
         stopPolling: () => {},
@@ -77,8 +74,6 @@ test("_poll's success handler survives its own callback removing the last device
     });
     iotLongpolling.addListener("10.0.0.5", ["d1"], "l1", () => {
         called = true;
-        // Mirrors enterprise/iot's onMessage, which unconditionally removes
-        // its own listener as the first thing it does on every message.
         iotLongpolling.removeListener("10.0.0.5", "d1", "l1");
     });
 

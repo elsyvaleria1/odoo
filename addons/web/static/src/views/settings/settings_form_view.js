@@ -79,9 +79,6 @@ const settingsFormView = {
     Controller: SettingsFormController,
     Compiler: SettingsFormCompiler,
     Renderer: SettingsFormRenderer,
-    // a field under <setting type="header"> is marked in its options before
-    // the form parser reads the tree; the mark goes on a copy of the IR, the
-    // one handed in may be the view cache's
     props: (genericProps, view) => {
         const { arch, ir } = genericProps;
         const marked = deepCopy(

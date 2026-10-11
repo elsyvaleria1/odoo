@@ -54,7 +54,6 @@ export class OrderWidget extends Component {
         return { label, disabled };
     }
 
-    // TODO: remove in master
     get lineNotSend() {
         return this.selfOrder.orderLineNotSend;
     }

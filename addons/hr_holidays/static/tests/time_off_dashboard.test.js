@@ -122,9 +122,6 @@ test(`test basic rendering`, async () => {
     expect(`.fc-day.hr_mandatory_day_5[data-date="2025-03-17"]`).toHaveCount(1);
 });
 
-// The "All Time Off" action reuses the same calendar view as the personal one.
-// On that screen the officer is looking at everybody's requests, so their own
-// balance panel is noise sitting on top of the work.
 async function openTimeOffCalendar(context) {
     await mountWebClient();
     await getService("action").doAction({

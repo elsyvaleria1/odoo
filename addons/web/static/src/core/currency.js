@@ -102,7 +102,6 @@ export async function getCurrencyRates() {
             ratesPromise = prom;
         }
         await ratesPromise;
-        // a company change while awaiting dropped that fetch's result
     } while (epochSeen !== ratesEpoch);
     return rates;
 }

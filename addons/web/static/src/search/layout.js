@@ -25,13 +25,8 @@ export function extractLayoutComponents(params) {
 
 const log = makeLogger("web.search.layout");
 
-// the views whose content passes under a frosted control panel laid over
-// their own scroller (P6.1); a view joins once its scroller takes the offset
 export const CHROME_OVERLAY_VIEWS = new Set(["list", "kanban", "form"]);
 
-// The panel's height as last measured, per view type. A view is rendered with
-// it already in place: the property is inherited, so writing it after the
-// mount restyles everything the view has just been styled with.
 /** @type {Map<string | undefined, string>} */
 const measuredPanelHeights = new Map();
 

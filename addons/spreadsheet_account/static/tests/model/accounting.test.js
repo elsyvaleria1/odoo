@@ -104,7 +104,7 @@ test("formula with invalid date", async () => {
     setCellContent(model, "A2", `=ODOO.DEBIT("100", 0)`);
     setCellContent(model, "A3", `=ODOO.BALANCE("100", -1)`);
     setCellContent(model, "A4", `=ODOO.BALANCE("100", "not a valid period")`);
-    setCellContent(model, "A5", `=ODOO.BALANCE("100", 1900)`); // this should be ok
+    setCellContent(model, "A5", `=ODOO.BALANCE("100", 1900)`);
     setCellContent(model, "A6", `=ODOO.BALANCE("100", 1900, -1)`);
     setCellContent(model, "A7", `=ODOO.DEBIT("100", 1899)`);
     await waitForDataLoaded(model);
@@ -133,7 +133,6 @@ test("Evaluation with multiple account codes", async () => {
     setCellContent(model, "A2", `=ODOO.DEBIT("100,200", "2022")`);
     setCellContent(model, "A3", `=ODOO.BALANCE("100,200", "2022")`);
 
-    // with spaces
     setCellContent(model, "B1", `=ODOO.CREDIT("100 , 200", "2022")`);
     setCellContent(model, "B2", `=ODOO.DEBIT("100 , 200", "2022")`);
     setCellContent(model, "B3", `=ODOO.BALANCE("100 , 200", "2022")`);
@@ -180,7 +179,7 @@ test("Server requests", async () => {
     setCellContent(model, "A2", `=ODOO.CREDIT("100", "01/2022")`);
     setCellContent(model, "A3", `=ODOO.DEBIT("100","Q2/2022")`);
     setCellContent(model, "A4", `=ODOO.BALANCE("10", "2021")`);
-    setCellContent(model, "A5", `=ODOO.CREDIT("10", "2022", -1)`); // same payload as A4: should only be called once
+    setCellContent(model, "A5", `=ODOO.CREDIT("10", "2022", -1)`);
     setCellContent(model, "A6", `=ODOO.DEBIT("5", "2021", 0, 2)`);
     setCellContent(model, "A7", `=ODOO.DEBIT("5", "05/04/2021", 1)`);
     setCellContent(model, "A8", `=ODOO.BALANCE("5", "2022",,,FALSE)`);
@@ -319,15 +318,11 @@ test("two concurrent requests on different accounts", async () => {
         },
     });
     setCellContent(model, "A1", `=ODOO.ACCOUNT.GROUP("income")`);
-    setCellContent(model, "A2", `=ODOO.BALANCE(A1, 2022)`); // batched only when A1 resolves
-    setCellContent(model, "A3", `=ODOO.BALANCE("100", 2022)`); // batched directly
+    setCellContent(model, "A2", `=ODOO.BALANCE(A1, 2022)`);
+    setCellContent(model, "A3", `=ODOO.BALANCE("100", 2022)`);
     expect(getCellValue(model, "A1")).toBe("Loading...");
     expect(getCellValue(model, "A2")).toBe("Loading...");
     expect(getCellValue(model, "A3")).toBe("Loading...");
-    // A lot happens within the next tick.
-    // Because cells are evaluated given their order in the sheet,
-    // A1's request is done first, meaning it's also resolved first, which add A2 to the next batch (synchronously)
-    // Only then A3 is resolved. => A2 is batched while A3 is pending
     await waitForDataLoaded(model);
     expect(getCellValue(model, "A1")).toBe("100104,200104");
     expect(getCellValue(model, "A2")).toBe(0);
@@ -414,8 +409,6 @@ test("parsePeriod", () => {
         year: 2022,
         quarter: 4,
     });
-    // A number below 3000 is interpreted as a year.
-    // It's interpreted as a regular spreadsheet date otherwise
     expect(parsePeriod({ value: "3005" }, locale)).toEqual({
         rangeType: "day",
         year: 1908,

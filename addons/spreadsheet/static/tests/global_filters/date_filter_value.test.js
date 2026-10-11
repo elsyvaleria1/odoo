@@ -477,7 +477,6 @@ test("Choosing a from after the to will re-order dates", async function () {
     });
     await contains("input").click();
     await contains("input.o_datetime_input:last").click();
-    // Select 1st of January 2023
     await contains(".o_date_item_cell.o_datetime_button:first").click();
     expect.verifySteps(["update"]);
 });

@@ -132,7 +132,6 @@ Modal.prototype._hideModal = function () {
  * @param {any} modal
  */
 function endModalTransitions(modal) {
-    // the dialog twice: a static-backdrop bounce chains a second transition on it
     for (const getEl of [
         () => modal._backdrop._element,
         () => modal._dialog,

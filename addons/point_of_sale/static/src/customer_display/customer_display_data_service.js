@@ -13,7 +13,6 @@ export const CustomerDisplayDataService = {
     async start(env, { bus_service, notification }) {
         const data = proxy({});
         const onNotified = getOnNotified(bus_service, session.bus_channel);
-        // a revoked link reloads into the page refusing it
         onNotified("LINK_REVOKED", () => browser.location.reload());
         log.lifecycle("start", () => ({
             source: session.proxy_ip ? "iot_poll" : "bus+broadcast",

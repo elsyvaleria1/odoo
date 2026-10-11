@@ -5,10 +5,6 @@ import { _t } from "@web/core/translation";
 const { arg, toString, toNumber } = helpers;
 const { functionRegistry } = registries;
 
-//--------------------------------------------------------------------------
-// Spreadsheet functions
-//--------------------------------------------------------------------------
-
 function assertListsExists(listId, getters) {
     if (!getters.isExistingList(listId)) {
         throw new EvaluationError(_t('There is no list with id "%s"', listId));

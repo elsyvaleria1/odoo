@@ -250,7 +250,6 @@ const threadPatch = {
         return super.openChannel();
     },
     setAsDiscussThread() {
-        // pinned first, so that the tab revealing it already lists it
         if (!this.displayToSelf && this.isChannelKind) {
             this.isLocallyPinned = true;
         }

@@ -9,7 +9,6 @@ import {
     mountWithCleanup,
 } from "@web/../tests/web_test_helpers";
 
-// Due to dependency with mail module, we have to define their models for our tests.
 defineModels(mailModels);
 
 test("can unformat a value when focus and format when blur", async () => {

@@ -59,10 +59,6 @@ function seedEmployeeWithTwoHomonymTypes() {
     return employeeId;
 }
 
-// groupedList keyed its groups by display_name, so two skill types that happen
-// to share a name were rendered as one group with the second type's rows
-// listed under the first type's header -- and its ADD button carried the wrong
-// default_skill_type_id.
 test("two skill types sharing a name are two groups", async () => {
     const employeeId = seedEmployeeWithTwoHomonymTypes();
     await mountView({
@@ -100,12 +96,6 @@ test("a skill row is the list's row component, editable on click", async () => {
     );
 });
 
-// The renderer asked four questions on every form open -- does any skill type
-// exist, who is the user's employee, is the user an HR user, and which
-// employees are below the user (a child_of search over the whole company) --
-// to decide whether to show one link. The history report already answers
-// "may I see this employee's history" through its record rules, so one count
-// against it replaces the last three.
 test("opening the skills widget asks the server two questions, not four", async () => {
     const employeeId = seedEmployeeWithTwoHomonymTypes();
     onRpc("hr.employee.skill.history.report", "search_count", ({ args }) => {

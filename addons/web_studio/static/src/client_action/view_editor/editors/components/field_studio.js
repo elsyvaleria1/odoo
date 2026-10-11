@@ -11,11 +11,6 @@ import { useCurrentViewEditorModel } from "@web_studio/client_action/view_editor
 
 import { FieldContentOverlay } from "./field_content_overlay.js";
 
-/*
- * Field:
- * - Displays an Overlay for X2Many fields
- * - handles invisible
- */
 export class FieldStudio extends Field {
     static components = { ...Field.components, FieldContentOverlay };
     static template = "web_studio.Field";
@@ -32,7 +27,6 @@ export class FieldStudio extends Field {
     get fieldComponentProps() {
         const fieldComponentProps = super.fieldComponentProps;
         if (this.type === "kanban.many2one_avatar_user") {
-            // This field must be visible, even when dealing without a record
             fieldComponentProps.readonly = false;
         }
         delete fieldComponentProps.studioXpath;
@@ -59,7 +53,7 @@ export class FieldStudio extends Field {
             return false;
         }
         if (this.type === "kanban.many2one_avatar_user") {
-            return false; // The widget has its own visibility when empty
+            return false;
         }
         return "isEmpty" in this.field
             ? this.field.isEmpty(record, name)

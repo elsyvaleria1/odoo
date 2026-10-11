@@ -10,9 +10,6 @@ const { topbarMenuRegistry } = registries;
 const commandProviderRegistry = registry.category("command_provider");
 const commandCategoryRegistry = registry.category("command_categories");
 
-/**
- * Activate the command palette for spreadsheet.
- */
 export function useSpreadsheetCommandPalette() {
     const env = useSpreadsheetEnv();
     useLayoutEffect(
@@ -96,8 +93,6 @@ function registerCommand(spreadsheetEnv, menu, parentName, category) {
                             ? "spreadsheet_insert_link"
                             : category,
                     name: `${parentName} / ${subMenuName}`,
-                    // The palette falls back to `DefaultCommandItem` on its
-                    // own, so only say something when there is a shortcut.
                     ...(hotkey && {
                         Component: HotkeyCommandItem,
                         props: { hotkey },

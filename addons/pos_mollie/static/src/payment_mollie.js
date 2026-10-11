@@ -63,7 +63,6 @@ export class PaymentMollie extends PaymentInterface {
                 return false;
             }
 
-            // In test mode, the terminal is simulated using a popup
             if (data._links.changePaymentState) {
                 browser.open(data._links.changePaymentState.href, "_blank");
             }

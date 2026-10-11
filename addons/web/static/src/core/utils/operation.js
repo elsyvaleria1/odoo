@@ -26,7 +26,6 @@ export class Operation {
         if (!this.integer || Number.isInteger(result)) {
             return result;
         }
-        // an integer column stores int(result), which truncates toward zero
         log.logic("integer operation truncated", () => ({
             operator: this.operator,
             operand: this.operand,

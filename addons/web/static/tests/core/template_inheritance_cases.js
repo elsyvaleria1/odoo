@@ -1,15 +1,4 @@
 /** @odoo-module native */
-/**
- * The template inheritance specification, as cases both engines must pass:
- * odoo/libs/xml/template_inheritance.py (server views, templates and kanban
- * archs) and web/static/src/core/template_inheritance.js (OWL templates).
- *
- * Read by web/static/tests/core/template_inheritance_corpus.test.js.
- *
- * A case holds a parent arch, a <data> of specifications, and either the
- * resulting arch or a text the error must contain. The payload is JSON in a
- * raw template literal.
- */
 
 export const CASES = JSON.parse(String.raw`
 {

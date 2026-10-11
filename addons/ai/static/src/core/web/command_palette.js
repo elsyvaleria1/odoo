@@ -16,9 +16,6 @@ class AskAICommand extends Component {
     props = useProps(this.constructor.props);
 }
 
-// Per-env memo of "ai.agent is unavailable", so that frequent palette opens
-// don't repeatedly RPC and log the same warning. The availability is stable for
-// the lifetime of an env. WeakSet so envs can still be garbage collected.
 const envsWithoutAi = new WeakSet();
 
 async function askAIProvide(env, options) {
@@ -31,9 +28,6 @@ async function askAIProvide(env, options) {
     try {
         agent = await orm.cache().call("ai.agent", "get_ask_ai_agent", []);
     } catch (error) {
-        // ``ai.agent`` may be unreachable for the current user (ACL) or absent
-        // from the environment; the "Ask AI" command must not bring the whole
-        // palette down, so degrade to no AI command and memoise the failure.
         envsWithoutAi.add(env);
         console.warn("[ai] CommandPalette: ai.agent unavailable", error);
         return [];
@@ -48,7 +42,6 @@ async function askAIProvide(env, options) {
                     options.searchValue,
                 ]);
                 if (action) {
-                    // Don't await so that the command palette can close immediately
                     actions.doAction(action);
                 }
             },
@@ -71,8 +64,6 @@ commandProviderRegistry.add("ask_ai", {
     },
 });
 
-// TODO: Add a unit test for this. The Ask AI command should be available in the default
-// namespace (CTRL+K) when no commands are found.
 patch(CommandPalette.prototype, {
     setup() {
         super.setup(...arguments);

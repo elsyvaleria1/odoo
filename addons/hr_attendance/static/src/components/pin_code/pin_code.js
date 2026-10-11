@@ -72,9 +72,6 @@ export class KioskPinCode extends Component {
                 this.state.codePin,
             );
             this.state.codePin = "";
-            // Only a rejected PIN slows the pad down. Counting every press made
-            // a correct one wait too, and reset nothing on success, so the
-            // employee after a few mistakes paid for them as well.
             this.failedAttempts = accepted ? 0 : this.failedAttempts + 1;
             const backoff = Math.min(this.failedAttempts * 500, 5000);
             if (backoff) {

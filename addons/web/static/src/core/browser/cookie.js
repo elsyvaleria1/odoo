@@ -4,12 +4,9 @@
 /** @type {number} */
 const COOKIE_TTL = 24 * 60 * 60 * 365;
 
-// RFC 6265 cookie-octet, less "%": the escape character escapes itself.
 const UNSAFE_VALUE_CHARS = /[^!#$&'()*+\-./0-9:<=>?@A-Z[\]^_`a-z{|}~]+/gu;
 // eslint-disable-next-line no-control-regex
 const UNSAFE_KEY_CHARS = /[%;=,\s()<>@:\\"/[\]?{}\x00-\x1f\x7f]/g;
-// werkzeug < 3.1.9 wrote a value outside cookie-octet as a quoted string with
-// octal slash escapes; browsers still hold those for the cookie's lifetime.
 const LEGACY_QUOTED_VALUE = /^"(?:[^\\"]|\\.)*"$/;
 const LEGACY_SLASH_ESCAPE = /\\([0-3][0-7]{2}|.)/g;
 

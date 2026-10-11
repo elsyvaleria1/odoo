@@ -320,9 +320,6 @@ export class MoveNodePlugin extends Plugin {
                 onDragStart: () => this.startDropzones(movableElements, containerRect),
                 onDragEnd: () => this._stopDropzones(movableElements),
                 helper: () => {
-                    // The handle only carries the whole selection when it
-                    // belongs to it; grabbing an unselected block moves that
-                    // block alone.
                     const selection =
                         this.dependencies.selection.getEditableSelection();
                     const targetedBlocks = this.getMovableElements().filter(
@@ -340,8 +337,6 @@ export class MoveNodePlugin extends Plugin {
                     }
                     const container = document.createElement("div");
                     let totalHeight = 0;
-                    // Consecutive list items keep their list, so the preview
-                    // shows them numbered as they will land.
                     const processedLists = new Set();
                     for (const el of movableElements) {
                         if (el.tagName === "LI") {

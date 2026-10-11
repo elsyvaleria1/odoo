@@ -16,7 +16,7 @@ registry.category("web_tour.tours").add("totportal_tour_setup", {
         {
             content: "Input password",
             trigger: "[name=password]",
-            run: "edit portal", // FIXME: better way to do this?
+            run: "edit portal",
         },
         {
             content: "Confirm",
@@ -29,12 +29,6 @@ registry.category("web_tour.tours").add("totportal_tour_setup", {
         },
         {
             content: "Get secret from the disclosure widget",
-            // This portal page renders auth_totp.view_totp_wizard's combined arch, so it
-            // inherited the <details>/<summary> conversion from 9251982dca8 along with
-            // the wizard. The anchor this looked for stopped existing then; the failure
-            // stayed latent because auth_portal is not installed by a base-only
-            // test run. The next step's `span[name=secret]:hidden` still holds: a closed
-            // <details> hides its content exactly as the old `.collapse` did.
             trigger: 'details > summary:contains("Cannot scan it?")',
         },
         {

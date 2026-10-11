@@ -20,8 +20,8 @@ patch(PivotController.prototype, {
                 const validMeasures = measures.filter((m) => m in metaDataMeasures);
                 const activeMeasures = metaData.activeMeasures || [];
                 const measuresToToggle = new Set([
-                    ...validMeasures.filter((m) => !activeMeasures.includes(m)), // measures to activate
-                    ...activeMeasures.filter((m) => !validMeasures.includes(m)), // measures to deactivate
+                    ...validMeasures.filter((m) => !activeMeasures.includes(m)),
+                    ...activeMeasures.filter((m) => !validMeasures.includes(m)),
                 ]);
                 for (const measure of measuresToToggle) {
                     this.model.toggleMeasure(measure);

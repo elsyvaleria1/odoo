@@ -1,11 +1,5 @@
 import { registry } from "@web/core/registry";
 
-/**
- * The queue list runs a `js_class` controller whose Validate button reaches into
- * `model.root`. Grouping swaps that root from a DynamicRecordList to a
- * DynamicGroupList, so the flow is exercised grouped -- the search view offers a
- * Group By on purpose and nothing else covers that combination.
- */
 registry.category("web_tour.tours").add("data_recycle_validate_grouped", {
     url: "/odoo/field-recycle",
     steps: () => [
@@ -52,11 +46,6 @@ registry.category("web_tour.tours").add("data_recycle_validate_grouped", {
     ],
 });
 
-/**
- * The "selects every record" alert is an `invisible=` expression comparing the
- * `domain` Char to the literal the domain widget writes for "no filter". That
- * string comparison is only ever exercised in a rendered form.
- */
 registry.category("web_tour.tours").add("data_recycle_unfiltered_warning", {
     steps: () => [
         {

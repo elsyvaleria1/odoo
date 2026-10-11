@@ -137,14 +137,11 @@ export class TimerTimesheetGridModel extends TimesheetGridModel {
             }
         }
         if (data.timer.id) {
-            // if the id linked to the timer changed then search the row associated
             this._searchRowWithTimer(metaData);
         }
     }
 
     _searchRowWithTimer({ sectionField, rowFields, data }) {
-        // The timer's record spells a many2one three ways depending on who
-        // set it: `[id, name]` off a read, `{ id }` off a form record, an id.
         const identity = (value) =>
             Array.isArray(value) ? value[0] : (value?.id ?? value ?? false);
         const fields = sectionField ? [sectionField, ...rowFields] : rowFields;
@@ -178,7 +175,6 @@ export class TimerTimesheetGridModel extends TimesheetGridModel {
         if (timesheetWithTimerData.id || timesheetWithTimerData.other_company) {
             this._updateTimer(timesheetWithTimerData, metaData);
         } else if (data.timer) {
-            // remove running timer since there is no longer.
             if ("row" in data.timer) {
                 data.timer.row.timerRunning = false;
             }

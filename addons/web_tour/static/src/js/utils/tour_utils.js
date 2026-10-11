@@ -112,11 +112,6 @@ export function getScrollParent(element) {
     }
 }
 
-/**
- * The step after one that navigates in place (`@web/public/partial_navigation`):
- * waits until the next page is swapped in, no region busy any more. Asked of
- * `body`: a region may be `display: contents`, which a trigger never sees.
- */
 export function waitForPartialNavigation() {
     return {
         content: "Wait for the next page to be swapped in place",

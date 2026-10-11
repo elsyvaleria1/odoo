@@ -6,9 +6,6 @@ import { _t } from "@web/core/translation";
 export class SalesReportFilters extends AccountReportFilters {
     static template = "account.SalesReportFilters";
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Getters
-    //------------------------------------------------------------------------------------------------------------------
     get selectedEcTaxName() {
         const selected =
             this.controller.cachedFilterOptions.ec_tax_filter_selection.filter(

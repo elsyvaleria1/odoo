@@ -69,9 +69,6 @@ export class Many2ManyAttendee extends Many2ManyTagsAvatarField {
         const organizer = partnerIds.find((partner) => partner.is_organizer);
         if (organizer) {
             const orgId = organizer.id;
-            // Organizer first, everyone else in their existing order. The old
-            // comparator returned -1/1 without ever returning 0 and was not
-            // antisymmetric, so the order it produced was engine-defined.
             tags.sort((a, b) => (b.resId === orgId) - (a.resId === orgId));
         }
         return tags;

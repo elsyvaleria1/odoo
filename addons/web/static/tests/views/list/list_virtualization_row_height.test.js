@@ -46,7 +46,6 @@ test("virtualization geometry matches the real row height on first render", asyn
             type: "list",
             arch: `<list limit="400"><field name="name"/></list>`,
         });
-        // the rows are measured once mounted; the geometry follows one render later
         await animationFrame();
 
         const renderedRows = queryAll(".o_data_row");

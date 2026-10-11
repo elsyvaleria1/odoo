@@ -47,9 +47,6 @@ export class MainComponent extends Component {
     props = useProps(this.constructor.props);
     render = useRender();
 
-    //--------------------------------------------------------------------------
-    // Lifecycle
-    //--------------------------------------------------------------------------
     setup() {
         this.action = useService("action");
         this.dialog = useService("dialog");
@@ -80,8 +77,6 @@ export class MainComponent extends Component {
             getContext: () => this.props.action.context,
         });
 
-        // the model is an EventBus, not reactive: its updates are published to
-        // what derives from it (the pager) through this revision
         const modelRevision = signal(0);
         useBus(this.model, "update", () => {
             modelRevision.set(modelRevision() + 1);

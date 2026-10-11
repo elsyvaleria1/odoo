@@ -17,24 +17,8 @@ describe.current.tags("desktop");
 const data = {};
 defineResourceMailModels();
 beforeEach(async () => {
-    /* 1. Create data
-        3 type of records tested:
-        - Task linked to a material resource (resourceComputer)
-            - fa-wrench should be used instead of avatar
-            - clicking the icon should not open any popover
-        - Task linked to a human resource not linked to a user (resourceMarie)
-            (- avatar of the resource should not be displayed)
-            (Currently not implemented, todo when m2o fields will support relatedFields option)
-            - a card popover should open
-            - No possibility to send a message to this resource as no user exists for it
-        - Task linked to a human resource linked to a user (resourcePierre)
-            - avatar of the user should be displayed
-            - a card popover should open
-            - A button to send a message to this user should be on the card
-    */
     const pyEnv = await startServer();
 
-    // User
     data.partnerPierreId = pyEnv["res.partner"].create({
         name: "Pierre",
         email: "Pierre@odoo.test",
@@ -45,7 +29,6 @@ beforeEach(async () => {
         partner_id: data.partnerPierreId,
     });
 
-    // Resources
     [data.resourceComputerId, data.resourceMarieId, data.resourcePierreId] = pyEnv[
         "resource.resource"
     ].create([
@@ -66,7 +49,6 @@ beforeEach(async () => {
         },
     ]);
 
-    // Tasks linked to those resources
     [data.taskComputerId, data.taskMarieId, data.taskPierreId] = pyEnv[
         "resource.task"
     ].create([
@@ -126,9 +108,7 @@ test("many2one_avatar_resource widget in list view", async () => {
             </list>`,
     });
     await contains(".o_m2o_avatar", { count: 3 });
-    // fa-wrench should be displayed for the first task
     await contains(".o_m2o_avatar > span.o_resource_icon > i.fa-wrench");
-    // Second and third slots should display employee avatar
     await contains(".o_field_many2one_avatar_resource img", { count: 2 });
     await contains(".o_field_many2one_avatar_resource a", { count: 0 });
 });
@@ -146,9 +126,7 @@ test("many2one_avatar_resource widget in kanban view", async () => {
             </kanban>`,
     });
     await contains(".o_m2o_avatar", { count: 3 });
-    // fa-wrench should be displayed for the first task
     await contains(".o_m2o_avatar > span.o_resource_icon > i.fa-wrench");
-    // Second and third slots should display employee avatar
     await contains(".o_field_many2one_avatar_resource img", { count: 2 });
     expect(
         queryFirst(".o_field_many2one_avatar_resource img").getAttribute("data-src"),
@@ -158,10 +136,8 @@ test("many2one_avatar_resource widget in kanban view", async () => {
             ".o_kanban_record:nth-of-type(3) .o_field_many2one_avatar_resource img",
         ).getAttribute("data-src"),
     ).toBe("/web/image/resource.resource/" + data.resourcePierreId + "/avatar_128");
-    // 1. Clicking on material resource's icon
     await click(".o_kanban_record:nth-of-type(1) .o_m2o_avatar > span > i");
     await contains(".o_avatar_card", { count: 0 });
-    // 2. Clicking on human resource's avatar with no user associated
     await click(".o_kanban_record:nth-of-type(2) .o_m2o_avatar > img");
     await contains(".o_card_user_infos span", { text: "Marie" });
     await contains(
@@ -174,7 +150,6 @@ test("many2one_avatar_resource widget in kanban view", async () => {
         { text: "Send message", count: 0 },
         'No "Send Message" button should be displayed for this employee as it is linked to no user',
     );
-    // 3. Clicking on human resource's avatar with one user associated
     await click(".o_kanban_record:nth-of-type(3) .o_m2o_avatar > img");
     await contains(".o_card_user_infos span", { text: "Pierre" });
     await contains(

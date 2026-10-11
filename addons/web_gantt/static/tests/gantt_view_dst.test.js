@@ -11,12 +11,6 @@ describe.current.tags("desktop");
 defineGanttModels();
 
 test("grid columns stay whole across a DST transition that removes midnight", async () => {
-    // Santiago starts DST at 24:00, so 2024-09-08 has no 00:00 and
-    // `startOf("day")` lands at 01:00. Diffing two such boundaries against each
-    // other gives 0.9583 days; the pill then carried
-    // `grid-column: c39 / c39.958333333333334`, naming a grid line that does
-    // not exist, and lost its placement. Measuring each boundary from
-    // `globalStart` instead keeps every index -- and every difference -- whole.
     mockTimeZone("America/Santiago");
     mockDate("2024-09-10T08:00:00");
 

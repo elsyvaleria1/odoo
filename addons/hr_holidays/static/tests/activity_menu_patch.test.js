@@ -13,9 +13,6 @@ import { utils } from "@web/ui/viewport";
 describe.current.tags("desktop");
 defineMailModels();
 
-// hr.leave declares no _systray_view, so the server hands the activity systray
-// a group asking for the list view (mail/models/res_users.py). On a phone that
-// list needs sideways scrolling before the approve/refuse buttons are reachable.
 const LEAVE_GROUP = {
     id: 1,
     model: "hr.leave",

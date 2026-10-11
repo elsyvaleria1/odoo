@@ -81,7 +81,6 @@ test("ungrouped gantt rendering", async () => {
         },
     ]);
 
-    // test popover and local timezone
     expect(`.o_popover`).toHaveCount(0);
     const task5Pill = queryAll(SELECTORS.pill)[0];
     expect(task5Pill).toHaveText("Task 5");
@@ -226,11 +225,9 @@ test("Controls: rendering is mobile friendly", async () => {
         arch: `<gantt date_start="start" date_stop="stop" />`,
     });
 
-    // check toolbar's dropdown
     await contains("button.dropdown-toggle:eq(2)").click();
     expect(queryAllTexts`.o-dropdown-item`).toEqual(["Activate sparse mode"]);
 
-    // check that pickers open in dialog
     await contains(SELECTORS.scaleSelectorToggler).click();
     expect(".modal").toHaveCount(0);
     await contains(SELECTORS.startDatePicker).click();
@@ -289,7 +286,6 @@ test("Progressbar: check the progressbar percentage visibility.", async () => {
         "25h / 200h",
     ]);
 
-    // Check the style of one of the progress bars
     expect(rowHeader1.children).toHaveLength(2);
     const rowTitle1 = rowHeader1.children[0];
     expect(rowTitle1.matches(SELECTORS.rowTitle)).toBe(true);
@@ -344,7 +340,6 @@ test("Progressbar: grouped row", async () => {
         "25h / 200h",
     ]);
 
-    // Check the style of one of the progress bars
     expect(rowHeader1.children).toHaveLength(2);
     const rowTitle1 = rowHeader1.children[0];
     expect(rowTitle1.matches(SELECTORS.rowTitle)).toBe(true);
@@ -375,7 +370,6 @@ test("horizontal scroll applies to the content [SMALL SCREEN]", async () => {
     expect(o_content).toHaveStyle({ overflow: "auto" });
     expect(o_content).toHaveProperty("scrollLeft", 0);
 
-    // Horizontal scroll
     const newScrollLeft = 50;
     await contains(".o_content").scroll({ left: newScrollLeft });
 

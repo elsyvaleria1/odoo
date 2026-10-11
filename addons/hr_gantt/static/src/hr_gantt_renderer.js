@@ -44,18 +44,14 @@ export class HrGanttRenderer extends GanttRenderer {
                 const stopTime = stop.hour + stop.minute / 60;
                 const { LUNCH_BREAK_START_HOUR, LUNCH_BREAK_STOP_HOUR } =
                     this.constructor;
-                // we can assume startTime < 12:00 and stopTime > 12:00
                 const closestToNoon =
                     12 - startTime < stopTime - 12 ? startTime : stopTime;
                 if (
                     startTime >= LUNCH_BREAK_START_HOUR &&
                     startTime === closestToNoon
                 ) {
-                    // most of pill is placed in afternoon, so round off first half
                     pill.grid.column = [startIndex + 1, endIndex];
                 } else if (stopTime <= LUNCH_BREAK_STOP_HOUR) {
-                    // start time is before LUNCH_BREAK_START_HOUR or most of
-                    // pill is before noon, so round off second half
                     pill.grid.column = [startIndex, endIndex - 1];
                 }
             }

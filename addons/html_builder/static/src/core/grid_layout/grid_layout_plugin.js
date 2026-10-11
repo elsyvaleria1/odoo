@@ -35,7 +35,6 @@ export class GridLayoutPlugin extends Plugin {
         }),
         on_cloned_handlers: this.onCloned.bind(this),
         on_removed_handlers: this.onRemoved.bind(this),
-        // Drag and drop from sidebar
         on_snippet_dragged_handlers: this.onSnippetDragged.bind(this),
         on_snippet_over_dropzone_handlers: this.onSnippetOverDropzone.bind(this),
         on_snippet_move_handlers: this.onSnippetMove.bind(this),
@@ -46,7 +45,6 @@ export class GridLayoutPlugin extends Plugin {
             1000,
             this.onSnippetDropped.bind(this),
         ),
-        // Drag and drop from the page
         is_draggable_handlers: this.isDraggable.bind(this),
         on_element_dragged_handlers: this.onElementDragged.bind(this),
         on_element_over_dropzone_handlers: this.onDropzoneOver.bind(this),
@@ -55,11 +53,7 @@ export class GridLayoutPlugin extends Plugin {
         on_element_dropped_over_handlers: this.onElementDroppedOver.bind(this),
         on_element_dropped_near_handlers: this.onElementDroppedNear.bind(this),
         on_element_dropped_handlers: this.onElementDropped.bind(this),
-        // Ignore background grid in history
         savable_mutation_record_predicates: this.ignoreBackgroundGrid.bind(this),
-        // Make sure `o_grid_item_image` elements are not editable, unless they
-        // already have other contents in them (=> compatibility with older
-        // versions).
         content_editable_providers: this.getContentEditableEls.bind(this),
         content_not_editable_providers: this.getContentNotEditableEls.bind(this),
     };
@@ -77,7 +71,6 @@ export class GridLayoutPlugin extends Plugin {
      * @returns {Boolean}
      */
     hasGridLayoutOption(containerEl) {
-        // Check if the "LayoutOption" option is active.
         const { targetEl } = this.dependencies.builderOptions.findOption(
             containerEl,
             "LayoutOption",
@@ -90,7 +83,6 @@ export class GridLayoutPlugin extends Plugin {
         if (record.type === "childList") {
             const addedOrRemovedNode = (record.addedTrees[0] || record.removedTrees[0])
                 .node;
-            // Do not record the addition/removal of the background grid.
             if (
                 isElement(addedOrRemovedNode) &&
                 addedOrRemovedNode.matches(".o_we_background_grid")
@@ -128,9 +120,6 @@ export class GridLayoutPlugin extends Plugin {
 
     onCloned({ cloneEl }) {
         if (isGridItem(cloneEl)) {
-            // If it is a grid item, shift the clone by one cell to the right
-            // and to the bottom, wrap to the first column if we reached the
-            // last one.
             let { rowStart, rowEnd, columnStart, columnEnd } =
                 getGridItemProperties(cloneEl);
             const columnSpan = columnEnd - columnStart;
@@ -139,7 +128,6 @@ export class GridLayoutPlugin extends Plugin {
             const newGridArea = `${rowStart + 1} / ${columnStart} / ${rowEnd + 1} / ${columnEnd}`;
             cloneEl.style.gridArea = newGridArea;
 
-            // Update the z-index and the grid row count.
             const rowEl = cloneEl.parentElement;
             setElementToMaxZindex(cloneEl, rowEl);
             resizeGrid(rowEl);
@@ -147,26 +135,17 @@ export class GridLayoutPlugin extends Plugin {
     }
 
     onRemoved({ nextTargetEl }) {
-        // Resize the grid, if any, to have the correct row count.
-        // If the active element after a removal is a grid item, it means we
-        // potentially removed a sibling grid item.
         if (nextTargetEl.classList.contains("o_grid_item")) {
             resizeGrid(nextTargetEl.parentElement);
         }
     }
 
-    /**
-     * Puts the grid item behind all the others (minimum z-index).
-     */
     sendGridItemToBack() {
         const rowEl = this.overlayTarget.parentNode;
         const columnEls = [...rowEl.children].filter((el) => el !== this.overlayTarget);
         const zIndexes = columnEls.map((el) => Number(el.style.zIndex) || 0);
         const minZindex = zIndexes.length ? Math.min(...zIndexes) : 0;
 
-        // While the minimum z-index is not 0, it is OK to decrease it and to
-        // set the column to it. Otherwise, the column is set to 0 and the
-        // other columns z-index are increased by one.
         if (minZindex > 0) {
             this.overlayTarget.style.zIndex = minZindex - 1;
         } else {
@@ -175,9 +154,6 @@ export class GridLayoutPlugin extends Plugin {
         }
     }
 
-    /**
-     * Puts the grid item in front all the others (maximum z-index).
-     */
     bringGridItemToFront() {
         const rowEl = this.overlayTarget.parentNode;
         setElementToMaxZindex(this.overlayTarget, rowEl);
@@ -200,7 +176,6 @@ export class GridLayoutPlugin extends Plugin {
             const { rowStart, rowEnd } = getGridItemProperties(gridItemEl);
             const oldRowSpan = rowEnd - rowStart;
 
-            // Compute the new height.
             const { borderTop, borderBottom, paddingTop, paddingBottom } =
                 window.getComputedStyle(gridItemEl);
             const borderY = parseFloat(borderTop) + parseFloat(borderBottom);
@@ -216,7 +191,6 @@ export class GridLayoutPlugin extends Plugin {
             }
 
             return () => {
-                // Restore the grid item height.
                 gridItemEl.style.gridRowEnd = rowEnd;
                 gridItemEl.classList.remove(`g-height-${rowSpan}`);
                 gridItemEl.classList.add(`g-height-${oldRowSpan}`);
@@ -228,10 +202,6 @@ export class GridLayoutPlugin extends Plugin {
 
         return () => {};
     }
-
-    //--------------------------------------------------------------------------
-    // DRAG AND DROP HANDLERS (from the sidebar)
-    //--------------------------------------------------------------------------
 
     /**
      * Returns the grid dropzone that overlaps with the given dropzone, if any.
@@ -256,7 +226,6 @@ export class GridLayoutPlugin extends Plugin {
      * @returns {HTMLElement}
      */
     wrapInGridItem(el, dropzoneEl, dragState) {
-        // Create the grid item.
         const columnEl = document.createElement("div");
         const columnSpan = dragState.snippet.gridColumnSpan || 6;
         columnEl.classList.add(
@@ -270,12 +239,10 @@ export class GridLayoutPlugin extends Plugin {
         columnEl.append(el);
         dragState.draggedEl = columnEl;
 
-        // Remove the padding/margins.
         const { paddingToRemove, marginToRemove, marginToAdd } = dragState;
         el.classList.remove(...paddingToRemove, ...marginToRemove);
         el.classList.add(...marginToAdd);
 
-        // Adjust the grid item dimensions to its content and store them.
         this.adjustGridItem(el, false);
         const { rowStart, rowEnd } = getGridItemProperties(columnEl);
         dragState.columnSpan = columnSpan;
@@ -290,7 +257,6 @@ export class GridLayoutPlugin extends Plugin {
      *                 - dragState: the current drag state
      */
     onSnippetDragged({ snippetEl, dragState }) {
-        // Store the padding and margin classes to remove/add them when needed.
         const paddingRegex = /^((pt|pb)\d{1,3}$)/;
         const marginRegex = /^((mt|my)-\d$)/;
         const paddingClasses = [...snippetEl.classList].filter((c) =>
@@ -304,7 +270,6 @@ export class GridLayoutPlugin extends Plugin {
             marginToRemove: marginClasses,
         });
 
-        // Check if CSS rules are potentially applying a top margin.
         snippetEl.classList.remove(...paddingClasses, ...marginClasses);
         this.document.body.appendChild(snippetEl);
         const { marginTop } = getComputedStyle(snippetEl);
@@ -321,17 +286,12 @@ export class GridLayoutPlugin extends Plugin {
     onSnippetOverDropzone({ snippetEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
-            // If we are not over a grid dropzone, hide the grid dropzone that
-            // is overlapping with it (if any).
             const gridDropzoneEl = this.getOverlappingGridDropzone(dropzoneEl);
             if (gridDropzoneEl) {
                 gridDropzoneEl.classList.add("invisible");
             }
         } else {
-            // If we are over a grid dropzone, wrap the snippet inside a column and
-            // drag that column instead.
             const columnEl = this.wrapInGridItem(snippetEl, dropzoneEl, dragState);
-            // Drag the column by the middle top.
             const iframeRect = this.iframe.getBoundingClientRect();
             dragState.mousePositionYOnElement = 0;
             dragState.mousePositionXOnElement =
@@ -351,18 +311,14 @@ export class GridLayoutPlugin extends Plugin {
         this.onDropzoneOut({ draggedEl: dragState.draggedEl, dragState });
 
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
-            // If we were not over a grid dropzone, show back the hidden grid
-            // dropzone if any.
             const gridDropzoneEl = this.getOverlappingGridDropzone(dropzoneEl);
             if (gridDropzoneEl) {
                 gridDropzoneEl.classList.remove("invisible");
             }
         } else {
-            // If we were over a grid dropzone, unwrap the snippet.
             dropzoneEl.after(snippetEl);
             dragState.draggedEl.remove();
             dragState.draggedEl = snippetEl;
-            // Restore the padding/margins.
             const { paddingToRemove, marginToRemove, marginToAdd } = dragState;
             snippetEl.classList.add(...paddingToRemove, ...marginToRemove);
             snippetEl.classList.remove(...marginToAdd);
@@ -405,7 +361,6 @@ export class GridLayoutPlugin extends Plugin {
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
             return;
         }
-        // If we are near a grid dropzone, wrap the snippet inside a column.
         this.wrapInGridItem(droppedEl, dropzoneEl, dragState);
         this.onElementDroppedNear({
             droppedEl: dragState.draggedEl,
@@ -420,17 +375,11 @@ export class GridLayoutPlugin extends Plugin {
      * @param {Object}
      */
     onSnippetDropped({ snippetEl, dragState }) {
-        // Readjust the closest grid item (needed to compute its height without
-        // the inner dropzones).
         if ("restoreGridItem" in dragState) {
             dragState.restoreGridItem();
             this.adjustGridItem(snippetEl);
         }
     }
-
-    //--------------------------------------------------------------------------
-    // DRAG AND DROP HANDLERS (from the page)
-    //--------------------------------------------------------------------------
 
     /**
      * Tells if the given element is draggable.
@@ -439,8 +388,6 @@ export class GridLayoutPlugin extends Plugin {
      * @returns {Boolean}
      */
     isDraggable(targetEl) {
-        // The columns move handles are not visible in mobile view to prevent
-        // dragging them.
         const isColumn = targetEl.parentElement?.classList.contains("row");
         if (isColumn && this.config.isMobileView(targetEl)) {
             return false;
@@ -462,14 +409,11 @@ export class GridLayoutPlugin extends Plugin {
             const containerEl = rowEl.parentElement;
             const columnEl = draggedEl;
 
-            // Allow the grid mode if the container has the option or if
-            // the grid mode is already activated.
             const hasGridOption = this.hasGridLayoutOption(containerEl);
             const isRowInGridMode = rowEl.classList.contains("o_grid_mode");
             const allowGridMode = hasGridOption || isRowInGridMode;
 
             if (allowGridMode) {
-                // Toggle the grid mode if it is not already on.
                 if (!isRowInGridMode) {
                     const preserveSelection =
                         this.dependencies.selection.preserveSelection;
@@ -481,25 +425,19 @@ export class GridLayoutPlugin extends Plugin {
                 }
                 const gridItemProps = getGridItemProperties(columnEl);
 
-                // Store the grid column and row spans of the column.
                 const { columnStart, columnEnd, rowStart, rowEnd } = gridItemProps;
                 dragState.columnSpan = columnEnd - columnStart;
                 dragState.rowSpan = rowEnd - rowStart;
 
-                // Store the initial state of the column.
                 const { gridArea, zIndex } = gridItemProps;
                 dragState.startGridArea = gridArea;
                 dragState.startZindex = zIndex;
                 dragState.startGridEl = rowEl;
             } else {
-                // If the column comes from a snippet that does not toggle the
-                // grid mode on drag, store its width and height to use them
-                // when the column goes over a grid dropzone.
                 const style = window.getComputedStyle(columnEl);
                 const { borderLeft, borderRight, borderTop, borderBottom } = style;
                 const borderX = parseFloat(borderLeft) + parseFloat(borderRight);
                 const borderY = parseFloat(borderTop) + parseFloat(borderBottom);
-                // Use the image dimension if the column only contains an image.
                 const isImageColumn = checkIfImageColumn(columnEl);
                 const sizedEl = isImageColumn
                     ? columnEl.querySelector("img")
@@ -518,15 +456,12 @@ export class GridLayoutPlugin extends Plugin {
     onDropzoneOver({ draggedEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
-            // Adjust the closest grid item if any.
             dragState.restoreGridItem = this.adjustGridItem(draggedEl);
             return;
         }
 
         const rowEl = dropzoneEl.parentElement;
         const columnEl = draggedEl;
-        // If the column does not come from a grid mode snippet, convert it to a
-        // grid item and store its dimensions.
         if (!columnEl.classList.contains("o_grid_item")) {
             const { columnWidth, columnHeight } = dragState;
             const spans = convertColumnToGrid(
@@ -541,21 +476,15 @@ export class GridLayoutPlugin extends Plugin {
         }
         const { columnSpan, rowSpan } = dragState;
 
-        // Create the drag helper.
         const dragHelperEl = document.createElement("div");
         dragHelperEl.classList.add("o_we_drag_helper");
         dragHelperEl.style.gridArea = `1 / 1 / ${1 + rowSpan} / ${1 + columnSpan}`;
         rowEl.append(dragHelperEl);
 
-        // Add the background grid and update the dropzone (in the case where
-        // the column is bigger than the grid).
         const backgroundGridEl = addBackgroundGrid(rowEl, rowSpan);
         const rowCount = Math.max(rowEl.dataset.rowCount, rowSpan);
         dropzoneEl.style.gridRowEnd = rowCount + 1;
 
-        // Set the column, the background grid and the drag helper z-indexes.
-        // The grid item z-index is set to its original one if we are in its
-        // starting grid, or to the maximum z-index of the grid otherwise.
         const { startGridEl, startZindex } = dragState;
         if (rowEl === startGridEl) {
             columnEl.style.zIndex = startZindex;
@@ -565,8 +494,6 @@ export class GridLayoutPlugin extends Plugin {
         setElementToMaxZindex(backgroundGridEl, rowEl);
         setElementToMaxZindex(dragHelperEl, rowEl);
 
-        // Force the column height and width to keep its size when the grid-area
-        // will be removed (as it prevents it from moving with the mouse).
         const { rowGap, rowSize, columnGap, columnSize } = getGridProperties(rowEl);
         const columnHeight = rowSpan * (rowSize + rowGap) - rowGap;
         const columnWidth = columnSpan * (columnSize + columnGap) - columnGap;
@@ -578,7 +505,6 @@ export class GridLayoutPlugin extends Plugin {
         });
         rowEl.style.position = "relative";
 
-        // Store information needed to drag over the grid.
         Object.assign(dragState, {
             startHeight: rowEl.clientHeight,
             currentHeight: rowEl.clientHeight,
@@ -596,7 +522,6 @@ export class GridLayoutPlugin extends Plugin {
     onDropzoneOut({ draggedEl, dragState }) {
         const dropzoneEl = dragState.currentDropzoneEl;
         if (!dropzoneEl.classList.contains("oe_grid_zone")) {
-            // Restore the adjusted grid item (if any).
             if ("restoreGridItem" in dragState) {
                 dragState.restoreGridItem();
                 delete dragState.restoreGridItem;
@@ -605,14 +530,12 @@ export class GridLayoutPlugin extends Plugin {
         }
 
         dragState.overGrid = false;
-        // Clean the grid and the column.
         const columnEl = draggedEl;
         const rowEl = dropzoneEl.parentElement;
         const { dragHelperEl, backgroundGridEl } = dragState;
         cleanUpGrid(rowEl, columnEl, dragHelperEl, backgroundGridEl);
         columnEl.style.removeProperty("z-index");
 
-        // Resize the grid and the dropzone.
         resizeGrid(rowEl);
         const rowCount = parseInt(rowEl.dataset.rowCount);
         dropzoneEl.style.gridRowEnd = Math.max(rowCount + 1, 1);
@@ -632,14 +555,11 @@ export class GridLayoutPlugin extends Plugin {
             const rowEl = dropzoneEl.parentElement;
             const { dragHelperEl, backgroundGridEl } = dragState;
 
-            // Place the column at the same grid-area as the drag helper.
             columnEl.style.gridArea = dragHelperEl.style.gridArea;
 
-            // Clean the grid and the column and resize the grid.
             cleanUpGrid(rowEl, columnEl, dragHelperEl, backgroundGridEl);
             resizeGrid(rowEl);
         } else if (columnEl.classList.contains("o_grid_item")) {
-            // Case when dropping a grid item in a non-grid dropzone.
             convertToNormalColumn(columnEl, this.config.mobileBreakpoint);
         }
     }
@@ -655,8 +575,6 @@ export class GridLayoutPlugin extends Plugin {
         const columnEl = droppedEl;
         if (dropzoneEl.classList.contains("oe_grid_zone")) {
             const rowEl = dropzoneEl.parentElement;
-            // If the column does not come from a grid mode snippet, convert it to a
-            // grid item and store its dimensions.
             if (!columnEl.classList.contains("o_grid_item")) {
                 const { columnWidth, columnHeight } = dragState;
                 const spans = convertColumnToGrid(
@@ -671,8 +589,6 @@ export class GridLayoutPlugin extends Plugin {
             }
             const { columnSpan, rowSpan } = dragState;
 
-            // Place the column in the top left corner, set its z-index and
-            // resize the grid.
             columnEl.style.gridArea = `1 / 1 / ${1 + rowSpan} / ${1 + columnSpan}`;
             const { startGridEl, startZindex } = dragState;
             if (rowEl === startGridEl) {
@@ -682,7 +598,6 @@ export class GridLayoutPlugin extends Plugin {
             }
             resizeGrid(rowEl);
         } else if (columnEl.classList.contains("o_grid_item")) {
-            // Case when a grid item is dropped near a non-grid dropzone.
             convertToNormalColumn(columnEl, this.config.mobileBreakpoint);
         }
     }
@@ -699,7 +614,6 @@ export class GridLayoutPlugin extends Plugin {
             return;
         }
 
-        // Get the column dimensions and the grid position.
         const columnEl = draggedEl;
         const columnHeight = parseFloat(columnEl.style.height);
         const columnWidth = parseFloat(columnEl.style.width);
@@ -710,8 +624,6 @@ export class GridLayoutPlugin extends Plugin {
         const rowLeft = rowRect.left;
         const rowRight = rowRect.right;
 
-        // Place the column where the mouse is, without overflowing horizontally
-        // or above the top of the grid.
         const { mousePositionYOnElement, mousePositionXOnElement } = dragState;
         let top = y - rowTop - mousePositionYOnElement;
 
@@ -732,8 +644,6 @@ export class GridLayoutPlugin extends Plugin {
             columnEl.style.left = `${left}px`;
         }
 
-        // Compute the drag helper grid-area corresponding to the column
-        // position.
         const { rowGap, rowSize, columnGap, columnSize } = getGridProperties(rowEl);
         const { columnSpan, rowSpan, dragHelperEl } = dragState;
 
@@ -743,8 +653,6 @@ export class GridLayoutPlugin extends Plugin {
         const columnEnd = columnStart + columnSpan;
         dragHelperEl.style.gridArea = `${rowStart} / ${columnStart} / ${rowEnd} / ${columnEnd}`;
 
-        // Update the reference heights, the dropzone and the background grid,
-        // depending on the vertical overflow/underflow.
         const dropzoneEl = dragState.currentDropzoneEl;
         const { startHeight, currentHeight, backgroundGridEl } = dragState;
 
@@ -760,7 +668,6 @@ export class GridLayoutPlugin extends Plugin {
                 backgroundGridEl.style.gridRowEnd = newGridEnd;
                 dragState.currentHeight += rowOverflow * (rowSize + rowGap);
             } else {
-                // Do not add new rows if we have reached the limit.
                 dropzoneEl.style.gridRowEnd = maxRowEnd;
                 backgroundGridEl.style.gridRowEnd = maxRowEnd;
                 dragState.currentHeight = (maxRowEnd - 1) * (rowSize + rowGap) - rowGap;
@@ -774,21 +681,16 @@ export class GridLayoutPlugin extends Plugin {
      * @param {Object}
      */
     onElementDropped({ droppedEl, dragState }) {
-        // Resize the grid from where the column came from (if any), as it may
-        // have not been resized if the column did not go over it.
         const { startGridEl } = dragState;
         if (startGridEl) {
             resizeGrid(startGridEl);
         }
 
-        // Adjust the closest grid item if any.
         if ("restoreGridItem" in dragState) {
             dragState.restoreGridItem();
         }
         this.adjustGridItem(droppedEl);
 
-        // The position of a grid item did not change if it is in its original
-        // grid and if it still has the same grid-area.
         if (droppedEl.classList.contains("o_grid_item")) {
             dragState.hasSamePositionAsStart = () => {
                 const parentEl = droppedEl.parentElement;

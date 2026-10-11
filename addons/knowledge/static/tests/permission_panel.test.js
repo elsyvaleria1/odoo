@@ -166,7 +166,6 @@ class KnowledgeArticle extends models.ServerModel {
     }
 
     get_permission_panel_members() {
-        // should define members array in each test as members model is not defined for simplicity
         return members;
     }
 
@@ -209,7 +208,6 @@ class KnowledgeArticle extends models.ServerModel {
     remove_member(id, memberId) {
         const index = members.findIndex((member) => member.member_id === memberId);
         if (index !== -1) {
-            // test cases removing (non) inherited member
             if (id === 5) {
                 if (members[index].based_on) {
                     this.write(id, { is_desynchronized: true });
@@ -242,7 +240,6 @@ class KnowledgeArticle extends models.ServerModel {
 
 defineMailModels();
 defineModels([KnowledgeArticle]);
-// dummy action to mock the invite dialog
 defineActions([
     {
         id: 99,
@@ -278,8 +275,6 @@ const expectMember = (member, disabled) => {
     }
 };
 
-// Inside the hook, not at module scope: a patch applied at import stays on
-// for every suite in the bundle, not only this file's.
 beforeEach(() => {
     patchWithCleanup(knowledgeTopbar, {
         fieldDependencies: Object.entries(KnowledgeArticle._fields).map(
@@ -335,7 +330,7 @@ mockKnowledgePermissionPanelRpc();
 
 test.tags("desktop");
 test("Permission Panel as a read only user", async () => {
-    patchWithCleanup(user, { isAdmin: false }); // readonly internal user
+    patchWithCleanup(user, { isAdmin: false });
     members = [
         {
             member_id: 1,
@@ -354,14 +349,11 @@ test("Permission Panel as a read only user", async () => {
     ];
     await mountPermissionPanel(2, false);
     await animationFrame();
-    // internal permission, visibility and members should appear as disabled
     expect(internalPermissionSelector).toHaveText("Can Read");
     expect(internalPermissionSelector).toHaveClass("disabled");
     expect(internalVisibilitySelector).toHaveText("Members only");
     expect(internalVisibilitySelector).toHaveClass("disabled");
-    // since there is no right escalation in this case, the user can remove its member.
     expectMember(members[0], false);
-    // invite input should not be shown
     expect(inviteMemberSelector).toHaveCount(0);
 });
 
@@ -370,7 +362,7 @@ test("Permission Panel as a portal user", async () => {
     patchWithCleanup(user, {
         isAdmin: false,
         hasGroup: (group) => group !== "base.group_user",
-    }); // portal user
+    });
     members = [
         {
             member_id: 1,
@@ -391,12 +383,9 @@ test("Permission Panel as a portal user", async () => {
     ];
     await mountPermissionPanel(5, true);
     await animationFrame();
-    // internal permission panel is not shown
     expect(internalPermissionSelector).toHaveCount(0);
     expect(internalVisibilitySelector).toHaveCount(0);
-    // invitation input is not shown
     expect(inviteMemberSelector).toHaveCount(0);
-    // members are shown with a disabled permission selector
     expect(".o_knowledge_permission_panel_members > div").toHaveCount(2);
     expectMember(members[0], true);
     expectMember(members[1], true);
@@ -416,7 +405,6 @@ test("Add a read member on a private article", async () => {
     expect(internalPermissionSelector).toHaveText("Members only");
     expect(internalVisibilitySelector).toHaveCount(0);
     expect(".o_knowledge_permission_panel_members > div").toHaveCount(1);
-    // member should be disabled: admin can't remove the editor of another users' private article)
     expectMember(members[0], true);
     await click(inviteMemberSelector);
     members.push({
@@ -428,11 +416,8 @@ test("Add a read member on a private article", async () => {
     await animationFrame();
     await click(".modal-header .btn-close");
     await animationFrame();
-    // internal visibility should remain hidden as article is shared
     expect(internalVisibilitySelector).toHaveCount(0);
-    // new member should be shown with the right permission
     expectMember(members[1]);
-    // writer should not be able to change its permission as a writer is always required on an article
     expectMember(members[0], true);
     expect.verifySteps(["reload record"]);
 });
@@ -521,7 +506,6 @@ test("Change inherited internal permission", async () => {
     await mountPermissionPanel(5, true);
     await animationFrame();
     expect(internalPermissionSelector).toHaveText("Can Edit");
-    // child articles do not have the visibility option
     expect(internalVisibilitySelector).toHaveCount(0);
     expect(".knowledge_internal_permission_based_on_text").toHaveText(
         "Based on 👨‍💻Workspace Article",
@@ -530,19 +514,14 @@ test("Change inherited internal permission", async () => {
     await animationFrame();
     await click(".o-dropdown-item:contains('Members only')");
     await animationFrame();
-    // downgrading internal permission should show confirmation dialog
     expect(".modal-title").toHaveText("Restrict Access");
     await click(".modal-footer button:contains('Restrict access')");
     await animationFrame();
     expect(internalPermissionSelector).toHaveText("Members only");
     expect.verifySteps(["change permission to none on article 5", "reload record"]);
-    // for simplicity the test model does not desync the article from its parent when changing the
-    // permission, so we can check the behavior when upgrading the permission of a synced article
-    // in the same test
     await click(internalPermissionSelector);
     await animationFrame();
     await click(".o-dropdown-item:contains('Can Read')");
-    // upgrading internal permission of synced article should not show confirmation modal
     await animationFrame();
     expect(".modal-title").toHaveCount(0);
     expect(internalPermissionSelector).toHaveText("Can Read");
@@ -571,12 +550,10 @@ test("Downgrade inherited member permission", async () => {
     await animationFrame();
     await click(".o-dropdown-item:contains('Can Read')");
     await animationFrame();
-    // should show confirmation dialog as it will restrict user's access
     expect(".modal-title").toHaveText("Change Permission");
     await click(".modal-footer button:contains('Restrict Access')");
     await animationFrame();
     expectMember(members[0]);
-    // article should now appear as desync
     expect(
         "div:contains('Access Restricted') + button:contains('Restore')",
     ).toHaveCount(1);
@@ -609,13 +586,10 @@ test("Upgrade inherited member permission", async () => {
     await animationFrame();
     await click(".o-dropdown-item:contains('Can Edit')");
     await animationFrame();
-    // since we are modifying the perm from its parent we need to confirm
     expect(".modal").toHaveCount(1);
     await click(".modal-footer button:contains('Restrict Access')");
     await animationFrame();
-    // member should not appear as "based on" anymore
     expectMember(members[0]);
-    // article should not appear as desync
     expect(
         "div:contains('Access Restricted') + button:contains('Restore')",
     ).toHaveCount(0);
@@ -645,12 +619,10 @@ test("Remove inherited member", async () => {
     await animationFrame();
     await click(".o_knowledge_permission_panel_remove_member");
     await animationFrame();
-    // should show confirmation dialog as it will restrict user's access
     expect(".modal-title").toHaveText("Restrict Access");
     await click(".modal-footer button:contains('Restrict Access')");
     await animationFrame();
     expect(".o_knowledge_permission_panel_members > div").toHaveCount(0);
-    // article should now appear as desync
     expect(
         "div:contains('Access Restricted') + button:contains('Restore')",
     ).toHaveCount(1);
@@ -695,9 +667,7 @@ test("Remove member while member has permission on a parent", async () => {
     await animationFrame();
     await click(".o_knowledge_permission_panel_remove_member");
     await animationFrame();
-    // should not show modal
     expect(".modal-title").toHaveCount(0);
-    // check that the inherited member is now shown
     expectMember({
         member_id: 1,
         name: "member",
@@ -718,7 +688,6 @@ test("Change article while permission panel is open", async () => {
     await click(".fa-shield + div a:contains('👨‍💻Workspace Article')");
     await animationFrame();
     expect.verifySteps(["open 4"]);
-    // check that panel has been reloaded
     expect(internalPermissionSelector).toHaveText("Can Edit");
 });
 
@@ -734,7 +703,7 @@ test("Downgrade own permission", async () => {
             partner_share: true,
         },
     ];
-    patchWithCleanup(user, { isAdmin: false }); // not admin user
+    patchWithCleanup(user, { isAdmin: false });
     mockService("action", {
         doAction: (action) => {
             if (action === "knowledge.ir_actions_server_knowledge_home_page") {
@@ -751,7 +720,6 @@ test("Downgrade own permission", async () => {
     await animationFrame();
     await click(".o-dropdown-item:contains('No Access')");
     await animationFrame();
-    // should show confirmation dialog as it will restrict user's access
     expect(".modal-title").toHaveText("Leave Article");
     await click(".modal-footer button:contains('Lose Access')");
     await animationFrame();
@@ -775,16 +743,12 @@ test("Restore Article", async () => {
     await mountPermissionPanel(6, true);
     await animationFrame();
     expect(internalPermissionSelector).toHaveText("Can Read");
-    // "based on" should not be visible
     expect(".knowledge_internal_permission_based_on_text").toHaveCount(0);
-    // member's dropdown is disabled since its the only editor
     expectMember(members[0], true);
-    // should show "restricted" message and "restore" button
     expect(
         "div:contains('Access Restricted') + button:contains('Restore')",
     ).toHaveCount(1);
     expect("div:contains('Access Restricted') > a").toHaveText("👨‍💻Workspace Article");
-    // update members list to check that restore will refetch members
     Object.assign(members[0], {
         based_on: 4,
         based_on_name: "Workspace Article",
@@ -795,11 +759,9 @@ test("Restore Article", async () => {
     expect(".modal .btn-primary:contains('Restore Access')").toHaveCount(1);
     await click(".modal .btn-primary:contains('Restore Access')");
     await animationFrame();
-    // check permission panel is updated and is now "based on"
     expect(internalPermissionSelector).toHaveText("Can Edit");
     expect(".knowledge_internal_permission_based_on_text").toHaveCount(1);
     expectMember(members[0]);
-    // should not show "restricted" message and "restore" button anymore
     expect(
         "div:contains('Access Restricted') + button:contains('Restore')",
     ).toHaveCount(0);

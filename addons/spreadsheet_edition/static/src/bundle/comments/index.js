@@ -143,5 +143,4 @@ sidePanelRegistry.add("Comments", {
     Body: CommentThreadsSidePanel,
 });
 
-// after the grid but before the highlights
 addRenderingLayer("Triangle", 0.5);

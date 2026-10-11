@@ -166,7 +166,6 @@ test("Side panel content", async function () {
         message: "3 revisions provided + initial state",
     });
 
-    // Revision info
     expect(`${revisionSelector}:eq(0) .o-sp-badge`).toHaveText("Current");
     expect(`${revisionSelector}:eq(1) .o-version-history-timestamp`).toHaveText(
         "Sep 9, 2023, 2:00 PM",
@@ -176,7 +175,6 @@ test("Side panel content", async function () {
         message: "if the revision has no name",
     });
 
-    // Revision name
     expect(`${revisionSelector}:eq(0) .o-version-history-item-text input`).toHaveValue(
         "revision 3",
         { message: "if the revision has a name" },
@@ -190,7 +188,6 @@ test("Side panel content", async function () {
         { message: "if the revision does not have a name" },
     );
 
-    // contributors
     expect(`${revisionSelector}:eq(0) .o-version-history-item-text input`).toHaveValue(
         "revision 3",
         { message: "if the revision has a name" },
@@ -224,7 +221,6 @@ test("Clicking on initial state resets the data without any revisions", async fu
         },
     );
     expect(actionModel(action).getters.getSheetIds().length).toBe(3);
-    // rollback to before the first revision. i.e. undo all changes
     await contains(`${revisionSelector}:last`).click();
     expect(actionModel(action).getters.getSheetIds().length).toBe(1);
 });
@@ -248,7 +244,6 @@ test("Side panel click loads the old version", async function () {
         },
     );
     expect(actionModel(action).getters.getSheetIds().length).toBe(3);
-    // rollback to the before last revision. i.e. undo a CREATE_SHEET
     await contains(`${revisionSelector}:eq(-2)`).click();
     expect(actionModel(action).getters.getSheetIds().length).toBe(2);
 });
@@ -338,7 +333,6 @@ test("Side panel > make copy", async function () {
                         "I clicked o",
                     );
                     expect.step("forking");
-                    // placeholder return
                     return {
                         type: "ir.actions.client",
                         tag: "reload",
@@ -369,8 +363,8 @@ test("Side panel > rename revision", async function () {
             }
             if (args.method === "rename_revision") {
                 expect.step("renamed");
-                expect(args.args[0]).toBe(1); // spreadsheet Id
-                expect(args.args[1]).toBe(1); // revision id
+                expect(args.args[0]).toBe(1);
+                expect(args.args[1]).toBe(1);
                 expect(args.args[2]).toBe("test 11");
                 return true;
             }
@@ -397,7 +391,7 @@ test("First revision should not be editable", async function () {
     });
 
     const historyItems = document.querySelectorAll(".o-version-history-item-text");
-    expect(historyItems).toHaveCount(2); // One should be an input, the other a span
+    expect(historyItems).toHaveCount(2);
     expect(historyItems[0].querySelector("input")).toHaveCount(1);
     expect(historyItems[1].querySelector("span")).toHaveCount(1);
     expect(historyItems[0].querySelector("span")).toBe(null);
@@ -494,7 +488,6 @@ test("Side panel > restore revision but copy instead", async function () {
                 }
                 case "fork_history":
                     expect.step("forking");
-                    // placeholder return
                     return {
                         type: "ir.actions.client",
                         tag: "reload",
@@ -921,8 +914,6 @@ test("Selection and scroll are preserved when switching revision", async functio
     model.dispatch("SET_VIEWPORT_OFFSET", { offsetX: 30, offsetY: 30 });
     await animationFrame();
 
-    // rollback to the before last revision. i.e. undo a CREATE_SHEET in the first spot
-    // -> the first sheet is deleted
     await contains(`${revisionSelector}:eq(1)`).click();
     await animationFrame();
     await animationFrame();

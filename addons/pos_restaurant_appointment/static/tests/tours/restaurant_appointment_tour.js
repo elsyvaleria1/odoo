@@ -17,11 +17,9 @@ registry.category("web_tour.tours").add("RestaurantAppointmentTour", {
                 Chrome.startPoS(),
                 Dialog.confirm("Open Register"),
 
-                // Make sure there is a currently active order.
                 FloorScreen.clickTable("4"),
                 ProductScreen.clickDisplayedProduct("Coca-Cola", true),
 
-                // Check that the booking gantt view is shown.
                 {
                     content:
                         "Wait few ms before clicking on Booking to ensure gantt view will be shown",
@@ -53,7 +51,6 @@ registry.category("web_tour.tours").add("RestaurantAppointmentTour", {
                     "Tomorrow Appointment",
                 ),
 
-                // Going back to the table, it should still be possible to add items
                 FloorScreen.clickTable("4"),
                 ProductScreen.clickDisplayedProduct("Coca-Cola", true),
             ]),
@@ -86,12 +83,12 @@ registry.category("web_tour.tours").add("test_appointment_kanban_view", {
                 trigger: ".o_form_renderer .o_field_many2many_selection .o_input",
                 run: "edit Test Main Floor - Table 4",
             },
-            RestaurantAppointment.selectTable("Test Main Floor - Table 4"), // 2 capacity
+            RestaurantAppointment.selectTable("Test Main Floor - Table 4"),
             {
                 trigger: ".o_form_renderer .o_field_many2many_selection .o_input",
                 run: "edit Test Main Floor - Table 5",
             },
-            RestaurantAppointment.selectTable("Test Main Floor - Table 5"), // 2 capacity
+            RestaurantAppointment.selectTable("Test Main Floor - Table 5"),
             {
                 trigger: ".o_form_button_save",
                 run: "click",
@@ -166,7 +163,6 @@ registry.category("web_tour.tours").add("test_appointment_kanban_view", {
 registry.category("web_tour.tours").add("DuplicateFloorCalendarResource", {
     steps: () =>
         [
-            // check floors if they contain their corresponding tables
             Chrome.startPoS(),
 
             FloorScreen.selectedFloorIs("Main Floor"),
@@ -176,7 +172,6 @@ registry.category("web_tour.tours").add("DuplicateFloorCalendarResource", {
 
             Chrome.clickMenuOption("Edit Plan"),
 
-            //test copy floor
             FloorScreen.clickFloor("Main Floor"),
             FloorScreen.clickEditButton("Clone"),
             FloorScreen.selectedFloorIs("Main Floor (copy)"),
@@ -186,7 +181,7 @@ registry.category("web_tour.tours").add("DuplicateFloorCalendarResource", {
             FloorScreen.clickSaveEditButton(),
             {
                 content: `Check copied floor plan tables have an appointment resource`,
-                trigger: ".pos", // dummy trigger
+                trigger: ".pos",
                 run: function () {
                     const tables = window.posmodel.models["restaurant.floor"]
                         .find((rf) => rf.name === "Main Floor (copy)")

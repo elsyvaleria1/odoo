@@ -165,7 +165,7 @@ export class SpreadsheetTemplate extends models.Model {
     ];
 
     _views = {
-        search: /* xml */ `<search><field name="name"/></search>`,
+        search: `<search><field name="name"/></search>`,
     };
 }
 

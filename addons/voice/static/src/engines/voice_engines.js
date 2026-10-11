@@ -4,8 +4,6 @@ import { t } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 
-// headless Chrome 153 answers SpeechRecognition.available() never, for any
-// language: an engine that does not say within this is not available
 export const AVAILABILITY_TIMEOUT_MS = 2000;
 
 /**

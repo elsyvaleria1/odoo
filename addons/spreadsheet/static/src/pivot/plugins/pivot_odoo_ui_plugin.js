@@ -21,9 +21,6 @@ export class PivotOdooUIPlugin extends OdooUIPlugin {
         }
     }
 
-    /**
-     * Refresh the cache of all the pivots
-     */
     refreshAllPivots() {
         for (const pivotId of this.getters.getPivotIds()) {
             this.dispatch("REFRESH_PIVOT", { id: pivotId });

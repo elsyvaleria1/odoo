@@ -394,10 +394,6 @@ export async function start(options) {
     env.testEnv = true;
     await mountWithCleanup(options?.root ?? WebClient, { env, target });
     await loadEmoji();
-    // One frame for the mounted client to settle: hotkey listeners, the chat
-    // hub and the store's first fetch all land after mount. Until loadEmoji()
-    // learned to answer from its cache this wait was hidden inside its dynamic
-    // import, and a palette opened on the very next line found no listener.
     await animationFrame();
     return Object.assign(env, { ...options?.env, target });
 }

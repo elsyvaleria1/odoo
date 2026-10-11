@@ -41,9 +41,8 @@ describe("useDraggableScroll", () => {
     test.tags("desktop");
     test("drags and scrolls horizontally", async () => {
         const { scrollEl, dispatchEvent } = await setupComponent();
-        // Simulate mouse drag
         dispatchEvent("mousedown", 800);
-        dispatchEvent("mousemove", 500); // drag left
+        dispatchEvent("mousemove", 500);
         dispatchEvent("mouseup");
         expect(scrollEl.scrollLeft).toBeGreaterThan(0);
     });
@@ -53,7 +52,7 @@ describe("useDraggableScroll", () => {
         const { scrollEl, dispatchEvent } = await setupComponent();
 
         dispatchEvent("mousedown", 500);
-        dispatchEvent("mousemove", 500 + 2); // small move
+        dispatchEvent("mousemove", 500 + 2);
         dispatchEvent("mouseup");
         expect(scrollEl.scrollLeft).toBe(0);
     });

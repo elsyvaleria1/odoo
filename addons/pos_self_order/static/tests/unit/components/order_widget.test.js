@@ -20,7 +20,6 @@ test("buttonToShow", async () => {
 
     store.router.activeSlot = "cart";
     expect(comp.buttonToShow).toMatchObject({ label: "Order", disabled: false });
-    // With valid payment method
     models["pos.payment.method"].getFirst().use_payment_terminal = "stripe";
     expect(comp.buttonToShow).toMatchObject({ label: "Pay", disabled: false });
 });
@@ -57,7 +56,6 @@ test("shouldGoBack", async () => {
     const store = await setupSelfPosEnv();
     const comp = await mountWithCleanup(OrderWidget, { props: { action: () => {} } });
 
-    // No orderlines
     expect(comp.shouldGoBack()).toBe(true);
     await getFilledSelfOrder(store);
     expect(comp.shouldGoBack()).toBe(false);

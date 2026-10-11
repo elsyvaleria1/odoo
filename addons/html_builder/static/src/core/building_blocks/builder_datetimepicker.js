@@ -64,7 +64,6 @@ export class BuilderDateTimePicker extends Component {
         this.state = proxy({});
         effect(
             ({ value }) => {
-                // State to display in the input.
                 this.state.value = value;
             },
             [state],
@@ -150,9 +149,6 @@ export class BuilderDateTimePicker extends Component {
                 return toUnixInteger(parsedDateTime).toString();
             }
         } catch (e) {
-            // A ConversionError means displayValue is an invalid date: keep
-            // the current value, unless previewing or empty, in which case
-            // fall back to the default value.
             if (!(e instanceof ConversionError)) {
                 throw e;
             }

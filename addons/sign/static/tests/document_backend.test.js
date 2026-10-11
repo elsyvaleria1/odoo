@@ -46,7 +46,6 @@ test("simple rendering", async () => {
     expect(".o_sign_resend_access_button:eq(1)").toHaveText("Send");
     expect(".o_sign_sign_directly").toHaveCount(1);
 
-    // click on resend
     await click(".o_sign_resend_access_button");
     expect.verifySteps(["send_messages"]);
 });

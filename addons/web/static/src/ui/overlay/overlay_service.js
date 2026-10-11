@@ -92,8 +92,6 @@ class OverlayService {
             return Promise.reject(error);
         }
         if (typeof result?.then !== "function") {
-            // settled now: the overlay leaves in the render that removes it,
-            // not one after, so a sibling mounting meanwhile is not restarted
             delete this.overlays[id];
             return Promise.resolve();
         }

@@ -6,7 +6,6 @@ import { htmlJoin } from "@web/core/utils/dom/html";
 
 const SAFE_URL_SCHEME = /^(https?|ftp):\/\//i;
 
-/** The folder panel's roots that are no record: `user_folder_id`'s special values (UserFolder on the server). */
 export const UserFolder = Object.freeze({
     COMPANY: "COMPANY",
     MY: "MY",
@@ -15,15 +14,10 @@ export const UserFolder = Object.freeze({
     TRASH: "TRASH",
 });
 
-/** The roots a document can be created in or moved to. */
 export const WRITABLE_ROOTS = Object.freeze([UserFolder.COMPANY, UserFolder.MY]);
 
 const SPECIAL_FOLDER_IDS = Object.freeze(Object.values(UserFolder));
 
-/**
- * What a documents view's own bus carries, within that view; the service's
- * bus speaks to every view (DocumentsBusEvent).
- */
 export const DocumentsViewEvent = Object.freeze({
     OPEN_PREVIEW: "documents-open-preview",
     CLOSE_PREVIEW: "documents-close-preview",
@@ -32,13 +26,10 @@ export const DocumentsViewEvent = Object.freeze({
     EXPAND_FOLDER: "documents-expand-folder",
 });
 
-/** Triggered on the documents search model once the folder tree is refetched. */
 export const SEARCH_PANEL_UPDATED = "documents-search-panel-updated";
 
-/** Triggered on a mail composer's model with the `{ links }` picked from Documents. */
 export const PASTE_SHARE_LINKS = "documents-paste-share-links";
 
-/** Where the Documents app remembers the folder it reopens on. */
 export const FOLDER_STORAGE_KEY = "searchpanel_documents_document";
 
 /**
@@ -64,7 +55,6 @@ export function openDocumentUrl(url) {
     window.open(toSafeDocumentUrl(url), "_blank", "noopener,noreferrer");
 }
 
-/** Why a document or folder dropped on a special root (All, Recent...) does not land. */
 export function specialFolderDropRefusal() {
     return _t(
         "You can't create shortcuts in or move documents to this special folder.",

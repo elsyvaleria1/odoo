@@ -1,8 +1,5 @@
 /** @odoo-module native */
 
-// EPC URI schemes: what each decodes to, and the one URI type it is written
-// under. A `tag` encoding prefixes the data with a filter value. Mirrors
-// `barcode.nomenclature`; a Map, so a scanned "constructor" is not a scheme.
 const URI_SCHEMES = new Map([
     ["lgtin", ["gtin", "class"]],
     ["sgtin", ["gtin", "id"]],
@@ -15,10 +12,8 @@ const URI_DATA_FIELDS = { gtin: 3, sscc: 2 };
 const URI_KEY_DIGITS = { gtin: 13, sscc: 17 };
 
 const ASCII_DIGITS = /^[0-9]+$/;
-// Mirrors `barcode.rule.NUMERIC_GROUP`.
 const NUMERIC_GROUP = /[{](N*)(D*)[}]/;
 
-// Mirrors `barcode.nomenclature.MAX_BARCODE_LENGTH`.
 const MAX_BARCODE_LENGTH = 256;
 
 const compiledPatterns = new Map();
@@ -64,8 +59,6 @@ export class BarcodeParser {
         "alias",
     ];
     static async fetchNomenclature(orm, id) {
-        // Two independent reads, so neither waits on the other. The rules come
-        // in `barcode.rule`'s `_order`, the order the server matches in.
         const [[nomenclature], rules] = await Promise.all([
             orm.read("barcode.nomenclature", [id], this.barcodeNomenclatureFields),
             orm.searchRead(
@@ -98,15 +91,9 @@ export class BarcodeParser {
     getBarcodeCheckDigit(numericBarcode) {
         let oddsum = 0,
             evensum = 0;
-        // Reverses the barcode to be sure each digit will be in the right place
-        // regardless the barcode length.
         const code = numericBarcode.split("").reverse();
-        // Removes the last barcode digit (should not be took in account for its own computing).
         code.shift();
 
-        // Multiply value of each position by
-        // N1  N2  N3  N4  N5  N6  N7  N8  N9  N10 N11 N12 N13 N14 N15 N16 N17 N18
-        // x3  X1  x3  x1  x3  x1  x3  x1  x3  x1  x3  x1  x3  x1  x3  x1  x3  CHECK_DIGIT
         for (let i = 0; i < code.length; i++) {
             if (i % 2 === 0) {
                 evensum += parseInt(code[i]);
@@ -194,7 +181,6 @@ export class BarcodeParser {
             return match;
         }
         match.match = true;
-        // An optional or alternated value group can match without taking part.
         const digits = wholeSize === null ? undefined : found.groups.value;
         if (digits === undefined) {
             return match;
@@ -236,8 +222,6 @@ export class BarcodeParser {
                 value: 0,
             };
         }
-        // An `alias` rule restates the scan as another barcode, which must then
-        // be parsed from the first rule again; `seen` stops a cycle looping.
         const seen = new Set();
         for (;;) {
             const parsedResult = this._matchRules(barcode);
@@ -253,10 +237,6 @@ export class BarcodeParser {
         }
     }
 
-    /**
-     * Match `barcode` against the nomenclature's rules, once. A matched alias
-     * rule yields `type === "alias"` with `code` set to the aliased barcode.
-     */
     _matchRules(barcode) {
         const parsedResult = {
             encoding: "",
@@ -266,9 +246,6 @@ export class BarcodeParser {
             value: 0,
         };
         const conv = this.nomenclature.upc_ean_conv;
-        // A UPC-A restated as EAN-13 always gains a leading zero, which
-        // `isBarcodeEncodingValid` reads as "really a UPC-A". So the conversion has
-        // to stand in for the encoding check rather than precede it.
         const asEan13 =
             ["upc2ean", "always"].includes(conv) &&
             this.isBarcodeEncodingValid(barcode, "upca")
@@ -320,7 +297,6 @@ export class BarcodeParser {
         return parsedResult;
     }
 
-    // URI methods
     /**
      * Parse an URI into a list of objects with either the product and its
      * lot/serial number, either the package.
@@ -333,7 +309,6 @@ export class BarcodeParser {
      * @returns {Object[]}
      */
     parseUri(barcode) {
-        // urn:<namespace>:<type>:<identifier>:<data>
         const parts = barcode.split(":").map((v) => v.trim());
         if (parts.length !== 5) {
             return [];
@@ -353,8 +328,6 @@ export class BarcodeParser {
         if (filtered) {
             data = data.slice(1);
         }
-        // Only the two leading fields feed the check-digit computation; an
-        // SGTIN-198 serial is legitimately alphanumeric and is passed through.
         const [companyPrefix, reference] = data;
         if (
             !ASCII_DIGITS.test(companyPrefix) ||

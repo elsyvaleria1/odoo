@@ -56,15 +56,6 @@ export const formEditor = {
     Renderer: FormEditorRenderer,
     Controller: FormEditorController,
     props(genericProps, editor, config) {
-        // Inline subviews sometimes have a "groups" attribute, allowing to have different
-        // x2many views depending on access rights. Outside Studio, this has no impact
-        // client side, because the view processing in python would remove nodes with groups
-        // the user doesn't belong to. However, when there's a "studio" key in the context,
-        // nodes are no longer removed but they are set as invisible="1" instead. This means
-        // that in Studio, we can have several x2many subviews for the same view type (even
-        // tough, only one of them should be visible). Here, we're only interested in the
-        // views that are visible (the ones the user has access to), so we remove the others —
-        // on a copy of the IR the parser reads, never on the arch element the editor keeps.
         const { arch, ir } = genericProps;
         const pruned = deepCopy(
             ir ?? elementToIR(typeof arch === "string" ? parseXML(arch) : arch),
@@ -86,7 +77,6 @@ export const formEditor = {
     },
     Sidebar: FormEditorSidebar,
 };
-// The object itself, not a copy: the hooks assigned below register on it.
 Object.assign(formEditor, {
     label: _t("Form"),
     icon: "fa-solid fa-address-card",
@@ -94,9 +84,6 @@ Object.assign(formEditor, {
 });
 registry.category("studio_editors").add("form", formEditor);
 
-/**
- *  Drag/Drop Validation
- */
 const HOOK_CLASS_WHITELIST = [
     "o_web_studio_field_signature",
     "o_web_studio_field_html",

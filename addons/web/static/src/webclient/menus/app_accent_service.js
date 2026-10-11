@@ -42,8 +42,6 @@ export const appAccentService = {
                 body.style.removeProperty("--o-app-accent");
             }
         };
-        // applied before subscribing: a start that throws is never destroyed,
-        // so it must not leave a listener on the module-level scheme channel
         apply();
         log.logic("subscribe", () => ({ scheme: colorScheme.current }));
         env.bus.addEventListener(AppEvent.MENUS_APP_CHANGED, apply);

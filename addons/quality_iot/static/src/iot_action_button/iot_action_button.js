@@ -3,11 +3,6 @@ import { Component, t, useProps } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { standardWidgetProps } from "@web/views/widgets";
 
-/**
- * Base class for IoT action buttons in quality checks.
- * Meant to add a button in the modal footer of quality checks
- * when triggered from manufacturing app (not shop floor).
- */
 export class IotActionButton extends Component {
     static template = "quality_iot.iotActionButton";
     static props = { ...standardWidgetProps, btn_name: t.string() };

@@ -254,7 +254,6 @@ function getAggregatesFromGroupData(groupData, fields, fieldsToAggregate) {
                     continue;
                 }
             }
-            // Keep supporting counts separate from the displayed aggregate.
             const key =
                 aggregate === "count" && fields[fieldName].aggregator !== "count"
                     ? keyAggregate

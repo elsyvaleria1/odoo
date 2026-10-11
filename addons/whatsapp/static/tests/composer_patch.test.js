@@ -21,7 +21,6 @@ describe.current.tags("desktop");
 defineWhatsAppModels();
 
 beforeEach(() => {
-    // Simulate real user interactions
     patchWithCleanup(Composer.prototype, {
         isEventTrusted() {
             return true;
@@ -42,9 +41,9 @@ test("Allow only single attachment in every message", async () => {
         new File(["hello, world"], "text2.txt", { type: "text/plain" }),
     ];
     await contains(".o-mail-Composer");
-    await click(".o-mail-Composer button[title='More Actions']"); // open
+    await click(".o-mail-Composer button[title='More Actions']");
     await contains(".dropdown-item:contains('Attach Files')");
-    await click(".o-mail-Composer button[title='More Actions']"); // close
+    await click(".o-mail-Composer button[title='More Actions']");
     await inputFiles(".o-mail-Composer .o_input_file", [file1]);
     await contains(".o-mail-AttachmentContainer");
     await contains(
@@ -133,11 +132,10 @@ test("Disabled composer should be enabled after message from whatsapp user", asy
     await start();
     await openDiscuss(channelId);
     await contains(".o-mail-Composer-input[readonly]");
-    await click(".o-mail-Composer button[title='More Actions']:disabled"); // open
+    await click(".o-mail-Composer button[title='More Actions']:disabled");
     await contains(".dropdown-item:contains('Attach Files'):disabled");
     await contains(".dropdown-item:contains('Voice Message'):disabled");
-    await click(".o-mail-Composer button[title='More Actions']"); // close
-    // stimulate the notification sent after receiving a message from whatsapp user
+    await click(".o-mail-Composer button[title='More Actions']");
     const [channel] = pyEnv["discuss.channel"].search_read([["id", "=", channelId]]);
     pyEnv["bus.bus"]._sendone(
         channel,
@@ -146,7 +144,7 @@ test("Disabled composer should be enabled after message from whatsapp user", asy
             whatsapp_channel_valid_until: serializeDateTime(now().add({ days: 1 })),
         }).get_result(),
     );
-    await click(".o-mail-Composer button[title='More Actions']:enabled"); // open
+    await click(".o-mail-Composer button[title='More Actions']:enabled");
     await contains(".dropdown-item:contains('Attach Files'):enabled");
     await contains(".dropdown-item:contains('Voice Message'):enabled");
     await insertText(".o-mail-Composer-input:not([readonly])", "Hello");
@@ -164,7 +162,6 @@ test("'Revive WhatsApp Conversation' button must be visible only in deactivated 
     await openDiscuss(channelId);
     await contains("button[title='Revive WhatsApp Conversation']");
 
-    // Active conversation should not have this button
     const [channel] = pyEnv["discuss.channel"].search_read([["id", "=", channelId]]);
     pyEnv["bus.bus"]._sendone(
         channel,

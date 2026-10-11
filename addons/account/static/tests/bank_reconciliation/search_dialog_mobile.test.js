@@ -136,7 +136,6 @@ describe.current.tags("mobile");
 
 test("BankRecSelectCreateDialog header with right information", async () => {
     await mountWithCleanup(WebClient);
-    // The initial action closes every dialog when it lands; open ours after it.
     await waitFor(".o_home_menu");
     getService("dialog").add(BankRecSelectCreateDialog, {
         noCreate: true,
@@ -164,7 +163,6 @@ test("BankRecSelectCreateDialog header with right information", async () => {
 
 test("BankRecSelectCreateDialog kanban view single currency", async () => {
     await mountWithCleanup(WebClient);
-    // The initial action closes every dialog when it lands; open ours after it.
     await waitFor(".o_home_menu");
     getService("dialog").add(BankRecSelectCreateDialog, {
         noCreate: true,
@@ -189,7 +187,6 @@ test("BankRecSelectCreateDialog kanban view single currency", async () => {
     expect(articles.length).toBe(3);
 
     await click("button.o_facet_remove");
-    // the cards are built a screenful at a time
     await waitFor("article.o_kanban_record:eq(5)");
     articles = queryAll("article.o_kanban_record");
     expect(articles.length).toBe(6);
@@ -237,7 +234,6 @@ test("BankRecSelectCreateDialog kanban view multiple currencies", async () => {
     });
 
     await mountWithCleanup(WebClient);
-    // The initial action closes every dialog when it lands; open ours after it.
     await waitFor(".o_home_menu");
 
     getService("dialog").add(BankRecSelectCreateDialog, {

@@ -11,7 +11,6 @@ patch(DiscussChannel.prototype, {
         const aiMember = this.channel_member_ids?.find(
             (member) => member.partner_id?.im_status === "agent",
         );
-        // message could be undefined if it is a command, for example /help.
         if (message?.thread?.ai_agent_id) {
             try {
                 if (aiMember) {

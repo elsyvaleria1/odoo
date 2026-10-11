@@ -26,10 +26,6 @@ export class ImportRecords extends Component {
         this.action = useService("action");
     }
 
-    //---------------------------------------------------------------------
-    // Protected
-    //---------------------------------------------------------------------
-
     importRecords() {
         const { context, resModel } = this.searchModel;
         this.action.doAction({

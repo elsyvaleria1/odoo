@@ -3,11 +3,6 @@ import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 import wSaleUtils from "@website_sale/js/website_sale_utils";
 
-/**
- * Follows the cart's `website_sale:cart_updated` event, which a route that
- * changes the cart sends with its fragments: the header's cart badge, the
- * warning, and the quick reorder button when its history was re-rendered.
- */
 export class CartUpdates extends Interaction {
     static selector = "#wrapwrap";
     dynamicContent = {

@@ -7,9 +7,6 @@ import { _t } from "@web/core/translation";
 export class AgedPartnerBalanceFilters extends AccountReportFilters {
     static template = "account.AgedPartnerBalanceFilters";
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Aging Interval
-    //------------------------------------------------------------------------------------------------------------------
     async setAgingInterval(ev) {
         const agingInterval = parseInt(ev.target.value);
         if (agingInterval < 1) {

@@ -58,19 +58,6 @@ const AddTrackingLineAndValidateSteps = [
     },
 ];
 
-/**
- * This tour depends on data created by python test in charge of launching it.
- * It is not intended to work when launched from interface.
- * The main purpose of this tour is:
- * - To check that quantity_decreasable is correctly used in the interface and prevents
- *   the user to decrease quantities.
- * - To check that warehouses (in the move and the default one of the user) are taken into account
- *   in quantity_decreasable
- * - To check that the wizard.project.task.update.product.lot wizard is taking the warehouses into account. When one line
- *   is implied in a move from a different warehouse than the current user's default one, an added
- *   column is displayed with the warehouse of the move implied by the line. The records that implies
- *   moves from another warehouse than the current user's default one are muted and readonly.
- */
 registry.category("web_tour.tours").add("industry_fsm_stock_test_tour", {
     url: "/odoo",
     steps: () => [

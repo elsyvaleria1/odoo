@@ -38,8 +38,6 @@ test("periods are offered, grouped by their type", async () => {
     withRanges();
     const options = getInRangeProviderOptions("date");
     expect(options.map((o) => o.label)).toEqual(["Q1 2030", "H1 2030"]);
-    // The provider's own label heads the group, subdivided by the range type,
-    // so two providers cannot produce colliding headings.
     expect(options.map((o) => o.group)).toEqual([
         "Periods / Quarter",
         "Periods / Half",
@@ -66,8 +64,6 @@ test("picking a period on a datetime field covers both of its end days", async (
     await makeMockEnv();
     mockTimeZone(0);
     withRanges();
-    // Start at the first instant of the start day, end at the last of the end
-    // day. Swapped, the filter silently loses almost two days.
     expect(resolveInRangeProviderOption("date_range:7", "datetime")).toEqual([
         "2030-01-01 00:00:00",
         "2030-03-31 23:59:59",
@@ -79,13 +75,8 @@ test("the period's end days follow the user's timezone", async () => {
     mockTimeZone(2);
     withRanges();
     const [start, end] = resolveInRangeProviderOption("date_range:7", "datetime");
-    // Two hours east: local midnight is 22:00 UTC the day before, and the last
-    // local instant of 31 March is 21:59:59 UTC on that same day.
     expect(start).toBe("2029-12-31 22:00:00");
     expect(end).toBe("2030-03-31 21:59:59");
-    // And the round trip still names the period it came from -- the bug this
-    // guards is reading the bound back by slicing its first ten characters,
-    // which lands on the wrong day for any user east of Greenwich.
     expect(matchInRangeProviderOption("datetime", start, end)).toBe("date_range:7");
 });
 
@@ -105,8 +96,6 @@ test("bounds naming no period stay a custom range", async () => {
     withRanges();
     expect(matchInRangeProviderOption("date", "2030-01-02", "2030-03-31")).toBe(null);
     expect(matchInRangeProviderOption("date", false, false)).toBe(null);
-    // A dynamic bound is an expression object, not a string; it names no period
-    // and must not be compared as one.
     expect(
         matchInRangeProviderOption("date", { _expr: "context_today()" }, "2030-03-31"),
     ).toBe(null);

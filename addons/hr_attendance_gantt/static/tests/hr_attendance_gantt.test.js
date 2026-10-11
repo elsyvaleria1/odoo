@@ -349,7 +349,6 @@ test("Open ended record updated correctly", async () => {
     await animationFrame();
     gridContent = getGridContent();
     expect(gridContent.range).toBe("12/20/2018 -> 12/20/2018");
-    // TODO fixme: end hour is non deterministic and alternates between 7pm and 8pm.
     const endHour = parseInt(
         gridContent.rows[0].pills[0].colSpan.match(/->\s*(\d+)/)[1],
     );
@@ -527,7 +526,7 @@ test("Dragging half column in week scale preserves checkout context", async () =
         getCell("Friday 1", "Week 31, Jul 27 - Aug 2"),
     ).drag();
     await moveTo(getCell("Friday 1", "Week 31, Jul 27 - Aug 2"));
-    await runAllTimers(); // Pointer move is subjected to throttleForAnimation in gantt
+    await runAllTimers();
     await drop();
     await animationFrame();
 });

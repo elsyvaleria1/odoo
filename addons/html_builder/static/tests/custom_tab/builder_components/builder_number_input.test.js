@@ -168,7 +168,6 @@ test("input should remove invalid char", async () => {
         `<div class="test-options-target" data-test="1">Hello</div><div class="test-options-target-composable" data-test="2">World</div>`,
     );
 
-    // Single
     await contains(":iframe .test-options-target").click();
 
     await contains(".options-container:first input").edit("-1-2-");
@@ -183,7 +182,6 @@ test("input should remove invalid char", async () => {
     await animationFrame();
     expect(".options-container:first input").toHaveValue("0.67");
 
-    // Composable
     await contains(":iframe .test-options-target-composable").click();
 
     await contains(".options-container:last input").edit("-12 12 -12 12");
@@ -254,7 +252,7 @@ describe("default value", () => {
 
         await clear();
         expect("[data-action-id='customAction'] input").toHaveValue("");
-        expect(":iframe .test-options-target").toHaveInnerHTML("0"); // Check that default value is used during preview
+        expect(":iframe .test-options-target").toHaveInnerHTML("0");
         await click(".options-container");
         expect("[data-action-id='customAction'] input").toHaveValue("0");
         expect(":iframe .test-options-target").toHaveInnerHTML("0");
@@ -487,12 +485,10 @@ describe("keyboard triggers", () => {
         `);
         await contains(":iframe .test-options-target").click();
 
-        // simulate arrow up
         await contains(".options-container input").keyDown("ArrowUp");
         await advanceTime();
         expect(":iframe .test-options-target").toHaveInnerHTML("12");
 
-        // simulate arrow down
         await contains(".options-container input").keyDown("ArrowDown");
         await advanceTime();
         expect(":iframe .test-options-target").toHaveInnerHTML("10");
@@ -523,13 +519,11 @@ describe("keyboard triggers", () => {
         `);
         await contains(":iframe .test-options-target").click();
 
-        // simulate arrow up
         await contains(".options-container input").focus();
         await contains(".options-container input").keyDown("ArrowUp");
         await advanceTime();
         expect(":iframe .test-options-target").toHaveInnerHTML("11 5 1");
 
-        // simulate arrow down
         await contains(".options-container input").keyDown("ArrowDown");
         await advanceTime();
         expect(":iframe .test-options-target").toHaveInnerHTML("10 4 0");
@@ -618,18 +612,15 @@ describe("keyboard triggers", () => {
         `);
         await contains(":iframe .test-options-target").click();
         await contains(".options-container input").focus();
-        // Simulate a single keydown hold down for a while.
         await contains(".options-container input").keyDown("ArrowUp");
-        await advanceTime(500); // Default browser delay between 1st & 2nd keydown.
+        await advanceTime(500);
         await contains(".options-container input").keyDown("ArrowUp");
         await advanceTime(50);
         await contains(".options-container input").keyDown("ArrowUp");
         await advanceTime(50);
         expect(":iframe .test-options-target").toHaveInnerHTML("13");
-        // 3 previews
         expect.verifySteps(["customAction 11", "customAction 12", "customAction 13"]);
-        await advanceTime(560); // Debounce = 550
-        // 1 commit
+        await advanceTime(560);
         expect.verifySteps(["customAction 13"]);
     });
 });
@@ -711,7 +702,6 @@ describe("unit & saveUnit", () => {
                 static template = xml`<BuilderNumberInput action="'customAction'" unit="'s'" saveUnit="'ms'"/>`;
             },
         );
-        // note that 5000 has no unit of measure
         await setupHTMLBuilder(`
                     <div class="test-options-target">5000</div>
                 `);
@@ -834,7 +824,7 @@ describe("sanitized values", () => {
         `);
         await contains(":iframe .test-options-target").click();
         await contains(".options-container input").edit("-1", { instantly: true });
-        expect.verifySteps(["customAction 0", "customAction 0"]); // input, change
+        expect.verifySteps(["customAction 0", "customAction 0"]);
         expect(".options-container input").toHaveValue("0");
     });
     test("clamp to min value when pressing down arrow with min > 0", async () => {
@@ -860,12 +850,10 @@ describe("sanitized values", () => {
             <div class="test-options-target">2</div>
         `);
         await contains(":iframe .test-options-target").click();
-        // Simulate pressing arrow down
         await contains(".options-container input").keyDown("ArrowDown");
         expect.verifySteps(["customAction 1"]);
         expect(".options-container input").toHaveValue("1");
         expect(":iframe .test-options-target").toHaveText("1");
-        // Pressing down again should stay at min value
         await contains(".options-container input").keyDown("ArrowDown");
         expect.verifySteps(["customAction 1"]);
         expect(".options-container input").toHaveValue("1");
@@ -895,7 +883,7 @@ describe("sanitized values", () => {
         await contains(":iframe .test-options-target").click();
         await contains(".options-container input").edit("11", { instantly: true });
         await animationFrame();
-        expect.verifySteps(["customAction 0", "customAction 10"]); // input, change
+        expect.verifySteps(["customAction 0", "customAction 10"]);
         expect(".options-container input").toHaveValue("10");
     });
     test("multi values: trailing space in BuilderNumberInput is ignored", async () => {
@@ -921,7 +909,7 @@ describe("sanitized values", () => {
         `);
         await contains(":iframe .test-options-target").click();
         await contains(".options-container input").fill("3 4 5 ", { instantly: true });
-        expect.verifySteps(["customAction 3 4 5", "customAction 3 4 5"]); // input, change
+        expect.verifySteps(["customAction 3 4 5", "customAction 3 4 5"]);
         expect(".options-container input").toHaveValue("3 4 5");
     });
     test("after input, displayed value is cleaned to match only numbers", async () => {
@@ -1014,7 +1002,6 @@ describe("sanitized values", () => {
         await contains(":iframe .test-options-target").click();
         await contains(".options-container input").edit("0.2");
         expect(".options-container input").toHaveValue("0.2");
-        // simulate arrow keys
         await contains(".options-container input").keyDown("ArrowUp");
         await advanceTime();
         expect(".options-container input").toHaveValue("0.3");

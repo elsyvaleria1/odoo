@@ -790,8 +790,6 @@ describe("isActiveItem", () => {
         );
         await contains(":iframe .test-options-target").click();
         await contains("[data-class-action='my-class1']").click();
-        // the removal cascades (id1 hides b2, whose id2 then hides b3), each
-        // step published on the next frame
         await waitForNone("[data-class-action='my-class3']");
         expect("[data-class-action='my-class3']").not.toHaveCount();
     });

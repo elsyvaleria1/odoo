@@ -28,7 +28,6 @@ export function dropRejectionReason({
     userIsDocumentManager,
     getFolderAndParents,
 }) {
-    // "All" (id false) holds nothing of its own
     if (
         !targetFolder?.id ||
         [UserFolder.RECENT, UserFolder.SHARED].includes(targetFolder.id)
@@ -43,7 +42,6 @@ export function dropRejectionReason({
             "There is at least one document you cannot move to trash in your selection.",
         );
     }
-    // a shortcut's drop lands in its target
     const permission =
         targetFolder.target_user_permission || targetFolder.user_permission;
     const canWrite =
@@ -95,7 +93,6 @@ export const useDraggableDocuments = makeDraggableHook({
         const { element } = current;
         addClass(ref.el, "o_documents_dragging");
         removeClass(element, DRAGGED_CLASS);
-        // this view's own panel, not the first on the page (a picker dialog's)
         const searchPanelEl = ref.el
             .closest(".o_component_with_search_panel")
             ?.querySelector(".o_documents_search_panel");
@@ -161,13 +158,9 @@ export const useDraggableDocuments = makeDraggableHook({
                 closestScrollableX(container),
                 closestScrollableY(container),
             ];
-            // the edge scrolling reads rects cached for the previous
-            // container, whose scroll parents may no longer exist
             current.rectsDirty = true;
         };
 
-        // any part of a folder's entry (label, icon, caret, padding) is that
-        // folder; each entry is judged once per visit
         let hoveredValueEl = null;
         const onSearchPanelFolderPointerOver = (ev) => {
             const valueEl = ev.target.closest(".o_search_panel_category_value");
@@ -354,7 +347,6 @@ export const useDraggableDocuments = makeDraggableHook({
         }
     },
 
-    /** Movable and trashable as the server answers them: user_can_move, user_can_trash. */
     _setDraggedRecords(ctx, model) {
         const ids = (predicate) =>
             model.root.selection.filter(predicate).map((record) => record.data.id);

@@ -222,7 +222,6 @@ function testWebsitePageProperties() {
             run: "click",
         },
         {
-            // TODO: this needs to be tested
             content: "Change date published",
             trigger: "#date_publish_0",
             run: "edit 02/01/2005 01:00:00 && press enter",
@@ -238,7 +237,6 @@ function testWebsitePageProperties() {
             run: "click",
         },
         {
-            // TODO: this needs to be tested
             content: "Make visible with password only",
             trigger: ".o-dropdown-item[data-choice-index='3']",
             run: "click",

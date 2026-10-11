@@ -11,7 +11,6 @@ function setFieldVisibility(el, visible) {
 }
 
 patch(PlanningCalendarFront.prototype, {
-    // override popup of calendar
     eventFunction(calEvent) {
         super.eventFunction(calEvent);
         const projectEl = document.getElementById("project");

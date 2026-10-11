@@ -48,7 +48,6 @@ test("both branches of the widget render a copy button", async () => {
 
     expect(".o_data_row").toHaveCount(1);
     expect(".o_clipboard_button").toHaveCount(2);
-    // the t-else branch shows the field's value, the t-if branch its label
     expect(".o_data_row").toHaveText(/URL/);
     expect(".o_data_row").toHaveText(/Email/);
 });
@@ -89,14 +88,6 @@ test("the generating branch asks the server on every click", async () => {
     await click(copyButtons()[1]);
     await animationFrame();
 
-    // Pins the behaviour, and deliberately does NOT claim to distinguish the
-    // shape this widget had before 8c630dedebf9. Driven against that shape in a
-    // worktree, all four of these tests pass: the old subclass assigned
-    // `this.props.content = await generator()` on every click, so the generator
-    // was re-invoked every time too. That refactor removed duplication and a
-    // props mutation, not a behavioural defect -- the two are indistinguishable
-    // from outside, and a test comment claiming otherwise would be a lie a
-    // reader has no way to check.
     expect.verifySteps([
         "writeText: first@example.com",
         "writeText: second@example.com",

@@ -133,12 +133,10 @@ export class SaleOrderTemplateLineListRenderer extends SectionAndNoteListRendere
         await this._handleQuantityAdjustment(recordMap);
     }
 
-    /** @see getRecordsToRecompute in section_optional_line_utils.js — shared */
     _getRecordsToRecompute(record, targetId) {
         return getRecordsToRecompute(this, record, targetId);
     }
 
-    /** @see handleQuantityAdjustment in section_optional_line_utils.js — */
     async _handleQuantityAdjustment(recordMap) {
         return handleQuantityAdjustment(this, recordMap);
     }

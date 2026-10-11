@@ -22,18 +22,11 @@ export function useBackButton(func, shouldEnable) {
     const owner = {};
     let isEnabled = false;
 
-    /**
-     * Enables the func listener, overriding default back button behavior.
-     */
     function enable() {
         ServiceCore.backButtonManager.addListener(owner, func);
         isEnabled = true;
     }
 
-    /**
-     * Disables the func listener, restoring the default back button behavior if
-     * no other listeners are present.
-     */
     function disable() {
         ServiceCore.backButtonManager.removeListener(owner);
         isEnabled = false;

@@ -4,19 +4,12 @@ import { proxy } from "@odoo/owl";
 import { localization } from "@web/core/l10n/localization";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
 
-/**
- * Common code between common and year renderer for our calendar.
- */
 export function useAppointmentRendererHook(component, getFcElements) {
     const env = {
         calendarState: useAppointmentCalendarContext().calendarState,
     };
     proxy(env.calendarState);
 
-    /**
-     * Display an overlay when using the slots selection mode that
-     * encompasses the past time.
-     */
     useLayoutEffect(
         (fcEls, calendarMode) => {
             if (calendarMode === "slots-creation") {
@@ -35,7 +28,6 @@ export function useAppointmentRendererHook(component, getFcElements) {
                     const nowIndicator = todayColumn?.querySelector(
                         ".fc-timegrid-now-indicator-line",
                     );
-                    // Create a block for today to have the overlay size based on the current hour
                     if (
                         bgColumn &&
                         nowIndicator &&
@@ -125,10 +117,10 @@ export function eventSourcesWithSlots(component, superSources) {
 export function convertSlotToEvent(component, record) {
     const result = {
         ...component.convertRecordToEvent(record),
-        id: component.maxResId + record.id, // Arbitrary id to avoid duplicated ids.
+        id: component.maxResId + record.id,
         slotId: record.id,
     };
-    result.editable = true; // Keep slots editable
+    result.editable = true;
     return result;
 }
 

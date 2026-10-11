@@ -345,7 +345,6 @@ function parseViewArch({ arch, ir }, context) {
             disabled[action] = "0";
         }
     }
-    // the payload's IR is cached by the ORM service: never mutate it, clone the root
     const archIR = ir
         ? { ...ir, attrs: { ...ir.attrs, ...disabled } }
         : elementToIR(archXmlDoc);

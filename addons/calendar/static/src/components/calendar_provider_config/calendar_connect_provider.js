@@ -26,14 +26,13 @@ export class CalendarConnectProvider extends Component {
         ev.preventDefault();
         ev.stopImmediatePropagation();
         if (!(await this.props.record.save())) {
-            return; // handled by view
+            return;
         }
         await this.orm.call(
             this.props.record.resModel,
             "action_calendar_prepare_external_provider_sync",
             [this.props.record.resId],
         );
-        // the provider's module, installed above, brings calendar_sync
         const provider = this.props.record.data.external_calendar_provider;
         if (!provider) {
             return;

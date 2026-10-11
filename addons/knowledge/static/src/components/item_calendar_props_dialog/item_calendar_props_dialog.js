@@ -9,11 +9,6 @@ import { useAutofocus, useService } from "@web/core/utils/hooks";
 import { Dialog } from "@web/ui/dialog";
 import { SCALE_LABELS } from "@web/views/calendar";
 
-/**
- * Dialog allowing to dynamically edit the item calendar view configuration
- * (the "itemCalendarProps"). Used when clicking on the "edit" button of the
- * embedded view manager.
- */
 export class ItemCalendarPropsDialog extends Component {
     static template = "knowledge.ItemCalendarPropsDialog";
     static components = {
@@ -61,8 +56,6 @@ export class ItemCalendarPropsDialog extends Component {
         }));
 
         onWillStart(async () => {
-            // Fetch the properties definitions and create choices to use in
-            // the SelectMenu components
             const propertiesDefinitions = await this.orm.read(
                 "knowledge.article",
                 [this.props.knowledgeArticleId],
@@ -75,7 +68,6 @@ export class ItemCalendarPropsDialog extends Component {
                     label: definition.string,
                     type: definition.type,
                 };
-                // Add choice in corresponding dropdown
                 const choice = {
                     value: definition.name,
                     label: definition.string,
@@ -92,15 +84,11 @@ export class ItemCalendarPropsDialog extends Component {
             }
 
             if (this.props.isNew) {
-                // If no date(time) properties exists, create default ones
                 if (!this.dateTimeChoices.length && !this.dateChoices.length) {
                     this.autoCreateDateProperties = true;
                     this.createProperty(_t("Start Date Time"), "datetime", "dateStart");
                     this.createProperty(_t("End Date Time"), "datetime", "dateStop");
                 } else {
-                    // If some exist, select them by default (prefer to use 2
-                    // of the same type if possible, and prefer datetimes over
-                    // dates)
                     if (this.dateTimeChoices.length > 1) {
                         this.selectDateStart(this.dateTimeChoices[0].value);
                         this.selectDateStop(this.dateTimeChoices[1].value);
@@ -114,7 +102,6 @@ export class ItemCalendarPropsDialog extends Component {
                     }
                 }
             } else {
-                // Use props only if the related property still exists
                 for (const propName of [
                     "dateStartPropertyId",
                     "dateStopPropertyId",
@@ -127,7 +114,6 @@ export class ItemCalendarPropsDialog extends Component {
             }
         });
 
-        // Save when pressing on enter
         useListener(window, "keydown", (event) => {
             if (event.key === "Enter") {
                 this.save();
@@ -135,10 +121,6 @@ export class ItemCalendarPropsDialog extends Component {
         });
     }
 
-    /**
-     * Return the available start properties formatted as groups (date and
-     * datetime) for the SelectMenu component
-     */
     get availableDateStartProperties() {
         return [
             {
@@ -152,12 +134,7 @@ export class ItemCalendarPropsDialog extends Component {
         ];
     }
 
-    /**
-     * Return the available stop properties (that are of the same type as the
-     * current start date) formatted as a group for the SelectMenu component
-     */
     get availableDateStopProperties() {
-        // Don't show current start date nor dates with other type
         if (this.dateStartProperty?.type === "datetime") {
             return [
                 {
@@ -202,13 +179,11 @@ export class ItemCalendarPropsDialog extends Component {
      */
     createProperty(label, type, calendarProp) {
         const newPropertyId = uuid();
-        // Add to list of properties
         this.propertyFieldEntries[newPropertyId] = {
             isNew: true,
             label: label,
             type: type,
         };
-        // Add new choice in dropdowns
         const newChoice = {
             value: newPropertyId,
             label,
@@ -220,7 +195,6 @@ export class ItemCalendarPropsDialog extends Component {
         } else {
             this.colorChoices.push(newChoice);
         }
-        // Select the new choice
         if (calendarProp === "dateStart") {
             this.selectDateStart(newPropertyId);
         } else if (calendarProp === "dateStop") {
@@ -230,11 +204,6 @@ export class ItemCalendarPropsDialog extends Component {
         }
     }
 
-    /**
-     * Save the item calendar props and close the dialog. If there is a new
-     * choice selected as start and/or stop date, create the associated
-     * property(ies) first.
-     */
     async save() {
         if (!this.state.dateStartPropertyId) {
             this.notification.add(_t("The start date property is required."), {
@@ -242,13 +211,11 @@ export class ItemCalendarPropsDialog extends Component {
             });
             return;
         }
-        // Create new property if needed
         if (
             this.dateStartProperty.isNew ||
             this.dateStopProperty?.isNew ||
             this.colorProperty?.isNew
         ) {
-            // Keep existing properties to not lose them.
             const propertiesDefinitions = [...this.propertiesDefinitions];
             if (this.dateStartProperty.isNew) {
                 propertiesDefinitions.push({
@@ -312,7 +279,6 @@ export class ItemCalendarPropsDialog extends Component {
 
     selectDateStart(value) {
         this.state.dateStartPropertyId = value;
-        // DateStop must be of the same type as start, but must not be the same property
         if (
             this.state.dateStopPropertyId &&
             (this.dateStartProperty.type !== this.dateStopProperty.type ||

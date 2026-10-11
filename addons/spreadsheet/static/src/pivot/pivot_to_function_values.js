@@ -5,11 +5,6 @@ const { DEFAULT_LOCALE } = constants;
 const { pivotToFunctionValueRegistry } = registries;
 const { toString, toNumber } = helpers;
 
-/**
- * Add pivot formatting functions to support odoo specific fields
- * in spreadsheet
- */
-
 const toFunctionValueDateTime = pivotToFunctionValueRegistry.get("date");
 
 function isFalseValue(value) {

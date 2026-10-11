@@ -523,8 +523,6 @@ function modifyAttributes(target, operation) {
 
         if (value) {
             target.setAttribute(attributeName, value);
-            // a directive is never translated, and owl rejects a context left
-            // beside one it has consumed (t-if on a <t t-out>)
             if (!(add || remove) && !attributeName.startsWith("t-")) {
                 target.setAttribute(
                     `t-translation-context-${attributeName}`,

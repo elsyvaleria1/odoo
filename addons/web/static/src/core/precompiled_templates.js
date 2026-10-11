@@ -62,21 +62,16 @@ export const precompiledTemplatesService = {
      */
     async start(env, { localization }) {
         const dev = Boolean(env.debug || session.test_mode);
-        // a public page may run without 'unsafe-eval': a template it compiles
-        // in the browser throws, so it waits for every artifact, in dev mode too
         const strict = Boolean(session.await_precompiled_templates);
         if (!localization.translationsHash || (dev && !strict)) {
             await ensureCompiler();
             return;
         }
         if (session.precompiled_templates === false) {
-            // the server cannot build the artifact: asking would cost it a
-            // request and this page the wait for a 404
             log("the server has no template precompiler, compiling in the browser");
             await ensureCompiler();
             return;
         }
-        // renderToString compiles outside dev mode on every page
         const variants = dev ? [false, true] : [false];
         /**
          * @param {string} bundle
@@ -86,8 +81,6 @@ export const precompiledTemplatesService = {
         const load = (bundle, checksum, params) =>
             Promise.all(
                 variants.map((variant) =>
-                    // from the server's origin: a live chat embedded on
-                    // another site runs this on that site's
                     loadJS(
                         url(
                             precompiledTemplatesUrl(
@@ -120,9 +113,6 @@ export const precompiledTemplatesService = {
             await loaded;
             return;
         }
-        // a cached artifact arrives within the bound; one the server is still
-        // compiling (the first page of a language after a deploy) does not
-        // hold the boot: what renders before it compiles in the browser
         const arrived = await Promise.race([
             loaded.then(() => true),
             new Promise((resolve) =>

@@ -3,14 +3,6 @@
  * @typedef {import("@web/core/network").ORM} ORM
  */
 
-/**
- *
- * Upload files on the server and link the files to a record as attachment.
- *
- * Implements the `FileStore` interface defined by o-spreadsheet.
- * https://github.com/odoo/o-spreadsheet/blob/300da461b23b5f3db017270192893d4a972bacf0/src/types/files.ts#L4
- *
- */
 export class RecordFileStore {
     /**
      *
@@ -26,9 +18,6 @@ export class RecordFileStore {
         this.orm = orm;
     }
 
-    /**
-     * Upload a file on the server and returns the path to the file.
-     */
     async upload(file) {
         const route = "/web/binary/upload_attachment";
         const params = {

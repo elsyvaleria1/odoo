@@ -18,9 +18,6 @@ const { ValidationMessages } = components;
  * @typedef {import("@spreadsheet").GlobalFilter} GlobalFilter
  */
 
-/**
- * This is the side panel to define/edit a global filter of type "relation".
- */
 export class RelationFilterEditorSidePanel extends AbstractFilterEditorSidePanel {
     static template = "spreadsheet_edition.RelationFilterEditorSidePanel";
     static components = {
@@ -87,7 +84,6 @@ export class RelationFilterEditorSidePanel extends AbstractFilterEditorSidePanel
             resIds,
         );
         if (!resIds.length) {
-            // force clear, even automatic default values
             this.store.update({ defaultValue: undefined });
         } else {
             this.store.update({

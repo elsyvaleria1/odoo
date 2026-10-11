@@ -115,7 +115,6 @@ export class RemovePlugin extends Plugin {
         if (!toRemoveEl.isConnected) {
             return;
         }
-        // Get the elements having options containers.
         const optionTargetEls = this.getOptionsContainersElements().filter((targetEl) =>
             targetEl.contains(toRemoveEl),
         );
@@ -139,7 +138,6 @@ export class RemovePlugin extends Plugin {
     removeCurrentTarget(toRemoveEl, optionsTargetEls) {
         this.dispatchTo("on_will_remove_handlers", toRemoveEl);
 
-        // Get the parent and the previous and next visible siblings.
         let parentEl = toRemoveEl.parentElement;
         const previousSiblingEl = this.dependencies.visibility.getVisibleSibling(
             toRemoveEl,
@@ -150,14 +148,9 @@ export class RemovePlugin extends Plugin {
             "next",
         );
         if (parentEl.matches(".o_editable:not(body)")) {
-            // If we target the editable, we want to reset the selection to the
-            // body. If the editable has options, we do not want to show them.
             parentEl = parentEl.closest("body");
         }
 
-        // Remove tooltips. The elements being removed live in the edited document, so the
-        // instances to dispose are registered in *that* realm's Bootstrap, not the backend
-        // one this plugin runs in.
         const Tooltip = getBootstrapComponent(
             toRemoveEl.ownerDocument.defaultView,
             "Tooltip",
@@ -168,10 +161,8 @@ export class RemovePlugin extends Plugin {
             }
         }
 
-        // Remove the element.
         toRemoveEl.remove();
 
-        // Remove potential last empty text node from the parent.
         if (parentEl) {
             const firstChildEl = parentEl.firstChild;
             if (
@@ -183,12 +174,8 @@ export class RemovePlugin extends Plugin {
             }
         }
 
-        // Set the sibling as the next element to activate, if any, otherwise
-        // set it as the parent.
         let nextTargetEl = previousSiblingEl || nextSiblingEl;
         if (!nextTargetEl) {
-            // Remove potential ancestors (like when removing the last column of
-            // a snippet).
             while (!optionsTargetEls.includes(parentEl)) {
                 const nextParentEl = parentEl.parentElement;
                 if (!nextParentEl) {

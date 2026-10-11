@@ -270,7 +270,6 @@ export class ComboPage extends Component {
             this.state.showResume = false;
         } else if (this.isAttributeSelection()) {
             if (!this.isNextEnabled()) {
-                // Disable product selection if not all attributes are selected
                 const choiceState = this.currentChoiceState;
                 delete choiceState.selectedItems[
                     choiceState.displayAttributesOfItem.id
@@ -322,7 +321,6 @@ export class ComboPage extends Component {
         const isAttributeSelection = this.isAttributeSelection();
         const hasMultiItemSelection = this.hasMultiItemSelection;
         if (isAttributeSelection && hasMultiItemSelection) {
-            // If we're in attribute selection for a multi-item choice, reset to item selection
             this.currentChoiceState.displayAttributesOfItem = false;
             newSectionDisplayed = true;
         } else if (!isAttributeSelection && !hasMultiItemSelection) {
@@ -356,7 +354,6 @@ export class ComboPage extends Component {
             return;
         }
 
-        // Ensure all previous choices are completed
         for (let i = 0; i < choiceIndex; i++) {
             const choice = this.state.choices[i];
             if (!choice) {
@@ -382,7 +379,6 @@ export class ComboPage extends Component {
     }
 
     resetScrollPosition() {
-        // Ensure the section below the large image is visible to minimize excessive scrolling for the user
         setTimeout(() => {
             const el = window.document.getElementById("k-combo-scroll-target");
             if (el) {
@@ -497,15 +493,4 @@ export class ComboPage extends Component {
     formatProductName(product) {
         return formatProductName(product);
     }
-
-    /*
-     // TODO
-     get editableProductLine() {
-        const order = this.selfOrder.currentOrder;
-        return !(
-            this.selfOrder.editedLine &&
-            this.selfOrder.editedLine.uuid &&
-            order.lastChangesSent[this.selfOrder.editedLine.uuid]
-        );
-    }*/
 }

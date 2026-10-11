@@ -50,7 +50,6 @@ test("pillBounds clips to the range and locks the clipped edge", () => {
         disableStartResize: true,
         disableStopResize: true,
     });
-    // A date-typed stop covers its whole day.
     const dated = pillBounds(
         { start: dt("2019-01-12"), stop: dt("2019-01-19") },
         { ...params, stopIsDate: true },
@@ -107,13 +106,11 @@ test("pillLabel: dates on the year scale, times and duration on week and month",
     expect(pillLabel({ ...base, scaleId: "week" })).toBe(
         "8:00 AM - 12:00 PM (4h) Task",
     );
-    // On the month scale a timed pill drops its own name.
     expect(pillLabel({ ...base, scaleId: "month" })).toBe("8:00 AM - 12:00 PM (4h)");
     expect(pillLabel({ ...base, scaleId: "month", duration: 0, durationStr: "" })).toBe(
         "Task",
     );
     expect(pillLabel({ ...base, scaleId: "day" })).toBe("Task");
-    // A span across days shows dates only when it leaves the visible range.
     const span = { ...base, scaleId: "week", stopDate: dt("2019-01-16T12:00") };
     expect(pillLabel(span)).toBe("Task");
     expect(pillLabel({ ...span, rangeStop: dt("2019-01-14") })).toBe(

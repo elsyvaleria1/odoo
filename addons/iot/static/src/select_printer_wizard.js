@@ -19,7 +19,6 @@ export class SelectPrinterFormController extends FormController {
         this.onClickViewButton = this.viewButtonContext.onClickViewButton;
 
         onWillUnmount(() => {
-            // If the user closes the popup without selecting a printer we still send a message back
             this.bus.trigger("printer-selected", {
                 reportId: this.props.context.report_id,
                 deviceSettings: null,

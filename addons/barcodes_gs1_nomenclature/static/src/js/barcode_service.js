@@ -5,7 +5,6 @@ import { patch } from "@web/core/utils/patch";
 import { session } from "@web/session";
 
 patch(barcodeService, {
-    // Use the regex given by the session, else use an impossible one
     gs1SeparatorRegex: new RegExp(session.gs1_group_separator_encodings || ".^", "g"),
 
     cleanBarcode(barcode) {

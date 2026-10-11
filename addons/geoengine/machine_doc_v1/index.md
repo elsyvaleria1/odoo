@@ -120,18 +120,18 @@ test_geoengine module, which declares those models.
 
 | File | Lines | Coverage Area |
 |------|-------|---------------|
-| `geoengine_arch_parser.test.js` | 129 | View XML parsing |
+| `geoengine_arch_parser.test.js` | 128 | View XML parsing |
 | `geoengine_model.test.js` | 226 | Data model loading |
 | `webgl_style_converter.test.js` | 256 | WebGL flat-style expression builders |
 | `classification.test.js` | 167 | Choropleth classification contract (`classIndexFor`, class colors) |
-| `geo_libs_contract.test.js` | 231 | What the code assumes about OpenLayers, checked against the real library (awaits `loadGeoLibs()`) |
+| `geo_libs_contract.test.js` | 228 | What the code assumes about OpenLayers, checked against the real library (awaits `loadGeoLibs()`) |
 | `heatmap_weight.test.js` | 46 | Heatmap weight normalization to 0..1 |
 | `map_tools.test.js` | 39 | Measurement formatting (geodesic length/area display) |
 | `popup_lifecycle.test.js` | 65 | info_box popup open/close lifecycle |
 | `record_values.test.js` | 53 | `record_values.js` display/saved-value helpers |
 | `renderer_trail_parts.test.js` | 86 | `webgl_trail` XYM line-part construction |
-| `geoengine_view_e2e.test.js` | 180 | Real OpenLayers and the real renderer against a mocked `get_layers`: first paint, narrowing load redraws, root reload redraws, panel toggle |
-| `geoengine_controller.test.js` | 78 | Controller chassis with the renderer stubbed: root class, search bar, mobile toggler |
+| `geoengine_view_e2e.test.js` | 172 | Real OpenLayers and the real renderer against a mocked `get_layers`: first paint, narrowing load redraws, root reload redraws, panel toggle |
+| `geoengine_controller.test.js` | 61 | Controller chassis with the renderer stubbed: root class, search bar, mobile toggler |
 
 ### Static (`static/src/`) -- JS Architecture
 
@@ -141,23 +141,23 @@ test_geoengine module, which declares those models.
 | `geoengine/geoengine_view.js` | 70 | View registration (`geoengine` type) |
 | `geoengine/geoengine_arch_parser.js` | 173 | XML arch parser (fields, geometry fields, webgl_trail config) |
 | `geoengine/classification.js` | 196 | The choropleth classification contract: one lookup, three modes |
-| `geoengine/geoengine_model.js` | 964 | Data model (record loading, spatial queries, trail data) |
-| `geoengine/layer_classifier.js` | 375 | Choropleth and proportional classification: population from the server, class bounds/colours/legend, size map, LRU cache keyed on config + data fingerprint |
+| `geoengine/geoengine_model.js` | 962 | Data model (record loading, spatial queries, trail data) |
+| `geoengine/layer_classifier.js` | 364 | Choropleth and proportional classification: population from the server, class bounds/colours/legend, size map, LRU cache keyed on config + data fingerprint |
 | `geoengine/geoengine_controller.js` | 330 | Controller (search, pager, action dispatch) |
-| `geoengine/geoengine_renderer.js` | 764 | Main renderer (OpenLayers map init, layer orchestration) |
+| `geoengine/geoengine_renderer.js` | 758 | Main renderer (OpenLayers map init, layer orchestration) |
 | `geoengine/geoengine_record.js` | 187 | Record popup/info_box rendering |
 | `geoengine/record_values.js` | 26 | Display-value / saved-value helpers shared by record and renderer |
 | **Renderer subsystems** | | |
 | `geoengine/renderer/geoengine_renderer_layers.js` | 265 | Layer creation (vector/raster), data loading |
-| `geoengine/renderer/raster_layers.js` | 315 | Background layers: OSM, XYZ, WMTS, tiled and single-image WMS, vector tiles, OSM fallback |
-| `geoengine/renderer/trail_layer.js` | 274 | The animated WebGL trail layer: XYM parts, timestamp interpolation, time style variable |
+| `geoengine/renderer/raster_layers.js` | 307 | Background layers: OSM, XYZ, WMTS, tiled and single-image WMS, vector tiles, OSM fallback |
+| `geoengine/renderer/trail_layer.js` | 269 | The animated WebGL trail layer: XYM parts, timestamp interpolation, time style variable |
 | `geoengine/renderer/geoengine_renderer_styling.js` | 430 | Feature styling (basic, proportional, colored, color-from-field, heatmap, cluster) |
-| `geoengine/renderer/geoengine_renderer_interactions.js` | 1,230 | Map interactions (select, draw, modify) |
+| `geoengine/renderer/geoengine_renderer_interactions.js` | 1,223 | Map interactions (select, draw, modify) |
 | `geoengine/renderer/geoengine_renderer_trails.js` | 263 | Live position trails, stored and drawn per model |
-| `geoengine/renderer/geoengine_renderer_utils.js` | 207 | Utility functions (coordinate transform, geometry helpers) |
-| `geoengine/renderer/geoengine_map_tools.js` | 451 | Measure, locate, box-select, snap, export-PNG map tools |
-| `geoengine/renderer/render_strategies.js` | 577 | WebGL/Canvas render strategy selection |
-| `geoengine/renderer/webgl_style_converter.js` | 244 | Converts OL styles to WebGL flat styles |
+| `geoengine/renderer/geoengine_renderer_utils.js` | 204 | Utility functions (coordinate transform, geometry helpers) |
+| `geoengine/renderer/geoengine_map_tools.js` | 448 | Measure, locate, box-select, snap, export-PNG map tools |
+| `geoengine/renderer/render_strategies.js` | 560 | WebGL/Canvas render strategy selection |
+| `geoengine/renderer/webgl_style_converter.js` | 242 | Converts OL styles to WebGL flat styles |
 | **Panels** | | |
 | `geoengine/panels/features_list.js` | 221 | Feature list sidebar panel |
 | `geoengine/panels/layers_panel.js` | 404 | Layer toggle/opacity panel |
@@ -168,10 +168,10 @@ test_geoengine module, which declares those models.
 | `domain/geo_virtual_operators.js` | 51 | Virtual operator definitions for UI |
 | `domain_selector/domain_field.js` | 42 | Domain field extension for geo types |
 | **Fields** | | |
-| `fields/geo_form_field.js` | 46 | Geo field form widget (the eager, always-loaded part) |
+| `fields/geo_form_field.js` | 44 | Geo field form widget (the eager, always-loaded part) |
 | **Services** | | |
 | **Libs / debug** | | |
-| `lib/geo_libs.js` | 108 | Dynamic `import()` of ol/chroma-js/geostats, one deduped promise per session |
+| `lib/geo_libs.js` | 107 | Dynamic `import()` of ol/chroma-js/geostats, one deduped promise per session |
 | `geo_debug.js` | 24 | Console debug helpers |
 
 domain_selector/domain_selector_geo_field_dialog.js (previously documented

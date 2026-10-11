@@ -25,10 +25,8 @@ test("changeQuantity", async () => {
     const comp = await mountWithCleanup(CartPage, {});
 
     expect(order.lines).toHaveLength(2);
-    // decrease the qty of line by 1
     comp.changeQuantity(line, false);
     expect(line.qty).toBe(1);
-    // decrease the qty of line again, should trigger removeLine
     comp.changeQuantity(line, false);
     expect(order.lines).toHaveLength(1);
 });
@@ -116,7 +114,6 @@ test("getPrice", async () => {
     expect(comp.getPrice(line1)).toBe(345);
     expect(comp.getPrice(line2)).toBe(250);
 
-    // For combo parent line
     const parentLine = await addComboProduct(store);
     expect(comp.getPrice(parentLine)).toBe(2125);
 });

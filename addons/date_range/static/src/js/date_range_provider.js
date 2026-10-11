@@ -57,10 +57,6 @@ function toDate(value, fieldType) {
     if (fieldType === "date") {
         return value;
     }
-    // Through the timezone, not by slicing the first ten characters: a bound is
-    // stored in UTC, and the last instant of a day is the *next* UTC date for
-    // any user east of Greenwich. `deserializeDateTime` brings it back to the
-    // user's timezone first, which is where the day boundary was drawn.
     return serializeDate(deserializeDateTime(value));
 }
 
@@ -82,8 +78,6 @@ inRangeProviderRegistry.add("date_range", {
         return ranges.map((range) => ({
             id: optionId(range.id),
             label: range.name,
-            // type_id is a [id, display_name] pair; the display name is what
-            // the user configured the type as, so it is the group heading.
             group: range.type_id ? range.type_id[1] : undefined,
         }));
     },

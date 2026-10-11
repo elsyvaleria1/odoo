@@ -1,11 +1,4 @@
 /** @odoo-module native */
-/**
- * JS half of the cross-runtime parser conformance suite.
- *
- * Shares its golden vectors with `barcodes/tests/test_barcode_conformance.py`
- * so the Python and JS parsers cannot drift apart again. Add a case to
- * `conformance_vectors.json`, not here.
- */
 
 import { VECTORS as vectors } from "@barcodes/../tests/conformance_vectors";
 import { BarcodeParser } from "@barcodes/js/barcode_parser";

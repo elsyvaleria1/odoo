@@ -139,13 +139,11 @@ describe("toNormalizedPivotValue", () => {
             expect(() => toNormalizedPivotValue(dimension, "won")).toThrow();
 
             dimension.granularity = "quarter";
-            // special quarter syntax:
             expect(toNormalizedPivotValue(dimension, "1/2020")).toBe("1/2020");
             expect(toNormalizedPivotValue(dimension, "2/2020")).toBe("2/2020");
             expect(toNormalizedPivotValue(dimension, "3/2020")).toBe("3/2020");
             expect(toNormalizedPivotValue(dimension, "4/2020")).toBe("4/2020");
 
-            // falls back on regular date parsing:
             expect(toNormalizedPivotValue(dimension, "5/2020")).toBe("2/2020");
             expect(toNormalizedPivotValue(dimension, "01/01/2020")).toBe("1/2020");
             expect(
@@ -196,8 +194,8 @@ describe("toNormalizedPivotValue", () => {
                 name: "my_field_name",
             };
             expect(toNormalizedPivotValue(dimension, "2020")).toBe(2020);
-            expect(toNormalizedPivotValue(dimension, "01/11/2020")).toBe(43841); // a date is actually a number in a spreadsheet
-            expect(toNormalizedPivotValue(dimension, "11/2020")).toBe(44136); // 1st of november 2020
+            expect(toNormalizedPivotValue(dimension, "01/11/2020")).toBe(43841);
+            expect(toNormalizedPivotValue(dimension, "11/2020")).toBe(44136);
             expect(toNormalizedPivotValue(dimension, "1")).toBe(1);
             expect(toNormalizedPivotValue(dimension, 1)).toBe(1);
             expect(toNormalizedPivotValue(dimension, "false")).toBe(false);

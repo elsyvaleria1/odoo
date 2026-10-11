@@ -106,10 +106,8 @@ export class AnalyticDistribution extends Component {
             false;
     }
 
-    // Lifecycle
     async willStart() {
         if (this.editingRecord) {
-            // for performance in list views, plans are not retrieved until they are required.
             await this.fetchAllPlans(this.props);
         }
         await this.jsonToData(this.props.record.data[this.props.name]);
@@ -120,10 +118,6 @@ export class AnalyticDistribution extends Component {
     }
 
     async willUpdateRecord(record) {
-        // Unless force_applicability, Plans need to be retrieved again as the product or account might have changed
-        // and thus different applicabilities apply
-        // or a model applies that contains unavailable plans
-        // This should only execute when these fields have changed, therefore we use the `_field` props.
         const valueChanged =
             JSON.stringify(this.currentValue) !==
             JSON.stringify(record.data[this.props.name]);
@@ -286,15 +280,12 @@ export class AnalyticDistribution extends Component {
             if (accountIds === "__update__") {
                 continue;
             }
-            const defaultVals = this.plansToArray(); // empty if the popup was not opened
+            const defaultVals = this.plansToArray();
             const ids = accountIds.split(",");
 
             for (const id of ids) {
                 const account = analyticAccountDict[parseInt(id)];
                 if (account) {
-                    // since tags are displayed even though plans might not be retrieved (ie defaultVals is empty)
-                    // push the accounts anyway, as order doesn't matter
-                    // once the popup is opened, plans are fetched and the analyticAccounts list will be ordered
                     Object.assign(
                         defaultVals.find(
                             (plan) => plan.planId === account.root_plan_id[0],
@@ -320,7 +311,6 @@ export class AnalyticDistribution extends Component {
         }
         this.state.formattedData = distribution;
         if (accountNotFound) {
-            // Analytic accounts in the json were not found, save the json without them
             await this.save();
         }
     }
@@ -335,7 +325,6 @@ export class AnalyticDistribution extends Component {
         };
         const recordFields = {};
         const values = {};
-        // Analytic Account fields
         line.analyticAccounts.map((account) => {
             const fieldName = this.planIdToColumn[account.planId];
             const companyId =
@@ -364,7 +353,6 @@ export class AnalyticDistribution extends Component {
                 ? [account.accountId, account.accountDisplayName]
                 : false;
         });
-        // Percentage field
         recordFields["percentage"] = {
             string: _t("Percentage"),
             type: "percentage",
@@ -372,7 +360,6 @@ export class AnalyticDistribution extends Component {
             ...this.decimalPrecision,
         };
         values["percentage"] = line.percentage;
-        // Value field copied from original
         if (this.props.amount_field) {
             const { string, name, type, currency_field } =
                 this.props.record.fields[this.props.amount_field];
@@ -384,7 +371,6 @@ export class AnalyticDistribution extends Component {
                 cellClass: "numeric_column_width",
             };
             values[name] = this.props.record.data[name] * values["percentage"];
-            // Currency field
             if (currency_field) {
                 const { string, name, type, relation } =
                     this.props.record.fields[currency_field];
@@ -422,7 +408,6 @@ export class AnalyticDistribution extends Component {
         return this.accountCount(line) && line.percentage;
     }
 
-    // ORM
     fetchPlansArgs({ record }) {
         const args = {};
         if (this.props.business_domain_compute) {
@@ -491,9 +476,7 @@ export class AnalyticDistribution extends Component {
         );
     }
 
-    // Editing Distributions
     async lineChanged(record, changes, line) {
-        // record analytic account changes to the state
         for (const account of line.analyticAccounts) {
             const selected = record.data[this.planIdToColumn[account.planId]];
             account.accountId = selected.id;
@@ -501,7 +484,6 @@ export class AnalyticDistribution extends Component {
             account.accountColor = account.planColor;
             account.accountRootPlanId = account.planId;
         }
-        // record percentage or value changes
         if (changes.percentage !== line.percentage) {
             roundDecimals(
                 (line.percentage = record.data.percentage),
@@ -519,7 +501,6 @@ export class AnalyticDistribution extends Component {
         }
     }
 
-    // Getters
     get valueColumnEnabled() {
         return Boolean(
             this.props.amount_field && this.props.record.data[this.props.amount_field],
@@ -545,7 +526,6 @@ export class AnalyticDistribution extends Component {
         return this.state.showDropdown && !!this.dropdownRef.el;
     }
 
-    // actions
     addLine() {
         let maxMandatory = 0,
             maxOptional = 0,
@@ -637,7 +617,6 @@ export class AnalyticDistribution extends Component {
     }
 
     forceCloseEditor() {
-        // focus to the main Element but the dropdown should not open
         this.preventOpen = true;
         this.closeAnalyticEditor();
         this.mainRef.el.focus();
@@ -666,7 +645,6 @@ export class AnalyticDistribution extends Component {
 
     async tagClicked(ev) {
         if (this.editingRecord && !this.isDropdownOpen) {
-            // TODO: focus is not working when tag is clicked while on an editable line
             await this.openAnalyticEditor();
         }
         if (this.isDropdownOpen) {
@@ -676,7 +654,6 @@ export class AnalyticDistribution extends Component {
         }
     }
 
-    // Focus
     onMainElementFocus(ev) {
         if (!this.isDropdownOpen && !this.preventOpen) {
             this.openAnalyticEditor();
@@ -734,7 +711,6 @@ export class AnalyticDistribution extends Component {
         }
     }
 
-    // Keys and Clicks
     async onWidgetKeydown(ev) {
         if (!this.editingRecord) {
             return;
@@ -790,16 +766,6 @@ export class AnalyticDistribution extends Component {
     }
 
     onWindowClick(ev) {
-        /*
-        Dropdown should be closed only if all these conditions are true:
-            - dropdown is open
-            - click is outside widget element (widgetRef)
-            - click is not inside a popover (search modal's search bar menu) nor
-              inside a modal that is not an action dialog (search more modal),
-              unless that modal is the one containing the widget itself
-            - click is not targeting document dom element (drag and drop search more modal)
-        */
-
         const selectors = [
             ".o_popover",
             ".modal:not(.o_inactive_modal):not(:has(.o_act_window))",
@@ -818,7 +784,6 @@ export class AnalyticDistribution extends Component {
     }
 
     onWindowResized() {
-        // popup ui is ugly when window is resized, so close it
         if (this.isDropdownOpen && !isMobileOS()) {
             this.forceCloseEditor();
         }

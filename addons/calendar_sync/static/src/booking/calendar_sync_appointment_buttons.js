@@ -4,7 +4,6 @@ import { Component, useProps } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { standardWidgetProps } from "@web/views/widgets";
 
-/** A button per provider a staff member may connect their calendar to. */
 export class CalendarSyncAppointmentButtons extends Component {
     static components = { AppointmentSyncButton };
     static props = { ...standardWidgetProps };

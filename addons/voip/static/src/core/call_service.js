@@ -87,8 +87,6 @@ export class CallService {
             ),
         );
         call.timer = {};
-        // Use the time from the client (rather than call.start_date) to avoid
-        // clock skew with the server.
         const timerStart = now().epochMilliseconds;
         const computeDuration = () => {
             call.timer.time = Math.floor((now().epochMilliseconds - timerStart) / 1000);

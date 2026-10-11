@@ -93,7 +93,7 @@ describe("setQuantityFromSOL", () => {
         const order = await getFilledOrder(store);
         const line = order.lines[0];
         line.product_id.type = "service";
-        line.sale_order_origin_id = { state: "done" }; // confirmed, not draft
+        line.sale_order_origin_id = { state: "done" };
 
         const saleOrderLine = { qty_to_invoice: 2 };
 
@@ -114,7 +114,7 @@ describe("setQuantityFromSOL", () => {
         };
 
         await line.setQuantityFromSOL(saleOrderLine);
-        expect(line.qty).toBe(6); // 8 - max(1,2)
+        expect(line.qty).toBe(6);
     });
 
     test("non-service product → a draft invoice claims its quantity", async () => {
@@ -131,6 +131,6 @@ describe("setQuantityFromSOL", () => {
         };
 
         await line.setQuantityFromSOL(saleOrderLine);
-        expect(line.qty).toBe(3); // 8 - max(1, 2 + 3)
+        expect(line.qty).toBe(3);
     });
 });

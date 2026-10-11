@@ -202,7 +202,7 @@ test("Cannot open see records on the empty PIVOT cell below the main cell", asyn
     const { env, model } = await createSpreadsheetWithPivot();
     model.dispatch("CREATE_SHEET", { sheetId: "42" });
     setCellContent(model, "A1", `=PIVOT("1")`, "42");
-    selectCell(model, "A2", "42"); // A2 is always empty. It's the cell next to measure headers.
+    selectCell(model, "A2", "42");
     const action = await getActionMenu(cellMenuRegistry, ["pivot_see_records"], env);
     expect(action.isVisible(env)).toBe(false);
 });
@@ -220,20 +220,14 @@ test("Can see records on PIVOT cells", async function () {
     const firstSheetId = model.getters.getActiveSheetId();
 
     async function checkCells(cells) {
-        // Let's check that clicking on a cell opens the same action on the first sheet
-        // where the pivot is made of individual regular pivot formulas and on the second
-        // sheet where the pivot is made of a single PIVOT formula.
         for (const [xc, formula] of Object.entries(cells)) {
-            // let's check the cell formula is what we expect
             expect(getCell(model, xc, firstSheetId)?.content).toBe(formula, {
                 message: `${xc} on the first sheet is ${formula}`,
             });
 
-            // action on the first sheet, on regular pivot formula
             selectCell(model, xc, firstSheetId);
             await doMenuAction(cellMenuRegistry, ["pivot_see_records"], env);
 
-            // action on the second sheet, on PIVOT
             selectCell(model, xc, "42");
             await doMenuAction(cellMenuRegistry, ["pivot_see_records"], env);
 
@@ -255,33 +249,21 @@ test("Can see records on PIVOT cells", async function () {
     model.dispatch("CREATE_SHEET", { sheetId: "42" });
     setCellContent(model, "A1", `=PIVOT("1")`, "42");
 
-    // here is what the cells look like
     const header_cells = {
-        // B1 is a column header
         B1: '=PIVOT.HEADER(1,"foo",1)',
-        // B2 is a measure header
         B2: '=PIVOT.HEADER(1,"foo",1,"measure","probability:avg")',
-        // A3 is a row header
         A3: '=PIVOT.HEADER(1,"bar",FALSE)',
-        // A5 is a total header
         A5: "=PIVOT.HEADER(1)",
     };
     const data_cells = {
-        // B3 is an empty value
         B3: '=PIVOT.VALUE(1,"probability:avg","bar",FALSE,"foo",1)',
-        // B4 is an non-empty value
         B4: '=PIVOT.VALUE(1,"probability:avg","bar",TRUE,"foo",1)',
-        // B5 is a column group total value
         B5: '=PIVOT.VALUE(1,"probability:avg","foo",1)',
-        // F3 is a row group total value
         F3: '=PIVOT.VALUE(1,"probability:avg","bar",FALSE)',
-        // F5 is the total
         F5: '=PIVOT.VALUE(1,"probability:avg")',
     };
     await checkCells({ ...header_cells, ...data_cells });
 
-    // same but without the column headers
-    // set the function in A3 such as the data cells matches the ones in the first sheet
     setCellContent(model, "A3", `=PIVOT("1",,,FALSE,,FALSE)`, "42");
     await checkCells(data_cells);
 });
@@ -360,7 +342,7 @@ test("Cannot see records of out of range positional pivot formula with calculate
 test("See records is not visible if the pivot is not loaded, even if the cell has a value", async function () {
     let deferred = undefined;
     const { env, model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -416,7 +398,7 @@ test("See records with custom pivot groups", async function () {
     });
     await waitForDataLoaded(model);
 
-    selectCell(model, "B1"); // "Group1" group column header
+    selectCell(model, "B1");
     await doMenuAction(cellMenuRegistry, ["pivot_see_records"], env);
     expect.verifySteps(["doAction"]);
     expect(doActionReceivedDomain).toEqual([
@@ -425,7 +407,7 @@ test("See records with custom pivot groups", async function () {
         ["product_id", "=", 41],
     ]);
 
-    selectCell(model, "B2"); // "Probability" measure header
+    selectCell(model, "B2");
     await doMenuAction(cellMenuRegistry, ["pivot_see_records"], env);
     expect.verifySteps(["doAction"]);
     expect(doActionReceivedDomain).toEqual([
@@ -434,7 +416,7 @@ test("See records with custom pivot groups", async function () {
         ["product_id", "=", 41],
     ]);
 
-    selectCell(model, "B4"); // Pivot value for "Group1" group and bar = true
+    selectCell(model, "B4");
     await doMenuAction(cellMenuRegistry, ["pivot_see_records"], env);
     expect.verifySteps(["doAction"]);
     expect(doActionReceivedDomain).toEqual([
@@ -447,12 +429,12 @@ test("See records with custom pivot groups", async function () {
         ["bar", "=", true],
     ]);
 
-    selectCell(model, "C1"); // "Others" group column header
+    selectCell(model, "C1");
     await doMenuAction(cellMenuRegistry, ["pivot_see_records"], env);
     expect.verifySteps(["doAction"]);
     expect(doActionReceivedDomain).toEqual([["product_id", "=", 200]]);
 
-    selectCell(model, "C3"); // Pivot value for "Others" group and bar = false
+    selectCell(model, "C3");
     await doMenuAction(cellMenuRegistry, ["pivot_see_records"], env);
     expect.verifySteps(["doAction"]);
     expect(doActionReceivedDomain).toEqual([

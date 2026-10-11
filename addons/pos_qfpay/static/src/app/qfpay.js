@@ -35,7 +35,6 @@ export class QFPay {
             const response = await result.json();
 
             if (response.respcd !== "6000") {
-                // Don't show error message when a request is canceled from the terminal
                 if (response.respcd !== "6001") {
                     this.errorCallback(
                         new QFPayError(

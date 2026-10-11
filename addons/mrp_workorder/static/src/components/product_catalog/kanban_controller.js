@@ -11,8 +11,6 @@ patch(ProductCatalogKanbanController.prototype, {
     setup() {
         super.setup();
         this.catalogKanbanUpdates = [];
-        // The `onCatalogUpdated` props provides a callback to be called
-        // once all the catalogKanbanUpdates have been resolved
         if (this.props.onCatalogUpdated) {
             onWillDestroy(async () => {
                 Promise.all(this.catalogKanbanUpdates).then(() => {
@@ -23,7 +21,7 @@ patch(ProductCatalogKanbanController.prototype, {
     },
 
     get canCreate() {
-        return !this.props.context.from_shop_floor; // Hide the "Back to Production" button if we are in the shop floor.
+        return !this.props.context.from_shop_floor;
     },
 
     pushCatalogKanbanUpdate(update) {

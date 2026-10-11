@@ -19,9 +19,6 @@ export class IoTLongpolling {
         this.setup(...arguments);
     }
 
-    /**
-     * Setup in addition to constructor to allow patching
-     */
     setup({ notification, orm }) {
         this._session_id = uuid();
         this._delayedStartPolling(this.rpcDelay);
@@ -123,7 +120,6 @@ export class IoTLongpolling {
                 message.status === "success" ||
                 message.status?.status === "connected"
             ) {
-                // 'connected' is the serial driver success status
                 onSuccess(message, iotDeviceIdentifier, requestId);
             } else {
                 onFailure(message, iotDeviceIdentifier, requestId);
@@ -195,7 +191,6 @@ export class IoTLongpolling {
     }
 
     _delayedStartPolling(delay) {
-        // ``fallback: true`` to avoid error notification on longpolling setup
         setTimeout(() => this.startPolling(null, true), delay);
     }
 
@@ -250,7 +245,6 @@ export class IoTLongpolling {
     _poll(iot_ip, fallback = true) {
         const listener = this._listeners[iot_ip];
 
-        // The backend has a maximum cycle time of 50 seconds so give +10 seconds
         this._rpcIoT(
             iot_ip,
             this.pollRoute,
@@ -261,8 +255,6 @@ export class IoTLongpolling {
             (result) => {
                 this._retries = 0;
                 if (!this._listeners[iot_ip]) {
-                    // The listener was removed (all its devices unregistered) while this
-                    // request was in flight; nothing left to update or re-poll for.
                     return;
                 }
                 this._listeners[iot_ip].abortController = null;
@@ -272,8 +264,6 @@ export class IoTLongpolling {
                     }
                 }
                 if (!this._listeners[iot_ip]) {
-                    // The listener's own callback removed it (e.g. the last device for
-                    // this iot_ip unregistered itself) while handling _onSuccess above.
                     return;
                 }
                 const remainingDevices = Object.keys(

@@ -19,7 +19,7 @@ export class QualityCheckSpreadsheetAction extends QualitySpreadsheetTemplateAct
         this.qualityCheckId = this.params.check_id;
         this.props.updateActionState({ check_id: this.qualityCheckId });
         provideSpreadsheetEnv({
-            makeCopy: false, // disable copy
+            makeCopy: false,
         });
     }
 
@@ -28,7 +28,6 @@ export class QualityCheckSpreadsheetAction extends QualitySpreadsheetTemplateAct
             ? (this.params.pass_action ?? "do_pass")
             : (this.params.fail_action ?? "do_fail");
         if (this.qualityCheckWizardId) {
-            // we are part of the quality check wizard flow
             this.writeToQualityCheckWizard(method);
         } else {
             const action = await this.orm.call(
@@ -67,7 +66,6 @@ export class QualityCheckSpreadsheetAction extends QualitySpreadsheetTemplateAct
     isCheckPassed() {
         const resultPosition = this.model.getters.getQualityCheckResultPosition();
         if (!resultPosition) {
-            // there's no condition, let it pass
             return true;
         }
         const evaluatedCell = this.model.getters.getEvaluatedCell(resultPosition);

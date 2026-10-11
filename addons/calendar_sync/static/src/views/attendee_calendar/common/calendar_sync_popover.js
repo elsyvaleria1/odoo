@@ -4,7 +4,6 @@ import { patch } from "@web/core/utils/patch";
 
 patch(AttendeeCalendarCommonPopover.prototype, {
     get isEventArchivable() {
-        // an external calendar holds the event: archiving it deletes it there
         return (
             super.isEventArchivable ||
             (this.isCurrentUserOrganizer &&

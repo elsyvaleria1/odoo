@@ -14,11 +14,9 @@ registry.category("web_tour.tours").add("PosResTicketScreenTour", {
         [
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
-            // New Ticket button should not be in the ticket screen if no table is selected.
             Chrome.clickOrders(),
             Chrome.clickPlanButton(),
 
-            // Make sure that order is deleted properly.
             FloorScreen.clickTable("5"),
             ProductScreen.addOrderline("Minute Maid", "1", "3"),
             ProductScreen.totalAmountIs("3.0"),

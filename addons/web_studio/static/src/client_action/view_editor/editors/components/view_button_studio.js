@@ -10,11 +10,6 @@ import {
 } from "@web_studio/client_action/view_editor/editors/utils";
 import { useCurrentViewEditorModel } from "@web_studio/client_action/view_editor/view_editor_model_context";
 
-/*
- * ViewButton:
- * - Deals with invisible
- * - Click is overriden not to trigger the bound action
- */
 export class ViewButtonStudio extends ViewButton {
     static template = "web_studio.ViewButton";
     static props = {

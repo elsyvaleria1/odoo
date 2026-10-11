@@ -87,9 +87,6 @@ export class DomainField extends FieldComponent {
             }
             const props = this.props;
             if (urgent) {
-                // the page is leaving: an awaited validation RPC would outlive the
-                // unload and drop both the beacon and the unsaved-changes prompt;
-                // the server validates the domain when it saves it
                 const domain = this.debugDomain;
                 log.logic("debug domain flushed urgently", () => ({
                     name: props.name,

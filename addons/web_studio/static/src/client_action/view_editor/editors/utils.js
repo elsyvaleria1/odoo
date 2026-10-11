@@ -18,10 +18,6 @@ export function getActiveHook(el) {
     return el.querySelector(".o_web_studio_nearest_hook");
 }
 
-// A naive function that determines if the toXpath on which we dropped
-// our object is actually the same as the fromXpath of the element we dropped.
-// Naive because it won't evaluate xpath, just guess whether they are equivalent
-// under precise conditions.
 export function isToXpathEquivalentFromXpath(position, toXpath, fromXpath) {
     if (toXpath === fromXpath) {
         return true;
@@ -29,7 +25,6 @@ export function isToXpathEquivalentFromXpath(position, toXpath, fromXpath) {
     const toParts = toXpath.split("/");
     const fromParts = fromXpath.split("/");
 
-    // Are the paths at least in the same parent node ?
     if (toParts.slice(0, -1).join("/") !== fromParts.slice(0, -1).join("/")) {
         return false;
     }
@@ -38,12 +33,10 @@ export function isToXpathEquivalentFromXpath(position, toXpath, fromXpath) {
     const toMatch = toParts[toParts.length - 1].match(nodeIdxRegExp);
     const fromMatch = fromParts[fromParts.length - 1].match(nodeIdxRegExp);
 
-    // Are the paths comparable in terms of their node tag ?
     if (fromMatch[1] !== toMatch[1]) {
         return false;
     }
 
-    // Is the position actually referring to the same place ?
     if (
         position === "after" &&
         parseInt(toMatch[3] || 1) + 1 === parseInt(fromMatch[3] || 1)
@@ -65,7 +58,6 @@ export function randomName(baseName) {
     return `${baseName}_${random}`;
 }
 
-// A standardized method to determine if a component is visible
 export function studioIsVisible(props) {
     return props.studioIsVisible !== undefined ? props.studioIsVisible : true;
 }
@@ -146,19 +138,15 @@ export function getWowlFieldWidgets(
     const widgets = [];
     for (const [widgetKey, Component] of wowlFieldRegistry.getEntries()) {
         if (widgetKey !== currentKey) {
-            // always show the current widget
-            // Widget dosn't explicitly supports the field's type
             if (
                 !Component.supportedTypes ||
                 !Component.supportedTypes.includes(fieldType)
             ) {
                 continue;
             }
-            // Widget is view-specific or is blacklisted
             if (widgetKey.includes(".") || blacklistedKeys.includes(widgetKey)) {
                 continue;
             }
-            // Widget is not whitelisted
             if (!debug && !SIDEBAR_SAFE_FIELDS.includes(widgetKey)) {
                 continue;
             }
@@ -169,8 +157,6 @@ export function getWowlFieldWidgets(
 }
 
 export function xpathToLegacyXpathInfo(xpath) {
-    // eg: /form[1]/field[3]
-    // RegExp notice: group 1 : form ; group 2: [1], group 3: 1
     const xpathInfo = [];
     const matches = xpath.matchAll(/\/?(\w+|\*)(\[(\d+)\])?/g);
     for (const m of matches) {

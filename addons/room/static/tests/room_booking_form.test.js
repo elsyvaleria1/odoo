@@ -158,7 +158,6 @@ test("Room Booking Form - Existing bookings", async () => {
         bookedSlots: ["1100", "1130", "1200", "1500", "1530"],
         freeSlots: ["1035", "1230"],
     });
-    // There should be only 5 booked slots
     expect(".col > .bg-secondary").toHaveCount(5);
     await contains(slotSel("1100")).click();
     expect(".col > .bg-secondary").toHaveCount(5);
@@ -298,10 +297,8 @@ test("Room Booking Form - Edit Current Booking", async () => {
     await contains(".o_room_sidebar .list-group-item:first-child").click();
     expect(`${slotSel("1435")} > .text-bg-primary`).toHaveCount(1);
 
-    // Extend the meeting
     await contains(slotSel("1600")).click();
     await contains("input[placeholder='Booking Name']").edit("Extended Booking");
-    // The start is the current slot, but it should not be considered as a new start
     await contains(".o_room_scheduler > div:last-child .btn-primary").click();
     expect(".fa-calendar-xmark.fa-3x").toHaveCount(1);
 });

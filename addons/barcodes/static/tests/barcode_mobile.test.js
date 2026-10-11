@@ -37,7 +37,6 @@ test("barcode field automatically focus behavior", async () => {
     expect.assertions(10);
     await mountWithCleanup(Root);
 
-    // Some elements doesn't need to keep the focus
     await click(document.body);
     await keyDown("a");
     expect(getActiveElement()).toHaveProperty("name", "barcode", {
@@ -51,8 +50,6 @@ test("barcode field automatically focus behavior", async () => {
         message: "hidden barcode input should have the focus",
     });
 
-    // Those elements absolutely need to keep the focus:
-    // inputs elements:
     const keepFocusedElements = [
         "email",
         "number",
@@ -69,12 +66,10 @@ test("barcode field automatically focus behavior", async () => {
             message: `input ${keepFocusedElements[i]} should keep focus`,
         });
     }
-    // textarea element
     element = queryFirst(`textarea`);
     await click(element);
     await keyDown("d");
     expect(`textarea`).toBeFocused({ message: "textarea should keep focus" });
-    // contenteditable elements
     element = queryFirst(`[contenteditable=true]`);
     await click(element);
     await keyDown("e");

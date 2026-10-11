@@ -166,8 +166,6 @@ export function useDependencyDefinition(id, item, { onReady } = {}) {
     }
     onMounted(() => (mounted = true));
     onWillDestroy(() => {
-        // a component created by a render that is then restarted is destroyed
-        // unmounted: telling the dependents would restart that render again
         builderContext.dependencyManager.removeByValue(item, { silent: !mounted });
     });
 }
@@ -212,13 +210,6 @@ function useIsActiveItem() {
     };
     const state = useDomState(getState);
     const isMounted = useIsMounted();
-    // before the mount, a dependency only fills in a value the render has not
-    // seen yet (the children that register it are created by that render):
-    // letting it change a known value again restarts the render that
-    // re-creates the child whose registration changes it back
-    // once mounted, the registrations a render in flight makes and drops (its
-    // children created, then destroyed by a restart) settle before the value
-    // is published: written as they happen, they restart that very render
     const publish = batched(
         () => Object.assign(state, getState()),
         () => new Promise((resolve) => browser.requestAnimationFrame(resolve)),
@@ -273,9 +264,6 @@ export function useGetItemValue() {
     };
     const state = useDomState(getState);
     const isMounted = useIsMounted();
-    // as for isActiveItem: before the mount a value is only filled in once;
-    // after it, only a changed value re-renders (values are often fresh
-    // objects), or each registration restarts the render that makes the next
     const listener = () => {
         const mounted = isMounted();
         for (const [itemId, value] of Object.entries(getState())) {
@@ -465,7 +453,6 @@ function usePrepareAction(getAllActions) {
         });
         onWillUpdateProps(async ({ actionParam, actionValue }) => {
             ({ promise: onReady, resolve } = Promise.withResolvers());
-            // TODO: should we support updating actionId?
             await Promise.all(
                 asyncActions.map((obj) =>
                     obj.action.prepare({
@@ -554,8 +541,6 @@ export function revertPreview(editor) {
     if (editor.isDestroyed) {
         return;
     }
-    // The `next` will cancel the previous operation, which will revert
-    // the operation in case of a preview.
     return editor.shared.operation.next();
 }
 
@@ -603,7 +588,6 @@ export function useClickableBuilderComponent() {
             }
         },
         preview: () => {
-            // Avoid previewing the same option twice.
             if (preventNextPreview) {
                 return;
             }
@@ -776,8 +760,6 @@ function getValueWithDefault(userInputValue, defaultValue, formatRawValue) {
  * @throws {Error} If editingElement is not an outdated snippet
  */
 function handleBuilderActionError(error, editingElement, comp) {
-    // Check if editingElement belongs to an outdated snippet, and displays a
-    // warning notification if yes.
     const isOutdated =
         comp.builderContext.editor.shared.versionError.checkNotifyOutdatedSnippet(
             editingElement,
@@ -834,7 +816,6 @@ export function useInputBuilderComponent({
     const operationWithReload = useOperationWithReload(callApply, reload);
     function getState(editingElement) {
         if (!isConnectedElement(editingElement)) {
-            // TODO try to remove it. We need to move hook in BuilderComponent
             return {};
         }
         const actionWithGetValue = getAllActions().find(({ actionId }) =>
@@ -883,9 +864,6 @@ export function useInputBuilderComponent({
         ) {
             state.value = rawValue;
         }
-        // If the parsed value is not equivalent to the user input, we want to
-        // normalize the displayed value. It is useful in cases of invalid
-        // input and allows to fall back to the output of parseDisplayValue.
         return rawValue !== undefined ? formatRawValue(rawValue) : "";
     }
 
@@ -970,10 +948,6 @@ export function useInputDebouncedCommit(comp, ref) {
         const normalizedDisplayValue = comp.commit(ref.el.value);
         ref.el.value = normalizedDisplayValue;
     }, 550);
-    // ↑ 500 is the delay when holding keydown between the 1st and 2nd event
-    // fired. Some additional delay by the browser may add another ~5-10ms.
-    // We debounce above that threshold to keep a single history step when
-    // holding up/down on a number or range input.
 }
 
 export const basicContainerBuilderComponentProps = {
@@ -1020,8 +994,6 @@ export function getAllActionsAndOperations(comp) {
         const specs = [];
         for (let { actionId, actionParam, actionValue } of actions) {
             const action = getAction(actionId);
-            // Take the action value defined by the clickable or the input given
-            // by the user.
             actionValue = actionValue === undefined ? userInputValue : actionValue;
             for (const editingElement of comp.builderContext.getEditingElements()) {
                 const spec = {
@@ -1031,8 +1003,6 @@ export function getAllActionsAndOperations(comp) {
                     actionValue,
                     action,
                 };
-                // TODO Since the action is now in the spec, this shouldn't be
-                // necessary anymore.
                 for (const method of overridableMethods) {
                     if (!action.has || action.has(method)) {
                         spec[method] = action[method];
@@ -1088,7 +1058,6 @@ export function getAllActionsAndOperations(comp) {
                 .map(
                     (actionId) =>
                         comp.builderContext.dependencyManager
-                            // The dependency might not be loaded yet.
                             .get(actionId)
                             ?.getActions?.() || [],
                 )
@@ -1124,7 +1093,6 @@ export function getAllActionsAndOperations(comp) {
                                     !applySpec.loadOnClean &&
                                     _shouldClean(comp, hasClean, isApplied())
                                 ) {
-                                    // The element will be cleaned, do not load
                                     return;
                                 }
                                 const result = await applySpec.action.load({
@@ -1155,7 +1123,6 @@ export function getAllActionsAndOperations(comp) {
         }
         const areActionsActiveTabs = getAllActions().map((o) => {
             const { actionId, actionParam, actionValue } = o;
-            // TODO isApplied === first editing el or all ?
             const editingElement = editingElements[0];
             if (!isConnectedElement(editingElement)) {
                 return false;
@@ -1171,15 +1138,12 @@ export function getAllActionsAndOperations(comp) {
                 handleBuilderActionError(error, editingElement, comp);
             }
         });
-        // If there is no `isApplied` method for the widget return false
         if (areActionsActiveTabs.every((el) => el === undefined)) {
             return false;
         }
-        // If `isApplied` is explicitly false for an action return false
         if (areActionsActiveTabs.some((el) => el === false)) {
             return false;
         }
-        // `isApplied` is true for at least one action
         return true;
     }
     return {
@@ -1246,15 +1210,6 @@ export class BaseOptionComponent extends Component {
         const comp = this;
         const editor = comp.builderContext.editor;
 
-        // Give the class its OWN `components` before assigning into it.
-        // `components` is a static, so a subclass that declares none resolves
-        // to its base class's object: assigning in place published this
-        // editor's builder components onto the *base* class, where they
-        // outlived the editor that owned them and were then inherited by every
-        // later component and editor. Subclassing an option is routine (the
-        // builder tests do it constantly), and the stale, cross-editor entries
-        // made the base option fail to build and silently disappear from the
-        // sidebar in whatever ran next.
         if (!Object.hasOwn(comp.constructor, "components")) {
             comp.constructor.components = { ...comp.constructor.components };
         }

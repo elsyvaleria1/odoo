@@ -110,18 +110,13 @@ export class SurveyResult extends Interaction {
         );
     }
 
-    /**
-     * Call print dialog
-     */
     onPrintResultsClick() {
-        // For each paginator, save the current state and uncollapse the table.
         for (const paginatorEl of document.querySelectorAll(
             ".survey_table_with_pagination",
         )) {
             paginatorEl.dispatchEvent(new Event("save_state_and_show_all"));
         }
         window.print();
-        // Restore the original state of each paginator after the print.
         for (const paginatorEl of document.querySelectorAll(
             ".survey_table_with_pagination",
         )) {

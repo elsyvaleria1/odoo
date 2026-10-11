@@ -10,9 +10,6 @@ import { WithSearch } from "@web/search/with_search/with_search";
 import { cleanClickedElements } from "@web_studio/client_action/view_editor/editors/utils";
 import { useCurrentViewEditorModel } from "@web_studio/client_action/view_editor/view_editor_model_context";
 
-// an active node change updates the sidebar and the highlight once the DOM
-// is patched; it re-renders this component only, not the view: a view
-// render re-renders its slotted controller, which reloads its model
 class ActiveNodeEffect extends Component {
     static template = xml`<t t-if="false"/>`;
     static props = { getXpath: t.function(), onChange: t.function() };
@@ -37,7 +34,7 @@ export class StudioView extends Component {
         </div>
     `;
     static props = null;
-    props = useProps(this.constructor.props); // Same as View.js. This is just a wrapper
+    props = useProps(this.constructor.props);
     setup() {
         this.notification = useService("notification");
         this.style = this.props.setOverlay ? "pointer-events: none;" : "";

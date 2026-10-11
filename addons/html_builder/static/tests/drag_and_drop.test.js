@@ -44,9 +44,7 @@ test("Drag and drop basic test", async () => {
 });
 
 test("Can drop a snippet outside a dropzone in a rtl language", async () => {
-    // Simulate rtl
     patchWithCleanup(localization, { direction: "rtl" });
-    // Visual styling to run the test in debug.
     getFixture().style.setProperty("direction", "rtl");
     const dropzoneSelectors = {
         selector: "section",
@@ -58,7 +56,6 @@ test("Can drop a snippet outside a dropzone in a rtl language", async () => {
         ".o_snippets_container .o_snippet.o_draggable .o_snippet_thumbnail",
     ).drag();
     expect(":iframe .oe_drop_zone").toHaveCount(1);
-    // Move the snippet out of the sidebar, but not over a dropzone
     await moveTo(":iframe body", {
         position: { x: 500, y: 500 },
     });

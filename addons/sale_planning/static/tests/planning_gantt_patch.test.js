@@ -199,7 +199,6 @@ test("check default planned dates on the plan dialog", async function () {
 });
 
 test("Show shift form dialog only when shifts to plan", async function () {
-    // Additionally to 'Shift 1', we create a new unplanned shift 'Shift 2' which has a sale_line_id, no start_datetime and no end_datetime values
     PlanningSlot._records.push({
         id: 2,
         name: "Shift 2",

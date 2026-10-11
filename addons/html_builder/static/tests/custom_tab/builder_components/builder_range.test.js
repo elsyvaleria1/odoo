@@ -81,25 +81,19 @@ test("range input should step up or down with arrow keys", async () => {
 
     freezeTime();
 
-    // Test integer steps
     await contains(":iframe .test-integer-step").click();
-    // Simulate ArrowUp
     await contains(".options-container input").press("ArrowUp");
     await advanceTime(750);
     expect(":iframe .test-integer-step").toHaveInnerHTML("12");
-    // Simulate ArrowRight
     await contains(".options-container input").press("ArrowRight");
     await advanceTime(750);
     expect(":iframe .test-integer-step").toHaveInnerHTML("14");
-    // Simulate ArrowDown
     await contains(".options-container input").press("ArrowDown");
     await advanceTime(750);
     expect(":iframe .test-integer-step").toHaveInnerHTML("12");
-    // Simulate ArrowLeft
     await contains(".options-container input").press("ArrowLeft");
     await advanceTime(750);
     expect(":iframe .test-integer-step").toHaveInnerHTML("10");
-    // Verify steps
     expect.verifySteps([
         "customAction 12",
         "customAction 14",
@@ -107,25 +101,19 @@ test("range input should step up or down with arrow keys", async () => {
         "customAction 10",
     ]);
 
-    // Test fractional steps
     await contains(":iframe .test-fractional-step").click();
-    // Simulate ArrowUp
     await contains(".options-container input").press("ArrowUp");
     await advanceTime(750);
     expect(":iframe .test-fractional-step").toHaveInnerHTML("15");
-    // Simulate ArrowRight
     await contains(".options-container input").press("ArrowRight");
     await advanceTime(750);
     expect(":iframe .test-fractional-step").toHaveInnerHTML("15.15");
-    // Simulate ArrowDown
     await contains(".options-container input").press("ArrowDown");
     await advanceTime(750);
     expect(":iframe .test-fractional-step").toHaveInnerHTML("15");
-    // Simulate ArrowLeft
     await contains(".options-container input").press("ArrowLeft");
     await advanceTime(750);
     expect(":iframe .test-fractional-step").toHaveInnerHTML("14.85");
-    // Verify steps
     expect.verifySteps([
         "customAction 15",
         "customAction 15.15",
@@ -169,7 +157,6 @@ test("keeping an arrow key pressed should commit only once", async () => {
         <div class="test-options-target">10</div>
     `);
     await contains(":iframe .test-options-target").click();
-    // Simulate a long press on ArrowUp
     await contains(".options-container input").keyDown("ArrowUp");
     await advanceTime(500);
     await contains(".options-container input").keyDown("ArrowUp");

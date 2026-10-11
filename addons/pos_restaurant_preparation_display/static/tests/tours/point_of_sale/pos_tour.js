@@ -22,7 +22,6 @@ registry.category("web_tour.tours").add("PreparationDisplayTourResto", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Create first order
             FloorScreen.clickTable("5"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             ProductScreen.clickDisplayedProduct("Water"),
@@ -37,7 +36,6 @@ registry.category("web_tour.tours").add("PreparationDisplayTourResto", {
             ReceiptScreen.isShown(),
             ReceiptScreen.clickNextOrder(),
 
-            // Create second order
             FloorScreen.isShown(),
             FloorScreen.clickTable("4"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -51,7 +49,6 @@ registry.category("web_tour.tours").add("PreparationDisplayTourResto", {
             ReceiptScreen.isShown(),
             ReceiptScreen.clickNextOrder(),
 
-            // Create third order
             FloorScreen.isShown(),
             FloorScreen.clickTable("4"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -115,7 +112,6 @@ registry.category("web_tour.tours").add("PreparationDisplayTourResto2", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Create first order
             FloorScreen.clickTable("5"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             ProductScreen.orderlineIsToOrder("Coca-Cola"),
@@ -244,7 +240,6 @@ registry.category("web_tour.tours").add("test_order_preparation_preparation_prin
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Create new order, order it, pay it and refund it
             ProductScreen.addOrderline("Coca-Cola", "2"),
             ProductScreen.addOrderline("Water", "2"),
             ProductScreen.clickPayButton(),
@@ -290,7 +285,6 @@ registry.category("web_tour.tours").add("test_order_preparation_preparation_disp
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Create new order, order 1 time and cancel it.
             FloorScreen.clickTable("1"),
             ProductScreen.addOrderline("Coca-Cola", "2"),
             ProductScreen.addOrderline("Water", "2"),
@@ -299,7 +293,6 @@ registry.category("web_tour.tours").add("test_order_preparation_preparation_disp
             ProductScreen.clickControlButton("Cancel Order"),
             Dialog.confirm(),
 
-            // Create new order, order 2 times and cancel it.
             FloorScreen.clickTable("1"),
             ProductScreen.addOrderline("Coca-Cola", "2"),
             ProductScreen.addOrderline("Water", "2"),

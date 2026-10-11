@@ -7,9 +7,6 @@ import { Interaction } from "@web/public/interaction";
 
 const log = makeLogger("website.interaction.animation");
 
-// Several `.o_animate` elements can finish their animation within the same
-// frame; coalesce their "animationend" reaction into a single global resize
-// dispatch per frame instead of one per element.
 let resizeDispatchScheduled = false;
 function scheduleGlobalResizeDispatch() {
     if (resizeDispatchScheduled) {

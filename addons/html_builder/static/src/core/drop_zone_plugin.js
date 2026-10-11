@@ -47,7 +47,6 @@ export class DropZonePlugin extends Plugin {
                 const addedOrRemovedNode = (
                     record.addedTrees[0] || record.removedTrees[0]
                 ).node;
-                // Do not record the addition/removal of the dropzones.
                 if (
                     isElement(addedOrRemovedNode) &&
                     addedOrRemovedNode.matches(".oe_drop_zone")
@@ -150,12 +149,9 @@ export class DropZonePlugin extends Plugin {
             }
         });
 
-        // Remove the dragged element from the selectors.
         selectorSiblings = selectorSiblings.filter((el) => !snippetEl.contains(el));
         selectorChildren = selectorChildren.filter((el) => !snippetEl.contains(el));
 
-        // Prevent dropping an element into another one.
-        // (e.g. ToC inside another ToC)
         const hasForm = snippetEl.matches("form") || !!snippetEl.querySelector("form");
         if (hasForm && !selectorExcludeAncestor.includes("form")) {
             selectorExcludeAncestor.push("form");
@@ -170,8 +166,6 @@ export class DropZonePlugin extends Plugin {
             );
         }
 
-        // Prevent dropping an element outside a given direct or indirect parent
-        // (e.g. form field must remain within its own form)
         if (checkLockedWithin && selectorLockedWithin.length) {
             const lockedAncestorsSelector = selectorLockedWithin.join(",");
             const closestLockedAncestorEl = snippetEl.closest(lockedAncestorsSelector);
@@ -181,9 +175,7 @@ export class DropZonePlugin extends Plugin {
             selectorChildren = selectorChildren.filter(filterFct);
         }
 
-        // Prevent dropping sanitized elements in sanitized zones.
         let forbidSanitize = false;
-        // Check if the element is sanitized or if it contains such elements.
         for (const el of [snippetEl, ...snippetEl.querySelectorAll("[data-snippet")]) {
             const snippet = this.snippetModel.getOriginalSnippet(el.dataset.snippet);
             if (snippet && snippet.forbidSanitize) {
@@ -217,8 +209,6 @@ export class DropZonePlugin extends Plugin {
         selectorSiblings = selectorSiblings.filter((el) => filterSanitized(el));
         selectorChildren = selectorChildren.filter((el) => filterSanitized(el));
 
-        // Remove the siblings/children that would add a dropzone as a direct
-        // child of a grid and make a dedicated set out of the identified grids.
         let selectorGrids = new Set();
         if (withGrids) {
             const filterGrids = (potentialGridEl) => {
@@ -233,7 +223,6 @@ export class DropZonePlugin extends Plugin {
             );
             selectorChildren = selectorChildren.filter((el) => filterGrids(el));
 
-            // If specified, only filter out the grids.
             if (withGrids === "filterOnly") {
                 selectorGrids = new Set();
             }
@@ -258,11 +247,9 @@ export class DropZonePlugin extends Plugin {
         if (rootEl && !rootEl.contains(el)) {
             return false;
         }
-        // Drop only in visible elements.
         if (!isVisible(el)) {
             return false;
         }
-        // Drop only in open dropdown and offcanvas elements.
         if (
             (el.closest(".dropdown-menu") && !el.closest(".dropdown-menu.show")) ||
             (el.closest(".offcanvas") && !el.closest(".offcanvas.show"))
@@ -287,7 +274,6 @@ export class DropZonePlugin extends Plugin {
     getSelectorSiblings(editableAreaEls, rootEl, { selector, excludeParent = false }) {
         const filterFct = (el) =>
             this.checkSelectors(el, rootEl) &&
-            // Do not drop blocks into an image field.
             !el.parentNode.closest("[data-oe-type=image]") &&
             !el.matches(".o_not_editable *") &&
             !el.matches(".o_we_no_overlay") &&
@@ -315,7 +301,6 @@ export class DropZonePlugin extends Plugin {
     getSelectorChildren(editableAreaEls, rootEl, { selector }) {
         const filterFct = (el) =>
             this.checkSelectors(el, rootEl) &&
-            // Do not drop blocks into an image field.
             !el.closest("[data-oe-type=image]") &&
             !el.matches(
                 '.o_not_editable :not([contenteditable="true"]), .o_not_editable',
@@ -342,7 +327,6 @@ export class DropZonePlugin extends Plugin {
         const dropzoneEl = this.document.createElement("div");
         dropzoneEl.classList.add("oe_drop_zone", "oe_insert");
 
-        // Set the messages to display in the dropzone.
         const editorMessagesAttributes = [
             "data-editor-message-default",
             "data-editor-message",
@@ -434,7 +418,6 @@ export class DropZonePlugin extends Plugin {
             if (!toInsertInline) {
                 style.float = float;
             }
-            // Compute the parent content width and the element outer width.
             const parentPaddingX =
                 parseFloat(parentStyle.paddingLeft) +
                 parseFloat(parentStyle.paddingRight);
@@ -507,7 +490,6 @@ export class DropZonePlugin extends Plugin {
             hookEls = hookEls.filter((el) => !closestElement(el, systemNodeSelectors));
         }
 
-        // Inserting the normal dropzones.
         for (const hookEl of hookEls) {
             const parentEl = hookEl.parentElement;
             const { vertical, style } = this.setDropzoneDirection(
@@ -537,28 +519,21 @@ export class DropZonePlugin extends Plugin {
             }
         }
 
-        // Inserting a sanitized dropzone for each sanitized area.
         for (const sanitizedZoneEl of selectorSanitized) {
             sanitizedZoneEl.style.position = "relative";
             sanitizedZoneEl.prepend(this.createSanitizedDropzone());
         }
         this.sanitizedZoneEls = selectorSanitized;
 
-        // Inserting a grid dropzone for each row in grid mode.
         for (const rowEl of selectorGrids) {
             rowEl.append(this.createGridDropzone(rowEl));
         }
 
-        // In the case where the editable content is in an iframe, take the
-        // iframe offset into account to compute the dropzones.
         if (isContentInIframe) {
             const dropzoneEls = [...this.editable.querySelectorAll(".oe_drop_zone")];
             dropzoneEls.forEach((dropzoneEl) => {
                 dropzoneEl.oldGetBoundingRect = dropzoneEl.getBoundingClientRect;
                 dropzoneEl.getBoundingClientRect = () => {
-                    // iframeRect should be re-computed every time in case
-                    // the iframe is inside a scrollable element which can
-                    // be scrolled during the drag&drop operation.
                     const iframeRect = this.iframe.getBoundingClientRect();
                     const rect = dropzoneEl.oldGetBoundingRect();
                     rect.x += iframeRect.x;
@@ -575,9 +550,6 @@ export class DropZonePlugin extends Plugin {
         ];
     }
 
-    /**
-     * Removes all the dropzones.
-     */
     removeDropzones() {
         this.editable.querySelectorAll(".oe_drop_zone").forEach((dropzoneEl) => {
             dropzoneEl.remove();

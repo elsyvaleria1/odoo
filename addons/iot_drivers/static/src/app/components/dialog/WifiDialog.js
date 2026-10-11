@@ -78,7 +78,6 @@ export class WifiDialog extends Component {
                 this.state.waitRestart = false;
             }
         } else {
-            // The IoT box is no longer reachable, so we can't await the response.
             this.state.status = "connecting";
             this.state.waitRestart = false;
         }
@@ -96,7 +95,6 @@ export class WifiDialog extends Component {
                     this.state.waitRestart = false;
                 }
             } else {
-                // The IoT box is no longer reachable, so we can't await the response.
                 this.state.status = "disconnecting";
                 this.state.waitRestart = false;
             }

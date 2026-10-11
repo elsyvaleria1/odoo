@@ -22,9 +22,6 @@ export const testMailModels = {
 };
 
 export function defineTestMailModels() {
-    // Bind the mail mock-server routes to the calling test file's suite (see
-    // registerMailMockRoutes): without this, every test_mail test runs with
-    // NO mail route mocked — no thread data, no messages, no chatter fetch.
     registerMailMockRoutes();
     defineParams({ suite: "test_mail" }, "replace");
     defineModels(testMailModels);

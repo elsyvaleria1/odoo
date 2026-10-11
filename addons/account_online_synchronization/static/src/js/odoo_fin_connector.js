@@ -15,7 +15,6 @@ function OdooFinConnector(parent, action) {
     const id = action.id;
     action.params.colorScheme = colorScheme.current;
     let mode = action.params.mode || "link";
-    // Ensure that the proxyMode is valid
     const modeRegexp = /^[a-z0-9-_]+$/;
     const runbotRegexp = /^https:\/\/[a-z0-9-_]+\.[a-z0-9-_]+\.odoo\.com$/;
     if (
@@ -32,7 +31,6 @@ function OdooFinConnector(parent, action) {
     let actionResult = false;
 
     loadJS(url).then(function () {
-        // Create and open the iframe
         const params = {
             data: action.params,
             proxyMode: action.params.proxyMode,
@@ -65,7 +63,6 @@ function OdooFinConnector(parent, action) {
                             { context: action.context },
                         );
                         actionResult.help = markup(actionResult.help);
-                        // Reload currencies, otherwise the new one may be missing from the session
                         await currency.reloadCurrencies();
                         return actionService.doAction(actionResult);
                     case "connect_existing_account":
@@ -91,7 +88,6 @@ function OdooFinConnector(parent, action) {
                 return actionService.doAction(actionResult);
             },
         };
-        // propagate parent debug mode to iframe
         if (typeof debugMode !== "undefined" && debugMode) {
             params.data["debug"] = debugMode;
         }

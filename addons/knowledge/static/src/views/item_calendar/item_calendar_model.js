@@ -8,12 +8,6 @@ import {
 } from "@web/core/l10n/dates";
 import { CalendarModel } from "@web/views/calendar";
 
-/**
- * CalendarModel allowing the usage of properties as calendar options.
- * Note: currently, as it is only used in knowledge, the properties
- * field name has been hardcoded for clarity, but if needed it can be
- * easily retrieved from the archInfo.
- */
 export class ItemCalendarModel extends CalendarModel {
     /**
      * @override
@@ -60,7 +54,6 @@ export class ItemCalendarModel extends CalendarModel {
         let end = partialRecord.end;
 
         if (!end) {
-            // Set end date if not existing
             if (this.meta.propertiesDateType === "date") {
                 end = start;
             } else {
@@ -70,18 +63,11 @@ export class ItemCalendarModel extends CalendarModel {
 
         if (this.meta.propertiesDateType === "datetime" && partialRecord.isAllDay) {
             if (partialRecord.id) {
-                // Keep time of the record when moving or resizing a datetime
-                // record in an allDay scale (eg. in month scale, there is no
-                // time scale so the partialRecord is created as an allDay
-                // record even if the record moved it is a datetime)
                 start = start.with({
                     hour: this.data.records[partialRecord.id].start.hour,
                 });
                 end = end.with({ hour: this.data.records[partialRecord.id].end.hour });
             } else {
-                // When creating a datetime that spans multiple days, set
-                // arbitrary start and end hours (to not have midnight by
-                // default)
                 start = start.with({ hour: 7 });
                 end = end.with({ hour: 19 });
             }
@@ -99,8 +85,6 @@ export class ItemCalendarModel extends CalendarModel {
         let properties = {};
 
         if (partialRecord.id) {
-            // Copy the properties of the existing rawRecord but update the
-            // start and stop date properties
             properties =
                 this.data.records[partialRecord.id].rawRecord.article_properties;
             properties.find(
@@ -113,7 +97,6 @@ export class ItemCalendarModel extends CalendarModel {
                 ).value = end;
             }
         } else {
-            // Create the start and stop date properties for the new record
             properties[this.meta.fieldMapping.date_start] = start;
             if (this.meta.fieldMapping.date_stop) {
                 properties[this.meta.fieldMapping.date_stop] = end;
@@ -122,10 +105,6 @@ export class ItemCalendarModel extends CalendarModel {
         return { article_properties: properties };
     }
 
-    /**
-     * If the model is invalid (missing props needed to fetch the correct
-     * items after a reload for example), no record should be loaded.
-     */
     loadRecords(data) {
         if (this.meta.invalid) {
             return {};
@@ -147,18 +126,12 @@ export class ItemCalendarModel extends CalendarModel {
         const stopValue = rawRecord.article_properties.find(
             (property) => property.name === fieldMapping.date_stop,
         )?.value;
-        // A date property is the start of its day on the calendar's time axis.
         const deserialize = (value) =>
             isDate ? toDateTime(deserializeDate(value)) : deserializeDateTime(value);
         const start = deserialize(startValue);
 
-        // If the stop property is not set, use the same date as the start
-        // to not show an invalid date message
         const end = stopValue ? deserialize(stopValue) : start;
 
-        // The time of the record is shown in the calendar if it is a datetime
-        // and if the selected scale is month (because there is no time scale
-        // in this case)
         const showTime = scale === "month" && !isDate;
 
         const colorValue = rawRecord.article_properties.find(

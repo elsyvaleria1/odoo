@@ -24,7 +24,6 @@ patch(LoginScreen.prototype, {
         try {
             data = await scanBarcode(this.appContext);
         } catch (error) {
-            // Here, we know the structure of the error raised by BarcodeScanner.
             this.dialog.add(AlertDialog, {
                 title: _t("Unable to scan"),
                 body:

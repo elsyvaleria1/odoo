@@ -21,8 +21,6 @@ describe.current.tags("desktop");
 const STEPS = ["recorded", "acknowledged", "resolved"];
 const OCCURRENCE = "0123456789abcdef0123456789abcdef";
 
-/* The journey's own notifications, delivered by the test; every other type
- * goes through the real bus, which the mail and bus services rely on. */
 let bus;
 
 beforeEach(() => {
@@ -124,7 +122,6 @@ test("an occurrence not written yet is picked up from the bus", async () => {
     bus.push(journey("recorded", { occurrence: OCCURRENCE }));
     await animationFrame();
     expect(".o_error_incident_head").toHaveText("This error was recorded");
-    // The bus answered: the retries it stood in for are not sent.
     await advanceTime(IncidentJourney.RETRY_MS.reduce((a, b) => a + b));
     expect(calls).toHaveLength(1);
 });

@@ -1,10 +1,5 @@
 /** @odoo-module native */
 
-/**
- * Hook to get the props for the timesheet overtime component use in the
- * timesheet_many2one and timesheet_avatar_many2one components.
- * (assume the hook is used in many2one grid component)
- */
 export function useTimesheetOvertimeProps(comp) {
     return {
         get props() {

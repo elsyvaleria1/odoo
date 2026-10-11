@@ -387,8 +387,6 @@ describe("RPC calls", () => {
     });
 
     test("'formatted_read_group': a datetime grouped by hour", async () => {
-        // hour is a backend interval (a view's interval="hour"): the sample
-        // group label is formatted like any other interval's
         const server = new DeterministicSampleServer("res.users", fields["res.users"]);
         const result = await server.mockRpc({
             method: "formatted_read_group",

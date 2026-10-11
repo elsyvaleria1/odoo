@@ -4,10 +4,6 @@ import { compareDates, now, serializeDateTime, toISODate } from "@web/core/l10n/
 import { GanttModel, parseServerValues } from "@web_gantt/gantt_model";
 
 export class AttendanceGanttModel extends GanttModel {
-    //-------------------------------------------------------------------------
-    // Protected
-    //-------------------------------------------------------------------------
-
     /**
      * @override
      */

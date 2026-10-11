@@ -141,7 +141,6 @@ export class BuilderOptionsPlugin extends Plugin {
         const options = this.builderOptions.concat([OptionsContainer]);
         for (const Option of options) {
             if (isLegacyOption(Option)) {
-                // Support legacy option definition.
                 continue;
             }
             this.getBuilderDependencies(Option);
@@ -151,7 +150,6 @@ export class BuilderOptionsPlugin extends Plugin {
         this.elementsToOptionsTitleComponents = withIds(
             this.getResource("elements_to_options_title_components"),
         );
-        // todo: remove that resource as we should be able to patch the class the normal way
         this.getResource("patch_builder_options").forEach((option) => {
             this.patchBuilderOptions(option);
         });
@@ -159,16 +157,11 @@ export class BuilderOptionsPlugin extends Plugin {
             this.getResource("builder_header_middle_buttons"),
         );
         this.builderContainerTitle = withIds(this.getResource("container_title"));
-        // doing this manually instead of using addDomListener. This is because
-        // addDomListener will ignore all events from protected targets. But in
-        // our case, we still want to update the containers.
         this.onClick = this.onClick.bind(this);
         this.editable.addEventListener("click", this.onClick, { capture: true });
 
         this.lastContainers = [];
 
-        // Selector of elements that should not update/have containers when they
-        // are clicked.
         this.notActivableElementsSelector = [
             "#web_editor-top-edit",
             "#oe_manipulators",
@@ -238,8 +231,6 @@ export class BuilderOptionsPlugin extends Plugin {
         if (newContainers.length === 0 && this.lastContainers.length === 0) {
             return;
         }
-        // Do not update the containers if they did not change and are not
-        // forced to update.
         if (
             !forceUpdate &&
             this.target?.isConnected &&
@@ -248,7 +239,6 @@ export class BuilderOptionsPlugin extends Plugin {
             const previousIds = this.lastContainers.map((c) => c.id);
             const newIds = newContainers.map((c) => c.id);
             const areSameElements = newIds.every((id, i) => id === previousIds[i]);
-            // Check if the overlay options status changed.
             const previousOverlays = this.lastContainers.map(
                 (c) => c.hasOverlayOptions,
             );
@@ -332,8 +322,6 @@ export class BuilderOptionsPlugin extends Plugin {
             this.elementsToOptionsTitleComponents,
         );
 
-        // Find the closest element with no options that should still have the
-        // overlay buttons.
         let element = target;
         while (element && !elementToOptions.has(element)) {
             if (this.hasOverlayOptions(element)) {
@@ -385,7 +373,6 @@ export class BuilderOptionsPlugin extends Plugin {
     }
 
     hasOverlayOptions(el) {
-        // An inner snippet alone in a column should not have overlay options.
         const parentEl = el.parentElement;
         const isAloneInColumn =
             parentEl?.children.length === 1 && parentEl.matches(".row > div");
@@ -450,18 +437,14 @@ export class BuilderOptionsPlugin extends Plugin {
         if (this.dependencies.history.getIsPreviewing()) {
             return;
         }
-        // Store the next target to activate in the current step.
         this.dependencies.history.setStepExtra("nextTarget", targetEl);
     }
 
     onWillAddStep() {
-        // Store the current target in the current step.
         this.dependencies.history.setStepExtra("currentTarget", this.target);
     }
 
     onStepAdded({ step }) {
-        // If a target is specified, activate its containers, otherwise simply
-        // update them.
         const nextTargetEl = step.extraStepInfos.nextTarget;
         if (nextTargetEl) {
             this.updateContainers(nextTargetEl, { forceUpdate: true });
@@ -481,8 +464,6 @@ export class BuilderOptionsPlugin extends Plugin {
     restoreContainers(revertedStep, mode) {
         if (revertedStep && revertedStep.extraStepInfos.currentTarget) {
             let targetEl = revertedStep.extraStepInfos.currentTarget;
-            // If the step was supposed to activate another target, activate
-            // this one instead.
             const nextTarget = revertedStep.extraStepInfos.nextTarget;
             if (mode === "redo" && (nextTarget || nextTarget === false)) {
                 targetEl = nextTarget;
@@ -490,9 +471,7 @@ export class BuilderOptionsPlugin extends Plugin {
             if (targetEl) {
                 this.dispatchTo("on_restore_containers_handlers", targetEl);
                 this.updateContainers(targetEl, { forceUpdate: true });
-                // Scroll to the target if not visible.
                 if (!isElementInViewport(targetEl)) {
-                    // Firefox mis-scrolls with block "center" on tall snippets; keep "start".
                     targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
                 }
             } else {
@@ -573,8 +552,6 @@ export class BuilderOptionsPlugin extends Plugin {
             containers = containers[0] ? [containers[0]] : [];
         }
 
-        // Find the given option in the active containers and the element on
-        // which it applies.
         let targetEl, requestedOption;
         for (const { element, options } of containers) {
             requestedOption = options.find((option) => {
@@ -593,24 +570,11 @@ export class BuilderOptionsPlugin extends Plugin {
 
         return { option: requestedOption, targetEl };
     }
-    /**
-     * Get all dependencies of an OptionComponent and all its descendants.
-     */
     getBuilderDependencies(OptionComponent) {
         const cachedDeps = this.builderOptionsDependencies.get(OptionComponent);
         if (cachedDeps) {
             return cachedDeps;
         }
-        // Copy — never push into `OptionComponent.dependencies` itself. That is
-        // a *static* array on the component class: it is shared by every editor
-        // ever built in the page, and a subclass that declares no `dependencies`
-        // of its own resolves to the very same array object as its base class.
-        // Appending the child dependencies in place therefore (a) grew the array
-        // once per editor instantiation and (b) taught the *base* class the
-        // dependencies of a subclass — after which the base option could no
-        // longer be built and silently vanished from the sidebar. Subclassing a
-        // real option is exactly what the builder tests do, which is why an
-        // option test poisoned every later test using that option.
         const deps = [...(OptionComponent.dependencies || [])];
         this.builderOptionsDependencies.set(OptionComponent, deps);
         const childDeps = Object.values(OptionComponent.components || {}).flatMap(
@@ -619,9 +583,6 @@ export class BuilderOptionsPlugin extends Plugin {
         deps.push(...childDeps);
         return deps;
     }
-    /**
-     * Get all the methods (window, document, getResources, ...) that are available in plugins. Provide the OptionComponent to set the right dependencies.
-     */
     getBuilderOptionContext(OptionComponent) {
         const context = this.builderOptionsContext.get(OptionComponent);
         if (!context) {
@@ -636,7 +597,6 @@ export class BuilderOptionsPlugin extends Plugin {
 
 function getClosestElements(element, selector) {
     if (!element) {
-        // TODO we should remove it
         return [];
     }
     const parent = element.closest(selector);
@@ -655,20 +615,16 @@ function getClosestElements(element, selector) {
  * @returns {Boolean}
  */
 export function checkElement(el, { editableOnly = true, exclude = "" }) {
-    // Unless specified otherwise, the element should be in an editable.
     if (editableOnly && !el.closest(".o_editable")) {
         return false;
     }
-    // Check that the element is not to be excluded.
     exclude += `${exclude && ", "}.o_snippet_not_selectable`;
     if (el.matches(exclude)) {
         return false;
     }
-    // If an editable is not required, do not check anything else.
     if (!editableOnly) {
         return true;
     }
-    // `o_editable_media` bypasses the `o_not_editable` class.
     if (el.matches(".o_editable_media")) {
         return shouldEditableMediaBeEditable(el);
     }

@@ -8,7 +8,6 @@ import { patch } from "@web/core/utils/patch";
 const activityPatch = {
     async markAsDone() {
         await super.markAsDone(...arguments);
-        // a triggered next activity may have changed the document's folder or tags
         if (
             this.res_model === "document.document" &&
             this.chaining_type === "trigger"

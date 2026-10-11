@@ -73,8 +73,6 @@ function markValuesRaw(obj) {
     /** @type {Record<string, any>} */
     const copy = {};
     for (const [key, value] of Object.entries(obj)) {
-        // a declared prop nobody passed is an undefined key of the owl 3 props
-        // object; like the absent key of owl 2, it must not override a default
         if (value === undefined) {
             continue;
         }
@@ -186,8 +184,6 @@ export class DateTimePickerController {
         this.pickerProps = observe(rawPickerProps, () => this.onPickerPropsUpdated());
         this.popover = this.createPopover(/** @type {any} */ (DateTimePickerPopover), {
             onClose: () => {
-                // Dismiss the calendar while onchange runs. Field flushing awaits
-                // the same save through commitInputs, independently of the overlay.
                 this.onPopoverClose().catch(reportUncaught);
             },
         });
@@ -262,8 +258,6 @@ export class DateTimePickerController {
             revision: this.propsValueRevision,
         };
         this.pendingApply = operation;
-        // Install ownership before invoking a callback which may synchronously
-        // render or flush the field again. Keep that invocation synchronous.
         try {
             completion.resolve(this.params.onApply?.(value));
         } catch (error) {
@@ -468,8 +462,6 @@ export class DateTimePickerController {
     /** @param {number} inputIndex */
     open = (inputIndex) => {
         if (this.closing) {
-            // The owner re-renders while the value it closed with is saved, and may
-            // ask to reopen before onClose tells it the picker is closed.
             log.logic("open refused while closing", () => ({ inputIndex }));
             return;
         }
@@ -714,10 +706,7 @@ export class DateTimePickerService {
                 controller.targetRef = params.target;
             }
 
-            // untracked: the host must not follow the picker's own state, only what
-            // its picker props read, which the effect below follows
             onWillRender(() => untrack(controller.computeBasePickerProps));
-            // started once mounted, when the host has built what they read
             /** @type {(() => void) | undefined} */
             let stopTracking;
             onMounted(() => {

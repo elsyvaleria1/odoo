@@ -38,10 +38,6 @@ export class MassMailingHtmlField extends HtmlField {
     };
 
     setup() {
-        // Keep track of the next props before other `onWillUpdateProps`
-        // callbacks in super can be executed, to be able to compute the next
-        // activeTheme and next themeSelector display status just before the
-        // Component is patched.
         let props = this.props;
         onWillUpdateProps((nextProps) => {
             if (nextProps !== this.props) {
@@ -58,9 +54,6 @@ export class MassMailingHtmlField extends HtmlField {
         });
 
         if (this.state.showThemeSelector) {
-            // Preemptively load assets for the html Builder because
-            // there is a high chance that they will be needed from the
-            // Theme Selector, no need to wait for the user selection.
             loadBundle("mass_mailing.assets_builder");
         }
 
@@ -73,7 +66,6 @@ export class MassMailingHtmlField extends HtmlField {
                 this.props.readonly !== nextProps.readonly &&
                 (this.props.readonly || nextProps.readonly)
             ) {
-                // Force a full reload for MassMailingIframe on readonly change
                 this.state.key++;
             }
             if (nextProps.readonly) {
@@ -95,14 +87,8 @@ export class MassMailingHtmlField extends HtmlField {
                     return;
                 }
                 if (state.key !== currentKey) {
-                    // html value may have been reset from the server:
-                    // - await the new iframe
                     this.resetIframe();
-                    // - ensure that the activeTheme is up to date with the next
-                    //   record.
                     this.updateActiveTheme(props.record);
-                    // - ensure that the themeSelector is displayed if necessary
-                    //   for the next props.
                     this.updateThemeSelector(props);
                     currentKey = state.key;
                 }
@@ -115,7 +101,6 @@ export class MassMailingHtmlField extends HtmlField {
                 if (!this.codeViewRef.el) {
                     return;
                 }
-                // Set the initial textArea height.
                 this.codeViewRef.el.style.height =
                     this.codeViewRef.el.scrollHeight + "px";
             },
@@ -139,21 +124,12 @@ export class MassMailingHtmlField extends HtmlField {
 
     onIframeLoad(key, iframeLoaded) {
         if (key !== this.state.key) {
-            // Notification from a MassMailingIframe generation that has been
-            // replaced (`state.key` changed): its setup raced the re-render
-            // and finished between `resetIframe()` and its own destruction.
-            // Resolving here would permanently stamp the fresh deferred with
-            // the torn-down generation's iframe and bundle controls.
             return;
         }
         this.iframeLoaded.resolve(iframeLoaded);
     }
 
     updateActiveTheme(record = this.props.record) {
-        // This function is called in an `effect` with a dependency on
-        // `state.key` which already guarantees that the Component will be
-        // re-rendered. All further reads on the state should not add
-        // dependencies to that effect, so it is used raw.
         const state = toRaw(this.state);
         const getThemeName = () => {
             const value = record.data[this.props.name];
@@ -174,20 +150,13 @@ export class MassMailingHtmlField extends HtmlField {
     }
 
     updateThemeSelector(props = this.props) {
-        // This function is called in an `effect` with a dependency on
-        // `state.key` which already guarantees that the Component will be
-        // re-rendered. All further reads on the state should not add
-        // dependencies to that effect, so it is used raw.
         const state = toRaw(this.state);
         if (!state.activeTheme && !state.showThemeSelector && !props.readonly) {
-            // Show the ThemeSelector when the theme is undefined and the content can be
-            // changed.
             state.showThemeSelector = true;
         } else if ((state.activeTheme && state.showThemeSelector) || props.readonly) {
             state.showThemeSelector = false;
         }
         if (state.showThemeSelector && state.showCodeView) {
-            // Never show the CodeView with the ThemeSelector.
             state.showCodeView = false;
         }
     }
@@ -251,7 +220,6 @@ export class MassMailingHtmlField extends HtmlField {
 
     getBuilderConfig() {
         const config = super.getConfig();
-        // All plugins for the html Builder are defined in MassMailingBuilder
         delete config.Plugins;
         return {
             ...config,
@@ -288,10 +256,6 @@ export class MassMailingHtmlField extends HtmlField {
         return {
             setThemeHTML: (html) =>
                 this.mutex.exec(() =>
-                    // The inlineField can not be updated to its final value at
-                    // this point since the editor is needed to process the
-                    // theme template. (i.e. applying the default style).
-                    // It will be updated onEditorReady since it has become empty.
                     this.props.record
                         .update({
                             [this.props.name]: html,
@@ -318,11 +282,6 @@ export class MassMailingHtmlField extends HtmlField {
      * @override
      */
     async _commitChanges({ urgent }) {
-        // Only a DESYNCHRONIZED pair -- an arch with no inline rendering --
-        // forces a commit. A record whose arch is empty too has nothing to
-        // render: after a discard both are "", and forcing the commit then
-        // pushed the editor's stale content back into the record, so the
-        // form could never leave a discarded new mailing.
         if (
             this.editor &&
             !this.editor.isDestroyed &&
@@ -357,20 +316,11 @@ export class MassMailingHtmlField extends HtmlField {
         if (!iframeInfo) {
             return;
         }
-        // Work on the iframe the resolved info belongs to: `this.iframeRef.el`
-        // is re-pointed (and transiently nulled) when the MassMailingIframe is
-        // re-keyed, and `toInline` below awaits, so reading the ref again
-        // after it would crash if the generation changed mid-computation.
         const { bundleControls, iframe } = iframeInfo;
         this.lastValue = normalizeHTML(value, this.clearElementToCompare.bind(this));
         this.isDirty = false;
         const shouldRestoreDisplayNone = iframe.classList.contains("d-none");
-        // d-none must be removed for style computation.
         iframe.classList.remove("d-none");
-        // The browser resets the size of the `iframe` inside `toInline`
-        // if we just set `width`. So as a workaround we set both `min-width`
-        // and `max-width` to force the size of the `iframe` for a proper
-        // inline conversion.
         iframe.style.setProperty("min-width", "1320px", "important");
         iframe.style.setProperty("max-width", "1320px", "important");
         const processingEl = iframe.contentDocument.createElement("DIV");
@@ -397,7 +347,6 @@ export class MassMailingHtmlField extends HtmlField {
                 [this.props.inlineField]: inlineValue,
             })
             .catch(() => (this.isDirty = true));
-        // Owned emitter inherited from HtmlField.setup (useFieldDirtySignal).
         this.setFieldDirty(this.isDirty);
     }
     /**

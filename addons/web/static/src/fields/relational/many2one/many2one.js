@@ -47,8 +47,6 @@ const M2O_PROPS = new WeakMap();
  */
 function m2oHolder(fieldProps) {
     const { record, name, id } = fieldProps;
-    // a field can appear more than once in an arch, each node with its own
-    // domain and context: one holder per node, not per field name
     const key = id ? `${name}/${id}` : name;
     let byName = M2O_PROPS.get(record);
     if (!byName) {
@@ -81,8 +79,6 @@ function m2oHolder(fieldProps) {
             },
             update: (value, options = {}) =>
                 created.latest.record.update({ [created.latest.name]: value }, options),
-            // an onchange runs inside the model's mutex: once it is unlocked,
-            // the relation and domain a search reads are the record's own
             settle: () => created.latest.record.model.mutex.getUnlockedDef(),
         };
         byName.set(key, created);

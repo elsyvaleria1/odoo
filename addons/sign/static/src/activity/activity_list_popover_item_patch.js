@@ -23,13 +23,11 @@ patch(ActivityListPopoverItem.prototype, {
     async onClickRequestSign() {
         const { res_model, res_id } = this.props.activity;
         if (res_model === "sign.request") {
-            // When activity is linked to sign request model we directly open the document for sign.
             const result = await this.openSignRequestAction(res_id);
             if (result) {
                 return;
             }
         }
-        // Skip 'sign.request' model as it's not allowed in the Reference field selection in the backend.
         const documentReference =
             res_model && res_model !== "sign.request" && res_id
                 ? `${res_model},${res_id}`

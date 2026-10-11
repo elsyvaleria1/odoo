@@ -34,10 +34,8 @@ export class LandingPage extends Component {
 
         onMounted(() => {
             if (this.selfOrder.config._self_ordering_image_home_ids.length > 1) {
-                // used to init carousel after components mount / unmount
                 const carousel = new Carousel(this.carouselRef.el);
 
-                // prevent traceback when no image is set
                 this.carouselInterval = setInterval(
                     () => {
                         carousel.next();

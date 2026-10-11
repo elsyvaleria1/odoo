@@ -6,16 +6,9 @@ import { _t } from "@web/core/translation";
 import { roundPrecision } from "@web/core/utils/format/numbers";
 import { AlertDialog } from "@web/ui/dialog";
 
-// Due to consistency issues with the webhook, we also poll
-// the status of the payment periodically as a fallback.
 const POLLING_INTERVAL_MS = 5000;
 
 export class PaymentVivaCom extends PaymentInterface {
-    /*
-     Developer documentation:
-    https://developer.viva.com/apis-for-point-of-sale/card-terminals-devices/rest-api/eft-pos-api-documentation/
-    */
-
     setup() {
         super.setup(...arguments);
         this.paymentLineResolvers = {};
@@ -36,7 +29,6 @@ export class PaymentVivaCom extends PaymentInterface {
     }
 
     _handleOdooConnectionFailure(paymentLine, data = {}) {
-        // handle timeout
         if (!paymentLine.isDone()) {
             paymentLine.setPaymentStatus("retry");
         }
@@ -46,7 +38,7 @@ export class PaymentVivaCom extends PaymentInterface {
             ),
         );
 
-        return Promise.reject(data); // prevent subsequent onFullFilled's from being called
+        return Promise.reject(data);
     }
 
     _viva_com_handle_response(response, paymentLine) {
@@ -58,9 +50,6 @@ export class PaymentVivaCom extends PaymentInterface {
     }
 
     _viva_com_pay() {
-        /**
-         * Override
-         */
         super.sendPaymentRequest(...arguments);
         const order = this.pos.getOrder();
         const line = order.getSelectedPaymentline();
@@ -112,10 +101,6 @@ export class PaymentVivaCom extends PaymentInterface {
         );
     }
 
-    /**
-     * This method is called from pos_bus when the payment
-     * confirmation from Viva.com is received via the webhook and confirmed in the retrieve_session_id.
-     */
     handleVivaComStatusResponse(paymentLine, notification) {
         if (!notification) {
             this._handleOdooConnectionFailure(paymentLine);
@@ -129,10 +114,6 @@ export class PaymentVivaCom extends PaymentInterface {
             this._show_error(_t("Message from Viva.com: %s", notification.error));
         }
 
-        // when starting to wait for the payment response we create a promise
-        // that will be resolved when the payment response is received.
-        // In case this resolver is lost ( for example on a refresh )
-        // we use the handlePaymentResponse method on the payment line
         const resolver = this.paymentLineResolvers?.[paymentLine.uuid];
         if (resolver) {
             this.paymentLineResolvers[paymentLine.uuid] = null;

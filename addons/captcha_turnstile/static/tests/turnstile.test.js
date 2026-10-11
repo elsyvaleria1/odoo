@@ -2,7 +2,6 @@ import { turnstile } from "@captcha_turnstile/turnstile";
 import { expect, test } from "@odoo/hoot";
 import { queryAll } from "@odoo/hoot-dom";
 
-/** A Turnstile that answers `token`, fails with `error`, or calls `callback`. */
 function fakeTurnstile(answer) {
     const removed = [];
     window.turnstile = {

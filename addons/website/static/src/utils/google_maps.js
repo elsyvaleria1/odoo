@@ -22,8 +22,6 @@ export function createGoogleMapsService(notification, onReady = () => {}) {
 
     function loadAPI(key) {
         if (!apiLoads.has(key)) {
-            // A refetch can overlap an older script: readiness belongs to
-            // the script's callback, never to the last requested key.
             const callbackName = uniqueId("odoo_gmap_api_post_load_");
             const ready = new Promise((resolve) => {
                 window[callbackName] = () => {

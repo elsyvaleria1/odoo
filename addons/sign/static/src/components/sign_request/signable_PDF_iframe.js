@@ -121,16 +121,12 @@ export class SignablePDFIframe extends PDFIframe {
             );
             const selectElement = optionDiv.querySelector("#selection");
 
-            // Add an event listener to handle the selection change.
             selectElement.addEventListener("change", (e) => {
                 const selectedOption =
                     selectElement.options[selectElement.selectedIndex];
-                // Extract the data-id from the selected option.
                 const selectedValue = selectedOption.dataset.id;
-                // Update the value in the signItemElement.
                 signItemElement.value = selectedValue;
 
-                // Iterate through all options to update their classes.
                 [...selectElement.options].forEach((option) => {
                     if (option.dataset.id === selectedValue) {
                         option.classList.add("o_sign_selected_option");
@@ -140,7 +136,6 @@ export class SignablePDFIframe extends PDFIframe {
                         option.classList.remove("o_sign_selected_option");
                     }
                 });
-                // Call the input handler function.
                 this.handleInput();
             });
         }
@@ -259,7 +254,6 @@ export class SignablePDFIframe extends PDFIframe {
         const { height, width } = signatureItem.getBoundingClientRect();
         const signFrame = signatureItem.querySelector(".o_sign_frame");
         this.dialogOpen = true;
-        // If we already have an image, we propagate it to populate the "draw" tab
         const signatureImage = signatureItem?.dataset?.signature;
         this.closeFn = this.dialog.add(
             SignNameAndSignatureDialog,
@@ -290,7 +284,6 @@ export class SignablePDFIframe extends PDFIframe {
                             hash: this.frameHash,
                         });
                     } else if (signature.signatureChanged) {
-                        // resets the sign item
                         delete signatureItem.dataset.signature;
                         delete signatureItem.dataset.frame;
                         signatureItem.replaceChildren();
@@ -399,7 +392,6 @@ export class SignablePDFIframe extends PDFIframe {
             });
         }
 
-        // Updates the set of unsigned documents if is fully signed or any item gets unsigned
         const documentsWithUnsignedItems = this.props.getDocumentsWithUnsignedItems();
         if (itemsToSign.length === 0) {
             this.props.updateDocumentsWithUnsignedItems(this.props.documentId, false);
@@ -439,9 +431,6 @@ export class SignablePDFIframe extends PDFIframe {
         return context;
     }
 
-    /**
-     * Hook executed before rendering the sign items and the sidebar
-     */
     preRender() {
         super.preRender();
     }
@@ -539,8 +528,6 @@ export class SignablePDFIframe extends PDFIframe {
     getSignatureValueFromElement(item) {
         let textArea = item.el.textContent;
         if (!item.data.constant && item.data.type === "textarea") {
-            // remove line breaks, it may update the item value, we can't use it on constant items
-            // Moreover, item.el.value is empty for constant items.
             textArea = this.textareaApplyLineBreak(item.el);
         }
         const types = {
@@ -581,7 +568,6 @@ export class SignablePDFIframe extends PDFIframe {
     }
 
     textareaApplyLineBreak(element) {
-        // Removing wrap in order to have scrollWidth > width
         element.setAttribute("wrap", "off");
 
         const strRawValue = element.value || element.textContent;
@@ -592,7 +578,6 @@ export class SignablePDFIframe extends PDFIframe {
         const nEmptyWidth = element.scrollWidth;
         let nLastWrappingIndex = -1;
 
-        // Computing new lines
         strRawValue.split("").forEach((curChar, i) => {
             element.value += curChar;
 

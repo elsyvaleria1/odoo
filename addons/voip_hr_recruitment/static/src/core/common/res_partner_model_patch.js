@@ -1,5 +1,4 @@
 /** @odoo-module native */
-// ensure voip patch is applied first
 import "@voip/core/common/res_partner_model_patch";
 
 import { ResPartner } from "@mail/core/common/res_partner_model";

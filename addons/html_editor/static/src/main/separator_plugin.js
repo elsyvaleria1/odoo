@@ -93,8 +93,6 @@ export class SeparatorPlugin extends Plugin {
                 sep.after(baseContainer);
                 this.dependencies.selection.setCursorStart(baseContainer);
             } else {
-                // Split the block at the cursor and drop the separator in
-                // between, so that what follows the cursor stays below it.
                 const anchorNode = selection.anchorNode;
                 const newAnchorNode =
                     anchorNode.nodeType === Node.TEXT_NODE

@@ -1,4 +1,3 @@
-// Add a test here we can see the message of a currently hidden sheet (should unhide the sheet)
 import { describe, expect, test } from "@odoo/hoot";
 import { stores } from "@odoo/o-spreadsheet";
 import { CommentsStore } from "@spreadsheet_edition/bundle/comments/comments_store";
@@ -23,7 +22,7 @@ test("Change thread visibility", async () => {
 test("Open a comment thread", async () => {
     const { model, env } = await setupWithThreads();
     const commentsStore = env.getStore(CommentsStore);
-    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 }); // Require a viewport big enough to display the popover
+    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 });
     const threadId = 1;
     const sheetId = model.getters.getActiveSheetId();
     model.dispatch("ADD_COMMENT_THREAD", { sheetId, col: 0, row: 0, threadId });
@@ -36,7 +35,7 @@ test("Opening a thread makes the threads visible", async () => {
     const { model, env } = await setupWithThreads();
     const commentsStore = env.getStore(CommentsStore);
     const popoverStore = env.getStore(CellPopoverStore);
-    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 }); // require a viewport to display the popover
+    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 });
     const threadId = 1;
     const sheetId = model.getters.getActiveSheetId();
     model.dispatch("ADD_COMMENT_THREAD", { sheetId, col: 0, row: 0, threadId });
@@ -49,7 +48,7 @@ test("Opening a thread makes the threads visible", async () => {
 test("Scrolling the viewport should close the comments popover", async () => {
     const { model, env } = await setupWithThreads();
     const commentsStore = env.getStore(CommentsStore);
-    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 }); // Require a viewport big enough to display the popover
+    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 });
     const threadId = 1;
     const sheetId = model.getters.getActiveSheetId();
     model.dispatch("ADD_COMMENT_THREAD", { sheetId, col: 0, row: 0, threadId });
@@ -64,7 +63,7 @@ test("Selecting a resolved thread closes the popover", async () => {
     const { model, env } = await setupWithThreads();
     const commentsStore = env.getStore(CommentsStore);
     const popoverStore = env.getStore(CellPopoverStore);
-    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 }); // Require a viewport big enough to display the popover
+    model.dispatch("RESIZE_SHEETVIEW", { width: 1000, height: 1000 });
     const sheetId = model.getters.getActiveSheetId();
     model.dispatch("ADD_COMMENT_THREAD", { sheetId, col: 0, row: 0, threadId: 1 });
     model.dispatch("ADD_COMMENT_THREAD", { sheetId, col: 0, row: 1, threadId: 2 });

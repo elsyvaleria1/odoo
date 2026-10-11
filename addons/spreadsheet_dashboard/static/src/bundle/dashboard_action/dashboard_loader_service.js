@@ -82,9 +82,6 @@ export class DashboardLoader {
         this.activeDashboardId = activeDashboardId;
     }
 
-    /**
-     * Return data needed to restore a dashboard loader
-     */
     getState() {
         return {
             groups: this.groups,

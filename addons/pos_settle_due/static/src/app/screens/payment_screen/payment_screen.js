@@ -31,19 +31,6 @@ patch(PaymentScreen.prototype, {
     },
 
     onUnmount() {
-        /*
-         * When the settlement payment selection dialog is opened,
-         * `is_settling_account` is temporarily set to true.
-         *
-         * However, if the user exits the settlement process
-         * (without completing the payment) and returns to the previous screen,
-         * we must reset this flag to false.
-         *
-         * Failing to do so allows the same order to be used for
-         * non-settlement operations, which can cause inconsistencies—
-         * particularly in cases where invoices are mandatory
-         * for all payments except settlements.
-         */
         if (
             this.currentOrder?.is_settling_account &&
             this.currentOrder.state !== "paid"
@@ -109,7 +96,6 @@ patch(PaymentScreen.prototype, {
             (payment) => payment.payment_method_id.type === "pay_later",
         );
 
-        // If the user attempts to deposit a zero amount
         if (
             this.props.isDepositOrder &&
             this.pos.currency.isZero(change) &&
@@ -121,7 +107,6 @@ patch(PaymentScreen.prototype, {
             });
         }
 
-        //If it's a deposit or settle due order
         if (
             ((!this.pos.currency.isZero(change) &&
                 order.getOrderlines().length === 0 &&

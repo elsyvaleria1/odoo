@@ -123,7 +123,6 @@ describe.current.tags("desktop");
 
 test("BankRecSelectCreateDialog footer with right information", async () => {
     await mountWithCleanup(WebClient);
-    // The initial action closes every dialog when it lands; open ours after it.
     await waitFor(".o_home_menu");
     getService("dialog").add(BankRecSelectCreateDialog, {
         noCreate: true,
@@ -151,7 +150,6 @@ test("BankRecSelectCreateDialog footer with right information", async () => {
 
 test("BankRecSelectCreateDialog list view single currency", async () => {
     await mountWithCleanup(WebClient);
-    // The initial action closes every dialog when it lands; open ours after it.
     await waitFor(".o_home_menu");
     getService("dialog").add(BankRecSelectCreateDialog, {
         noCreate: true,
@@ -240,7 +238,6 @@ test("BankRecSelectCreateDialog list view multi currencies", async () => {
         currency_id: 1,
     });
     await mountWithCleanup(WebClient);
-    // The initial action closes every dialog when it lands; open ours after it.
     await waitFor(".o_home_menu");
     getService("dialog").add(BankRecSelectCreateDialog, {
         noCreate: true,

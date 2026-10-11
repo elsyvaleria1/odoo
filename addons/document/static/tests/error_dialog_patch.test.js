@@ -129,7 +129,6 @@ test("an unrelated upload does not hijack the traceback link", async () => {
 
 test("Error dialog is not shareable for portal user", async () => {
     expect.errors(1);
-    // a portal user sees error dialogs only in debug mode: web swallows them otherwise
     patchWithCleanup(user, { isInternalUser: false });
     patchWithCleanup(odoo, { debug: "1" });
     const error = makeServerError({
@@ -246,7 +245,6 @@ test("two dialogs sharing their tracebacks each get their own link", async () =>
         await animationFrame();
     }
     expect.verifyErrors(["First", "Second"]);
-    // the first dialog is covered and inert: the one on top shares, then closes
     await contains(".o_dialog:eq(1) .modal-footer button:contains(Share)").click();
     await animationFrame();
     expect(queryAllTexts(".o_dialog:eq(0) .o_field_CopyClipboardChar")).toEqual([]);

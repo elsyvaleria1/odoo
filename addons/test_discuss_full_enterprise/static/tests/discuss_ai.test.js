@@ -12,7 +12,7 @@ import { describe, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-mock";
 
 describe.current.tags("desktop");
-defineHrModels(); // FIXME: somehow test non-deterministically needs "hr.employee", cf. https://runbot.odoo.com/runbot/build/92414152
+defineHrModels();
 
 test("can handle command and disable mentions in AI composer", async () => {
     const pyEnv = await startServer();

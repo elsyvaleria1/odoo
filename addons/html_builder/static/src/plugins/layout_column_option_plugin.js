@@ -61,8 +61,6 @@ export class ChangeColumnCountAction extends BuilderAction {
         let rowEl = getRow(editingElement);
         let columnEls, prevNbColumns;
         if (!rowEl) {
-            // If there is no row, create one and wrap the content
-            // in a column.
             const cursors = this.dependencies.selection.preserveSelection();
             rowEl = document.createElement("div");
             const columnEl = document.createElement("div");
@@ -99,8 +97,6 @@ export class ChangeColumnCountAction extends BuilderAction {
             }
         }
 
-        // If "None" columns was chosen, unwrap the content from
-        // the column and the row and remove them.
         if (nbColumns === 0) {
             const cursors = this.dependencies.selection.preserveSelection();
             for (const columnEl of rowEl.children) {
@@ -109,7 +105,6 @@ export class ChangeColumnCountAction extends BuilderAction {
             rowEl.remove();
             cursors.restore();
         } else if (prevNbColumns === 0) {
-            // Activate the first column options.
             const firstColumnEl = editingElement.querySelector(".row > div");
             this.dependencies.builderOptions.setNextTarget(firstColumnEl);
         }
@@ -138,12 +133,10 @@ export class ChangeColumnCountAction extends BuilderAction {
         const firstItemOffset = Math.floor((12 - itemSize * nbColumns) / 2);
 
         const resolutionModifier = isMobile ? "" : `-${this.config.mobileBreakpoint}`;
-        const replacingRegex =
-            // (?!\S): following char cannot be a non-space character
-            new RegExp(
-                `(?:^|\\s+)(col|offset)${resolutionModifier}(-\\d{1,2})?(?!\\S)`,
-                "g",
-            );
+        const replacingRegex = new RegExp(
+            `(?:^|\\s+)(col|offset)${resolutionModifier}(-\\d{1,2})?(?!\\S)`,
+            "g",
+        );
 
         for (const columnEl of columnEls) {
             columnEl.className = columnEl.className.replace(replacingRegex, "");

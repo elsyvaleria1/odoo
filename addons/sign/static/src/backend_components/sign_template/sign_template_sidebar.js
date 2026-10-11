@@ -57,18 +57,15 @@ export class SignTemplateSidebar extends Component {
         const spanSelector = `span[data-role-id="${roleId}"]`;
         const inputSelector = `input[data-role-id="${roleId}"]`;
 
-        // Polling function to check if the input is available in the DOM
         const checkInput = () => {
             const span = document.querySelector(spanSelector);
             const input = document.querySelector(inputSelector);
 
-            // If the span and input are found, focus on input
             if (span && input) {
                 span.click();
                 input.focus();
                 input.select();
             } else {
-                // If input is not found, wait for the next frame and check again
                 requestAnimationFrame(checkInput);
             }
         };
@@ -86,7 +83,6 @@ export class SignTemplateSidebar extends Component {
             (signer) => signer.id !== signerId,
         );
 
-        /* After deleting the signer, if no signer is focused, focus the last one in the array. */
         if (
             !updatedSigners.some((signer) => !signer.isCollapsed) &&
             updatedSigners.length > 0
@@ -98,7 +94,6 @@ export class SignTemplateSidebar extends Component {
         this.props.deleteRole(roleId);
     }
 
-    // TODO: remove in master
     updateSignerNames(signers) {
         let signer_idx = 1;
         const str = _t("Signer");
@@ -112,7 +107,6 @@ export class SignTemplateSidebar extends Component {
     }
 
     getSidebarRoleItemsProps(id) {
-        //  TODO MASTER: we should put the role name here. it would prevent one rpc per role...
         const signer = this.props.signers.find((signer) => signer.id === id);
         return {
             id: id,
@@ -125,7 +119,6 @@ export class SignTemplateSidebar extends Component {
             updateRoleName: this.props.updateRoleName,
             isCollapsed: signer.isCollapsed,
             isInputFocused: signer.isInputFocused,
-            /* Update callbacks binding for parent props: */
             updateCollapse: (id, value) => this.props.updateCollapse(id, value),
             onDelete: () => this.deleteSigner(id, signer.roleId),
             onFieldNameInputKeyUp: (ev) => this.onFieldNameInputKeyUp(ev),
@@ -165,14 +158,11 @@ export class SignTemplateSidebar extends Component {
         this.state.editableDocumentId = documentId;
         const input = document.querySelector(`[data-document-id="${documentId}"]`);
 
-        // Polling function to check if the input is no longer `d-none`
         const waitForVisibility = () => {
             if (input && !input.classList.contains("d-none")) {
-                // Input is visible, so we can focus
                 input.focus();
                 input.select();
             } else {
-                // Input is still hidden, keep checking in the next frame
                 requestAnimationFrame(waitForVisibility);
             }
         };
@@ -193,7 +183,6 @@ export class SignTemplateSidebar extends Component {
     }
 
     async onUpdateDocument(documentId, ev) {
-        /* Check if pdf got uploaded, save manually, and call update document function from props. */
         const file = ev.target.files && ev.target.files.length && ev.target.files[0];
         if (!file) {
             return;

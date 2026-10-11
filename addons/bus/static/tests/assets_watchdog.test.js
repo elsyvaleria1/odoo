@@ -17,9 +17,6 @@ defineBusModels();
 describe.current.tags("desktop");
 
 test("can listen on bus and display notifications in DOM", async () => {
-    // Use hoot's `on` (auto-removed via `after`) so this listener on the shared
-    // `browser.location` mock does not leak into later suites, where a stray
-    // "reload-page" step would corrupt their `waitForSteps` assertions.
     after(on(browser.location, "reload", () => asyncStep("reload-page")));
     await mountWithCleanup(WebClient);
     getService("bus_service").subscribe("bundle_changed", () =>

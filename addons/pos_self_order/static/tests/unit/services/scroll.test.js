@@ -28,7 +28,7 @@ describe("scrollItemIntoViewX", () => {
         expect(scrollEl.scrollLeft).toBe(0);
         scrollItemIntoViewX(scrollEl, ".item", {
             align: "start",
-            scrollBehavior: "auto", // animation takes time to update scroll value
+            scrollBehavior: "auto",
         });
 
         expect(scrollEl.scrollLeft).toBe(200);
@@ -45,7 +45,7 @@ describe("scrollItemIntoViewX", () => {
         expect(scrollEl.scrollLeft).toBe(0);
         scrollItemIntoViewX(scrollEl, ".item", {
             align: "start",
-            scrollBehavior: "auto", // animation takes time to update scroll value
+            scrollBehavior: "auto",
         });
 
         expect(scrollEl.scrollLeft).toBe(0);

@@ -79,10 +79,6 @@ export function useSpreadsheetPrint(model) {
         return { x: 0, y: 0, width, height };
     }
 
-    /**
-     * Will alter the spreadsheet dimensions to ensure we render the whole sheet.
-     * invoking this function will ultimately trigger a print of the page after a patch.
-     */
     async function preparePrint() {
         if (!model()) {
             return;
@@ -103,7 +99,6 @@ export function useSpreadsheetPrint(model) {
             mode: model().config.mode,
         };
         const startPrinting = () => {
-            // reset the viewport to A1 visibility
             model().dispatch("SET_VIEWPORT_OFFSET", { offsetX: 0, offsetY: 0 });
             model().dispatch("RESIZE_SHEETVIEW", { ...getPrintRect() });
             printState.active = true;
@@ -112,10 +107,7 @@ export function useSpreadsheetPrint(model) {
             startPrinting();
             return;
         }
-        // FIXME: updateMode is not meant fore production use,
-        // we should render a specific component with limited interface instead
         model().updateMode("dashboard");
-        // loaded here as the store provider might be empty (no Model store) when the hook is used
         const gridRendererStore = env.getStore(GridRenderer);
         const intervalId = setInterval(() => {
             if (!gridRendererStore.animations.size) {
@@ -154,7 +146,7 @@ export function useSpreadsheetNotificationStore() {
             title: _t("Odoo Spreadsheet"),
             body,
             confirm,
-            cancel: () => {}, // Must be defined to display the Cancel button
+            cancel: () => {},
             confirmLabel: _t("Confirm"),
         });
     }

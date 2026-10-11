@@ -58,7 +58,6 @@ export class AILivechatComponent extends Component {
 
         useLayoutEffect(
             () => {
-                // Resize  textarea to fit its content.
                 this.promptInputRef.el.style.height = 0;
                 this.promptInputRef.el.style.height =
                     this.promptInputRef.el.scrollHeight + "px";
@@ -77,8 +76,6 @@ export class AILivechatComponent extends Component {
         );
         useLayoutEffect(
             () => {
-                // Scroll to the latest message whenever new message
-                // is inserted.
                 const messagesDivEl = this.messagesDiv.el;
                 const selectorToHide = ["footer", ".o-livechat-root"];
                 if (messagesDivEl) {
@@ -137,7 +134,6 @@ export class AILivechatComponent extends Component {
 
     async onChatWindowClosed({ detail }) {
         if (detail.channel.eq(this.channel)) {
-            // leaveLivechatSession = false => User has already left the livechat session.
             await this.closeConversation(false);
         }
     }
@@ -183,8 +179,6 @@ export class AILivechatComponent extends Component {
     }
 
     hideOtherSnippets() {
-        // Hiding all snippets other than the aiLivechatSnippet may result in hiding the aiLivechatSnippet if it is embedded into another snippet.
-        // Instead, all the snippets will be hidden and the aiLivechatSnippet will be added to the '#wrap' div which wraps all the snippets.
         const snippetsToHide = document.querySelectorAll(this.ALL_SNIPPETS_SELECTOR);
         for (const snippet of snippetsToHide) {
             snippet.classList.add("d-none");
@@ -265,8 +259,6 @@ export class AILivechatComponent extends Component {
             this.channel = await this.livechatService._createThread({
                 options: livechatChannelOptions,
             });
-            // If an ai_agent is set on the website snippet and then that ai_agent became archived and wasn't removed
-            // from the snippet, the created channel won't have ai_agent_id.
             if (!this.channel.ai_agent_id) {
                 this.channel = undefined;
                 archivedAgent = true;
@@ -317,7 +309,6 @@ export class AILivechatComponent extends Component {
         if (result["success"] === true) {
             this.channel.readyToSwapDeferred.resolve();
             await this.channel.openChatWindow({ focus: true });
-            // Reset the state to show other snippets. The livechat with a human will always open in a chat window popup not fullscreen.
             this.resetState();
         }
     }

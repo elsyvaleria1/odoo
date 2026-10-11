@@ -54,7 +54,6 @@ patch(RelationalRecord.prototype, {
                 throw e;
             }
         }
-        // allows to use the "SET" command
         if (field.type === "many2many") {
             await this.updateLocked({ [fieldName]: value });
             return;

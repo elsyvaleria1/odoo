@@ -29,10 +29,6 @@ registry.category("web_tour.tours").add("auth_portal_revoke_trusted_device", {
             expectUnloadPage: true,
         },
         {
-            // The whole table is behind t-if="len(user_id.totp_trust_ids)",
-            // so revoking the only device takes the row, the table and the
-            // "Revoke All" button with it. Asserting on the section that stays
-            // proves the page re-rendered rather than merely failing to match.
             content: "The device is gone, and 2FA is still enabled",
             trigger: "button:contains(Disable two-factor authentication)",
         },

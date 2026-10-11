@@ -7,9 +7,7 @@ import {
 } from "@web/views/calendar";
 
 export class EventSlotCalendarCommonRenderer extends CalendarCommonRenderer {
-    // Display end time and hide title on the full calendar library event.
     static eventTemplate = "event.EventSlotCalendarCommonRenderer.event";
-    // Prevent square selection over disabled cells on desktop.
     static cellIsSelectable = (cell) => !cell.classList.contains("o_calendar_disabled");
 
     setup() {
@@ -19,9 +17,6 @@ export class EventSlotCalendarCommonRenderer extends CalendarCommonRenderer {
         this.rangeEndDate = this.props.model.meta.context.event_calendar_range_end_date;
     }
 
-    /**
-     * Add overlay to disable days outside of event time range.
-     */
     getDayCellClassNames(info) {
         const date = toISODate(fromJSDate(info.date));
         if (

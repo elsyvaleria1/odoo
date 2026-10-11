@@ -4,10 +4,6 @@ import { StreamPostComment } from "@social/js/stream_post_comment";
 import { StreamPostCommentsReplyInstagram } from "./stream_post_comments_reply.js";
 
 export class StreamPostCommentInstagram extends StreamPostComment {
-    //--------
-    // Getters
-    //--------
-
     get authorPictureSrc() {
         return `https://graph.facebook.com/v17.0/${encodeURIComponent(this.originalPost.instagram_facebook_author_id.raw_value)}/picture`;
     }

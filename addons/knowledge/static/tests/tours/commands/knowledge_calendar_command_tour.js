@@ -86,13 +86,9 @@ function laneTop(time) {
         .getBoundingClientRect().top;
 }
 
-// under the step's own 10 s, so that a wait that expires names what it waited for
 const WAIT_MS = 8000;
 
 async function measuredLane(time) {
-    // FullCalendar 7 gives the time slots their height from a ResizeObserver a
-    // frame after the grid mounts; until then every lane is 0 px tall, the times
-    // sit a pixel apart, and a pointer aimed at one lands on another
     const deadline = performance.now() + WAIT_MS;
     while (performance.now() < deadline) {
         const lane = document.querySelector(
@@ -125,7 +121,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
     steps: () => [
         stepUtils.showAppsMenuItem(),
         {
-            // open the Knowledge App
             trigger: '.o_app[data-menu-xmlid="knowledge.knowledge_menu_root"]',
             run: "click",
         },
@@ -137,28 +132,20 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            //-----------------------------------------------
-            // Insert a new item calendar view in the article
-            //-----------------------------------------------
-
-            // Open the command bar
             trigger: ".odoo-editor-editable > p",
             run: function () {
                 openCommandBar(this.anchor);
             },
         },
         {
-            // Click on the /calendar command
             trigger: '.o-we-command-name:contains("Calendar")',
             run: "click",
         },
         {
-            // As the article does not have properties definitions, it should create default ones
             trigger: ".modal-footer .btn-primary",
             run: "click",
         },
         {
-            // Scroll to the embedded view to load it
             trigger: '[data-embedded="view"]',
             run: function () {
                 this.anchor.scrollIntoView(true);
@@ -168,11 +155,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: "[data-embedded='view']",
         },
         {
-            //---------------------------------------------------
-            // Create an article item by clicking in the calendar
-            //---------------------------------------------------
-
-            // Click on a date
             trigger: '.fc-timegrid-slot.fc-timegrid-slot-lane[data-time="08:00:00"]',
             async run() {
                 clickDate(await measuredLane("08:00:00"));
@@ -182,7 +164,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: ".o_hierarchy_article_name input:empty",
         },
         {
-            // Check we created an item with the right datetime used as property
             trigger:
                 '.o_widget_knowledge_properties_panel .o_property_field:contains("Start Date")',
             run: function () {
@@ -195,26 +176,18 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            // Set the name of the item
             trigger: ".o_knowledge_editor .odoo-editor-editable h1",
             run: "editor Item Article",
         },
         {
-            // Go back to parent article
             trigger:
                 '.o_knowledge_tree .o_article_name:contains("EditorCommandsArticle")',
             run: "click",
         },
         {
-            // Check that the item is shown in the calendar
             trigger: '.fc-timegrid-event .o_event_title:contains("Item Article")',
         },
         {
-            //--------------------------------------------------------------
-            // Insert another item calendar view (to test advanced settings)
-            // and create new start and stop properties to use by the view
-            //--------------------------------------------------------------
-
             content: "Remove previous item calendar view",
             trigger: ".odoo-editor-editable",
             run: "editor ",
@@ -223,17 +196,14 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: ".odoo-editor-editable:not(:has( [data-embedded='view']))",
         },
         {
-            // Click on the "Create Item Calednar" helper
             trigger: ".o_knowledge_helper .o_knowledge_add_item_calendar",
             run: "click",
         },
         {
-            // Open the start date dropdown
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_start .o_select_menu_toggler",
             run: "click",
         },
-        // Create a new start property
         ...stepUtils.editSelectMenuInput(
             ".o_knowledge_item_calendar_dialog_date_start .o_select_menu_input",
             "Start Property",
@@ -243,12 +213,10 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Open the stop dropwdown
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_stop .o_select_menu_toggler",
             run: "click",
         },
-        // Create a new stop property
         ...stepUtils.editSelectMenuInput(
             ".o_knowledge_item_calendar_dialog_date_stop .o_select_menu_input",
             "Stop Property",
@@ -258,7 +226,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Change the min slot time
             trigger: ".o_knowledge_item_calendar_dialog_slot_min_time input",
             run: function () {
                 this.anchor.value = "08:00";
@@ -266,7 +233,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            // Change the max slot time
             trigger: ".o_knowledge_item_calendar_dialog_slot_max_time input",
             run: function () {
                 this.anchor.value = "16:30";
@@ -274,12 +240,10 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            // Hide Weekends
             trigger: "input[type='checkbox']",
             run: "click",
         },
         {
-            // Insert the calendar
             trigger: ".modal-footer .btn-primary",
             run: "click",
         },
@@ -288,7 +252,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
                 "[data-embedded='view'] .o_knowledge_article_view_calendar_embedded_view",
         },
         {
-            // Check that the display options are applied
             trigger:
                 ".fc-view:has(.fc-timegrid-slot-lane):not(:has(.fc-timegrid-slot-lane[data-time='07:00:00']))",
         },
@@ -306,11 +269,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: ".o_calendar_widget:not(:has(.fc-day-sat, .fc-day-sun))",
         },
         {
-            //---------------------------------------------------
-            // Create an article item by clicking in the calendar
-            //---------------------------------------------------
-
-            // Click on a date
             trigger: '.fc-timegrid-slot.fc-timegrid-slot-lane[data-time="08:00:00"]',
             async run() {
                 clickDate(await measuredLane("08:00:00"));
@@ -320,7 +278,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: ".o_hierarchy_article_name input:empty",
         },
         {
-            // Check we created an item with the right datetime used as property
             trigger:
                 '.o_widget_knowledge_properties_panel .o_property_field:contains("Start Property")',
             run: function () {
@@ -333,12 +290,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            //-----------------------------------------------------------------------
-            // Create new properties from the article view that will be used later in
-            // this tour
-            //-----------------------------------------------------------------------
-
-            // Create a new date property
             trigger:
                 ".o_widget_knowledge_properties_panel .o_field_property_add button",
             run: "click",
@@ -361,7 +312,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Create a new checkbox property
             trigger:
                 ".o_widget_knowledge_properties_panel .o_field_property_add button",
             run: "click",
@@ -383,7 +333,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Create a text property
             trigger:
                 ".o_widget_knowledge_properties_panel .o_field_property_add button",
             run: "click",
@@ -405,33 +354,22 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Set the text property
             trigger:
                 '.o_widget_knowledge_properties_panel .o_property_field:contains("Text Property") input',
             run: "edit Custom text && click body",
         },
         {
-            // Set the name of the item
             trigger: ".o_knowledge_editor .odoo-editor-editable h1",
             run: "editor Item Article",
         },
         {
-            // Go back to parent article
             trigger: '.o_knowledge_tree .o_article_name:contains("Article Items")',
             run: "click",
         },
         {
-            // Check that the item is shown in the calendar
             trigger: '.fc-timegrid-event .o_event_title:contains("Item Article")',
         },
         {
-            //-------------------------------------------------------------------------
-            // Test the props editor dialog by changing the values, check that the view
-            // is updated accordingly, and set the start and stop dates back to check
-            // that the item article is shown again
-            //-------------------------------------------------------------------------
-
-            // Open the view props editor
             trigger: ".o_control_panel_breadcrumbs_actions .dropdown-toggle",
             run: "click",
         },
@@ -440,7 +378,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Change the start property
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_start .o_select_menu_toggler",
             run: "click",
@@ -451,49 +388,40 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Check that stop date has been removed as the start type changed,
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_stop .o_select_menu_toggler:empty",
         },
         {
-            // Open the stop property dropdown
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_stop .o_select_menu_toggler",
             run: "click",
         },
         {
-            // Check that one cannot use the selected start date
             trigger:
                 '.o_knowledge_item_calendar_dialog_date_stop .o_select_menu:not(:contains("Date Property"))',
         },
         {
-            // Don't select a stop property
             trigger: ".o_knowledge_item_calendar_props_dialog",
             run: "click",
         },
         {
-            // Open the color property dropdown
             trigger: ".o_color .o_select_menu_toggler",
             run: "click",
         },
         {
-            // Select the previously created property
             trigger:
                 '.o_select_menu_menu .o_select_menu_item:contains("Boolean Property")',
             run: "click",
         },
         {
-            // Open the scale dropdown
             trigger: ".o_scale .o_select_menu_toggler",
             run: "click",
         },
         {
-            // Select the month scale
             trigger: '.o_select_menu_menu .o_select_menu_item:contains("Month")',
             run: "click",
         },
         {
-            // Save changes
             trigger: ".modal-footer .btn-primary",
             run: "click",
         },
@@ -501,12 +429,10 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: ".fc-view:not(:has(.fc-event-container))",
         },
         {
-            // Check calendar has been updated (new scale and no item shown)
             trigger:
                 '.o_knowledge_article_view_calendar_embedded_view .o_calendar_header .o_view_scale_selector:contains("Month")',
         },
         {
-            // Change start and stop dates again
             trigger: ".o_control_panel_breadcrumbs_actions .dropdown-toggle",
             run: "click",
         },
@@ -515,7 +441,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Change the start property
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_start .o_select_menu_toggler",
             run: "click",
@@ -526,29 +451,24 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Check that stop date has been removed as the start type changed,
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_stop .o_select_menu_toggler:empty",
         },
         {
-            // Open the stop property dropdown
             trigger:
                 ".o_knowledge_item_calendar_dialog_date_stop .o_select_menu_toggler",
             run: "click",
         },
         {
-            // Select the stop date
             trigger:
                 '.o_select_menu_menu .o_select_menu_item:contains("Stop Property")',
             run: "click",
         },
         {
-            // Save changes
             trigger: ".modal-footer .btn-primary",
             run: "click",
         },
         {
-            // Open the view
             trigger: ".o_control_panel_breadcrumbs_actions .dropdown-toggle",
             run: "click",
         },
@@ -560,11 +480,9 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: ".o_knowledge_article_view_calendar_embedded_view.o_action",
         },
         {
-            // Check that the item is shown
             trigger: '.fc-view .o_event_title:contains("Item Article")',
         },
         {
-            // Leave the app and come back to make sure that changes have been saved
             trigger: ".o_main_navbar .o_menu_toggle",
             run: "click",
         },
@@ -576,11 +494,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: "[data-embedded='view']",
         },
         {
-            //----------------------------
-            // Move the item and resize it
-            //----------------------------
-
-            // Change the scale from the calendar view
             trigger:
                 '.o_knowledge_article_view_calendar_embedded_view .o_calendar_header .o_view_scale_selector button:contains("Month")',
             run: "click",
@@ -590,7 +503,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             run: "click",
         },
         {
-            // Move the item in the calendar
             trigger: '.fc-timegrid-event .o_event_title:contains("Item Article")',
             async run() {
                 const target = await measuredLane("09:00:00");
@@ -598,7 +510,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            // Make resizer visible
             trigger: '.fc-timegrid-event:contains("Item Article")',
             async run({ hover }) {
                 const eventEl = await waitForItemEvent(
@@ -609,7 +520,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            // Resize the item
             trigger: '.fc-timegrid-event:contains("Item Article")',
             async run() {
                 const hoveredEl = await waitForItemEvent(
@@ -626,13 +536,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            //----------------------------------------------------------------------
-            // Check that the date properties have been updated correctly after that
-            // the item has been moved in the item calendar view, and that the text
-            // property has not been changed
-            //----------------------------------------------------------------------
-
-            // Open the item
             trigger: ".fc-timegrid-event",
             async run({ dblclick }) {
                 const eventEl = await waitForItemEvent(
@@ -645,7 +548,6 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             trigger: '.o_hierarchy_article_name input:value("Item Article")',
         },
         {
-            // Check that the properties have been updated
             trigger:
                 '.o_widget_knowledge_properties_panel .o_property_field:contains("Start Property")',
             run: function () {
@@ -660,14 +562,12 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
                 '.o_widget_knowledge_properties_panel .o_property_field:contains("Stop Property")',
             run: function () {
                 const input = this.anchor.querySelector("input");
-                // When resizing an event, the event spans the hovered row, so we need to add 15 minutes
                 if (!input.value.includes("11:15")) {
                     console.error("Item stop date property has not been updated");
                 }
             },
         },
         {
-            // Check text property did not change
             trigger:
                 '.o_widget_knowledge_properties_panel .o_property_field:contains("Text Property")',
             run: function () {
@@ -678,33 +578,23 @@ registry.category("web_tour.tours").add("knowledge_calendar_command_tour", {
             },
         },
         {
-            //---------------------------------------------------------------------
-            // Remove start property to test the behavior of the item calendar view
-            // when the required props are missing
-            //---------------------------------------------------------------------
-
-            // Click on edit property button
             trigger:
                 ".o_widget_knowledge_properties_panel .o_property_field:contains(Start Property)",
             run: "hover && click .o_widget_knowledge_properties_panel .o_property_field:contains(Start Property) .o_field_property_open_popover",
         },
         {
-            // Delete start date property
             trigger: ".o_field_property_definition .o_field_property_definition_delete",
             run: "click",
         },
         {
-            // Confirm deletion
             trigger: ".modal-dialog .btn-primary",
             run: "click",
         },
         {
-            // Go back to parent article
             trigger: '.o_knowledge_tree .o_article_name:contains("Article Items")',
             run: "click",
         },
         {
-            // Make sure view is not crashed and shows nocontent helper
             trigger:
                 ".o_knowledge_article_view_calendar_embedded_view .o_knowledge_item_calendar_nocontent",
         },

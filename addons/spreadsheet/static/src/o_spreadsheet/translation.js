@@ -6,12 +6,6 @@ import { _t, appTranslateFn } from "@web/core/translation";
 const { arg, toString } = spreadsheet.helpers;
 const { functionRegistry, featurePluginRegistry } = spreadsheet.registries;
 
-/**
- * Standard spreadsheet dashboards defined in the source code need to be translated.
- * To achieve this, custom code in translate.py extracts source terms from spreadsheet JSON files
- * (specifically, files matching *.osheet.json).
- * This function is then used to translate those terms at runtime.
- */
 export function dynamicSpreadsheetTranslate(translationNamespace, term) {
     return appTranslateFn(term, translationNamespace);
 }

@@ -1628,8 +1628,6 @@ test("multi-level dropdown: unsubscribe all keynav when root destroyed", async (
 
 test.tags("mobile");
 test("an open bottom sheet stays one when the modality changes, the next opening follows it", async () => {
-    // opened and closed through the state: a HOOT click is a touch pointer in
-    // this preset, and would turn the modality back to touch before reopening
     const state = startOpenState();
     state.isOpen = false;
     class Parent extends SimpleDropdown {

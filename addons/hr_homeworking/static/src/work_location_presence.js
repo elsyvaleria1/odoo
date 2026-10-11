@@ -2,10 +2,6 @@
 import { registerImStatusDecoration } from "@mail/core/common/presence_status";
 import { _t } from "@web/core/translation";
 
-// hr_homeworking spells a located presence `<location_type>_<im_status>` on both
-// res.users.im_status and res.partner.im_status. hr_holidays spells its own
-// `leave_<im_status>` the same way, so the location word -- not the presence of
-// an underscore -- is what identifies one of ours.
 const LOCATIONS = {
     home: { icon: "fa-solid fa-house", label: _t("At Home") },
     office: { icon: "fa-solid fa-building", label: _t("At Office") },
@@ -43,10 +39,6 @@ export function workLocationPresence(imStatus) {
     };
 }
 
-// Tell mail what each located status means, once. Everything that reads a
-// presence word -- the member partition, the chat bubble, the self-presence
-// restart, offline_since -- answers from this rather than from a literal list
-// repeated per reader.
 export const WORK_LOCATION_PRESENCE_WORDS = Object.keys(STATUSES);
 
 for (const locationType of Object.keys(LOCATIONS)) {

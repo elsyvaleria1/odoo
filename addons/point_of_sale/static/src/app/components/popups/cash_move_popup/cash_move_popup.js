@@ -138,7 +138,6 @@ export class CashMovePopup extends Component {
                       ),
                 { type: "warning", sticky: true },
             );
-            // a dead-lettered move keeps the warning: its alert says why
             this.pos.data.waitForReplay(result.uuid).then((replayed) => {
                 if (replayed) {
                     closeWarning();

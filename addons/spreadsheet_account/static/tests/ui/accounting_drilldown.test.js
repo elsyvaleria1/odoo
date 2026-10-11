@@ -63,7 +63,6 @@ test("Create drill down domain", async () => {
     setCellContent(model, "A2", `=ODOO.BALANCE("100", 0)`);
     setCellContent(model, "A3", `=ODOO.BALANCE("100", 2020, , , FALSE)`);
     setCellContent(model, "A4", `=ODOO.BALANCE("100", 2020, , , )`);
-    // Does not affect non formula cells
     setCellContent(model, "A5", `5`);
     await waitForDataLoaded(model);
     selectCell(model, "A1");

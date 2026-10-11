@@ -61,7 +61,6 @@ export function useCategoryScrollSpy(
             scrollEl.scrollTo({ top: scrollOffset });
         }
 
-        //Ensure the category is correctly selected and visible
         selectCategory(categoryId);
     }
 
@@ -71,7 +70,6 @@ export function useCategoryScrollSpy(
         const containerTop =
             productScrollContainerRef.el.getBoundingClientRect().top + visibleThreshold;
 
-        // Loop through each category section to determine which is closest to the top
         for (const section of categorySections) {
             const distanceFromTop = section.getBoundingClientRect().top - containerTop;
             const absDistanceFromTop = Math.abs(distanceFromTop);

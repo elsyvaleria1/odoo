@@ -22,16 +22,7 @@ export class AttendanceListRenderer extends ListRenderer {
 }
 
 export class AttendanceListModel extends listView.Model {
-    /**
-     * Hide the attendances of archived employees unless the caller asked about
-     * them.
-     */
     async load(params = {}) {
-        // `params.domain` is absent on every reload that means "same domain as
-        // before" -- after a save, after a discard -- so pushing into it left
-        // those loads unfiltered, and reached the current domain only because
-        // it had mutated the search model's own array on the first load and
-        // that array was still the one in the config.
         const domain = params.domain ?? this.config.domain ?? [];
         const filtersOnActive = domain.some(
             (condition) =>

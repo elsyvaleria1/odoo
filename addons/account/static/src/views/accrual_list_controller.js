@@ -48,7 +48,6 @@ export class AccrualListController extends ListController {
     }
 
     async openRecord(record) {
-        // Instead of opening the record itself, open the parent order.
         const res_model = record.model.config.fields.order_id.relation;
         this.actionService.doAction({
             name: record.data.order_id.display_name,
@@ -67,7 +66,6 @@ export class AccrualListController extends ListController {
         this.state.date = date;
 
         if (this.model.config.groups) {
-            // If records are grouped, update context of grouped lines too.
             for (const group of Object.values(this.model.config.groups)) {
                 group.context.accrual_entry_date = this.dateAsString;
             }
@@ -87,7 +85,6 @@ export class AccrualListController extends ListController {
 
     async beforeExecuteActionButton(clickParams) {
         if (this.dateAsString) {
-            // If a date was selected, use it as the default date for the wizard.
             clickParams.buttonContext.default_date = this.dateAsString;
         }
         return super.beforeExecuteActionButton(...arguments);

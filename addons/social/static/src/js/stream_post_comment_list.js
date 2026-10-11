@@ -15,9 +15,6 @@ export class StreamPostCommentList extends Component {
     };
     props = useProps(this.constructor.props);
 
-    /**
-     * To override for each specific social StreamPostCommentList class.
-     */
     toggleUserLikes() {}
 
     _updateLikes(comment) {

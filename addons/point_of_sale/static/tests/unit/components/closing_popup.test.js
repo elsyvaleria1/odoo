@@ -16,7 +16,6 @@ const mountClosingPopup = async (pos, refusal) => {
     pos.config.cash_control = false;
     const calls = [];
     patchWithCleanup(pos, { pushOrdersWithClosingPopup: async () => true });
-    // leaving the POS would navigate the test page away
     const navigations = [];
     patchWithCleanup(pos.router, { close: () => navigations.push("close") });
     patchWithCleanup(pos.data, {
@@ -61,7 +60,6 @@ test("a refused closing state stops the close and shows why", async () => {
 test("an accepted closing state goes on to close the session", async () => {
     mockService("report", () => ({ doAction: async () => {} }));
     const pos = await setupPosEnv();
-    // data.call reports the method's null result as true
     const { popup, calls, navigations } = await mountClosingPopup(pos, true);
 
     await popup.closeSession();

@@ -15,7 +15,6 @@
 export async function preloadBackground(imageUrl) {
     let resolvePreload;
 
-    // We have to manually create a promise here because the "onload" API does not provide one.
     const preloadPromise = new Promise(function (resolve, reject) {
         resolvePreload = resolve;
     });

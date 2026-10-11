@@ -272,26 +272,4 @@ export class CartPage extends Component {
     formatProductName(product) {
         return formatProductName(product);
     }
-
-    /*
-    //TODO editable line
-        clickOnLine(line) {
-        const order = this.selfOrder.currentOrder;
-        this.selfOrder.editedLine = line;
-
-        if (order.state === "draft" && !order.lastChangesSent[line.uuid]) {
-            this.selfOrder.selectedOrderUuid = order.uuid;
-
-            if (line.combo_line_ids.length > 0) {
-                this.router.navigate("combo_selection", { id: line.product_id });
-            } else {
-                this.router.navigate("product", { id: line.product_id });
-            }
-        } else {
-            this.selfOrder.notification.add(_t("You cannot edit a posted orderline !"), {
-                type: "danger",
-            });
-        }
-    }
-*/
 }

@@ -67,9 +67,8 @@ export const CLASSES = {
     highlightedPill: "highlight",
     resizable: "o_resizable",
 
-    // Connectors
     highlightedConnector: "o_connector_highlighted",
-    lockedConnectorCreator: "o_connector_creator_lock", // Connector creators highlight for initial pill
+    lockedConnectorCreator: "o_connector_creator_lock",
 };
 
 export const SELECTORS = {
@@ -120,7 +119,6 @@ export const SELECTORS = {
     previousButton: ".o_gantt_renderer_controls button:has(> .oi-arrow-left)",
     nextButton: ".o_gantt_renderer_controls button:has(> .oi-arrow-right)",
 
-    // Connectors
     connector: ".o_gantt_connector",
     connectorCreatorBullet: ".o_connector_creator_bullet",
     connectorCreatorRight: ".o_connector_creator_right",
@@ -159,7 +157,7 @@ export function trackPatches(onModel) {
 export async function ganttControlsChanges() {
     await runAllTimers();
     await animationFrame();
-    await animationFrame(); // for potential focusDate
+    await animationFrame();
 }
 
 /**
@@ -248,8 +246,6 @@ export async function dragPill(text, options) {
     pill.scrollIntoView({ behavior: "instant", inline: "center" });
     const { cell, part } = await hoverPillCell(pill);
     const dragActions = await contains(pill).drag({
-        // D&D needs the correct initial position since it will attempt an implicit
-        // hover on the pill.
         position: getCellPositionOffset(cell, part - 1),
         relative: true,
     });
@@ -386,8 +382,6 @@ function getCellFromPill(pill) {
  * @param {string} str
  */
 function parseNumber(str) {
-    // A style with no explicit line ("auto", "") is the first line; 149 tests
-    // read one, so this is a default and not a failure to hide.
     return parseInt(str.match(/\d+/)?.[0]) || 1;
 }
 
@@ -432,11 +426,6 @@ export function getGridContent(params = {}) {
         SELECTORS.groupHeader,
         params.setTitleAttrOnHeaders,
     );
-    // The custom range renders its two dates around a separator icon, so the
-    // toggler's text comes back on separate lines; every other scale is a single
-    // label. Reading the lines keeps this independent of which icon font the
-    // template uses — probing for one icon class silently fell through to the
-    // raw text (dates joined by a newline) the moment the icon was restyled.
     const rangeLines = queryText(SELECTORS.scaleSelectorToggler)
         .split("\n")
         .map((line) => line.trim())
@@ -563,7 +552,6 @@ function getCellPositionOffset(cell, part) {
     const position = { x: 1 };
     if (part > 1) {
         const rect = cell.getBoundingClientRect();
-        // Calculate cell parts
         const colsRange = queryFirst(SELECTORS.columnHeader)
             .style.getPropertyValue("grid-column")
             .split("/");
@@ -634,14 +622,12 @@ export async function resizePill(pill, side, deltaOrPosition, shouldDrop = true)
 
     const { row, column } = getGridStyle(pill);
 
-    // Calculate cell parts
     const colsRange = queryFirst(SELECTORS.columnHeader)
         .style.getPropertyValue("grid-column")
         .split("/");
     const cellParts =
         CELL_PART || parseNumber(colsRange[1]) - parseNumber(colsRange[0]);
 
-    // Calculate delta or position
     const delta = typeof deltaOrPosition === "object" ? 0 : deltaOrPosition;
     const position = typeof deltaOrPosition === "object" ? deltaOrPosition : {};
     const targetColumn = (side === "start" ? column[0] : column[1]) + delta * cellParts;
@@ -665,13 +651,11 @@ export async function resizePill(pill, side, deltaOrPosition, shouldDrop = true)
         targetPart = targetColumn - cCol[0];
     }
 
-    // Assign position if delta
     if (!position.x) {
         const { width } = targetCell.getBoundingClientRect();
         position.x = targetPart * Math.floor(width / cellParts);
     }
 
-    // Actual drag actions
     const { moveTo, drop } = await contains(
         pill.querySelector(
             side === "start" ? SELECTORS.resizeStartHandle : SELECTORS.resizeEndHandle,

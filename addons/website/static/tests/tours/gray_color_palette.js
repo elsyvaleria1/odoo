@@ -36,7 +36,6 @@ registerWebsitePreviewTour(
         {
             content: "Check the preview of the gray 900 after hue change",
             trigger:
-                // the style is written through the CSSOM, which serializes colors as rgb()
                 ".o_we_gray_preview span[variable='900'][style*='background-color: rgb(36, 41, 33) !important']",
         },
         {
@@ -48,7 +47,6 @@ registerWebsitePreviewTour(
         {
             content: "Check the preview of the gray 900 after saturation change",
             trigger:
-                // the style is written through the CSSOM, which serializes colors as rgb()
                 ".o_we_gray_preview span[variable='900'][style*='background-color: rgb(34, 47, 27) !important']",
         },
         ...clickOnSave(),

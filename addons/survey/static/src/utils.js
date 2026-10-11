@@ -10,11 +10,8 @@ async function animate(el, keyFrame, duration) {
     });
     await animation.finished;
     try {
-        // can fail when the element is not visible (ex: display: none)
         animation.commitStyles();
-    } catch {
-        // pass
-    }
+    } catch {}
     animation.cancel();
 }
 

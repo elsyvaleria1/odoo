@@ -1,8 +1,4 @@
 /** @odoo-module native */
-/**
- * JS half of the cross-runtime GS1 conformance suite; the Python half is
- * tests/test_gs1_conformance.py. Add a case to gs1_conformance_vectors.js.
- */
 
 import { BarcodeParser } from "@barcodes/js/barcode_parser";
 import { GS1_VECTORS as vectors } from "@barcodes_gs1_nomenclature/../tests/gs1_conformance_vectors";

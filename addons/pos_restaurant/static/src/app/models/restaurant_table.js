@@ -72,7 +72,6 @@ export class RestaurantTable extends Base {
         return this.models["pos.order"].filter(
             (o) =>
                 o.table_id?.id === this.id &&
-                // Include the orders that are in tipping state.
                 (!o.finalized || o.uiState.screen_data?.value?.name === "TipScreen"),
         );
     }

@@ -74,10 +74,8 @@ function containerRecordClass(Record) {
 
 export const DocumentsRendererMixin = (component) =>
     class extends component {
-        /** The element standing for one record, and the one to focus after select-all. */
         static recordSelector = null;
         static focusSelector = (resId) => `[data-value-id="${resId}"]`;
-        /** Where a dragged document may be dropped, and the classes marking the hover. */
         static dropTargetSelector = null;
         static dropHoverClasses = { hover: "o_drag_hover", invalid: "o_drag_invalid" };
 
@@ -90,7 +88,6 @@ export const DocumentsRendererMixin = (component) =>
             this.searchModel = useSearchModel();
             this.config = useViewConfig();
             this.model = useViewModel();
-            // list and kanban bind their inherited rootRef, activity its own root
             this.root = this.rootRef ?? elementRef();
             this.documentService = useService("document.document");
             this.notificationService = useService("notification");
@@ -142,9 +139,6 @@ export const DocumentsRendererMixin = (component) =>
                 });
             }
 
-            // not in setup: the controller reads the focused record, and a
-            // restart of its render re-creates this renderer, whose new focus
-            // would restart it again
             onMounted(() =>
                 this.documentService.focusRecord(
                     this.selection?.[0] || this.getContainerRecord(),
@@ -191,7 +185,6 @@ export const DocumentsRendererMixin = (component) =>
             });
             useMountedListener(window, "blur", () => setShortcutModifier(false));
 
-            // list and kanban get a new list per load, activity a new records array
             onWillUpdateProps((nextProps) => {
                 if (
                     (nextProps.list ?? nextProps.records) !==
@@ -224,11 +217,6 @@ export const DocumentsRendererMixin = (component) =>
             }
             return this.documentService.focusedRecord;
         }
-        /**
-         * The current folder as a record, for the details panel. One per folder
-         * value (the search model replaces them on reload) and size, so
-         * focusing it again is recognised as the same focus.
-         */
         getContainerRecord() {
             const folder = this.searchModel.getSelectedFolder();
             const fileSize = this.props.list?.model.fileSize || 0;
@@ -245,7 +233,6 @@ export const DocumentsRendererMixin = (component) =>
 
         _makeContainerRecord(folder, fileSize) {
             const folderData = this.searchModel.getFolderAndParents(folder);
-            // a panel value has no folder_id: its parent is the next one up
             const folderId =
                 folderData?.length > 1 && typeof folderData[1].id === "number"
                     ? [folderData[1].id, folderData[1].display_name]
@@ -289,7 +276,6 @@ export const DocumentsRendererMixin = (component) =>
             return this.props.list?.count ?? this.records.length;
         }
 
-        /** list and kanban render a `list`, activity its flat `records` */
         get records() {
             return this.props.list?.records ?? this.props.records;
         }

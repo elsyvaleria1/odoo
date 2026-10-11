@@ -13,9 +13,7 @@ import {
 
 /** @typedef {{ url: string, html: string }} FetchedPage */
 
-// a pointer resting this long on a link announces a click
 const PRELOAD_DELAY = 65;
-// how long a preloaded page stays good for the click it announced
 const PRELOAD_TTL = 10000;
 
 /**
@@ -41,28 +39,6 @@ export function requestNavigation(
     }
 }
 
-/**
- * Turns the links and GET forms of a page region into in-place navigation:
- * the target URL is fetched as a whole page, the region carrying the same
- * `data-fragment` key is morphed in from it, and the URL goes into the
- * history. Only links and forms inside the scopes listed by
- * `data-partial-navigation` (a CSS selector) are taken, except under a
- * `data-no-partial-navigation` element (htmx's `hx-boost="false"`): an
- * autocomplete menu inside a scoped search form links to other pages.
- * Anything else, and any answer without the region, navigates as usual. An interaction that
- * builds its URL itself dispatches a cancelable, bubbling `o-navigate` event
- * with `detail.url`, and navigates on its own when nobody took it. After each
- * in-place navigation, `window` receives an `o-partial-navigation` event
- * (`detail.key`, `detail.url`, and `detail.page`, the fetched page as a
- * Document) for code that otherwise runs on page load or reads what the
- * server rendered outside the region. Elements outside the region marked
- * `data-partial-navigation-oob` with a `data-fragment` key follow along.
- *
- * A link in scope is preloaded (htmx's preload extension) once a mouse rests
- * on it, a finger touches it or the keyboard focuses it: the click then
- * finds its page fetched or on its way. One preload at a time, none when
- * the browser asks to save data.
- */
 export class PartialNavigation extends Interaction {
     static selector = "[data-fragment][data-partial-navigation]";
     dynamicContent = {
@@ -84,8 +60,6 @@ export class PartialNavigation extends Interaction {
         /** @type {Promise<FetchedPage> | null} */
         this.preloading = null;
         this.preloadTimer = 0;
-        // a page embedded by a same-origin frame (the website builder's preview)
-        // navigates as usual: the embedder follows the page through its loads
         this.scopes = window.frameElement ? null : this.el.dataset.partialNavigation;
         if (this.scopes && !browser.history.state?.partialNavigation) {
             browser.history.replaceState(
@@ -96,7 +70,6 @@ export class PartialNavigation extends Interaction {
     }
 
     start() {
-        // passive: a touch listener that may cancel would hold back scrolling
         this.addListener(this.el, "touchstart", (ev) => this.onTouchStart(ev), {
             passive: true,
         });
@@ -229,7 +202,6 @@ export class PartialNavigation extends Interaction {
         const form = /** @type {HTMLFormElement} */ (ev.target);
         if (
             ev.defaultPrevented ||
-            // the attribute: a control named "method" shadows form.method
             (form.getAttribute("method") || "get").toLowerCase() !== "get" ||
             !this._isInScope(form)
         ) {
@@ -278,8 +250,6 @@ export class PartialNavigation extends Interaction {
      * @param {{ push: boolean }} options
      */
     async navigate(url, { push }) {
-        // the morph would drop their `show` class but not the backdrop and
-        // scroll lock Bootstrap put on the body
         for (const el of this.el.querySelectorAll(".offcanvas.show")) {
             Offcanvas.getInstance(el)?.hide();
         }
@@ -287,7 +257,6 @@ export class PartialNavigation extends Interaction {
             Modal.getInstance(el)?.hide();
         }
         clearTimeout(this.preloadTimer);
-        // the swapped-in region carries no aria-busy, so the morph clears it
         this.el.setAttribute("aria-busy", "true");
         const preloaded = this._freshPreload(url);
         this.preloads.delete(url);
@@ -303,7 +272,6 @@ export class PartialNavigation extends Interaction {
             browser.location.assign(url);
             return;
         }
-        // the region may be display: contents, which has no box of its own
         const anchor = () => this.el.firstElementChild || this.el;
         const scrolledPast = anchor().getBoundingClientRect().top < 0;
         const el = this.el;

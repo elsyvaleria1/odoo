@@ -179,9 +179,6 @@ test("a failed upload-limit lookup is asked again, not remembered", async () => 
 });
 
 test("Uploading with no upload cap accepts the file", async () => {
-    // the server answers null for an unlimited cap (max_fileupload_size=0);
-    // an onRpc handler answering null falls through to the mock model, so the
-    // model itself answers it
     patchWithCleanup(DocumentsModels.DocumentsDocument.prototype, {
         get_document_max_upload_limit() {
             expect.step("cap: null");
@@ -359,7 +356,6 @@ test("Drag and Drop - After selecting multiple documents", async function () {
 test("Drag and Drop - Check permission when dropping documents", async function () {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Test Document 1"),
-        // what the server computes for a viewer who does not own it
         makeDocumentRecordData(3, "Test Document 2", {
             user_permission: "view",
             user_can_move: false,
@@ -384,7 +380,6 @@ test("Drag and Drop - Check permission when dropping documents", async function 
 });
 
 test("Drag and Drop - Check access rights confirmation popup when moving from kanban view", async function () {
-    // every move is first sent checked: the server refuses one changing access
     onRpc("document.document", "write", ({ args, kwargs }) => {
         const checked = kwargs.context?.[MOVE_ACCESS_CHECK] ? " checked" : "";
         expect.step(`move ${args[0][0]} ${args[1].user_folder_id}${checked}`);
@@ -407,7 +402,6 @@ test("Drag and Drop - Check access rights confirmation popup when moving from ka
                 }),
         ),
     );
-    // 4 -> 6 differ only in discoverability, which a move never changes
     const cases = [
         [2, 3, true],
         [2, 4, true],
@@ -439,8 +433,6 @@ test("Drag and Drop - Check access rights confirmation popup when moving from ka
 });
 
 test("Drag and Drop - Check access rights confirmation popup when moving from search panel", async function () {
-    // stepped, then left to the mock server, which refuses a checked move
-    // changing access
     onRpc("action_move_folder", ({ args, kwargs }) => {
         const checked = kwargs.context?.[MOVE_ACCESS_CHECK] ? "_checked" : "";
         expect.step(`action_move_folder_${args[0][0]}_${args[1]}${checked}`);
@@ -480,7 +472,6 @@ test("Drag and Drop - Check access rights confirmation popup when moving from se
             )
             .concat(nestedFolder),
     );
-    // 4 -> 6 differ only in discoverability, which a move never changes
     const cases = [
         [2, 3, true],
         [2, 4, true],
@@ -517,7 +508,6 @@ test("Drag and Drop - Check access rights confirmation popup when moving from se
             expect(".o_dialog:not(.o_inactive_modal)").toHaveCount(1);
             const movedFolder = documents.find((doc) => doc[0] === docToMove);
             const targetFolder = documents.find((doc) => doc[0] === targetDoc);
-            // a row per setting the move changes, showing its new value
             for (const [index, row] of [
                 [2, "access_internal"],
                 [3, "access_via_link"],
@@ -562,7 +552,6 @@ test("Drag and Drop - Check access rights confirmation popup when moving from se
 });
 
 test("Drag and Drop - a drop moves what the server says may move, not every editable", async function () {
-    // an editor's document on the company root: user_can_move keeps it to managers
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Company Root Doc", {
             user_permission: "edit",
@@ -590,7 +579,6 @@ test("Drag and Drop - a drop moves what the server says may move, not every edit
 test("Drag and Drop - Drop multiple documents at once", async function () {
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Test Document 1"),
-        // what the server computes for a viewer who does not own it
         makeDocumentRecordData(3, "Test Document 2", {
             user_permission: "view",
             user_can_move: false,
@@ -1132,7 +1120,6 @@ test("Check actions with preview", async function () {
     await waitFor(".o-dropdown-item:contains('Lock')");
     await contains(".o-dropdown-item:contains('Lock')").click();
 
-    // a lock reloads that document only: the preview stays on it
     expect(".o-FileViewer").toHaveCount(1);
     await contains(".o-FileViewer .o_cp_action_menus .o-dropdown").click();
     await waitFor(".o-dropdown-item:contains('Unlock')");

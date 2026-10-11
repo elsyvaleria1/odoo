@@ -7,13 +7,6 @@ import { SignalStore } from "@web/core/utils/reactive";
 import { ConfirmationDialog } from "@web/ui/dialog";
 import { useStudioEditorContext } from "@web_studio/client_action/editor/studio_editor_context";
 
-/**
- * Provides standard shortcuts for the ActionEditor and  ViewEditor.
- * Used as a communcation interface between the editorMenu
- * and the ActionEditor or the ViewEditor
- *
- * Supports snackBar, breadcrumbs, operation stack
- */
 export class EditionFlow extends SignalStore {
     constructor(env, services) {
         super();
@@ -41,8 +34,6 @@ export class EditionFlow extends SignalStore {
         const bcLength = this.breadcrumbs.length;
         const handler = () => {
             this.breadcrumbs.length = bcLength + 1;
-            // Reset studio to its own state
-            // In case another action has been done
             this.studio.setParams({}, false);
         };
         this.breadcrumbs.push({ data: crumb, handler });
@@ -73,7 +64,6 @@ export class EditionFlow extends SignalStore {
         return new Promise((resolve) => {
             const confirm = async () => {
                 if (!viewId && viewType) {
-                    // To restore the default view from an inherited one, we need first to retrieve the default view id
                     const result = await this.loadViews();
                     viewId = result.views[viewType].id;
                 }
@@ -118,11 +108,6 @@ export function useEditorMenuItem(MenuItem) {
     });
 }
 
-/**
- * Indicates whether a the concrete editor has finished its async operation
- * with its state: loaded/loading
- */
-
 export class SnackbarIndicator extends SignalStore {
     constructor() {
         super();
@@ -148,11 +133,6 @@ export class SnackbarIndicator extends SignalStore {
     }
 }
 
-/**
- * A Class that manages undo/redo of some operations
- * in a sort of MutexedKeeLast: doing many calls to "do"
- * will just store the arguments and keep only the last call's results
- */
 export class EditorOperations extends SignalStore {
     constructor(params) {
         super();

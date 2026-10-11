@@ -7,9 +7,6 @@ import { standardFieldProps } from "@web/fields/standard_field_props";
 
 import { ImagesCarouselDialog } from "../images_carousel_dialog.js";
 
-/**
- * Component for a many2many field to <ir.attachment>, containing only images.
- */
 export class SocialMany2manyImages extends Component {
     static template = "social.SocialMany2manyImages";
     static props = standardFieldProps;

@@ -41,7 +41,6 @@ test("replacing an image should display the image tool options", async () => {
     await waitSidebarUpdated();
     expect("button[data-action-id=replaceMedia]").toHaveCount(1);
 
-    // Fields that don't appear before replacing the image
     expect("div[data-label=Shape] div[role=button]").toHaveCount(0);
     expect("div[data-label=Transform] button[data-action-id=cropImage]").toHaveCount(0);
     expect(
@@ -53,7 +52,6 @@ test("replacing an image should display the image tool options", async () => {
     await contains(".o_existing_attachment_cell .o_button_area").click();
     await waitSidebarUpdated();
 
-    // Fields that are displayed after replacing the image
     expect("div[data-label=Shape] div[role=button]").toHaveCount(1);
     expect("div[data-label=Transform] button[data-action-id=cropImage]").toHaveCount(1);
     expect(
@@ -61,7 +59,6 @@ test("replacing an image should display the image tool options", async () => {
     ).toHaveCount(0);
     expect("div[data-label=Format] button").toHaveCount(1);
 
-    // Fields that should not appear in [data-oe-type='image'] > img for a binary field image
     expect("div[data-label=Description] input").toHaveCount(0);
     expect("div[data-label=Tooltip] input").toHaveCount(0);
     expect("div[data-label=Alignment] button").toHaveCount(0);

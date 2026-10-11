@@ -38,7 +38,6 @@ test("rendering with allow refusal", async () => {
         tag,
     };
     await createDocumentWebClient(config);
-    // After the helper, whose own get_document mock would otherwise win.
     onRpc("/sign/get_document/5/abc", () =>
         Promise.resolve({
             html: `
@@ -55,7 +54,6 @@ test("rendering with allow refusal", async () => {
     await getService("action").doAction(9);
     await animationFrame();
 
-    // The item lives in a Dropdown's content, which renders only once opened.
     await click(".signer-status + .dropdown .dropdown-toggle");
     await animationFrame();
     expect(".o_sign_refuse_document_button").toHaveCount(1, {

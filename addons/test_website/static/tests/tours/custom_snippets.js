@@ -3,25 +3,6 @@ import {
     registerWebsitePreviewTour,
 } from "@website/js/tours/tour_utils";
 
-/**
- * The purpose of this tour is to check the custom snippets flow:
- *
- * -> go to edit mode
- * -> drag a banner into page content
- * -> customize banner (set text)
- * -> save banner as custom snippet
- * -> confirm save
- * -> ensure custom snippet is available in the "add snippet" dialog
- * -> add custom snippet into the page
- * -> ensure block appears as banner
- * -> ensure block appears as custom banner
- * -> rename custom banner
- * -> verify rename took effect
- * -> delete custom snippet
- * -> confirm delete
- * -> ensure it was deleted
- */
-
 registerWebsitePreviewTour(
     "test_custom_snippet",
     {

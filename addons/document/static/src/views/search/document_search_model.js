@@ -45,9 +45,7 @@ export class DocumentsSearchModel extends SearchModel {
             if (documentId) {
                 this.documentService.requestFocus(documentId);
             }
-            // the document asked for is shown whatever the defaults would filter
             if (this.documentService.focusRequest) {
-                // a search model loaded without saved filters has none to disarm
                 for (const irFilter of config.irFilters || []) {
                     irFilter.is_default = false;
                 }
@@ -198,8 +196,6 @@ export class DocumentsSearchModel extends SearchModel {
 
     async _reloadSearchPanel(skipUpdate = false) {
         const end = log.perf("reloadSearchPanel");
-        // called when the tree may have changed: its cached copy would be
-        // served first and then replaced by the answer, notifying twice
         rpcBus.trigger(RpcEvent.CLEAR_CACHES, {
             tables: ["search_panel_select_range"],
             model: "document.document",
@@ -344,7 +340,6 @@ export class DocumentsSearchModel extends SearchModel {
         } else {
             category.activeValueId = storageItem;
         }
-        // a special root counts only where this panel has it (none for a portal user)
         if (
             (isSpecialFolderId(category.activeValueId) &&
                 category.values.has(category.activeValueId)) ||
@@ -364,8 +359,6 @@ export class DocumentsSearchModel extends SearchModel {
                 newSection = category.values.get(newSection.parentId);
             }
             if (newSection) {
-                // the nearest ancestor still reachable; when that is "All"
-                // (false: a portal user's roots), the tree's first folder
                 category.activeValueId =
                     newSection.id || (valueIds.find((id) => id !== false) ?? false);
             } else {

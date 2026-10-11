@@ -6,7 +6,6 @@ const NAME_LIMIT = 24;
 const COLUMN_GAP = 90;
 const ROW_GAP = 40;
 
-// Ordered as they are offered on a step's right edge, most common first.
 export const CONDITIONS = [
     "on_success",
     "on_error",
@@ -16,9 +15,6 @@ export const CONDITIONS = [
     "no_event",
 ];
 
-// An `expression` edge carries a Python expression, and an event edge an event
-// code, that the canvas cannot ask for; `workflow.edge` refuses either without
-// it, so those ports are only ever shown for an edge that already exists.
 const DRAGGABLE_CONDITIONS = ["on_success", "on_error", "always"];
 
 export const INPUT_PORT_ID = "in";
@@ -141,23 +137,10 @@ export function shortName(name) {
     return name.length > NAME_LIMIT ? `${name.slice(0, NAME_LIMIT - 1)}…` : name;
 }
 
-/**
- * Which conditions a reader may draw from a step's right edge.
- *
- * A rule that does not record its runs cannot honour anything but "on success"
- * — `workflow.edge._check_condition_is_honoured` refuses the rest — so those
- * ports are not offered rather than offered and rejected.
- */
 export function draggableConditions(runtimeBacked) {
     return runtimeBacked ? DRAGGABLE_CONDITIONS : ["on_success"];
 }
 
-/**
- * The output ports of one step: every condition it may still be given, plus
- * every condition it already carries, so an existing edge always has a port
- * to leave from. A graph nobody can edit is given nothing more, so it draws
- * only the ports its edges leave from.
- */
 export function outputPortsFor(nodeId, edges, runtimeBacked, editable = true) {
     const draggable = editable ? draggableConditions(runtimeBacked) : [];
     const used = new Set(
@@ -234,14 +217,6 @@ export function layoutWorkflow(nodes, edges, defaultSize) {
     return positions;
 }
 
-/**
- * Translate `automation.rule.get_workflow_graph`'s payload into the graph the
- * flow editor draws: one node per step, one connection per edge, and the
- * edge's condition carried by the port it leaves from.
- *
- * Every figure the editor needs comes out of the payload, sizes included, so
- * the canvas restates none of the geometry the server enforces.
- */
 export function toFlowGraph(payload) {
     const runtimeBacked = Boolean(payload.runtime_backed);
     const size = payload.node_size;

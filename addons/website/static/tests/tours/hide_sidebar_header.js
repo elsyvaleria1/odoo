@@ -36,8 +36,6 @@ registerWebsitePreviewTour(
             trigger: ":iframe #wrapwrap>header.o_header_sidebar",
         },
         {
-            // only the builder remounted on the reloaded page marks its body:
-            // checked after the new header, or the page being replaced passes
             content: "Wait for the builder to mount after iframe reload",
             trigger: ":iframe body.editor_enable",
         },

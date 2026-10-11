@@ -17,8 +17,6 @@ test("a viewer whose page is gone by the time its styles arrive stops quietly", 
             radioSets: {},
         },
     );
-    // a document with no window: what an iframe's document becomes once the
-    // iframe is removed
     pdf.root = document.implementation.createHTMLDocument("left");
     pdf.root.body.innerHTML = '<div class="page" data-page-number="1"></div>';
     await pdf.start();

@@ -2,11 +2,6 @@
 import { resolveZone, serializeDate, userTimeZone } from "@web/core/l10n/dates";
 import { CalendarModel } from "@web/views/calendar";
 
-/**
- * Slots are created differently depending on the screen size.
- * Desktop: Using the multi create feature.
- * Mobile: Using the calendar quick create dialog.
- */
 export class EventSlotCalendarModel extends CalendarModel {
     /**
      * @override
@@ -17,7 +12,6 @@ export class EventSlotCalendarModel extends CalendarModel {
         rawRecord["date"] = serializeDate(partialRecord.start);
         rawRecord["start_hour"] =
             partialRecord.start.hour + partialRecord.start.minute / 60;
-        // There could be no 'end' when opening the mobile quick create dialog.
         if (partialRecord.end) {
             rawRecord["end_hour"] =
                 partialRecord.end.hour + partialRecord.end.minute / 60;
@@ -58,7 +52,6 @@ export class EventSlotCalendarModel extends CalendarModel {
             .withTimeZone(tz)
             .toPlainDateTime()
             .toZonedDateTime(localZone);
-        // Always display the slot time
         normalizedRecord.isTimeHidden = false;
         return normalizedRecord;
     }

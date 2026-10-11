@@ -26,8 +26,6 @@ patch(OrderSummary.prototype, {
 
         if (key === "-") {
             if (selectedLine && selectedLine._e_wallet_program_id) {
-                // Do not allow negative quantity or price in a gift card or ewallet orderline.
-                // Refunding gift card or ewallet is not supported.
                 this.notification.add(
                     _t(
                         "You cannot set negative quantity or price to gift card or ewallet.",
@@ -56,7 +54,6 @@ patch(OrderSummary.prototype, {
             if (confirmed) {
                 buffer = null;
             } else {
-                // Cancel backspace
                 return;
             }
         }
@@ -113,11 +110,6 @@ patch(OrderSummary.prototype, {
         }
     },
 
-    /**
-     * Updates the order line with the gift card information:
-     * 1. Reduce the quantity if greater than one, otherwise remove the order line.
-     * 2. Add a new order line with updated gift card code and points, removing any existing related couponPointChanges.
-     */
     async _updateGiftCardOrderline(code, points) {
         let selectedLine = this.currentOrder.getSelectedOrderline();
         const product = selectedLine.product_id;
@@ -173,7 +165,6 @@ patch(OrderSummary.prototype, {
                 }
                 code = code.trim();
 
-                // check for duplicate code
                 if (this.currentOrder.duplicateCouponChanges(code)) {
                     this.dialog.add(ConfirmationDialog, {
                         title: _t("Validation Error"),

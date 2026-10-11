@@ -1,10 +1,6 @@
 import { expect, test } from "@odoo/hoot";
 import { ProductNameAndDescriptionField } from "@product/product_name_and_description/product_name_and_description";
 
-// ---------------------------------------------------------------------------
-// ProductNameAndDescriptionField.label
-// ---------------------------------------------------------------------------
-
 /** @param {string} productName @param {string} description */
 function labelOf(productName, description) {
     const self = Object.create(ProductNameAndDescriptionField.prototype);
@@ -28,8 +24,6 @@ test("the product name written as a prefix is stripped", () => {
 });
 
 test("a description that only mentions the product name is left alone", () => {
-    // Reachable from any import or API caller: account.move.line.name is an
-    // editable stored compute, so an explicit write without the prefix is kept.
     expect(labelOf("Desk", "Spare leg for a Desk")).toBe("Spare leg for a Desk");
 });
 

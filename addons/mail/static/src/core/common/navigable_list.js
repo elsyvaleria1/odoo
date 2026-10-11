@@ -59,7 +59,6 @@ export class NavigableList extends Component {
         const positioning = usePosition(this.rootRef, () => this.props.anchorRef, {
             position: this.props.position,
         });
-        // the root stays in the DOM while closed; do not measure and place it then
         useLayoutEffect(
             (show) => (show ? positioning.unlock() : positioning.lock()),
             () => [this.show],

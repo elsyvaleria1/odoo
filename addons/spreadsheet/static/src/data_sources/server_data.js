@@ -33,20 +33,6 @@ export class Request {
     }
 }
 
-/**
- * A batch request consists of multiple requests which are combined into a single RPC.
- *
- * The batch responsibility is to combine individual requests into a single RPC payload
- * and to split the response back for individual requests.
- *
- * The server method must have the following API:
- * - The input is a list of arguments. Each list item being the arguments of a single request.
- * - The output is a list of results, ordered according to the input list
- *
- *  ```
- *  [result1, result2] = self.env['my.model'].my_batched_method([request_1_args, request_2_args])
- *  ```
- */
 class ListRequestBatch {
     /**
      * @param {string} resModel
@@ -235,9 +221,6 @@ export class ServerData {
     }
 }
 
-/**
- * Collect multiple requests into a single batch.
- */
 export class BatchEndpoint {
     /**
      * @param {import("@web/core/network/orm_service").ORM} orm

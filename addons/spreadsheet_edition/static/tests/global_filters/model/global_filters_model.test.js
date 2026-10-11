@@ -32,7 +32,7 @@ const testFieldMatching = {
 
 test("Can set a value from a pivot header context menu", async function () {
     const { env, model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -102,7 +102,7 @@ test("Can set a value from a pivot header context menu", async function () {
 
 test("Can open context menu with positional argument", async function () {
     const { env, model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -127,7 +127,7 @@ test("Can open context menu with positional argument", async function () {
 
 test("Can open context menu without argument", async function () {
     const { env, model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -158,7 +158,7 @@ test("Can open context menu without argument", async function () {
 
 test("Can open context menu when there is a filter with no field defined", async function () {
     const { env, model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -227,7 +227,7 @@ test("menu to set filter value is not visible if no filter matches", async funct
 
 test("menu to set filter value is only visible on the PIVOT.HEADER formulas", async function () {
     const { env, model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                     <pivot>
                         <field name="product_id" type="row"/>
                         <field name="probability" type="measure"/>
@@ -250,7 +250,7 @@ test("menu to set filter value is only visible on the PIVOT.HEADER formulas", as
 
 test("menu to set filter value is only visible on the the header of a PIVOT.TABLE", async function () {
     const { env, model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                     <pivot>
                         <field name="product_id" type="row"/>
                         <field name="probability" type="measure"/>
@@ -265,10 +265,10 @@ test("menu to set filter value is only visible on the the header of a PIVOT.TABL
         .getMenuItems()
         .find((item) => item.id === "use_global_filter");
 
-    selectCell(model, "A3"); // Header cell
+    selectCell(model, "A3");
     expect(root.isVisible(env)).toBe(true);
 
-    selectCell(model, "B3"); // Not a header cell
+    selectCell(model, "B3");
     expect(root.isVisible(env)).toBe(false);
 });
 

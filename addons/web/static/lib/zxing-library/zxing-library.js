@@ -18,7 +18,6 @@
  *
  * @license Apache-2.0 (see LICENSE in this directory)
  */
-// ../node_modules/ts-custom-error/dist/custom-error.mjs
 function fixProto(target, prototype) {
   var setPrototypeOf = Object.setPrototypeOf;
   setPrototypeOf ? setPrototypeOf(target, prototype) : target.__proto__ = prototype;
@@ -69,7 +68,6 @@ var CustomError = function(_super) {
   return CustomError2;
 }(Error);
 
-// package/esm/core/Exception.js
 var __extends2 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -111,7 +109,6 @@ var Exception = (
 );
 var Exception_default = Exception;
 
-// package/esm/core/ArgumentException.js
 var __extends3 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -144,7 +141,6 @@ var ArgumentException = (
 );
 var ArgumentException_default = ArgumentException;
 
-// package/esm/core/IllegalArgumentException.js
 var __extends4 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -177,7 +173,6 @@ var IllegalArgumentException = (
 );
 var IllegalArgumentException_default = IllegalArgumentException;
 
-// package/esm/core/BinaryBitmap.js
 var BinaryBitmap = (
   /** @class */
   function() {
@@ -232,7 +227,6 @@ var BinaryBitmap = (
 );
 var BinaryBitmap_default = BinaryBitmap;
 
-// package/esm/core/ChecksumException.js
 var __extends5 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -268,7 +262,6 @@ var ChecksumException = (
 );
 var ChecksumException_default = ChecksumException;
 
-// package/esm/core/Binarizer.js
 var Binarizer = (
   /** @class */
   function() {
@@ -289,7 +282,6 @@ var Binarizer = (
 );
 var Binarizer_default = Binarizer;
 
-// package/esm/core/util/System.js
 var System = (
   /** @class */
   function() {
@@ -316,7 +308,6 @@ var System = (
 );
 var System_default = System;
 
-// package/esm/core/IndexOutOfBoundsException.js
 var __extends6 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -349,7 +340,6 @@ var IndexOutOfBoundsException = (
 );
 var IndexOutOfBoundsException_default = IndexOutOfBoundsException;
 
-// package/esm/core/ArrayIndexOutOfBoundsException.js
 var __extends7 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -391,7 +381,6 @@ var ArrayIndexOutOfBoundsException = (
 );
 var ArrayIndexOutOfBoundsException_default = ArrayIndexOutOfBoundsException;
 
-// package/esm/core/util/Arrays.js
 var __values = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -541,7 +530,6 @@ var Arrays = (
 );
 var Arrays_default = Arrays;
 
-// package/esm/core/util/Integer.js
 var Integer = (
   /** @class */
   function() {
@@ -628,7 +616,6 @@ var Integer = (
 );
 var Integer_default = Integer;
 
-// package/esm/core/common/BitArray.js
 var BitArray = (
   /** @class */
   function() {
@@ -795,7 +782,7 @@ var BitArray = (
           }
           bitOffset++;
         }
-        array[offset + i] = /*(byte)*/
+        array[offset + i] =
         theByte;
       }
     };
@@ -814,7 +801,7 @@ var BitArray = (
         x = x >> 4 & 252645135 | (x & 252645135) << 4;
         x = x >> 8 & 16711935 | (x & 16711935) << 8;
         x = x >> 16 & 65535 | (x & 65535) << 16;
-        newBits[len - i] = /*(int)*/
+        newBits[len - i] =
         x;
       }
       if (this.size !== oldBitsLen * 32) {
@@ -868,7 +855,6 @@ var BitArray = (
 );
 var BitArray_default = BitArray;
 
-// package/esm/core/DecodeHintType.js
 var DecodeHintType;
 (function(DecodeHintType2) {
   DecodeHintType2[DecodeHintType2["OTHER"] = 0] = "OTHER";
@@ -886,7 +872,6 @@ var DecodeHintType;
 })(DecodeHintType || (DecodeHintType = {}));
 var DecodeHintType_default = DecodeHintType;
 
-// package/esm/core/FormatException.js
 var __extends8 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -922,7 +907,6 @@ var FormatException = (
 );
 var FormatException_default = FormatException;
 
-// package/esm/core/common/CharacterSetECI.js
 var __values2 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -1071,7 +1055,6 @@ var CharacterSetECI = (
 );
 var CharacterSetECI_default = CharacterSetECI;
 
-// package/esm/core/UnsupportedOperationException.js
 var __extends9 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1104,7 +1087,6 @@ var UnsupportedOperationException = (
 );
 var UnsupportedOperationException_default = UnsupportedOperationException;
 
-// package/esm/core/util/StringEncoding.js
 var StringEncoding = (
   /** @class */
   function() {
@@ -1180,7 +1162,6 @@ var StringEncoding = (
 );
 var StringEncoding_default = StringEncoding;
 
-// package/esm/core/common/StringUtils.js
 var StringUtils = (
   /** @class */
   function() {
@@ -1212,9 +1193,9 @@ var StringUtils = (
       var sjisMaxKatakanaWordLength = 0;
       var sjisMaxDoubleBytesWordLength = 0;
       var isoHighOther = 0;
-      var utf8bom = bytes.length > 3 && bytes[0] === /*(byte) */
-      239 && bytes[1] === /*(byte) */
-      187 && bytes[2] === /*(byte) */
+      var utf8bom = bytes.length > 3 && bytes[0] ===
+      239 && bytes[1] ===
+      187 && bytes[2] ===
       191;
       for (var i = 0; i < length && (canBeISO88591 || canBeShiftJIS || canBeUTF8); i++) {
         var value = bytes[i] & 255;
@@ -1383,7 +1364,6 @@ var StringUtils = (
 );
 var StringUtils_default = StringUtils;
 
-// package/esm/core/util/StringBuilder.js
 var StringBuilder = (
   /** @class */
   function() {
@@ -1442,7 +1422,6 @@ var StringBuilder = (
 );
 var StringBuilder_default = StringBuilder;
 
-// package/esm/core/common/BitMatrix.js
 var BitMatrix = (
   /** @class */
   function() {
@@ -1755,7 +1734,6 @@ var BitMatrix = (
 );
 var BitMatrix_default = BitMatrix;
 
-// package/esm/core/NotFoundException.js
 var __extends10 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1791,7 +1769,6 @@ var NotFoundException = (
 );
 var NotFoundException_default = NotFoundException;
 
-// package/esm/core/common/GlobalHistogramBinarizer.js
 var __extends11 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1947,7 +1924,6 @@ var GlobalHistogramBinarizer = (
 );
 var GlobalHistogramBinarizer_default = GlobalHistogramBinarizer;
 
-// package/esm/core/common/HybridBinarizer.js
 var __extends12 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -2104,7 +2080,6 @@ var HybridBinarizer = (
 );
 var HybridBinarizer_default = HybridBinarizer;
 
-// package/esm/core/LuminanceSource.js
 var LuminanceSource = (
   /** @class */
   function() {
@@ -2161,7 +2136,6 @@ var LuminanceSource = (
 );
 var LuminanceSource_default = LuminanceSource;
 
-// package/esm/core/InvertedLuminanceSource.js
 var __extends13 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -2194,7 +2168,7 @@ var InvertedLuminanceSource = (
       var sourceRow = this.delegate.getRow(y, row);
       var width = this.getWidth();
       for (var i = 0; i < width; i++) {
-        sourceRow[i] = /*(byte)*/
+        sourceRow[i] =
         255 - (sourceRow[i] & 255);
       }
       return sourceRow;
@@ -2204,7 +2178,7 @@ var InvertedLuminanceSource = (
       var length = this.getWidth() * this.getHeight();
       var invertedMatrix = new Uint8ClampedArray(length);
       for (var i = 0; i < length; i++) {
-        invertedMatrix[i] = /*(byte)*/
+        invertedMatrix[i] =
         255 - (matrix[i] & 255);
       }
       return invertedMatrix;
@@ -2232,7 +2206,6 @@ var InvertedLuminanceSource = (
 );
 var InvertedLuminanceSource_default = InvertedLuminanceSource;
 
-// package/esm/browser/HTMLCanvasElementLuminanceSource.js
 var __extends14 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -2367,7 +2340,6 @@ var HTMLCanvasElementLuminanceSource = (
   }(LuminanceSource_default)
 );
 
-// package/esm/browser/VideoInputDevice.js
 var VideoInputDevice = (
   /** @class */
   function() {
@@ -2389,7 +2361,6 @@ var VideoInputDevice = (
   }()
 );
 
-// package/esm/browser/BrowserCodeReader.js
 var __awaiter = function(thisArg, _arguments, P, generator) {
   function adopt(value) {
     return value instanceof P ? value : new P(function(resolve) {
@@ -2512,9 +2483,6 @@ var BrowserCodeReader = (
       this._timeBetweenDecodingAttempts = 0;
     }
     Object.defineProperty(BrowserCodeReader2.prototype, "hasNavigator", {
-      /**
-       * If navigator is present.
-       */
       get: function() {
         return typeof navigator !== "undefined";
       },
@@ -2522,9 +2490,6 @@ var BrowserCodeReader = (
       configurable: true
     });
     Object.defineProperty(BrowserCodeReader2.prototype, "isMediaDevicesSuported", {
-      /**
-       * If mediaDevices under navigator is supported.
-       */
       get: function() {
         return this.hasNavigator && !!navigator.mediaDevices;
       },
@@ -2532,9 +2497,6 @@ var BrowserCodeReader = (
       configurable: true
     });
     Object.defineProperty(BrowserCodeReader2.prototype, "canEnumerateDevices", {
-      /**
-       * If enumerateDevices under navigator is supported.
-       */
       get: function() {
         return !!(this.isMediaDevicesSuported && navigator.mediaDevices.enumerateDevices);
       },
@@ -2542,7 +2504,6 @@ var BrowserCodeReader = (
       configurable: true
     });
     Object.defineProperty(BrowserCodeReader2.prototype, "timeBetweenDecodingAttempts", {
-      /** Time between two decoding tries in milli seconds. */
       get: function() {
         return this._timeBetweenDecodingAttempts;
       },
@@ -2558,15 +2519,9 @@ var BrowserCodeReader = (
       configurable: true
     });
     Object.defineProperty(BrowserCodeReader2.prototype, "hints", {
-      /**
-       * Sets the hints.
-       */
       get: function() {
         return this._hints;
       },
-      /**
-       * Sets the hints.
-       */
       set: function(hints) {
         this._hints = hints || null;
       },
@@ -2840,7 +2795,6 @@ var BrowserCodeReader = (
                 console.warn("Trying to play video that is already playing.");
                 return [
                   2
-                  /*return*/
                 ];
               }
               _b.label = 1;
@@ -2857,7 +2811,6 @@ var BrowserCodeReader = (
             case 4:
               return [
                 2
-                /*return*/
               ];
           }
         });
@@ -2998,7 +2951,6 @@ var BrowserCodeReader = (
               this.decodeContinuously(videoElement, callbackFn);
               return [
                 2
-                /*return*/
               ];
           }
         });
@@ -3289,7 +3241,6 @@ var BrowserCodeReader = (
   }()
 );
 
-// package/esm/core/Result.js
 var Result = (
   /** @class */
   function() {
@@ -3377,7 +3328,6 @@ var Result = (
 );
 var Result_default = Result;
 
-// package/esm/core/BarcodeFormat.js
 var BarcodeFormat;
 (function(BarcodeFormat2) {
   BarcodeFormat2[BarcodeFormat2["AZTEC"] = 0] = "AZTEC";
@@ -3401,7 +3351,6 @@ var BarcodeFormat;
 })(BarcodeFormat || (BarcodeFormat = {}));
 var BarcodeFormat_default = BarcodeFormat;
 
-// package/esm/core/ResultMetadataType.js
 var ResultMetadataType;
 (function(ResultMetadataType2) {
   ResultMetadataType2[ResultMetadataType2["OTHER"] = 0] = "OTHER";
@@ -3419,7 +3368,6 @@ var ResultMetadataType;
 })(ResultMetadataType || (ResultMetadataType = {}));
 var ResultMetadataType_default = ResultMetadataType;
 
-// package/esm/core/common/DecoderResult.js
 var DecoderResult = (
   /** @class */
   function() {
@@ -3488,7 +3436,6 @@ var DecoderResult = (
 );
 var DecoderResult_default = DecoderResult;
 
-// package/esm/core/common/reedsolomon/AbstractGenericGF.js
 var AbstractGenericGF = (
   /** @class */
   function() {
@@ -3511,7 +3458,6 @@ var AbstractGenericGF = (
 );
 var AbstractGenericGF_default = AbstractGenericGF;
 
-// package/esm/core/common/reedsolomon/GenericGFPoly.js
 var GenericGFPoly = (
   /** @class */
   function() {
@@ -3711,7 +3657,6 @@ var GenericGFPoly = (
 );
 var GenericGFPoly_default = GenericGFPoly;
 
-// package/esm/core/ArithmeticException.js
 var __extends15 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3744,7 +3689,6 @@ var ArithmeticException = (
 );
 var ArithmeticException_default = ArithmeticException;
 
-// package/esm/core/common/reedsolomon/GenericGF.js
 var __extends16 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3847,7 +3791,6 @@ var GenericGF = (
 );
 var GenericGF_default = GenericGF;
 
-// package/esm/core/ReedSolomonException.js
 var __extends17 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3880,7 +3823,6 @@ var ReedSolomonException = (
 );
 var ReedSolomonException_default = ReedSolomonException;
 
-// package/esm/core/IllegalStateException.js
 var __extends18 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -3913,7 +3855,6 @@ var IllegalStateException = (
 );
 var IllegalStateException_default = IllegalStateException;
 
-// package/esm/core/common/reedsolomon/ReedSolomonDecoder.js
 var ReedSolomonDecoder = (
   /** @class */
   function() {
@@ -4041,7 +3982,6 @@ var ReedSolomonDecoder = (
 );
 var ReedSolomonDecoder_default = ReedSolomonDecoder;
 
-// package/esm/core/aztec/decoder/Decoder.js
 var Table;
 (function(Table2) {
   Table2[Table2["UPPER"] = 0] = "UPPER";
@@ -4096,7 +4036,7 @@ var Decoder = (
               break;
             }
             var code = Decoder5.readCode(correctedBits, index, 8);
-            result += /*(char)*/
+            result +=
             StringUtils_default.castAsNonUtf8Char(code);
             index += 8;
           }
@@ -4436,7 +4376,6 @@ var Decoder = (
 );
 var Decoder_default = Decoder;
 
-// package/esm/core/common/detector/MathUtils.js
 var MathUtils = (
   /** @class */
   function() {
@@ -4450,7 +4389,6 @@ var MathUtils = (
       if (d >= Number.MAX_SAFE_INTEGER)
         return Number.MAX_SAFE_INTEGER;
       return (
-        /*(int) */
         d + (d < 0 ? -0.5 : 0.5) | 0
       );
     };
@@ -4458,7 +4396,6 @@ var MathUtils = (
       var xDiff = aX - bX;
       var yDiff = aY - bY;
       return (
-        /*(float) */
         Math.sqrt(xDiff * xDiff + yDiff * yDiff)
       );
     };
@@ -4475,7 +4412,6 @@ var MathUtils = (
 );
 var MathUtils_default = MathUtils;
 
-// package/esm/core/util/Float.js
 var Float = (
   /** @class */
   function() {
@@ -4490,7 +4426,6 @@ var Float = (
 );
 var Float_default = Float;
 
-// package/esm/core/ResultPoint.js
 var ResultPoint = (
   /** @class */
   function() {
@@ -4559,7 +4494,6 @@ var ResultPoint = (
 );
 var ResultPoint_default = ResultPoint;
 
-// package/esm/core/common/DetectorResult.js
 var DetectorResult = (
   /** @class */
   function() {
@@ -4578,7 +4512,6 @@ var DetectorResult = (
 );
 var DetectorResult_default = DetectorResult;
 
-// package/esm/core/aztec/AztecDetectorResult.js
 var __extends19 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -4623,7 +4556,6 @@ var AztecDetectorResult = (
 );
 var AztecDetectorResult_default = AztecDetectorResult;
 
-// package/esm/core/common/detector/WhiteRectangleDetector.js
 var WhiteRectangleDetector = (
   /** @class */
   function() {
@@ -4828,7 +4760,6 @@ var WhiteRectangleDetector = (
 );
 var WhiteRectangleDetector_default = WhiteRectangleDetector;
 
-// package/esm/core/common/GridSampler.js
 var GridSampler = (
   /** @class */
   function() {
@@ -4889,7 +4820,6 @@ var GridSampler = (
 );
 var GridSampler_default = GridSampler;
 
-// package/esm/core/common/PerspectiveTransform.js
 var PerspectiveTransform = (
   /** @class */
   function() {
@@ -4977,7 +4907,6 @@ var PerspectiveTransform = (
 );
 var PerspectiveTransform_default = PerspectiveTransform;
 
-// package/esm/core/common/DefaultGridSampler.js
 var __extends20 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -5040,7 +4969,6 @@ var DefaultGridSampler = (
 );
 var DefaultGridSampler_default = DefaultGridSampler;
 
-// package/esm/core/common/GridSamplerInstance.js
 var GridSamplerInstance = (
   /** @class */
   function() {
@@ -5058,7 +4986,6 @@ var GridSamplerInstance = (
 );
 var GridSamplerInstance_default = GridSamplerInstance;
 
-// package/esm/core/aztec/detector/Detector.js
 var Point = (
   /** @class */
   function() {
@@ -5084,13 +5011,9 @@ var Detector = (
     function Detector5(image) {
       this.EXPECTED_CORNER_BITS = new Int32Array([
         3808,
-        // 07340  XXX .XX X.. ...
         476,
-        // 00734  ... XXX .XX X..
         2107,
-        // 04073  X.. ... XXX .XX
         1799
-        // 03407 .XX X.. ... XXX
       ]);
       this.image = image;
     }
@@ -5117,13 +5040,9 @@ var Detector = (
       var length = 2 * this.nbCenterLayers;
       var sides = new Int32Array([
         this.sampleLine(bullsEyeCorners[0], bullsEyeCorners[1], length),
-        // Right side
         this.sampleLine(bullsEyeCorners[1], bullsEyeCorners[2], length),
-        // Bottom
         this.sampleLine(bullsEyeCorners[2], bullsEyeCorners[3], length),
-        // Left side
         this.sampleLine(bullsEyeCorners[3], bullsEyeCorners[0], length)
-        // Top
       ]);
       this.shift = this.getRotation(sides, length);
       var parameterData = 0;
@@ -5272,16 +5191,12 @@ var Detector = (
         dimension,
         low,
         low,
-        // topleft
         high,
         low,
-        // topright
         high,
         high,
-        // bottomright
         low,
         high,
-        // bottomleft
         topLeft.getX(),
         topLeft.getY(),
         topRight.getX(),
@@ -5414,7 +5329,6 @@ var Detector = (
 );
 var Detector_default = Detector;
 
-// package/esm/core/aztec/AztecReader.js
 var AztecReader = (
   /** @class */
   function() {
@@ -5477,7 +5391,6 @@ var AztecReader = (
 );
 var AztecReader_default = AztecReader;
 
-// package/esm/browser/BrowserAztecCodeReader.js
 var __extends21 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -5511,7 +5424,6 @@ var BrowserAztecCodeReader = (
   }(BrowserCodeReader)
 );
 
-// package/esm/core/oned/OneDReader.js
 var OneDReader = (
   /** @class */
   function() {
@@ -5678,7 +5590,6 @@ var OneDReader = (
 );
 var OneDReader_default = OneDReader;
 
-// package/esm/core/oned/Code128Reader.js
 var __extends22 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -6127,7 +6038,6 @@ var Code128Reader = (
 );
 var Code128Reader_default = Code128Reader;
 
-// package/esm/core/oned/Code39Reader.js
 var __extends23 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -6419,7 +6329,6 @@ var Code39Reader = (
       37,
       292,
       100,
-      // 0-9
       265,
       73,
       328,
@@ -6430,7 +6339,6 @@ var Code39Reader = (
       268,
       76,
       28,
-      // A-J
       259,
       67,
       322,
@@ -6441,7 +6349,6 @@ var Code39Reader = (
       262,
       70,
       22,
-      // K-T
       385,
       193,
       448,
@@ -6452,11 +6359,9 @@ var Code39Reader = (
       388,
       196,
       168,
-      // U-$
       162,
       138,
       42
-      // /-%
     ];
     Code39Reader2.ASTERISK_ENCODING = 148;
     return Code39Reader2;
@@ -6464,7 +6369,6 @@ var Code39Reader = (
 );
 var Code39Reader_default = Code39Reader;
 
-// package/esm/core/oned/Code93Reader.js
 var __extends24 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -6737,7 +6641,6 @@ var Code93Reader = (
       336,
       274,
       266,
-      // 0-9
       424,
       420,
       418,
@@ -6748,7 +6651,6 @@ var Code93Reader = (
       356,
       354,
       308,
-      // A-J
       282,
       344,
       332,
@@ -6759,14 +6661,12 @@ var Code93Reader = (
       434,
       428,
       422,
-      // K-T
       406,
       410,
       364,
       358,
       310,
       314,
-      // U-Z
       302,
       468,
       466,
@@ -6774,13 +6674,11 @@ var Code93Reader = (
       366,
       374,
       430,
-      // - - %
       294,
       474,
       470,
       306,
       350
-      // Control chars? $-*
     ];
     Code93Reader2.ASTERISK_ENCODING = Code93Reader2.CHARACTER_ENCODINGS[47];
     return Code93Reader2;
@@ -6788,7 +6686,6 @@ var Code93Reader = (
 );
 var Code93Reader_default = Code93Reader;
 
-// package/esm/core/oned/ITFReader.js
 var __extends25 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -6901,7 +6798,6 @@ var ITFReader = (
       var resultReturn = new Result_default(
         resultString,
         null,
-        // no natural byte representation for these barcodes
         0,
         points,
         BarcodeFormat_default.ITF,
@@ -7033,45 +6929,25 @@ var ITFReader = (
     };
     ITFReader2.PATTERNS = [
       Int32Array.from([1, 1, 2, 2, 1]),
-      // 0
       Int32Array.from([2, 1, 1, 1, 2]),
-      // 1
       Int32Array.from([1, 2, 1, 1, 2]),
-      // 2
       Int32Array.from([2, 2, 1, 1, 1]),
-      // 3
       Int32Array.from([1, 1, 2, 1, 2]),
-      // 4
       Int32Array.from([2, 1, 2, 1, 1]),
-      // 5
       Int32Array.from([1, 2, 2, 1, 1]),
-      // 6
       Int32Array.from([1, 1, 1, 2, 2]),
-      // 7
       Int32Array.from([2, 1, 1, 2, 1]),
-      // 8
       Int32Array.from([1, 2, 1, 2, 1]),
-      // 9
       Int32Array.from([1, 1, 3, 3, 1]),
-      // 0
       Int32Array.from([3, 1, 1, 1, 3]),
-      // 1
       Int32Array.from([1, 3, 1, 1, 3]),
-      // 2
       Int32Array.from([3, 3, 1, 1, 1]),
-      // 3
       Int32Array.from([1, 1, 3, 1, 3]),
-      // 4
       Int32Array.from([3, 1, 3, 1, 1]),
-      // 5
       Int32Array.from([1, 3, 3, 1, 1]),
-      // 6
       Int32Array.from([1, 1, 1, 3, 3]),
-      // 7
       Int32Array.from([3, 1, 1, 3, 1]),
-      // 8
       Int32Array.from([1, 3, 1, 3, 1])
-      // 9
     ];
     ITFReader2.MAX_AVG_VARIANCE = 0.38;
     ITFReader2.MAX_INDIVIDUAL_VARIANCE = 0.5;
@@ -7079,16 +6955,13 @@ var ITFReader = (
     ITFReader2.START_PATTERN = Int32Array.from([1, 1, 1, 1]);
     ITFReader2.END_PATTERN_REVERSED = [
       Int32Array.from([1, 1, 2]),
-      // 2x
       Int32Array.from([1, 1, 3])
-      // 3x
     ];
     return ITFReader2;
   }(OneDReader_default)
 );
 var ITFReader_default = ITFReader;
 
-// package/esm/core/oned/AbstractUPCEANReader.js
 var __extends26 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -7254,32 +7127,21 @@ var AbstractUPCEANReader = (
     AbstractUPCEANReader2.END_PATTERN = Int32Array.from([1, 1, 1, 1, 1, 1]);
     AbstractUPCEANReader2.L_PATTERNS = [
       Int32Array.from([3, 2, 1, 1]),
-      // 0
       Int32Array.from([2, 2, 2, 1]),
-      // 1
       Int32Array.from([2, 1, 2, 2]),
-      // 2
       Int32Array.from([1, 4, 1, 1]),
-      // 3
       Int32Array.from([1, 1, 3, 2]),
-      // 4
       Int32Array.from([1, 2, 3, 1]),
-      // 5
       Int32Array.from([1, 1, 1, 4]),
-      // 6
       Int32Array.from([1, 3, 1, 2]),
-      // 7
       Int32Array.from([1, 2, 1, 3]),
-      // 8
       Int32Array.from([3, 1, 1, 2])
-      // 9
     ];
     return AbstractUPCEANReader2;
   }(OneDReader_default)
 );
 var AbstractUPCEANReader_default = AbstractUPCEANReader;
 
-// package/esm/core/oned/UPCEANExtension5Support.js
 var __values7 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -7424,7 +7286,6 @@ var UPCEANExtension5Support = (
 );
 var UPCEANExtension5Support_default = UPCEANExtension5Support;
 
-// package/esm/core/oned/UPCEANExtension2Support.js
 var __values8 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -7512,7 +7373,6 @@ var UPCEANExtension2Support = (
 );
 var UPCEANExtension2Support_default = UPCEANExtension2Support;
 
-// package/esm/core/oned/UPCEANExtensionSupport.js
 var UPCEANExtensionSupport = (
   /** @class */
   function() {
@@ -7534,7 +7394,6 @@ var UPCEANExtensionSupport = (
 );
 var UPCEANExtensionSupport_default = UPCEANExtensionSupport;
 
-// package/esm/core/oned/UPCEANReader.js
 var __extends27 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -7674,7 +7533,6 @@ var UPCEANReader = (
 );
 var UPCEANReader_default = UPCEANReader;
 
-// package/esm/core/oned/EAN13Reader.js
 var __extends28 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -7786,7 +7644,6 @@ var EAN13Reader = (
 );
 var EAN13Reader_default = EAN13Reader;
 
-// package/esm/core/oned/EAN8Reader.js
 var __extends29 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -7883,7 +7740,6 @@ var EAN8Reader = (
 );
 var EAN8Reader_default = EAN8Reader;
 
-// package/esm/core/oned/UPCAReader.js
 var __extends30 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -7970,7 +7826,6 @@ var UPCAReader = (
 );
 var UPCAReader_default = UPCAReader;
 
-// package/esm/core/oned/UPCEReader.js
 var __extends31 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -8058,11 +7913,9 @@ var UPCEReader = (
           if (lgPatternFound === this.NUMSYS_AND_CHECK_DIGIT_PATTERNS[numSys][d]) {
             resultString.insert(
               0,
-              /*(char)*/
               "0" + numSys
             );
             resultString.append(
-              /*(char)*/
               "0" + d
             );
             return;
@@ -8079,7 +7932,6 @@ var UPCEReader = (
         return x.charCodeAt(0);
       });
       var result = new StringBuilder_default(
-        /*12*/
       );
       result.append(upce.charAt(0));
       var lastChar = upceChars[5];
@@ -8123,7 +7975,6 @@ var UPCEReader = (
 );
 var UPCEReader_default = UPCEReader;
 
-// package/esm/core/oned/MultiFormatUPCEANReader.js
 var __extends32 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -8238,7 +8089,6 @@ var MultiFormatUPCEANReader = (
 );
 var MultiFormatUPCEANReader_default = MultiFormatUPCEANReader;
 
-// package/esm/core/oned/CodaBarReader.js
 var __extends33 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -8377,7 +8227,6 @@ var CodaBarReader = (
 );
 var CodaBarReader_default = CodaBarReader;
 
-// package/esm/core/oned/rss/AbstractRSSReader.js
 var __extends34 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -8513,7 +8362,6 @@ var AbstractRSSReader = (
 );
 var AbstractRSSReader_default = AbstractRSSReader;
 
-// package/esm/core/oned/rss/DataCharacter.js
 var DataCharacter = (
   /** @class */
   function() {
@@ -8545,7 +8393,6 @@ var DataCharacter = (
 );
 var DataCharacter_default = DataCharacter;
 
-// package/esm/core/oned/rss/FinderPattern.js
 var FinderPattern = (
   /** @class */
   function() {
@@ -8580,7 +8427,6 @@ var FinderPattern = (
 );
 var FinderPattern_default = FinderPattern;
 
-// package/esm/core/oned/rss/RSSUtils.js
 var __values14 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -8669,7 +8515,6 @@ var RSSUtils = (
 );
 var RSSUtils_default = RSSUtils;
 
-// package/esm/core/oned/rss/expanded/BitArrayBuilder.js
 var BitArrayBuilder = (
   /** @class */
   function() {
@@ -8717,7 +8562,6 @@ var BitArrayBuilder = (
 );
 var BitArrayBuilder_default = BitArrayBuilder;
 
-// package/esm/core/oned/rss/expanded/decoders/BlockParsedResult.js
 var BlockParsedResult = (
   /** @class */
   function() {
@@ -8736,7 +8580,6 @@ var BlockParsedResult = (
 );
 var BlockParsedResult_default = BlockParsedResult;
 
-// package/esm/core/oned/rss/expanded/decoders/CurrentParsingState.js
 var State;
 (function(State3) {
   State3[State3["NUMERIC"] = 0] = "NUMERIC";
@@ -8782,7 +8625,6 @@ var CurrentParsingState = (
 );
 var CurrentParsingState_default = CurrentParsingState;
 
-// package/esm/core/oned/rss/expanded/decoders/DecodedObject.js
 var DecodedObject = (
   /** @class */
   function() {
@@ -8797,7 +8639,6 @@ var DecodedObject = (
 );
 var DecodedObject_default = DecodedObject;
 
-// package/esm/core/oned/rss/expanded/decoders/DecodedChar.js
 var __extends35 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -8838,7 +8679,6 @@ var DecodedChar = (
 );
 var DecodedChar_default = DecodedChar;
 
-// package/esm/core/oned/rss/expanded/decoders/DecodedInformation.js
 var __extends36 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -8888,7 +8728,6 @@ var DecodedInformation = (
 );
 var DecodedInformation_default = DecodedInformation;
 
-// package/esm/core/oned/rss/expanded/decoders/DecodedNumeric.js
 var __extends37 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -8942,7 +8781,6 @@ var DecodedNumeric = (
 );
 var DecodedNumeric_default = DecodedNumeric;
 
-// package/esm/core/oned/rss/expanded/decoders/FieldParser.js
 var FieldParser = (
   /** @class */
   function() {
@@ -9067,7 +8905,6 @@ var FieldParser = (
       ["417", FieldParser2.fixed(3, 13)],
       ["420", FieldParser2.variable(3, 20)],
       ["421", FieldParser2.variable(3, 15)],
-      // limited to 12 in latest versions of spec
       ["422", FieldParser2.fixed(3, 3)],
       ["423", FieldParser2.variable(3, 15)],
       ["424", FieldParser2.fixed(3, 3)],
@@ -9183,7 +9020,6 @@ var FieldParser = (
 );
 var FieldParser_default = FieldParser;
 
-// package/esm/core/oned/rss/expanded/decoders/GeneralAppIdDecoder.js
 var GeneralAppIdDecoder = (
   /** @class */
   function() {
@@ -9552,7 +9388,6 @@ var GeneralAppIdDecoder = (
 );
 var GeneralAppIdDecoder_default = GeneralAppIdDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AbstractExpandedDecoder.js
 var AbstractExpandedDecoder = (
   /** @class */
   function() {
@@ -9571,7 +9406,6 @@ var AbstractExpandedDecoder = (
 );
 var AbstractExpandedDecoder_default = AbstractExpandedDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI01decoder.js
 var __extends38 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9635,7 +9469,6 @@ var AI01decoder = (
 );
 var AI01decoder_default = AI01decoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI01AndOtherAIs.js
 var __extends39 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9677,7 +9510,6 @@ var AI01AndOtherAIs = (
 );
 var AI01AndOtherAIs_default = AI01AndOtherAIs;
 
-// package/esm/core/oned/rss/expanded/decoders/AnyAIDecoder.js
 var __extends40 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9714,7 +9546,6 @@ var AnyAIDecoder = (
 );
 var AnyAIDecoder_default = AnyAIDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI01weightDecoder.js
 var __extends41 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9759,7 +9590,6 @@ var AI01weightDecoder = (
 );
 var AI01weightDecoder_default = AI01weightDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI013x0xDecoder.js
 var __extends42 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9802,7 +9632,6 @@ var AI013x0xDecoder = (
 );
 var AI013x0xDecoder_default = AI013x0xDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI013103decoder.js
 var __extends43 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9840,7 +9669,6 @@ var AI013103decoder = (
 );
 var AI013103decoder_default = AI013103decoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI01320xDecoder.js
 var __extends44 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9885,7 +9713,6 @@ var AI01320xDecoder = (
 );
 var AI01320xDecoder_default = AI01320xDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI01392xDecoder.js
 var __extends45 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9933,7 +9760,6 @@ var AI01392xDecoder = (
 );
 var AI01392xDecoder_default = AI01392xDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI01393xDecoder.js
 var __extends46 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -9990,7 +9816,6 @@ var AI01393xDecoder = (
 );
 var AI01393xDecoder_default = AI01393xDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AI013x0x1xDecoder.js
 var __extends47 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -10073,7 +9898,6 @@ var AI013x0x1xDecoder = (
 );
 var AI013x0x1xDecoder_default = AI013x0x1xDecoder;
 
-// package/esm/core/oned/rss/expanded/decoders/AbstractExpandedDecoderComplement.js
 function createDecoder(information) {
   if (information.get(1)) {
     return new AI01AndOtherAIs_default(information);
@@ -10117,7 +9941,6 @@ function createDecoder(information) {
   throw new IllegalStateException_default("unknown decoder: " + information);
 }
 
-// package/esm/core/oned/rss/expanded/ExpandedPair.js
 var ExpandedPair = (
   /** @class */
   function() {
@@ -10160,7 +9983,6 @@ var ExpandedPair = (
 );
 var ExpandedPair_default = ExpandedPair;
 
-// package/esm/core/oned/rss/expanded/ExpandedRow.js
 var __read5 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
@@ -10227,7 +10049,6 @@ var ExpandedRow = (
 );
 var ExpandedRow_default = ExpandedRow;
 
-// package/esm/core/oned/rss/expanded/RSSExpandedReader.js
 var __extends48 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -10775,7 +10596,7 @@ var RSSExpandedReader = (
         var prevStart = prev.getFinderPattern().getStartEnd()[0];
         var prevEnd = prev.getFinderPattern().getStartEnd()[1];
         var prevWidth = prevEnd - prevStart;
-        var charWidth = prevWidth / /* float */
+        var charWidth = prevWidth /
         RSSExpandedReader2.FINDER_PATTERN_MODULES * RSSExpandedReader2.DATA_CHARACTER_MODULES;
         var minX = prevEnd + 2 * charWidth * (1 - RSSExpandedReader2.MAX_FINDER_PATTERN_DISTANCE_VARIANCE);
         var maxX = prevEnd + 2 * charWidth * (1 + RSSExpandedReader2.MAX_FINDER_PATTERN_DISTANCE_VARIANCE);
@@ -10956,17 +10777,11 @@ var RSSExpandedReader = (
     RSSExpandedReader2.GSUM = [0, 348, 1388, 2948, 3988];
     RSSExpandedReader2.FINDER_PATTERNS = [
       Int32Array.from([1, 8, 4, 1]),
-      // A
       Int32Array.from([3, 6, 4, 1]),
-      // B
       Int32Array.from([3, 4, 6, 1]),
-      // C
       Int32Array.from([3, 2, 8, 1]),
-      // D
       Int32Array.from([2, 6, 5, 1]),
-      // E
       Int32Array.from([2, 2, 9, 1])
-      // F
     ];
     RSSExpandedReader2.WEIGHTS = [
       [1, 3, 9, 27, 81, 32, 96, 77],
@@ -11092,7 +10907,6 @@ var RSSExpandedReader = (
 );
 var RSSExpandedReader_default = RSSExpandedReader;
 
-// package/esm/core/oned/rss/Pair.js
 var __extends49 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -11136,7 +10950,6 @@ var Pair = (
 );
 var Pair_default = Pair;
 
-// package/esm/core/oned/rss/RSS14Reader.js
 var __extends50 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -11592,7 +11405,6 @@ var RSS14Reader = (
 );
 var RSS14Reader_default = RSS14Reader;
 
-// package/esm/core/oned/MultiFormatOneDReader.js
 var __extends51 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -11680,7 +11492,6 @@ var MultiFormatOneDReader = (
 );
 var MultiFormatOneDReader_default = MultiFormatOneDReader;
 
-// package/esm/browser/BrowserBarcodeReader.js
 var __extends52 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -11714,7 +11525,6 @@ var BrowserBarcodeReader = (
   }(BrowserCodeReader)
 );
 
-// package/esm/core/datamatrix/decoder/Version.js
 var __values17 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -11876,7 +11686,6 @@ var Version = (
 );
 var Version_default = Version;
 
-// package/esm/core/datamatrix/decoder/BitMatrixParser.js
 var BitMatrixParser = (
   /** @class */
   function() {
@@ -12179,7 +11988,6 @@ var BitMatrixParser = (
 );
 var BitMatrixParser_default = BitMatrixParser;
 
-// package/esm/core/datamatrix/decoder/DataBlock.js
 var __values18 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -12275,7 +12083,6 @@ var DataBlock = (
 );
 var DataBlock_default = DataBlock;
 
-// package/esm/core/common/BitSource.js
 var BitSource = (
   /** @class */
   function() {
@@ -12336,7 +12143,6 @@ var BitSource = (
 );
 var BitSource_default = BitSource;
 
-// package/esm/core/datamatrix/decoder/DecodedBitStreamParser.js
 var Mode;
 (function(Mode5) {
   Mode5[Mode5["PAD_ENCODE"] = 0] = "PAD_ENCODE";
@@ -12419,7 +12225,6 @@ var DecodedBitStreamParser = (
               result.append(String.fromCharCode(29));
               break;
             case 233:
-            // Structured Append
             case 234:
               break;
             case 235:
@@ -12867,7 +12672,6 @@ var DecodedBitStreamParser = (
 );
 var DecodedBitStreamParser_default = DecodedBitStreamParser;
 
-// package/esm/core/datamatrix/decoder/Decoder.js
 var __values19 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -12935,7 +12739,6 @@ var Decoder2 = (
 );
 var Decoder_default2 = Decoder2;
 
-// package/esm/core/datamatrix/detector/Detector.js
 var Detector2 = (
   /** @class */
   function() {
@@ -13161,7 +12964,6 @@ var Detector2 = (
 );
 var Detector_default2 = Detector2;
 
-// package/esm/core/datamatrix/DataMatrixReader.js
 var DataMatrixReader = (
   /** @class */
   function() {
@@ -13249,7 +13051,6 @@ var DataMatrixReader = (
 );
 var DataMatrixReader_default = DataMatrixReader;
 
-// package/esm/browser/BrowserDatamatrixCodeReader.js
 var __extends53 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -13283,7 +13084,6 @@ var BrowserDatamatrixCodeReader = (
   }(BrowserCodeReader)
 );
 
-// package/esm/core/qrcode/decoder/ErrorCorrectionLevel.js
 var ErrorCorrectionLevelValues;
 (function(ErrorCorrectionLevelValues2) {
   ErrorCorrectionLevelValues2[ErrorCorrectionLevelValues2["L"] = 0] = "L";
@@ -13348,7 +13148,6 @@ var ErrorCorrectionLevel = (
 );
 var ErrorCorrectionLevel_default = ErrorCorrectionLevel;
 
-// package/esm/core/qrcode/decoder/FormatInformation.js
 var __values20 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -13365,7 +13164,7 @@ var FormatInformation = (
   function() {
     function FormatInformation2(formatInfo) {
       this.errorCorrectionLevel = ErrorCorrectionLevel_default.forBits(formatInfo >> 3 & 3);
-      this.dataMask = /*(byte) */
+      this.dataMask =
       formatInfo & 7;
     }
     FormatInformation2.numBitsDiffering = function(a, b) {
@@ -13472,7 +13271,6 @@ var FormatInformation = (
 );
 var FormatInformation_default = FormatInformation;
 
-// package/esm/core/qrcode/decoder/ECBlocks.js
 var __values21 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -13529,7 +13327,6 @@ var ECBlocks2 = (
 );
 var ECBlocks_default = ECBlocks2;
 
-// package/esm/core/qrcode/decoder/ECB.js
 var ECB2 = (
   /** @class */
   function() {
@@ -13548,7 +13345,6 @@ var ECB2 = (
 );
 var ECB_default = ECB2;
 
-// package/esm/core/qrcode/decoder/Version.js
 var __values22 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -13751,7 +13547,6 @@ var Version2 = (
 );
 var Version_default2 = Version2;
 
-// package/esm/core/qrcode/decoder/DataMask.js
 var DataMaskValues;
 (function(DataMaskValues2) {
   DataMaskValues2[DataMaskValues2["DATA_MASK_000"] = 0] = "DATA_MASK_000";
@@ -13780,54 +13575,27 @@ var DataMask = (
       }
     };
     DataMask2.values = /* @__PURE__ */ new Map([
-      /**
-       * 000: mask bits for which (x + y) mod 2 == 0
-       */
       [DataMaskValues.DATA_MASK_000, new DataMask2(DataMaskValues.DATA_MASK_000, function(i, j) {
         return (i + j & 1) === 0;
       })],
-      /**
-       * 001: mask bits for which x mod 2 == 0
-       */
       [DataMaskValues.DATA_MASK_001, new DataMask2(DataMaskValues.DATA_MASK_001, function(i, j) {
         return (i & 1) === 0;
       })],
-      /**
-       * 010: mask bits for which y mod 3 == 0
-       */
       [DataMaskValues.DATA_MASK_010, new DataMask2(DataMaskValues.DATA_MASK_010, function(i, j) {
         return j % 3 === 0;
       })],
-      /**
-       * 011: mask bits for which (x + y) mod 3 == 0
-       */
       [DataMaskValues.DATA_MASK_011, new DataMask2(DataMaskValues.DATA_MASK_011, function(i, j) {
         return (i + j) % 3 === 0;
       })],
-      /**
-       * 100: mask bits for which (x/2 + y/3) mod 2 == 0
-       */
       [DataMaskValues.DATA_MASK_100, new DataMask2(DataMaskValues.DATA_MASK_100, function(i, j) {
         return (Math.floor(i / 2) + Math.floor(j / 3) & 1) === 0;
       })],
-      /**
-       * 101: mask bits for which xy mod 2 + xy mod 3 == 0
-       * equivalently, such that xy mod 6 == 0
-       */
       [DataMaskValues.DATA_MASK_101, new DataMask2(DataMaskValues.DATA_MASK_101, function(i, j) {
         return i * j % 6 === 0;
       })],
-      /**
-       * 110: mask bits for which (xy mod 2 + xy mod 3) mod 2 == 0
-       * equivalently, such that xy mod 6 < 3
-       */
       [DataMaskValues.DATA_MASK_110, new DataMask2(DataMaskValues.DATA_MASK_110, function(i, j) {
         return i * j % 6 < 3;
       })],
-      /**
-       * 111: mask bits for which ((x+y)mod 2 + xy mod 3) mod 2 == 0
-       * equivalently, such that (x + y + xy mod 3) mod 2 == 0
-       */
       [DataMaskValues.DATA_MASK_111, new DataMask2(DataMaskValues.DATA_MASK_111, function(i, j) {
         return (i + j + i * j % 3 & 1) === 0;
       })]
@@ -13837,7 +13605,6 @@ var DataMask = (
 );
 var DataMask_default = DataMask;
 
-// package/esm/core/qrcode/decoder/BitMatrixParser.js
 var BitMatrixParser2 = (
   /** @class */
   function() {
@@ -13941,7 +13708,7 @@ var BitMatrixParser2 = (
                 currentByte |= 1;
               }
               if (bitsRead === 8) {
-                result[resultOffset++] = /*(byte) */
+                result[resultOffset++] =
                 currentByte;
                 bitsRead = 0;
                 currentByte = 0;
@@ -13985,7 +13752,6 @@ var BitMatrixParser2 = (
 );
 var BitMatrixParser_default2 = BitMatrixParser2;
 
-// package/esm/core/qrcode/decoder/DataBlock.js
 var __values23 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -14086,7 +13852,6 @@ var DataBlock2 = (
 );
 var DataBlock_default2 = DataBlock2;
 
-// package/esm/core/qrcode/decoder/Mode.js
 var ModeValues;
 (function(ModeValues2) {
   ModeValues2[ModeValues2["TERMINATOR"] = 0] = "TERMINATOR";
@@ -14163,7 +13928,6 @@ var Mode2 = (
 );
 var Mode_default = Mode2;
 
-// package/esm/core/qrcode/decoder/DecodedBitStreamParser.js
 var DecodedBitStreamParser2 = (
   /** @class */
   function() {
@@ -14254,9 +14018,9 @@ var DecodedBitStreamParser2 = (
         } else {
           assembledTwoBytes += 42657;
         }
-        buffer[offset] = /*(byte) */
+        buffer[offset] =
         assembledTwoBytes >> 8 & 255;
-        buffer[offset + 1] = /*(byte) */
+        buffer[offset + 1] =
         assembledTwoBytes & 255;
         offset += 2;
         count--;
@@ -14281,9 +14045,9 @@ var DecodedBitStreamParser2 = (
         } else {
           assembledTwoBytes += 49472;
         }
-        buffer[offset] = /*(byte) */
+        buffer[offset] =
         assembledTwoBytes >> 8;
-        buffer[offset + 1] = /*(byte) */
+        buffer[offset + 1] =
         assembledTwoBytes;
         offset += 2;
         count--;
@@ -14300,7 +14064,7 @@ var DecodedBitStreamParser2 = (
       }
       var readBytes = new Uint8Array(count);
       for (var i = 0; i < count; i++) {
-        readBytes[i] = /*(byte) */
+        readBytes[i] =
         bits.readBits(8);
       }
       var encoding;
@@ -14408,7 +14172,6 @@ var DecodedBitStreamParser2 = (
 );
 var DecodedBitStreamParser_default2 = DecodedBitStreamParser2;
 
-// package/esm/core/qrcode/decoder/QRCodeDecoderMetaData.js
 var QRCodeDecoderMetaData = (
   /** @class */
   function() {
@@ -14431,7 +14194,6 @@ var QRCodeDecoderMetaData = (
 );
 var QRCodeDecoderMetaData_default = QRCodeDecoderMetaData;
 
-// package/esm/core/qrcode/decoder/Decoder.js
 var __values24 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -14528,7 +14290,7 @@ var Decoder3 = (
         throw new ChecksumException_default();
       }
       for (var i = 0; i < numDataCodewords; i++) {
-        codewordBytes[i] = /*(byte) */
+        codewordBytes[i] =
         codewordsInts[i];
       }
     };
@@ -14537,7 +14299,6 @@ var Decoder3 = (
 );
 var Decoder_default3 = Decoder3;
 
-// package/esm/core/qrcode/detector/AlignmentPattern.js
 var __extends54 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -14584,7 +14345,6 @@ var AlignmentPattern = (
 );
 var AlignmentPattern_default = AlignmentPattern;
 
-// package/esm/core/qrcode/detector/AlignmentPatternFinder.js
 var __values25 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -14730,7 +14490,6 @@ var AlignmentPatternFinder = (
       var centerJ = AlignmentPatternFinder2.centerFromEnd(stateCount, j);
       var centerI = this.crossCheckVertical(
         i,
-        /*(int) */
         centerJ,
         2 * stateCount[1],
         stateCountTotal
@@ -14766,7 +14525,6 @@ var AlignmentPatternFinder = (
 );
 var AlignmentPatternFinder_default = AlignmentPatternFinder;
 
-// package/esm/core/qrcode/detector/FinderPattern.js
 var __extends55 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -14824,7 +14582,6 @@ var FinderPattern2 = (
 );
 var FinderPattern_default2 = FinderPattern2;
 
-// package/esm/core/qrcode/detector/FinderPatternInfo.js
 var FinderPatternInfo = (
   /** @class */
   function() {
@@ -14847,7 +14604,6 @@ var FinderPatternInfo = (
 );
 var FinderPatternInfo_default = FinderPatternInfo;
 
-// package/esm/core/qrcode/detector/FinderPatternFinder.js
 var __values26 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -15141,24 +14897,19 @@ var FinderPatternFinder = (
       var centerJ = FinderPatternFinder2.centerFromEnd(stateCount, j);
       var centerI = this.crossCheckVertical(
         i,
-        /*(int) */
         Math.floor(centerJ),
         stateCount[2],
         stateCountTotal
       );
       if (!isNaN(centerI)) {
         centerJ = this.crossCheckHorizontal(
-          /*(int) */
           Math.floor(centerJ),
-          /*(int) */
           Math.floor(centerI),
           stateCount[2],
           stateCountTotal
         );
         if (!isNaN(centerJ) && (!pureBarcode || this.crossCheckDiagonal(
-          /*(int) */
           Math.floor(centerI),
-          /*(int) */
           Math.floor(centerJ),
           stateCount[2],
           stateCountTotal
@@ -15202,7 +14953,6 @@ var FinderPatternFinder = (
             } else {
               this.hasSkipped = true;
               return (
-                /*(int) */
                 Math.floor((Math.abs(firstConfirmedCenter.getX() - center.getX()) - Math.abs(firstConfirmedCenter.getY() - center.getY())) / 2)
               );
             }
@@ -15292,10 +15042,6 @@ var FinderPatternFinder = (
         average = totalModuleSize / startSize;
         var stdDev = Math.sqrt(square / startSize - average * average);
         possibleCenters.sort(
-          /**
-           * <p>Orders by furthest from average</p>
-           */
-          // FurthestFromAverageComparator implements Comparator<FinderPattern>
           function(center1, center2) {
             var dA = Math.abs(center2.getEstimatedModuleSize() - average);
             var dB = Math.abs(center1.getEstimatedModuleSize() - average);
@@ -15329,10 +15075,6 @@ var FinderPatternFinder = (
         }
         average = totalModuleSize / possibleCenters.length;
         possibleCenters.sort(
-          /**
-           * <p>Orders by {@link FinderPattern#getCount()}, descending.</p>
-           */
-          // CenterComparator implements Comparator<FinderPattern>
           function(center1, center2) {
             if (center2.getCount() === center1.getCount()) {
               var dA = Math.abs(center2.getEstimatedModuleSize() - average);
@@ -15359,7 +15101,6 @@ var FinderPatternFinder = (
 );
 var FinderPatternFinder_default = FinderPatternFinder;
 
-// package/esm/core/qrcode/detector/Detector.js
 var Detector3 = (
   /** @class */
   function() {
@@ -15374,7 +15115,6 @@ var Detector3 = (
     };
     Detector5.prototype.detect = function(hints) {
       this.resultPointCallback = hints === null || hints === void 0 ? null : (
-        /*(ResultPointCallback) */
         hints.get(DecodeHintType_default.NEED_RESULT_POINT_CALLBACK)
       );
       var finder = new FinderPatternFinder_default(this.image, this.resultPointCallback);
@@ -15398,11 +15138,9 @@ var Detector3 = (
         var bottomRightY = topRight.getY() - topLeft.getY() + bottomLeft.getY();
         var correctionToTopLeft = 1 - 3 / modulesBetweenFPCenters;
         var estAlignmentX = (
-          /*(int) */
           Math.floor(topLeft.getX() + correctionToTopLeft * (bottomRightX - topLeft.getX()))
         );
         var estAlignmentY = (
-          /*(int) */
           Math.floor(topLeft.getY() + correctionToTopLeft * (bottomRightY - topLeft.getY()))
         );
         for (var i = 4; i <= 16; i <<= 1) {
@@ -15454,11 +15192,9 @@ var Detector3 = (
       var tlblCentersDimension = MathUtils_default.round(ResultPoint_default.distance(topLeft, bottomLeft) / moduleSize);
       var dimension = Math.floor((tltrCentersDimension + tlblCentersDimension) / 2) + 7;
       switch (dimension & 3) {
-        // mod 4
         case 0:
           dimension++;
           break;
-        // 1? do nothing
         case 2:
           dimension--;
           break;
@@ -15472,23 +15208,15 @@ var Detector3 = (
     };
     Detector5.prototype.calculateModuleSizeOneWay = function(pattern, otherPattern) {
       var moduleSizeEst1 = this.sizeOfBlackWhiteBlackRunBothWays(
-        /*(int) */
         Math.floor(pattern.getX()),
-        /*(int) */
         Math.floor(pattern.getY()),
-        /*(int) */
         Math.floor(otherPattern.getX()),
-        /*(int) */
         Math.floor(otherPattern.getY())
       );
       var moduleSizeEst2 = this.sizeOfBlackWhiteBlackRunBothWays(
-        /*(int) */
         Math.floor(otherPattern.getX()),
-        /*(int) */
         Math.floor(otherPattern.getY()),
-        /*(int) */
         Math.floor(pattern.getX()),
-        /*(int) */
         Math.floor(pattern.getY())
       );
       if (isNaN(moduleSizeEst1)) {
@@ -15504,29 +15232,28 @@ var Detector3 = (
       var scale = 1;
       var otherToX = fromX - (toX - fromX);
       if (otherToX < 0) {
-        scale = fromX / /*(float) */
+        scale = fromX /
         (fromX - otherToX);
         otherToX = 0;
       } else if (otherToX >= this.image.getWidth()) {
-        scale = (this.image.getWidth() - 1 - fromX) / /*(float) */
+        scale = (this.image.getWidth() - 1 - fromX) /
         (otherToX - fromX);
         otherToX = this.image.getWidth() - 1;
       }
       var otherToY = (
-        /*(int) */
         Math.floor(fromY - (toY - fromY) * scale)
       );
       scale = 1;
       if (otherToY < 0) {
-        scale = fromY / /*(float) */
+        scale = fromY /
         (fromY - otherToY);
         otherToY = 0;
       } else if (otherToY >= this.image.getHeight()) {
-        scale = (this.image.getHeight() - 1 - fromY) / /*(float) */
+        scale = (this.image.getHeight() - 1 - fromY) /
         (otherToY - fromY);
         otherToY = this.image.getHeight() - 1;
       }
-      otherToX = /*(int) */
+      otherToX =
       Math.floor(fromX + (otherToX - fromX) * scale);
       result += this.sizeOfBlackWhiteBlackRun(fromX, fromY, otherToX, otherToY);
       return result - 1;
@@ -15573,7 +15300,6 @@ var Detector3 = (
     };
     Detector5.prototype.findAlignmentInRegion = function(overallEstModuleSize, estAlignmentX, estAlignmentY, allowanceFactor) {
       var allowance = (
-        /*(int) */
         Math.floor(allowanceFactor * overallEstModuleSize)
       );
       var alignmentAreaLeftX = Math.max(0, estAlignmentX - allowance);
@@ -15594,7 +15320,6 @@ var Detector3 = (
 );
 var Detector_default3 = Detector3;
 
-// package/esm/core/qrcode/QRCodeReader.js
 var QRCodeReader = (
   /** @class */
   function() {
@@ -15665,12 +15390,11 @@ var QRCodeReader = (
         throw new NotFoundException_default();
       }
       var nudge = (
-        /*(int) */
         Math.floor(moduleSize / 2)
       );
       top += nudge;
       left += nudge;
-      var nudgedTooFarRight = left + /*(int) */
+      var nudgedTooFarRight = left +
       Math.floor((matrixWidth - 1) * moduleSize) - right;
       if (nudgedTooFarRight > 0) {
         if (nudgedTooFarRight > nudge) {
@@ -15678,7 +15402,7 @@ var QRCodeReader = (
         }
         left -= nudgedTooFarRight;
       }
-      var nudgedTooFarDown = top + /*(int) */
+      var nudgedTooFarDown = top +
       Math.floor((matrixHeight - 1) * moduleSize) - bottom;
       if (nudgedTooFarDown > 0) {
         if (nudgedTooFarDown > nudge) {
@@ -15688,10 +15412,10 @@ var QRCodeReader = (
       }
       var bits = new BitMatrix_default(matrixWidth, matrixHeight);
       for (var y = 0; y < matrixHeight; y++) {
-        var iOffset = top + /*(int) */
+        var iOffset = top +
         Math.floor(y * moduleSize);
         for (var x = 0; x < matrixWidth; x++) {
-          if (image.get(left + /*(int) */
+          if (image.get(left +
           Math.floor(x * moduleSize), iOffset)) {
             bits.set(x, y);
           }
@@ -15727,7 +15451,6 @@ var QRCodeReader = (
 );
 var QRCodeReader_default = QRCodeReader;
 
-// package/esm/core/microqr/decoder/MicroQRFormatInformation.js
 var __values27 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -15846,7 +15569,6 @@ var MicroQRFormatInformation = (
       switch (this.versionIndicator) {
         case 0:
           return null;
-        // M1, detection only
         case 1:
         case 3:
         case 5:
@@ -15869,7 +15591,6 @@ var MicroQRFormatInformation = (
 );
 var MicroQRFormatInformation_default = MicroQRFormatInformation;
 
-// package/esm/core/microqr/decoder/MicroQRVersion.js
 var __read9 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
@@ -15946,16 +15667,12 @@ var MicroQRVersion = (
       switch (dimension) {
         case 11:
           return MicroQRVersion2.getVersionForIndicator(0);
-        // M1
         case 13:
           return MicroQRVersion2.getVersionForIndicator(1);
-        // M2-L (placeholder)
         case 15:
           return MicroQRVersion2.getVersionForIndicator(3);
-        // M3-L (placeholder)
         case 17:
           return MicroQRVersion2.getVersionForIndicator(5);
-        // M4-L (placeholder)
         default:
           throw new FormatException_default();
       }
@@ -15965,39 +15682,23 @@ var MicroQRVersion = (
     };
     MicroQRVersion2.VERSION_INFO = [
       [1, null],
-      // 0: M1, no EC
       [2, "L"],
-      // 1: M2-L
       [2, "M"],
-      // 2: M2-M
       [3, "L"],
-      // 3: M3-L
       [3, "M"],
-      // 4: M3-M
       [4, "L"],
-      // 5: M4-L
       [4, "M"],
-      // 6: M4-M
       [4, "Q"]
-      // 7: M4-Q
     ];
     MicroQRVersion2.EC_BLOCKS = [
       new ECBlocks_default(2, new ECB_default(1, 3)),
-      // 0: M1
       new ECBlocks_default(5, new ECB_default(1, 5)),
-      // 1: M2-L
       new ECBlocks_default(6, new ECB_default(1, 4)),
-      // 2: M2-M
       new ECBlocks_default(6, new ECB_default(1, 11)),
-      // 3: M3-L
       new ECBlocks_default(8, new ECB_default(1, 9)),
-      // 4: M3-M
       new ECBlocks_default(8, new ECB_default(1, 16)),
-      // 5: M4-L
       new ECBlocks_default(10, new ECB_default(1, 14)),
-      // 6: M4-M
       new ECBlocks_default(14, new ECB_default(1, 10))
-      // 7: M4-Q
     ];
     MicroQRVersion2.MODE_INDICATOR_BITS = [0, 1, 2, 3];
     return MicroQRVersion2;
@@ -16005,7 +15706,6 @@ var MicroQRVersion = (
 );
 var MicroQRVersion_default = MicroQRVersion;
 
-// package/esm/core/microqr/decoder/MicroQRDataMask.js
 var MicroQRDataMask = (
   /** @class */
   function() {
@@ -16029,20 +15729,16 @@ var MicroQRDataMask = (
       }
     };
     MicroQRDataMask2.MASKS = [
-      // 00: i mod 2 = 0
       new MicroQRDataMask2(0, function(i, _j) {
         return (i & 1) === 0;
       }),
-      // 01: ((i div 2) + (j div 3)) mod 2 = 0
       new MicroQRDataMask2(1, function(i, j) {
         return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
       }),
-      // 10: ((i*j mod 2) + (i*j mod 3)) mod 2 = 0
       new MicroQRDataMask2(2, function(i, j) {
         var tmp = i * j;
         return ((tmp & 1) + tmp % 3) % 2 === 0;
       }),
-      // 11: ((i+j) mod 2 + i*j mod 3) mod 2 = 0
       new MicroQRDataMask2(3, function(i, j) {
         return ((i + j & 1) + i * j % 3) % 2 === 0;
       })
@@ -16052,7 +15748,6 @@ var MicroQRDataMask = (
 );
 var MicroQRDataMask_default = MicroQRDataMask;
 
-// package/esm/core/microqr/decoder/MicroQRBitMatrixParser.js
 var MicroQRBitMatrixParser = (
   /** @class */
   function() {
@@ -16134,7 +15829,6 @@ var MicroQRBitMatrixParser = (
 );
 var MicroQRBitMatrixParser_default = MicroQRBitMatrixParser;
 
-// package/esm/core/microqr/decoder/MicroQRDecodedBitStreamParser.js
 var MicroQRDecodedBitStreamParser = (
   /** @class */
   function() {
@@ -16222,16 +15916,12 @@ var MicroQRDecodedBitStreamParser = (
       switch (mode) {
         case MicroQRDecodedBitStreamParser2.MODE_NUMERIC:
           return versionNumber + 2;
-        // M1=3, M2=4, M3=5, M4=6
         case MicroQRDecodedBitStreamParser2.MODE_ALPHA:
           return versionNumber + 1;
-        // M2=3, M3=4, M4=5
         case MicroQRDecodedBitStreamParser2.MODE_BYTE:
           return versionNumber + 1;
-        // M3=4, M4=5
         case MicroQRDecodedBitStreamParser2.MODE_KANJI:
           return versionNumber;
-        // M3=3, M4=4
         default:
           throw new FormatException_default();
       }
@@ -16337,7 +16027,6 @@ var MicroQRDecodedBitStreamParser = (
 );
 var MicroQRDecodedBitStreamParser_default = MicroQRDecodedBitStreamParser;
 
-// package/esm/core/microqr/decoder/MicroQRDecoder.js
 var MicroQRDecoder = (
   /** @class */
   function() {
@@ -16373,7 +16062,6 @@ var MicroQRDecoder = (
 );
 var MicroQRDecoder_default = MicroQRDecoder;
 
-// package/esm/core/microqr/detector/MicroQRFinderPattern.js
 var __extends56 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -16431,7 +16119,6 @@ var MicroQRFinderPattern = (
 );
 var MicroQRFinderPattern_default = MicroQRFinderPattern;
 
-// package/esm/core/microqr/detector/MicroQRDetector.js
 var __read10 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
@@ -16633,13 +16320,9 @@ var MicroQRDetector = (
     MicroQRDetector2.prototype.determineDimension = function(fx, fy, ms) {
       var ORIENTATION_PROBES = [
         [5, -3, 1, 0, -3, 5, 0, 1],
-        // 0°
         [3, 5, 0, 1, -5, -3, -1, 0],
-        // 90° CW
         [-5, 3, -1, 0, 3, -5, 0, -1],
-        // 180°
         [-3, -5, 0, -1, 5, 3, 1, 0]
-        // 270° CW
       ];
       var bestSingle = null;
       for (var orientation_1 = 0; orientation_1 < 4; orientation_1++) {
@@ -16707,23 +16390,18 @@ var MicroQRDetector = (
       return PerspectiveTransform_default.quadrilateralToQuadrilateral(
         3.5,
         3.5,
-        // source top-left (finder center in ideal grid)
         dimMinusThree,
         3.5,
-        // source top-right
         3.5,
         dimMinusThree,
-        // source bottom-left
         dimMinusThree,
         dimMinusThree,
-        // source bottom-right (estimated)
         topLeftX,
         topLeftY,
         topRightX,
         topRightY,
         bottomLeftX,
         bottomLeftY,
-        // bottom-right: project both directions from top-left
         topRightX + (bottomLeftX - topLeftX),
         topRightY + (bottomLeftY - topLeftY)
       );
@@ -16737,7 +16415,6 @@ var MicroQRDetector = (
 );
 var MicroQRDetector_default = MicroQRDetector;
 
-// package/esm/core/microqr/MicroQRCodeReader.js
 var MicroQRCodeReader = (
   /** @class */
   function() {
@@ -16775,7 +16452,6 @@ var MicroQRCodeReader = (
 );
 var MicroQRCodeReader_default = MicroQRCodeReader;
 
-// package/esm/core/maxicode/decoder/BitMatrixParser.js
 var BitMatrixParser3 = (
   /** @class */
   function() {
@@ -16837,7 +16513,6 @@ var BitMatrixParser3 = (
 );
 var BitMatrixParser_default3 = BitMatrixParser3;
 
-// package/esm/core/maxicode/decoder/DecodedBitStreamParser.js
 var __values28 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -17063,7 +16738,6 @@ var DecodedBitStreamParser3 = (
 );
 var DecodedBitStreamParser_default3 = DecodedBitStreamParser3;
 
-// package/esm/core/maxicode/decoder/Decoder.js
 var Decoder4 = (
   /** @class */
   function() {
@@ -17135,7 +16809,6 @@ var Decoder4 = (
 );
 var Decoder_default4 = Decoder4;
 
-// package/esm/core/maxicode/MaxiCodeReader.js
 var MaxiCodeReader = (
   /** @class */
   function() {
@@ -17187,7 +16860,6 @@ var MaxiCodeReader = (
 );
 var MaxiCodeReader_default = MaxiCodeReader;
 
-// package/esm/core/pdf417/PDF417Common.js
 var __values29 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -22830,7 +22502,6 @@ var PDF417Common = (
 );
 var PDF417Common_default = PDF417Common;
 
-// package/esm/core/pdf417/detector/PDF417DetectorResult.js
 var PDF417DetectorResult = (
   /** @class */
   function() {
@@ -22849,7 +22520,6 @@ var PDF417DetectorResult = (
 );
 var PDF417DetectorResult_default = PDF417DetectorResult;
 
-// package/esm/core/pdf417/detector/Detector.js
 var __values30 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -23038,7 +22708,6 @@ var Detector4 = (
       }
       if (total < patternLength) {
         return (
-          /*Float.POSITIVE_INFINITY*/
           Infinity
         );
       }
@@ -23051,7 +22720,6 @@ var Detector4 = (
         var variance = counter > scaledPattern ? counter - scaledPattern : scaledPattern - counter;
         if (variance > maxIndividualVariance) {
           return (
-            /*Float.POSITIVE_INFINITY*/
             Infinity
           );
         }
@@ -23075,7 +22743,6 @@ var Detector4 = (
 );
 var Detector_default4 = Detector4;
 
-// package/esm/core/pdf417/decoder/ec/ModulusPoly.js
 var __values31 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -23251,7 +22918,6 @@ var ModulusPoly = (
     };
     ModulusPoly2.prototype.toString = function() {
       var result = new StringBuilder_default(
-        /*8 * this.getDegree()*/
       );
       for (var degree = this.getDegree(); degree >= 0; degree--) {
         var coefficient = this.getCoefficient(degree);
@@ -23284,7 +22950,6 @@ var ModulusPoly = (
 );
 var ModulusPoly_default = ModulusPoly;
 
-// package/esm/core/pdf417/decoder/ec/ModulusBase.js
 var ModulusBase = (
   /** @class */
   function() {
@@ -23328,7 +22993,6 @@ var ModulusBase = (
 );
 var ModulusBase_default = ModulusBase;
 
-// package/esm/core/pdf417/decoder/ec/ModulusGF.js
 var __extends57 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -23392,7 +23056,6 @@ var ModulusGF = (
 );
 var ModulusGF_default = ModulusGF;
 
-// package/esm/core/pdf417/decoder/ec/ErrorCorrection.js
 var __values32 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -23535,7 +23198,6 @@ var ErrorCorrection = (
 );
 var ErrorCorrection_default = ErrorCorrection;
 
-// package/esm/core/pdf417/decoder/BoundingBox.js
 var BoundingBox = (
   /** @class */
   function() {
@@ -23651,7 +23313,6 @@ var BoundingBox = (
 );
 var BoundingBox_default = BoundingBox;
 
-// package/esm/core/pdf417/decoder/BarcodeMetadata.js
 var BarcodeMetadata = (
   /** @class */
   function() {
@@ -23682,7 +23343,6 @@ var BarcodeMetadata = (
 );
 var BarcodeMetadata_default = BarcodeMetadata;
 
-// package/esm/core/util/Formatter.js
 var Formatter = (
   /** @class */
   function() {
@@ -23747,7 +23407,6 @@ var Formatter = (
 );
 var Formatter_default = Formatter;
 
-// package/esm/core/pdf417/decoder/DetectionResultColumn.js
 var __values33 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -23834,7 +23493,6 @@ var DetectionResultColumn = (
 );
 var DetectionResultColumn_default = DetectionResultColumn;
 
-// package/esm/core/pdf417/decoder/BarcodeValue.js
 var __values34 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -23923,7 +23581,6 @@ var BarcodeValue = (
 );
 var BarcodeValue_default = BarcodeValue;
 
-// package/esm/core/pdf417/decoder/DetectionResultRowIndicatorColumn.js
 var __extends58 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -24182,7 +23839,6 @@ var DetectionResultRowIndicatorColumn = (
 );
 var DetectionResultRowIndicatorColumn_default = DetectionResultRowIndicatorColumn;
 
-// package/esm/core/pdf417/decoder/DetectionResult.js
 var __values36 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -24437,7 +24093,6 @@ var DetectionResult = (
 );
 var DetectionResult_default = DetectionResult;
 
-// package/esm/core/pdf417/decoder/Codeword.js
 var Codeword = (
   /** @class */
   function() {
@@ -24487,7 +24142,6 @@ var Codeword = (
 );
 var Codeword_default = Codeword;
 
-// package/esm/core/pdf417/decoder/PDF417CodewordDecoder.js
 var PDF417CodewordDecoder = (
   /** @class */
   function() {
@@ -24586,7 +24240,6 @@ var PDF417CodewordDecoder = (
 );
 var PDF417CodewordDecoder_default = PDF417CodewordDecoder;
 
-// package/esm/core/pdf417/PDF417ResultMetadata.js
 var PDF417ResultMetadata = (
   /** @class */
   function() {
@@ -24667,7 +24320,6 @@ var PDF417ResultMetadata = (
 );
 var PDF417ResultMetadata_default = PDF417ResultMetadata;
 
-// package/esm/core/util/Long.js
 var Long = (
   /** @class */
   function() {
@@ -24684,7 +24336,6 @@ var Long = (
 );
 var Long_default = Long;
 
-// package/esm/core/NullPointerException.js
 var __extends59 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -24717,7 +24368,6 @@ var NullPointerException = (
 );
 var NullPointerException_default = NullPointerException;
 
-// package/esm/core/util/OutputStream.js
 var OutputStream = (
   /** @class */
   function() {
@@ -24747,7 +24397,6 @@ var OutputStream = (
 );
 var OutputStream_default = OutputStream;
 
-// package/esm/core/OutOfMemoryError.js
 var __extends60 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -24779,7 +24428,6 @@ var OutOfMemoryError = (
 );
 var OutOfMemoryError_default = OutOfMemoryError;
 
-// package/esm/core/util/ByteArrayOutputStream.js
 var __extends61 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -24833,7 +24481,7 @@ var ByteArrayOutputStream = (
     };
     ByteArrayOutputStream2.prototype.write = function(b) {
       this.ensureCapacity(this.count + 1);
-      this.buf[this.count] = /*(byte)*/
+      this.buf[this.count] =
       b;
       this.count += 1;
     };
@@ -24869,19 +24517,16 @@ var ByteArrayOutputStream = (
     ByteArrayOutputStream2.prototype.toString_void = function() {
       return new String(
         this.buf
-        /*, 0, this.count*/
       ).toString();
     };
     ByteArrayOutputStream2.prototype.toString_string = function(charsetName) {
       return new String(
         this.buf
-        /*, 0, this.count, charsetName*/
       ).toString();
     };
     ByteArrayOutputStream2.prototype.toString_number = function(hibyte) {
       return new String(
         this.buf
-        /*, hibyte, 0, this.count*/
       ).toString();
     };
     ByteArrayOutputStream2.prototype.close = function() {
@@ -24891,7 +24536,6 @@ var ByteArrayOutputStream = (
 );
 var ByteArrayOutputStream_default = ByteArrayOutputStream;
 
-// package/esm/core/pdf417/decoder/DecodedBitStreamParser.js
 var Mode3;
 (function(Mode5) {
   Mode5[Mode5["ALPHA"] = 0] = "ALPHA";
@@ -24956,7 +24600,6 @@ var DecodedBitStreamParser4 = (
             break;
           case DecodedBitStreamParser5.MODE_SHIFT_TO_BYTE_COMPACTION_MODE:
             result.append(
-              /*(char)*/
               codewords[codeIndex++]
             );
             break;
@@ -25120,7 +24763,7 @@ var DecodedBitStreamParser4 = (
         switch (subMode) {
           case Mode3.ALPHA:
             if (subModeCh < 26) {
-              ch = /*(char)('A' + subModeCh) */
+              ch =
               String.fromCharCode(65 + subModeCh);
             } else {
               switch (subModeCh) {
@@ -25139,7 +24782,6 @@ var DecodedBitStreamParser4 = (
                   break;
                 case DecodedBitStreamParser5.MODE_SHIFT_TO_BYTE_COMPACTION_MODE:
                   result.append(
-                    /*(char)*/
                     byteCompactionData[i]
                   );
                   break;
@@ -25151,7 +24793,7 @@ var DecodedBitStreamParser4 = (
             break;
           case Mode3.LOWER:
             if (subModeCh < 26) {
-              ch = /*(char)('a' + subModeCh)*/
+              ch =
               String.fromCharCode(97 + subModeCh);
             } else {
               switch (subModeCh) {
@@ -25171,7 +24813,6 @@ var DecodedBitStreamParser4 = (
                   break;
                 case DecodedBitStreamParser5.MODE_SHIFT_TO_BYTE_COMPACTION_MODE:
                   result.append(
-                    /*(char)*/
                     byteCompactionData[i]
                   );
                   break;
@@ -25204,7 +24845,6 @@ var DecodedBitStreamParser4 = (
                   break;
                 case DecodedBitStreamParser5.MODE_SHIFT_TO_BYTE_COMPACTION_MODE:
                   result.append(
-                    /*(char)*/
                     byteCompactionData[i]
                   );
                   break;
@@ -25224,7 +24864,6 @@ var DecodedBitStreamParser4 = (
                   break;
                 case DecodedBitStreamParser5.MODE_SHIFT_TO_BYTE_COMPACTION_MODE:
                   result.append(
-                    /*(char)*/
                     byteCompactionData[i]
                   );
                   break;
@@ -25237,7 +24876,7 @@ var DecodedBitStreamParser4 = (
           case Mode3.ALPHA_SHIFT:
             subMode = priorToShiftMode;
             if (subModeCh < 26) {
-              ch = /*(char)('A' + subModeCh)*/
+              ch =
               String.fromCharCode(65 + subModeCh);
             } else {
               switch (subModeCh) {
@@ -25261,7 +24900,6 @@ var DecodedBitStreamParser4 = (
                   break;
                 case DecodedBitStreamParser5.MODE_SHIFT_TO_BYTE_COMPACTION_MODE:
                   result.append(
-                    /*(char)*/
                     byteCompactionData[i]
                   );
                   break;
@@ -25306,7 +24944,6 @@ var DecodedBitStreamParser4 = (
                 if (count % 5 === 0 && count > 0) {
                   for (var j = 0; j < 6; ++j) {
                     decodedBytes.write(
-                      /*(byte)*/
                       Number(createBigInt(value) >> createBigInt(8 * (5 - j)))
                     );
                   }
@@ -25321,7 +24958,6 @@ var DecodedBitStreamParser4 = (
           }
           for (var i = 0; i < count; i++) {
             decodedBytes.write(
-              /*(byte)*/
               byteCompactedCodewords[i]
             );
           }
@@ -25349,7 +24985,6 @@ var DecodedBitStreamParser4 = (
             if (count % 5 === 0 && count > 0) {
               for (var j = 0; j < 6; ++j) {
                 decodedBytes.write(
-                  /*(byte)*/
                   Number(createBigInt(value) >> createBigInt(8 * (5 - j)))
                 );
               }
@@ -25440,7 +25075,6 @@ var DecodedBitStreamParser4 = (
 );
 var DecodedBitStreamParser_default4 = DecodedBitStreamParser4;
 
-// package/esm/core/pdf417/decoder/PDF417ScanningDecoder.js
 var __values37 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -25487,7 +25121,7 @@ var PDF417ScanningDecoder = (
       var leftToRight = leftRowIndicatorColumn != null;
       for (var barcodeColumnCount = 1; barcodeColumnCount <= maxBarcodeColumn; barcodeColumnCount++) {
         var barcodeColumn = leftToRight ? barcodeColumnCount : maxBarcodeColumn - barcodeColumnCount;
-        if (detectionResult.getDetectionResultColumn(barcodeColumn) !== /* null */
+        if (detectionResult.getDetectionResultColumn(barcodeColumn) !==
         void 0) {
           continue;
         }
@@ -25953,7 +25587,6 @@ var PDF417ScanningDecoder = (
 );
 var PDF417ScanningDecoder_default = PDF417ScanningDecoder;
 
-// package/esm/core/pdf417/PDF417Reader.js
 var __values38 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -26047,7 +25680,6 @@ var PDF417Reader = (
 );
 var PDF417Reader_default = PDF417Reader;
 
-// package/esm/core/ReaderException.js
 var __extends62 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -26080,7 +25712,6 @@ var ReaderException = (
 );
 var ReaderException_default = ReaderException;
 
-// package/esm/core/MultiFormatReader.js
 var __values39 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -26212,7 +25843,6 @@ var MultiFormatReader = (
 );
 var MultiFormatReader_default = MultiFormatReader;
 
-// package/esm/browser/BrowserMultiFormatReader.js
 var __extends63 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -26266,7 +25896,6 @@ var BrowserMultiFormatReader = (
   }(BrowserCodeReader)
 );
 
-// package/esm/browser/BrowserPDF417Reader.js
 var __extends64 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -26300,7 +25929,6 @@ var BrowserPDF417Reader = (
   }(BrowserCodeReader)
 );
 
-// package/esm/browser/BrowserQRCodeReader.js
 var __extends65 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -26334,7 +25962,6 @@ var BrowserQRCodeReader = (
   }(BrowserCodeReader)
 );
 
-// package/esm/core/EncodeHintType.js
 var EncodeHintType;
 (function(EncodeHintType2) {
   EncodeHintType2[EncodeHintType2["ERROR_CORRECTION"] = 0] = "ERROR_CORRECTION";
@@ -26354,7 +25981,6 @@ var EncodeHintType;
 })(EncodeHintType || (EncodeHintType = {}));
 var EncodeHintType_default = EncodeHintType;
 
-// package/esm/core/common/reedsolomon/ReedSolomonEncoder.js
 var ReedSolomonEncoder = (
   /** @class */
   function() {
@@ -26402,7 +26028,6 @@ var ReedSolomonEncoder = (
 );
 var ReedSolomonEncoder_default = ReedSolomonEncoder;
 
-// package/esm/core/qrcode/encoder/MaskUtil.js
 var MaskUtil = (
   /** @class */
   function() {
@@ -26553,7 +26178,6 @@ var MaskUtil = (
 );
 var MaskUtil_default = MaskUtil;
 
-// package/esm/core/qrcode/encoder/ByteMatrix.js
 var __values40 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -26593,7 +26217,7 @@ var ByteMatrix = (
       this.bytes[y][x] = value;
     };
     ByteMatrix2.prototype.setBoolean = function(x, y, value) {
-      this.bytes[y][x] = /*(byte) */
+      this.bytes[y][x] =
       value ? 1 : 0;
     };
     ByteMatrix2.prototype.clear = function(value) {
@@ -26661,7 +26285,6 @@ var ByteMatrix = (
 );
 var ByteMatrix_default = ByteMatrix;
 
-// package/esm/core/qrcode/encoder/QRCode.js
 var QRCode = (
   /** @class */
   function() {
@@ -26727,7 +26350,6 @@ var QRCode = (
 );
 var QRCode_default = QRCode;
 
-// package/esm/core/WriterException.js
 var __extends66 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -26760,7 +26382,6 @@ var WriterException = (
 );
 var WriterException_default = WriterException;
 
-// package/esm/core/qrcode/encoder/MatrixUtil.js
 var MatrixUtil = (
   /** @class */
   function() {
@@ -26768,8 +26389,6 @@ var MatrixUtil = (
     }
     MatrixUtil2.clearMatrix = function(matrix) {
       matrix.clear(
-        /*(byte) */
-        /*-1*/
         255
       );
     };
@@ -26998,85 +26617,45 @@ var MatrixUtil = (
     ]);
     MatrixUtil2.POSITION_ADJUSTMENT_PATTERN_COORDINATE_TABLE = Array.from([
       Int32Array.from([-1, -1, -1, -1, -1, -1, -1]),
-      // Version 1
       Int32Array.from([6, 18, -1, -1, -1, -1, -1]),
-      // Version 2
       Int32Array.from([6, 22, -1, -1, -1, -1, -1]),
-      // Version 3
       Int32Array.from([6, 26, -1, -1, -1, -1, -1]),
-      // Version 4
       Int32Array.from([6, 30, -1, -1, -1, -1, -1]),
-      // Version 5
       Int32Array.from([6, 34, -1, -1, -1, -1, -1]),
-      // Version 6
       Int32Array.from([6, 22, 38, -1, -1, -1, -1]),
-      // Version 7
       Int32Array.from([6, 24, 42, -1, -1, -1, -1]),
-      // Version 8
       Int32Array.from([6, 26, 46, -1, -1, -1, -1]),
-      // Version 9
       Int32Array.from([6, 28, 50, -1, -1, -1, -1]),
-      // Version 10
       Int32Array.from([6, 30, 54, -1, -1, -1, -1]),
-      // Version 11
       Int32Array.from([6, 32, 58, -1, -1, -1, -1]),
-      // Version 12
       Int32Array.from([6, 34, 62, -1, -1, -1, -1]),
-      // Version 13
       Int32Array.from([6, 26, 46, 66, -1, -1, -1]),
-      // Version 14
       Int32Array.from([6, 26, 48, 70, -1, -1, -1]),
-      // Version 15
       Int32Array.from([6, 26, 50, 74, -1, -1, -1]),
-      // Version 16
       Int32Array.from([6, 30, 54, 78, -1, -1, -1]),
-      // Version 17
       Int32Array.from([6, 30, 56, 82, -1, -1, -1]),
-      // Version 18
       Int32Array.from([6, 30, 58, 86, -1, -1, -1]),
-      // Version 19
       Int32Array.from([6, 34, 62, 90, -1, -1, -1]),
-      // Version 20
       Int32Array.from([6, 28, 50, 72, 94, -1, -1]),
-      // Version 21
       Int32Array.from([6, 26, 50, 74, 98, -1, -1]),
-      // Version 22
       Int32Array.from([6, 30, 54, 78, 102, -1, -1]),
-      // Version 23
       Int32Array.from([6, 28, 54, 80, 106, -1, -1]),
-      // Version 24
       Int32Array.from([6, 32, 58, 84, 110, -1, -1]),
-      // Version 25
       Int32Array.from([6, 30, 58, 86, 114, -1, -1]),
-      // Version 26
       Int32Array.from([6, 34, 62, 90, 118, -1, -1]),
-      // Version 27
       Int32Array.from([6, 26, 50, 74, 98, 122, -1]),
-      // Version 28
       Int32Array.from([6, 30, 54, 78, 102, 126, -1]),
-      // Version 29
       Int32Array.from([6, 26, 52, 78, 104, 130, -1]),
-      // Version 30
       Int32Array.from([6, 30, 56, 82, 108, 134, -1]),
-      // Version 31
       Int32Array.from([6, 34, 60, 86, 112, 138, -1]),
-      // Version 32
       Int32Array.from([6, 30, 58, 86, 114, 142, -1]),
-      // Version 33
       Int32Array.from([6, 34, 62, 90, 118, 146, -1]),
-      // Version 34
       Int32Array.from([6, 30, 54, 78, 102, 126, 150]),
-      // Version 35
       Int32Array.from([6, 24, 50, 76, 102, 128, 154]),
-      // Version 36
       Int32Array.from([6, 28, 54, 80, 106, 132, 158]),
-      // Version 37
       Int32Array.from([6, 32, 58, 84, 110, 136, 162]),
-      // Version 38
       Int32Array.from([6, 26, 54, 82, 110, 138, 166]),
-      // Version 39
       Int32Array.from([6, 30, 58, 86, 114, 142, 170])
-      // Version 40
     ]);
     MatrixUtil2.TYPE_INFO_COORDINATES = Array.from([
       Int32Array.from([8, 0]),
@@ -27103,7 +26682,6 @@ var MatrixUtil = (
 );
 var MatrixUtil_default = MatrixUtil;
 
-// package/esm/core/qrcode/encoder/BlockPair.js
 var BlockPair = (
   /** @class */
   function() {
@@ -27122,7 +26700,6 @@ var BlockPair = (
 );
 var BlockPair_default = BlockPair;
 
-// package/esm/core/qrcode/encoder/Encoder.js
 var __values41 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -27414,7 +26991,7 @@ var Encoder = (
       new ReedSolomonEncoder_default(GenericGF_default.QR_CODE_FIELD_256).encode(toEncode, numEcBytesInBlock);
       var ecBytes = new Uint8Array(numEcBytesInBlock);
       for (var i = 0; i < numEcBytesInBlock; i++) {
-        ecBytes[i] = /*(byte) */
+        ecBytes[i] =
         toEncode[numDataBytes + i];
       }
       return ecBytes;
@@ -27553,7 +27130,6 @@ var Encoder = (
       -1,
       -1,
       -1,
-      // 0x00-0x0f
       -1,
       -1,
       -1,
@@ -27570,7 +27146,6 @@ var Encoder = (
       -1,
       -1,
       -1,
-      // 0x10-0x1f
       36,
       -1,
       -1,
@@ -27587,7 +27162,6 @@ var Encoder = (
       41,
       42,
       43,
-      // 0x20-0x2f
       0,
       1,
       2,
@@ -27604,7 +27178,6 @@ var Encoder = (
       -1,
       -1,
       -1,
-      // 0x30-0x3f
       -1,
       10,
       11,
@@ -27621,7 +27194,6 @@ var Encoder = (
       22,
       23,
       24,
-      // 0x40-0x4f
       25,
       26,
       27,
@@ -27638,7 +27210,6 @@ var Encoder = (
       -1,
       -1,
       -1
-      // 0x50-0x5f
     ]);
     Encoder3.DEFAULT_BYTE_MODE_ENCODING = CharacterSetECI_default.UTF8.getName();
     return Encoder3;
@@ -27646,7 +27217,6 @@ var Encoder = (
 );
 var Encoder_default = Encoder;
 
-// package/esm/browser/BrowserQRCodeSvgWriter.js
 var BrowserQRCodeSvgWriter = (
   /** @class */
   function() {
@@ -27732,7 +27302,6 @@ var BrowserQRCodeSvgWriter = (
   }()
 );
 
-// package/esm/core/qrcode/QRCodeWriter.js
 var QRCodeWriter = (
   /** @class */
   function() {
@@ -27791,7 +27360,6 @@ var QRCodeWriter = (
 );
 var QRCodeWriter_default = QRCodeWriter;
 
-// package/esm/core/MultiFormatWriter.js
 var MultiFormatWriter = (
   /** @class */
   function() {
@@ -27800,45 +27368,9 @@ var MultiFormatWriter = (
     MultiFormatWriter2.prototype.encode = function(contents, format, width, height, hints) {
       var writer;
       switch (format) {
-        // case BarcodeFormat.EAN_8:
-        //   writer = new EAN8Writer()
-        //   break
-        // case BarcodeFormat.UPC_E:
-        //   writer = new UPCEWriter()
-        //   break
-        // case BarcodeFormat.EAN_13:
-        //   writer = new EAN13Writer()
-        //   break
-        // case BarcodeFormat.UPC_A:
-        //   writer = new UPCAWriter()
-        //   break
         case BarcodeFormat_default.QR_CODE:
           writer = new QRCodeWriter_default();
           break;
-        // case BarcodeFormat.CODE_39:
-        //   writer = new Code39Writer()
-        //   break
-        // case BarcodeFormat.CODE_93:
-        //   writer = new Code93Writer()
-        //   break
-        // case BarcodeFormat.CODE_128:
-        //   writer = new Code128Writer()
-        //   break
-        // case BarcodeFormat.ITF:
-        //   writer = new ITFWriter()
-        //   break
-        // case BarcodeFormat.PDF_417:
-        //   writer = new PDF417Writer()
-        //   break
-        // case BarcodeFormat.CODABAR:
-        //   writer = new CodaBarWriter()
-        //   break
-        // case BarcodeFormat.DATA_MATRIX:
-        //   writer = new DataMatrixWriter()
-        //   break
-        // case BarcodeFormat.AZTEC:
-        //   writer = new AztecWriter()
-        //   break
         default:
           throw new IllegalArgumentException_default("No encoder available for format " + format);
       }
@@ -27849,7 +27381,6 @@ var MultiFormatWriter = (
 );
 var MultiFormatWriter_default = MultiFormatWriter;
 
-// package/esm/core/PlanarYUVLuminanceSource.js
 var __extends67 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -27968,7 +27499,6 @@ var PlanarYUVLuminanceSource = (
 );
 var PlanarYUVLuminanceSource_default = PlanarYUVLuminanceSource;
 
-// package/esm/core/RGBLuminanceSource.js
 var __extends68 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -28006,7 +27536,7 @@ var RGBLuminanceSource = (
           var r = pixel >> 16 & 255;
           var g2 = pixel >> 7 & 510;
           var b = pixel & 255;
-          luminancesUint8Array[offset] = /*(byte) */
+          luminancesUint8Array[offset] =
           (r + g2 + b) / 4 & 255;
         }
         _this.luminances = luminancesUint8Array;
@@ -28076,7 +27606,6 @@ var RGBLuminanceSource = (
 );
 var RGBLuminanceSource_default = RGBLuminanceSource;
 
-// package/esm/core/util/Charset.js
 var __extends69 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -28111,7 +27640,6 @@ var Charset = (
 );
 var Charset_default = Charset;
 
-// package/esm/core/util/StandardCharsets.js
 var StandardCharsets = (
   /** @class */
   function() {
@@ -28123,7 +27651,6 @@ var StandardCharsets = (
 );
 var StandardCharsets_default = StandardCharsets;
 
-// package/esm/core/datamatrix/encoder/DefaultPlacement.js
 var DefaultPlacement = (
   /** @class */
   function() {
@@ -28261,7 +27788,6 @@ var DefaultPlacement = (
 );
 var DefaultPlacement_default = DefaultPlacement;
 
-// package/esm/core/datamatrix/encoder/constants.js
 var _a;
 var FACTOR_SETS = [
   5,
@@ -28756,7 +28282,6 @@ var X12_ENCODATION = 3;
 var EDIFACT_ENCODATION = 4;
 var BASE256_ENCODATION = 5;
 
-// package/esm/core/datamatrix/encoder/ErrorCorrection.js
 var ErrorCorrection2 = (
   /** @class */
   function() {
@@ -28837,7 +28362,6 @@ var ErrorCorrection2 = (
 );
 var ErrorCorrection_default2 = ErrorCorrection2;
 
-// package/esm/core/datamatrix/encoder/ASCIIEncoder.js
 var ASCIIEncoder = (
   /** @class */
   function() {
@@ -28900,7 +28424,6 @@ var ASCIIEncoder = (
   }()
 );
 
-// package/esm/core/datamatrix/encoder/Base256Encoder.js
 var Base256Encoder = (
   /** @class */
   function() {
@@ -28954,7 +28477,6 @@ var Base256Encoder = (
   }()
 );
 
-// package/esm/core/datamatrix/encoder/C40Encoder.js
 var C40Encoder = (
   /** @class */
   function() {
@@ -29130,7 +28652,6 @@ var C40Encoder = (
   }()
 );
 
-// package/esm/core/datamatrix/encoder/EdifactEncoder.js
 var EdifactEncoder = (
   /** @class */
   function() {
@@ -29240,7 +28761,6 @@ var EdifactEncoder = (
   }()
 );
 
-// package/esm/core/datamatrix/encoder/SymbolInfo.js
 var __extends70 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -29422,24 +28942,18 @@ var DataMatrixSymbolInfo144 = (
 var PROD_SYMBOLS = [
   new SymbolInfo(false, 3, 5, 8, 8, 1),
   new SymbolInfo(false, 5, 7, 10, 10, 1),
-  /*rect*/
   new SymbolInfo(true, 5, 7, 16, 6, 1),
   new SymbolInfo(false, 8, 10, 12, 12, 1),
-  /*rect*/
   new SymbolInfo(true, 10, 11, 14, 6, 2),
   new SymbolInfo(false, 12, 12, 14, 14, 1),
-  /*rect*/
   new SymbolInfo(true, 16, 14, 24, 10, 1),
   new SymbolInfo(false, 18, 14, 16, 16, 1),
   new SymbolInfo(false, 22, 18, 18, 18, 1),
-  /*rect*/
   new SymbolInfo(true, 22, 18, 16, 10, 2),
   new SymbolInfo(false, 30, 20, 20, 20, 1),
-  /*rect*/
   new SymbolInfo(true, 32, 24, 16, 14, 2),
   new SymbolInfo(false, 36, 24, 22, 22, 1),
   new SymbolInfo(false, 44, 28, 24, 24, 1),
-  /*rect*/
   new SymbolInfo(true, 49, 28, 22, 14, 2),
   new SymbolInfo(false, 62, 36, 14, 14, 4),
   new SymbolInfo(false, 86, 42, 16, 16, 4),
@@ -29458,7 +28972,6 @@ var PROD_SYMBOLS = [
   new DataMatrixSymbolInfo144()
 ];
 
-// package/esm/core/datamatrix/encoder/EncoderContext.js
 var EncoderContext = (
   /** @class */
   function() {
@@ -29549,7 +29062,6 @@ var EncoderContext = (
   }()
 );
 
-// package/esm/core/datamatrix/encoder/X12Encoder.js
 var __extends71 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -29639,7 +29151,6 @@ var X12Encoder = (
   }(C40Encoder)
 );
 
-// package/esm/core/datamatrix/encoder/TextEncoder.js
 var __extends72 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -29726,7 +29237,6 @@ var TextEncoder2 = (
   }(C40Encoder)
 );
 
-// package/esm/core/datamatrix/encoder/HighLevelEncoder.js
 var HighLevelEncoder = (
   /** @class */
   function() {
@@ -29986,7 +29496,7 @@ var HighLevelEncoder = (
       return this.isX12TermSep(ch) || ch === " ".charCodeAt(0) || ch >= "0".charCodeAt(0) && ch <= "9".charCodeAt(0) || ch >= "A".charCodeAt(0) && ch <= "Z".charCodeAt(0);
     };
     HighLevelEncoder3.isX12TermSep = function(ch) {
-      return ch === 13 || // CR
+      return ch === 13 ||
       ch === "*".charCodeAt(0) || ch === ">".charCodeAt(0);
     };
     HighLevelEncoder3.isNativeEDIFACT = function(ch) {
@@ -30016,7 +29526,6 @@ var HighLevelEncoder = (
 );
 var HighLevelEncoder_default = HighLevelEncoder;
 
-// package/esm/core/common/ECIEncoderSet.js
 var __values43 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -30191,7 +29700,6 @@ var ECIEncoderSet = (
   }()
 );
 
-// package/esm/core/common/MinimalECIInput.js
 var COST_PER_ECI = 3;
 var MinimalECIInput = (
   /** @class */
@@ -30368,7 +29876,6 @@ var InputEdge = (
   }()
 );
 
-// package/esm/core/datamatrix/encoder/MinimalEncoder.js
 var __extends73 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -31178,7 +30685,6 @@ var Input = (
   }(MinimalECIInput)
 );
 
-// package/esm/core/datamatrix/DataMatrixWriter.js
 var DataMatrixWriter = (
   /** @class */
   function() {
@@ -31305,7 +30811,6 @@ var DataMatrixWriter = (
 );
 var DataMatrixWriter_default = DataMatrixWriter;
 
-// package/esm/core/aztec/encoder/AztecCode.js
 var AztecCode = (
   /** @class */
   function() {
@@ -31346,7 +30851,6 @@ var AztecCode = (
 );
 var AztecCode_default = AztecCode;
 
-// package/esm/core/util/Collections.js
 var Collections = (
   /** @class */
   function() {
@@ -31363,7 +30867,6 @@ var Collections = (
 );
 var Collections_default = Collections;
 
-// package/esm/core/aztec/encoder/Token.js
 var Token = (
   /** @class */
   function() {
@@ -31378,7 +30881,6 @@ var Token = (
 );
 var Token_default = Token;
 
-// package/esm/core/aztec/encoder/SimpleToken.js
 var __extends74 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -31428,7 +30930,6 @@ var SimpleToken = (
 );
 var SimpleToken_default = SimpleToken;
 
-// package/esm/core/aztec/encoder/BinaryShiftToken.js
 var __extends75 = /* @__PURE__ */ function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -31484,7 +30985,6 @@ var BinaryShiftToken = (
 );
 var BinaryShiftToken_default = BinaryShiftToken;
 
-// package/esm/core/aztec/encoder/TokenHelpers.js
 function addBinaryShift(token, start, byteCount) {
   return new BinaryShiftToken_default(token, start, byteCount);
 }
@@ -31492,7 +30992,6 @@ function add(token, value, bitCount) {
   return new SimpleToken_default(token, value, bitCount);
 }
 
-// package/esm/core/aztec/encoder/EncoderConstants.js
 var MODE_NAMES = [
   "UPPER",
   "LOWER",
@@ -31507,66 +31006,44 @@ var MODE_MIXED = 3;
 var MODE_PUNCT = 4;
 var EMPTY_TOKEN = new SimpleToken_default(null, 0, 0);
 
-// package/esm/core/aztec/encoder/LatchTable.js
 var LATCH_TABLE = [
   Int32Array.from([
     0,
     (5 << 16) + 28,
-    // UPPER -> LOWER
     (5 << 16) + 30,
-    // UPPER -> DIGIT
     (5 << 16) + 29,
-    // UPPER -> MIXED
     (10 << 16) + (29 << 5) + 30
-    // UPPER -> MIXED -> PUNCT
   ]),
   Int32Array.from([
     (9 << 16) + (30 << 4) + 14,
-    // LOWER -> DIGIT -> UPPER
     0,
     (5 << 16) + 30,
-    // LOWER -> DIGIT
     (5 << 16) + 29,
-    // LOWER -> MIXED
     (10 << 16) + (29 << 5) + 30
-    // LOWER -> MIXED -> PUNCT
   ]),
   Int32Array.from([
     (4 << 16) + 14,
-    // DIGIT -> UPPER
     (9 << 16) + (14 << 5) + 28,
-    // DIGIT -> UPPER -> LOWER
     0,
     (9 << 16) + (14 << 5) + 29,
-    // DIGIT -> UPPER -> MIXED
     (14 << 16) + (14 << 10) + (29 << 5) + 30
-    // DIGIT -> UPPER -> MIXED -> PUNCT
   ]),
   Int32Array.from([
     (5 << 16) + 29,
-    // MIXED -> UPPER
     (5 << 16) + 28,
-    // MIXED -> LOWER
     (10 << 16) + (29 << 5) + 30,
-    // MIXED -> UPPER -> DIGIT
     0,
     (5 << 16) + 30
-    // MIXED -> PUNCT
   ]),
   Int32Array.from([
     (5 << 16) + 31,
-    // PUNCT -> UPPER
     (10 << 16) + (31 << 5) + 28,
-    // PUNCT -> UPPER -> LOWER
     (10 << 16) + (31 << 5) + 30,
-    // PUNCT -> UPPER -> DIGIT
     (10 << 16) + (31 << 5) + 29,
-    // PUNCT -> UPPER -> MIXED
     0
   ])
 ];
 
-// package/esm/core/aztec/encoder/ShiftTable.js
 var __values45 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -31604,7 +31081,6 @@ function static_SHIFT_TABLE(SHIFT_TABLE2) {
 }
 var SHIFT_TABLE = static_SHIFT_TABLE(Arrays_default.createInt32Array(6, 6));
 
-// package/esm/core/aztec/encoder/State.js
 var __values46 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -31734,7 +31210,6 @@ var State2 = (
 );
 var State_default = State2;
 
-// package/esm/core/aztec/encoder/CharMap.js
 function static_CHAR_MAP(CHAR_MAP2) {
   var spaceCharCode = StringUtils_default.getCharCode(" ");
   var pointCharCode = StringUtils_default.getCharCode(".");
@@ -31834,7 +31309,6 @@ function static_CHAR_MAP(CHAR_MAP2) {
 }
 var CHAR_MAP = static_CHAR_MAP(Arrays_default.createInt32Array(5, 256));
 
-// package/esm/core/aztec/encoder/HighLevelEncoder.js
 var __values47 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -32019,7 +31493,6 @@ var HighLevelEncoder2 = (
 );
 var HighLevelEncoder_default2 = HighLevelEncoder2;
 
-// package/esm/core/aztec/encoder/Encoder.js
 var __values48 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
@@ -32345,7 +31818,6 @@ var Encoder2 = (
 );
 var Encoder_default2 = Encoder2;
 
-// package/esm/core/aztec/AztecWriter.js
 var AztecWriter = (
   /** @class */
   function() {

@@ -229,8 +229,6 @@ export class HtmlField extends Component {
             return;
         }
         if (urgent) {
-            // a keystroke whose mutations the editor has not stepped yet must
-            // still count; an untouched field must not be written at all
             this.editor?.shared.history?.addStep();
             if (this.isDirty) {
                 await this.updateValue(this.editor.getContent());

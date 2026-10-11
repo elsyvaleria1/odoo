@@ -71,10 +71,6 @@ export class MrpDisplayRecord extends Component {
         });
     }
 
-    /**
-     * Opens a confirmation dialog to register the produced quantity and set the
-     * tracking number if it applies.
-     */
     async registerProduction() {
         if (!this.props.production.data.qty_producing) {
             this.props.production.update({
@@ -392,7 +388,6 @@ export class MrpDisplayRecord extends Component {
             throw error;
         }
         if (resModel === "mrp.production" && !automaticBackorderCreation) {
-            // Manually remove the parent MO from the model, to avoid a full reload.
             const productions_root = this.props.production.model.root;
             productions_root.records.splice(
                 productions_root.records.findIndex(
@@ -404,7 +399,6 @@ export class MrpDisplayRecord extends Component {
         } else {
             this.props.removeFromCache(resId);
             if (this.quantityProducing < this.quantityToProduce) {
-                // To make sure we see any potentially created backorders
                 await this.mrpDisplayContext.reload();
             } else {
                 await this.mrpDisplayContext.reload(this.props.production);

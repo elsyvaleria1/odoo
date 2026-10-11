@@ -202,8 +202,6 @@ export const templateCompileCacheService = {
      */
     async start(env, { localization }) {
         if (session.await_precompiled_templates) {
-            // a public page runs without 'unsafe-eval': reviving stored code
-            // would throw, and would let an injected string outlive the page
             return null;
         }
         const db = session.registry_hash

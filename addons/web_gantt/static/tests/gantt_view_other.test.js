@@ -36,7 +36,6 @@ import {
     SELECTORS,
 } from "./web_gantt_test_helpers.js";
 
-// Hard-coded daylight saving dates from 2019
 const DST_DATES = {
     winterToSummer: {
         before: "2019-03-30",
@@ -242,14 +241,11 @@ test("move a pill in multi-level group row after collapse and expand grouped row
     });
     expect(getGridContent().rows).toHaveLength(4);
 
-    // collapse the first group
     await contains(`${SELECTORS.rowHeader}${SELECTORS.group}:nth-child(1)`).click();
     expect(`${SELECTORS.rowHeader}:nth-child(1)`).not.toHaveClass("o_group_open");
-    // expand the first group
     await contains(`${SELECTORS.rowHeader}${SELECTORS.group}:nth-child(1)`).click();
     expect(`${SELECTORS.rowHeader}:nth-child(1)`).toHaveClass("o_group_open");
 
-    // move a pill (task 7) in the other row and in the day 2
     const { drop } = await dragPill("Task 7");
     await drop({ columnHeader: "11", groupHeader: "December 2018", part: 2 });
     expect.verifySteps(["write"]);
@@ -276,7 +272,6 @@ test("plan dialog initial domain has the action domain as its only base", async 
         views: [[false, "gantt"]],
     };
 
-    // Load action without domain and open plan dialog
     await getService("action").doAction(ganttAction);
     await animationFrame();
 
@@ -285,7 +280,6 @@ test("plan dialog initial domain has the action domain as its only base", async 
     await clickCell("10", "December 2018");
     expect.verifySteps(["|,start,=,false,stop,=,false"]);
 
-    // Load action WITH domain and open plan dialog
     await getService("action").doAction({
         ...ganttAction,
         domain: [["project_id", "=", 1]],
@@ -298,7 +292,6 @@ test("plan dialog initial domain has the action domain as its only base", async 
     await clickCell("10", "December 2018");
     expect.verifySteps(["&,project_id,=,1,|,start,=,false,stop,=,false"]);
 
-    // Load action without domain, activate a filter and then open plan dialog
     await getService("action").doAction(ganttAction);
     expect.verifySteps(["&,start,<,2019-02-28 23:00:00,stop,>,2018-11-30 23:00:00"]);
 
@@ -592,7 +585,7 @@ test("Only the task name appears in the pill title when the pill_label option is
         arch: `<gantt date_start="start" date_stop="stop" default_range="week" scales="week"/>`,
     });
     expect(queryAllTexts(SELECTORS.pill)).toEqual([
-        "Task 1", // the pill should not include DateTime in the title
+        "Task 1",
         "Task 2",
         "Task 4",
         "Task 7",
@@ -605,8 +598,8 @@ test("The date and task name appears in the pill title when the pill_label optio
         arch: `<gantt date_start="start" date_stop="stop" default_range="week" scales="week" pill_label="True"/>`,
     });
     expect(queryAllTexts(SELECTORS.pill)).toEqual([
-        "11/30 - 12/31 Task 1", // the task span across in week then DateTime should be displayed on the pill label
-        "Task 2", // the task does not span across in week scale then DateTime shouldn't be displayed on the pill label
+        "11/30 - 12/31 Task 1",
+        "Task 2",
         "Task 4",
         "Task 7",
     ]);
@@ -619,35 +612,35 @@ test("A task should always have a title (pill_label='1', scale 'week')", async (
             id: 1,
             name: "Task 1",
             start: "2018-12-17 08:30:00",
-            stop: "2018-12-17 19:30:00", // span only one day
+            stop: "2018-12-17 19:30:00",
             allocated_hours: 0,
         },
         {
             id: 2,
             name: "Task 2",
             start: "2018-12-18 08:30:00",
-            stop: "2018-12-18 19:30:00", // span only one day
+            stop: "2018-12-18 19:30:00",
             allocated_hours: 6,
         },
         {
             id: 3,
             name: "Task 3",
             start: "2018-12-18 08:30:00",
-            stop: "2018-12-19 19:30:00", // span two days
+            stop: "2018-12-19 19:30:00",
             allocated_hours: 6,
         },
         {
             id: 4,
             name: "Task 4",
             start: "2018-12-08 08:30:00",
-            stop: "2019-02-18 19:30:00", // span two weeks
+            stop: "2019-02-18 19:30:00",
             allocated_hours: 6,
         },
         {
             id: 5,
             name: "Task 5",
             start: "2018-12-18 08:30:00",
-            stop: "2019-02-18 19:30:00", // span two months
+            stop: "2019-02-18 19:30:00",
             allocated_hours: 6,
         },
     ];
@@ -681,9 +674,6 @@ test("A task should always have a title (pill_label='1', scale 'week')", async (
 });
 
 test("pill_label without duration_field shows no duration", async () => {
-    // The generic view used to read `allocated_hours` off the record by name --
-    // a planning field, in a module that depends on `web` alone. Nothing is
-    // shown now unless the arch names the field it wants read.
     Tasks._fields.allocated_hours = fields.Float({ string: "Allocated Hours" });
     Tasks._records = [
         {
@@ -710,9 +700,6 @@ test("pill_label without duration_field shows no duration", async () => {
 });
 
 test("duration_field is fetched without being declared as a field", async () => {
-    // `_getFields` adds the named field to the read specification, so a view
-    // that wants a duration does not also have to carry a <field> for it --
-    // which is the whole point of the attribute over the arch declaring both.
     Tasks._fields.allocated_hours = fields.Float({ string: "Allocated Hours" });
     Tasks._records = [
         {
@@ -745,28 +732,28 @@ test("A task should always have a title (pill_label='1', scale 'month')", async 
             id: 1,
             name: "Task 1",
             start: "2018-12-15 08:30:00",
-            stop: "2018-12-15 19:30:00", // span only one day
+            stop: "2018-12-15 19:30:00",
             allocated_hours: 0,
         },
         {
             id: 2,
             name: "Task 2",
             start: "2018-12-16 08:30:00",
-            stop: "2018-12-16 19:30:00", // span only one day
+            stop: "2018-12-16 19:30:00",
             allocated_hours: 6,
         },
         {
             id: 3,
             name: "Task 3",
             start: "2018-12-16 08:30:00",
-            stop: "2018-12-17 18:30:00", // span two days
+            stop: "2018-12-17 18:30:00",
             allocated_hours: 6,
         },
         {
             id: 4,
             name: "Task 4",
             start: "2018-12-16 08:30:00",
-            stop: "2019-02-18 19:30:00", // span two months
+            stop: "2019-02-18 19:30:00",
             allocated_hours: 6,
         },
     ];
@@ -805,28 +792,28 @@ test("A task should always have a title (pill_label='1', scale 'year')", async (
             id: 1,
             name: "Task 1",
             start: "2018-12-15 08:30:00",
-            stop: "2018-12-15 19:30:00", // span only one day
+            stop: "2018-12-15 19:30:00",
             allocated_hours: 0,
         },
         {
             id: 2,
             name: "Task 2",
             start: "2018-12-16 08:30:00",
-            stop: "2018-12-16 19:30:00", // span only one day
+            stop: "2018-12-16 19:30:00",
             allocated_hours: 6,
         },
         {
             id: 3,
             name: "Task 3",
             start: "2018-12-16 08:30:00",
-            stop: "2018-12-17 18:30:00", // span two days
+            stop: "2018-12-17 18:30:00",
             allocated_hours: 6,
         },
         {
             id: 4,
             name: "Task 4",
             start: "2018-12-16 08:30:00",
-            stop: "2019-02-18 19:30:00", // span two months
+            stop: "2019-02-18 19:30:00",
             allocated_hours: 6,
         },
     ];
@@ -1541,7 +1528,7 @@ test("groups_limit attribute (no groupBy)", async () => {
         resModel: "tasks",
         arch: `<gantt date_start="start" date_stop="stop" groups_limit="2"/>`,
     });
-    expect(".o_gantt_view .o_control_panel .o_pager").toHaveCount(0); // only one group here!
+    expect(".o_gantt_view .o_control_panel .o_pager").toHaveCount(0);
     expect.verifySteps(["get_views", "get_gantt_data", "with limit 2"]);
     const { rows } = getGridContent();
     expect(rows).toEqual([
@@ -1831,7 +1818,7 @@ test("groups_limit attribute in sample mode (no groupBy)", async () => {
         arch: `<gantt date_start="start" date_stop="stop" groups_limit="2" sample="1"/>`,
         domain: Domain.FALSE.toList(),
     });
-    expect(".o_gantt_view .o_control_panel .o_pager").toHaveCount(0); // only one group here!
+    expect(".o_gantt_view .o_control_panel .o_pager").toHaveCount(0);
     expect.verifySteps(["get_views", "get_gantt_data", "with limit 2"]);
 });
 
@@ -1929,7 +1916,6 @@ test("The date and task should appear even if the pill is planned on 2 days but 
             stop: "2024-01-03 02:00:00",
         },
         {
-            // will be displayed in 2 days
             id: 11,
             name: "Task 11",
             allocated_hours: 4,
@@ -1984,6 +1970,5 @@ test("New on a week range creates from the locale's first weekday, not ISO Monda
     });
     await contains(".o_gantt_button_add").click();
     await animationFrame();
-    // 2018-12-20 is a Thursday: the week is Sunday 16 to Saturday 22, in UTC+1
     expect.verifySteps(["2018-12-15 23:00:00 -> 2018-12-22 23:00:00"]);
 });

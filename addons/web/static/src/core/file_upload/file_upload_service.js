@@ -163,8 +163,6 @@ class FileUploadService {
             this._fail(upload, params, e);
             return;
         }
-        // listeners read the server's reply here: a direct upload replaces
-        // upload.xhr with the request to the cloud below
         upload.response = content;
         if (params.directFile) {
             if (!content?.upload_info) {
@@ -180,8 +178,6 @@ class FileUploadService {
                     upload.total = total;
                 },
             });
-            // the cancel button aborts upload.xhr: the request to cancel is
-            // the long one, not the metadata post that just finished
             upload.xhr = toCloud.xhr;
             try {
                 await toCloud;

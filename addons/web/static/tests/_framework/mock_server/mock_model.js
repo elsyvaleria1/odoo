@@ -824,7 +824,6 @@ function orderByField(model, orderBy, records) {
     return sortedRecords;
 }
 
-/** Mirrors the server's FieldHandler: graph and pivot read an invisible field as hidden */
 const RECORD_VIEW_TYPES = new Set([
     "form",
     "list",

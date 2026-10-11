@@ -50,8 +50,6 @@ const ARCHES = {
 
 for (const type of ["kanban", "list"]) {
     test(`registration desk ${type}: dismissing the summary dialog reloads the view`, async () => {
-        // the dialog is dismissed by Escape or a click outside: only the
-        // dialog service's onClose runs, none of the dialog's own buttons
         mockService("dialog", {
             add(component, props, options) {
                 expect.step(`dialog ${Object.keys(props).join(",")}`);

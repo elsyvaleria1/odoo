@@ -29,8 +29,6 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
                     this._setupChartDataSource(chartId);
                 }
 
-                // make sure the domains are correctly set before
-                // any evaluation
                 this._addDomains();
                 break;
             case "UPDATE_CHART": {
@@ -125,10 +123,6 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
         return this.custom.env;
     }
 
-    // -------------------------------------------------------------------------
-    // Private
-    // -------------------------------------------------------------------------
-
     /**
      * Add an additional domain to a chart
      *
@@ -155,8 +149,6 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
      */
     _addDomains() {
         for (const chartId of this.getters.getOdooChartIds()) {
-            // Reset the data source to prevent eager loading
-            // of the data source when the domain is added
             this._resetChartDataSource(chartId);
         }
     }
@@ -205,9 +197,6 @@ export class OdooChartCoreViewPlugin extends OdooUIPlugin {
         this.getChartDataSource(chartId).load({ reload: true });
     }
 
-    /**
-     * Refresh the cache of all the charts
-     */
     _refreshOdooCharts() {
         for (const chartId of this.getters.getOdooChartIds()) {
             this._refreshOdooChart(chartId);

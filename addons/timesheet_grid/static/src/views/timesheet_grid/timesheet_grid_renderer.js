@@ -163,7 +163,6 @@ export class TimesheetGridRenderer extends GridRenderer {
             for (const cell of Object.values(section.cells)) {
                 if (isTodayColumn) {
                     if (isToday && !cell.column.isToday) {
-                        // we don't count after today
                         break;
                     } else if (!isToday && cell.column.isToday) {
                         isToday = true;
@@ -205,7 +204,6 @@ export class TimesheetGridRenderer extends GridRenderer {
 
     getTotalCellsTextClasses(row, grandTotal) {
         const res = super.getTotalCellsTextClasses(...arguments);
-        // Limit applying color when multi groupby of employees when the row is section
         if (
             this.props.model.searchParams.groupBy[0] === "employee_id" &&
             row.section.isFake
@@ -216,7 +214,6 @@ export class TimesheetGridRenderer extends GridRenderer {
         return res;
     }
 
-    /** Return grid cell action helper when no records are found */
     _getNoContentHelper() {
         const noActivitiesFound = _t("No timesheets found. Let's create one!");
         const noContentTimesheetHelper = _t(

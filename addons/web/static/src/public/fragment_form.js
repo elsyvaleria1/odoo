@@ -9,8 +9,6 @@ import { PARTIAL_NAVIGATION_HEADER, swapPage } from "@web/public/page_swap";
 import { TAB_HEADER, TAB_ID } from "@web/public/tab_id";
 import { ConfirmationDialog } from "@web/ui/dialog";
 
-// web/controllers/utils.py's FRAGMENTS_HEADER: the route may answer with the
-// fragments to swap instead of redirecting, and a refusal comes as JSON
 const FRAGMENTS_HEADER = "X-Odoo-Fragments";
 
 /**
@@ -27,25 +25,6 @@ function showServerValue(submitted) {
     }
 }
 
-/**
- * A post form that works without JavaScript, its route redirecting to the
- * page to show next (post/redirect/get), and updates the page in place with
- * it (htmx's boosted forms). The form's data is posted with
- * `X-Odoo-Fragments`; the answer is either
- * - fragments, from a route answering with `fragments_or_redirect`: swapped;
- * - the page the route redirected to, asked without header and footer: on
- *   the path shown, the form's regions are swapped from it, like a
- *   navigation in place, and its URL replaces the one shown; any other page
- *   is loaded in full.
- *
- * The regions are the elements keyed by `data-fragment-form` (a comma list),
- * or the closest element with a `data-fragment` key. `data-confirm` asks
- * before posting. A field marked `data-submit-on-change` submits the form
- * when it changes; without JavaScript, a submit button does. While the post
- * runs the form is `aria-busy` and further submits are dropped. A refusal
- * (a UserError, answered as JSON) shows as a notification; any other failure
- * submits the form natively.
- */
 export class FragmentForm extends Interaction {
     static selector = "form[data-fragment-form]";
     dynamicContent = {
@@ -65,8 +44,6 @@ export class FragmentForm extends Interaction {
     /** @param {SubmitEvent} ev */
     async onSubmit(ev) {
         const form = /** @type {HTMLFormElement} */ (this.el);
-        // attributes, not the properties: a control named "method" or
-        // "action" shadows form.method and form.action
         if (
             ev.defaultPrevented ||
             (form.getAttribute("method") || "").toLowerCase() !== "post"
@@ -174,7 +151,6 @@ export class FragmentForm extends Interaction {
         }
         showServerValue(body);
         if (next.href !== shown.href) {
-            // what a post/redirect/get leaves in the address bar
             browser.history.replaceState(browser.history.state, "", response.url);
         }
     }

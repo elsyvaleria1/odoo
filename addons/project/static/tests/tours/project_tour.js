@@ -31,8 +31,6 @@ registry.category("web_tour.tours").add("project_test_tour", {
             run: "click .modal:visible .btn.btn-primary",
         },
         {
-            // a new project is born with a "New" step, so the board already has
-            // a column and the column quick create starts folded
             trigger: ".o_kanban_project_tasks .o_column_quick_create",
         },
         {

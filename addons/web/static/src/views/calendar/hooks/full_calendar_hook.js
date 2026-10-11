@@ -217,8 +217,6 @@ function syncCalendarWithParams(instance, params, component) {
         lastSources.length !== sources.length ||
         sources.some((source, i) => source !== lastSources[i]);
     instance.__lastEventSources = sources;
-    // Rendered events may include transient slots as well as stored meetings.
-    // Model notifications cover both, including edits that retain collection identity.
     const model = component.props.model;
     const eventsChanged =
         instance.__lastUpdateEpoch !== model.updateEpoch ||
@@ -237,8 +235,6 @@ function syncCalendarWithParams(instance, params, component) {
     }
 }
 
-// FullCalendar's destroy() ends a pending drag with an event-less pointer-up,
-// so a view torn down mid-drag would still select, drop or click.
 const USER_GESTURE_CALLBACKS = new Set([
     "dateClick",
     "eventDrop",
@@ -302,8 +298,6 @@ export function useFullCalendar(component, ref, paramsOrGetter) {
         }
     });
 
-    // FullCalendar reads the records outside the template: the sync reads
-    // what it draws, so an edit the model publishes by notify() re-syncs it
     useLayoutEffect(
         (_epoch, _records, params) =>
             syncCalendarWithParams(instance, params, component),

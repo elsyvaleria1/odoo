@@ -9,7 +9,6 @@ export class JsonFieldResource extends JsonField {
     get timeAndPersonDetails() {
         const formattedValue = JSON.parse(this.formattedValue || "{}");
         if (this.formattedValue) {
-            // formattedValue.event_start is the start time in UTC
             const localStartTime = deserializeDateTime(formattedValue.event_start);
             return {
                 time: formatValue(localStartTime, "h:mm a"),

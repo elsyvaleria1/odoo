@@ -62,9 +62,6 @@ test("free stock lines merge with each other but not with expired stock", () => 
 });
 
 test("the quantities the report sent are displayed as they are", () => {
-    // The undated free stock line already excludes what the dated lines
-    // report; deducting them again here understates it, and turns negative
-    // on a product whose free stock is entirely dated.
     const { docs, lines } = makeDocs();
     const quantities = docs.lines.map((line) => line.quantity);
     const details = makeDetails(docs);

@@ -22,8 +22,6 @@ export function useApprovalButton({ getRecord, method, action }) {
     const notification = useService("notification");
     const approvalButton = useService("approval_button");
     const gate = proxy({ result: null, syncing: false });
-    // Answers can land out of order when the pager moves on while one is in
-    // flight: only the latest request may write the gate.
     let latestRequest = 0;
     let loadedFor = null;
 
@@ -45,7 +43,6 @@ export function useApprovalButton({ getRecord, method, action }) {
         const request = ++latestRequest;
         const target = `${model},${resId}`;
         if (loadedFor !== target) {
-            // another record's approvers must not show while this one's are asked
             gate.result = null;
         }
         gate.syncing = true;
@@ -58,9 +55,6 @@ export function useApprovalButton({ getRecord, method, action }) {
                 action_id: actionId,
             });
         } catch (error) {
-            // Failing open is deliberate -- a gate that cannot be read must not
-            // block the record -- but it used to fail open in silence, which reads
-            // to a developer exactly like a button that was never gated.
             browser.console.warn(
                 `approval: the gate on ${model}#${resId} could not be read ` +
                     `(${error?.name || "Error"}), so the button is shown ungated.`,
@@ -127,9 +121,6 @@ export function useApprovalButton({ getRecord, method, action }) {
     if (model?.subscribeLifecycle) {
         onWillDestroy(
             approvalButton.track(model, {
-                // the pager replaces the root, and the new one reaches the button
-                // through its props, after the model's listeners have run: a
-                // replaced root is asked about when its successor arrives there
                 onRootLoaded: (root) => getRecord() === root && load(),
                 onRecordSaved: () => load(),
             }),

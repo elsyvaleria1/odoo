@@ -13,7 +13,7 @@ import { contains, mountView } from "@web/../tests/web_test_helpers";
 describe.current.tags("desktop");
 defineDocumentSpreadsheetModels();
 
-const kanbanArch = /* xml */ `
+const kanbanArch = `
     <kanban js_class="documents_kanban">
         <templates>
             <field name="id"/>
@@ -194,10 +194,8 @@ test("Disable create button if no template is selected", async function () {
     await initTestEnvWithKanban({ additionalTemplates: TEST_TEMPLATES });
     await openTemplateDialog();
 
-    // select template
     await click(`${dialogSelector} .o-spreadsheet-grid-image:eq(1)`);
 
-    // change page; no template should be selected
     await contains(`${dialogSelector} .o_pager_next`).click();
     expect(".o-spreadsheet-grid-selected").toHaveCount(0);
     expect(`${dialogSelector} .o-spreadsheet-create`).toHaveAttribute("disabled");
@@ -221,15 +219,12 @@ test("Can create a blank spreadsheet from template dialog", async function () {
     });
     mockActionService(mockDoAction);
 
-    // ### With confirm button
     await openTemplateDialog();
 
-    // select blank spreadsheet
     await click(`${dialogSelector} .o-spreadsheet-grid-image`);
     await contains(`${dialogSelector} .o-spreadsheet-create`).click();
     expect.verifySteps(["action_view_new_spreadsheet", "redirect"]);
 
-    // ### With double click on image
     await openTemplateDialog();
 
     await click(`${dialogSelector} .o-spreadsheet-grid-image`);
@@ -282,7 +277,6 @@ test("Context is transmitted when creating spreadsheet", async function () {
 
     await openTemplateDialog();
 
-    // select blank spreadsheet
     await click(`${dialogSelector} .o-spreadsheet-grid-image`);
     await contains(`${dialogSelector} .o-spreadsheet-create`).click();
     expect.verifySteps(["action_view_new_spreadsheet"]);
@@ -312,14 +306,12 @@ test("Can create a spreadsheet from a template", async function () {
     });
     mockActionService(mockDoAction);
 
-    // ### With confirm button
     await openTemplateDialog();
 
     await click(`${dialogSelector} .o-spreadsheet-grid-image:eq(1)`);
     await contains(`${dialogSelector} .o-spreadsheet-create`).click();
     expect.verifySteps(["action_create_spreadsheet", "redirect"]);
 
-    // ### With double click on image
     await openTemplateDialog();
     await click(`${dialogSelector} .o-spreadsheet-grid-image:eq(1)`);
     await dblclick(`${dialogSelector} .o-spreadsheet-grid-image:eq(1)`);
@@ -372,7 +364,7 @@ test("Offset reset to zero after searching for template in template dialog", asy
 
     expect(
         `${dialogSelector} .o-spreadsheet-grid:not(.o-spreadsheet-grid-ghost-item)`,
-    ).toHaveCount(5); // Blank template, Template 1, Template 10, Template 11, Template 12
+    ).toHaveCount(5);
     expect.verifySteps([JSON.stringify({ offset: 0, limit: 9 })]);
     expect(`${dialogSelector} .o_pager_value `).toHaveText("1-4", {
         message: "Pager should be reset to 1-4 after searching for a template",
@@ -388,7 +380,6 @@ test("Can navigate through templates with keyboard", async function () {
     );
     expect(defaultTemplate).toHaveClass("o-spreadsheet-grid-selected");
 
-    // Navigate to the next template
     await contains(defaultTemplate).press("ArrowRight");
     expect(defaultTemplate).not.toHaveClass("o-spreadsheet-grid-selected");
 
@@ -397,7 +388,6 @@ test("Can navigate through templates with keyboard", async function () {
     );
     expect(firstTemplate).toHaveClass("o-spreadsheet-grid-selected");
 
-    // Navigate back to the previous template
     await contains(defaultTemplate).press("ArrowLeft");
     expect(firstTemplate).not.toHaveClass("o-spreadsheet-grid-selected");
     expect(defaultTemplate).toHaveClass("o-spreadsheet-grid-selected");

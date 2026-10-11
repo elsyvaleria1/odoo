@@ -9,9 +9,6 @@ let chatbotDelayProcessingDef;
 
 registry.category("web_tour.tours").add("website_livechat_chatbot_flow_tour", {
     steps: () => {
-        // the live class, looked up when the tour runs: a static import would
-        // evaluate the chatbot model on every page that loads the tour bundle,
-        // registering a second Chatbot where livechat is not (project sharing)
         const Chatbot = registry.category("discuss.model").get("Chatbot");
         patchWithCleanup(Chatbot.prototype, {
             async _delayThenProcessAnswerAgain(message) {

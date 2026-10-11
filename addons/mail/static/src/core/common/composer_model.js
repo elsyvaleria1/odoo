@@ -162,7 +162,6 @@ export class Composer extends Record {
 
     /** @param {import("models").Message} message */
     insertReplyFromNote(message) {
-        // Notes mention partners; guests do not have partner mention identities.
         const author = message.author_id;
         if (!author) {
             log.logic("insertReplyFromNote skipped: no partner author", () => ({

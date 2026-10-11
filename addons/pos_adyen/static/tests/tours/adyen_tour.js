@@ -84,13 +84,7 @@ registry.category("web_tour.tours").add("PosAdyenTour", {
                     const payment_terminal =
                         posmodel.getPendingPaymentLine("adyen").payment_method_id
                             .payment_terminal;
-                    // The fact that we are shown the `Waiting for card` status means that the
-                    // request for payment has been sent to the adyen server ( in this case the mocked server )
-                    // and the server replied with an `ok` response.
-                    // As such, this is the time when we wait to receive the notification from adyen on the webhook
-                    // The simplest way to mock this notification is to send it ourselves here.
 
-                    // ==> pretend to be adyen and send the notification to the POS
                     const resp = await fetch("/pos_adyen/notification", {
                         method: "POST",
                         headers: {

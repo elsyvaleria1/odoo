@@ -18,8 +18,6 @@ test("loadDateRanges re-fetches on every call instead of caching stale data", as
     const first = await service.loadDateRanges();
     expect(first.ranges[0].name).toBe("Range 1");
 
-    // A range was created/edited server-side between the two calls (e.g. an
-    // admin adds a fiscal-year range, then a second selector is opened).
     const second = await service.loadDateRanges();
     expect(call).toBe(2);
     expect(second.ranges[0].name).toBe("Range 2");

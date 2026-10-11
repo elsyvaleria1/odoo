@@ -41,14 +41,11 @@ export const knowledgeCommentsService = {
             get hasComments() {
                 return Object.keys(this.threadRecords).length > 0;
             },
-            // database records
             threadRecords: {},
-            // mail.store instances
             threads: {},
             disabledEditorThreads: {},
-            // editor metadata
             editorThreads: {},
-            displayMode: "handler", // 'handler' 'panel'
+            displayMode: "handler",
             focusedThreads: new Set(),
             deletedThreadIds: new Set(),
             hasFocus(threadId) {
@@ -139,7 +136,6 @@ export const knowledgeCommentsService = {
         this.batchedDeleteThread.threadIds.add(resId);
         this.batchedDeleteThread();
     },
-    // threadId is a number
     async fetchMessages(threadId) {
         const deferred = new Deferred();
         this.batchedFetchMessages.deferredPromises[threadId] ||= [];
@@ -196,10 +192,7 @@ export const knowledgeCommentsService = {
             batch.threadIds = new Set();
             try {
                 await this.services["orm"].unlink("knowledge.article.thread", resIds);
-            } catch {
-                // deleted threads may already be deleted, or the current user
-                // may not have the right to delete them.
-            }
+            } catch {}
             if (this.loadingId !== batch.loadingId) {
                 return;
             }
@@ -234,7 +227,6 @@ export const knowledgeCommentsService = {
             } catch (e) {
                 error = e;
             }
-            // thread_id is a number, not a string (used for backend)
             for (const thread_id in deferredPromises) {
                 for (const deferred of deferredPromises[thread_id]) {
                     if (error) {
@@ -290,7 +282,6 @@ export const knowledgeCommentsService = {
                 }
             }
             if (targetedSet.size) {
-                // cleanup targetedThreadIds which do not exist anymore
                 for (const threadId of targetedSet) {
                     if (
                         !(threadId in this.commentsState.threadRecords) &&

@@ -20,9 +20,7 @@ export class GeoFormField extends Component {
                     ? `${geom.type} ${JSON.stringify(geom.coordinates)}`
                     : geom.type;
             }
-        } catch {
-            // not GeoJSON: shown as it came
-        }
+        } catch {}
         return String(value);
     }
 }

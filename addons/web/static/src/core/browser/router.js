@@ -106,7 +106,6 @@ function parseString(/** @type {string} */ str) {
             continue;
         }
         const value = eqIdx === -1 ? "" : part.slice(eqIdx + 1);
-        // application/x-www-form-urlencoded: the server spells a space as "+"
         const decoded = tryDecode(value.replaceAll("+", " "));
         result[key] = cast(decoded);
     }
@@ -336,8 +335,6 @@ function unwindReleasedEphemerals() {
         _router.ephemeralStack.pop();
         below = _router.ephemeralEntries.pop()?.below;
     }
-    // only back off the entries while the user still stands on them: once
-    // they navigated on, the released entries are history, not a place to go
     if (below && browser.navigation.currentEntry?.key === top?.key) {
         _router.unwindingEphemerals = true;
         browser.navigation.traverseTo(below).finished.catch(() => {

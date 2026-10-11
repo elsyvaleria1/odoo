@@ -97,7 +97,6 @@ export class AgentSourceAddDialog extends Component {
             return;
         }
 
-        // Validate file types
         const { validFiles, invalidFiles } = this.validateFileTypes(Array.from(files));
         if (invalidFiles.length > 0 && validFiles.length > 0) {
             const invalidFileNames = invalidFiles.map((file) => file.name).join(", ");

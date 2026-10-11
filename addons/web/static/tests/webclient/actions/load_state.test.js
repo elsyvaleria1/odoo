@@ -238,7 +238,6 @@ describe(`new urls`, () => {
 
         await mountWebClient();
         await waitFor(`.test_client_action`);
-        // the router pushes on a timer, which may still be pending when the view appears
         await animationFrame();
         expect(`.test_client_action`).toHaveCount(1);
         expect(`.o_menu_brand`).toHaveText("App1");
@@ -932,7 +931,6 @@ describe(`new urls`, () => {
 
         await mountWebClient();
         await waitFor(`.o_list_view`);
-        // the router pushes on a timer, which may still be pending when the view appears
         await animationFrame();
         expect(`.o_form_view`).toHaveCount(0);
         expect(`.o_list_view`).toHaveCount(1);
@@ -1418,7 +1416,6 @@ describe(`new urls`, () => {
 
         await mountWebClient();
         await waitFor(`.o_list_view`);
-        // the router pushes on a timer, which may still be pending when the view appears
         await animationFrame();
         expect(`.o_list_view`).toHaveCount(1);
         expect.verifyErrors([/RPC_ERROR/]);

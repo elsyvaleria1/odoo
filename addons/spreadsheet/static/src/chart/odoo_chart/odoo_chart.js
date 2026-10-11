@@ -101,7 +101,6 @@ export class OdooChart extends AbstractChart {
     }
 
     getDefinitionForExcel() {
-        // Export not supported
         return undefined;
     }
 
@@ -109,7 +108,6 @@ export class OdooChart extends AbstractChart {
      * @returns {OdooChart}
      */
     updateRanges() {
-        // No range on this graph
         return this;
     }
 

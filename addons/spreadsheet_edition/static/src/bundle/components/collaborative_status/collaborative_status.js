@@ -59,7 +59,6 @@ export class CollaborativeStatus extends Component {
             currentClientId = this.env.model.getters.getCurrentClient().id;
         } catch (error) {
             if (error instanceof ClientDisconnectedError) {
-                // We are currently disconnecting
                 return connectedUsers;
             }
             throw error;

@@ -65,7 +65,7 @@ async function createSpreadsheetAction(actionTag, params) {
                 spreadsheet_id: params.spreadsheetId,
             },
         },
-        { clearBreadcrumbs: true }, // Sometimes in test defining custom action, Odoo opens on the action instead of opening on root
+        { clearBreadcrumbs: true },
     );
     await animationFrame();
     const model = getSpreadsheetActionModel(spreadsheetAction);
@@ -92,7 +92,7 @@ export async function createSpreadsheet(params = {}) {
         const spreadsheetId = Math.max(...documents.map((d) => d.id)) + 1;
         documents.push({
             id: spreadsheetId,
-            name: UNTITLED_SPREADSHEET_NAME.toString(), // toString() to force translation
+            name: UNTITLED_SPREADSHEET_NAME.toString(),
             spreadsheet_data: "{}",
             active: true,
         });

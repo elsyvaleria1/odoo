@@ -8,7 +8,6 @@ import { session } from "@web/session";
 
 import { PublicReadonlySpreadsheet } from "./public_readonly.js";
 
-/** The element `public_readonly_spreadsheet_templates.xml` renders for this app. */
 export const MOUNT_ANCHOR_ID = "spreadsheet-mount-anchor";
 
 /**
@@ -29,8 +28,6 @@ export async function startPublicReadonlySpreadsheet() {
 
     const target = document.getElementById(MOUNT_ANCHOR_ID);
     if (!target) {
-        // Reached `App.validateTarget` as `null` before, which reports a
-        // missing target without naming what was looked for.
         throw new Error(
             `public spreadsheet: no #${MOUNT_ANCHOR_ID} element to mount on`,
         );

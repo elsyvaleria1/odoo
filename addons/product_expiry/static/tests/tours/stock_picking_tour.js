@@ -18,7 +18,6 @@ registry.category("web_tour.tours").add("test_generate_serial_with_expiration", 
             trigger: ".modal .btn-primary:contains('Generate')",
             run: "click",
         },
-        // Check that the expiration date is now set after generating Serials/Lots.
         {
             trigger: "td.o_field_cell[name=expiration_date]",
             run: () => {
@@ -36,10 +35,6 @@ registry.category("web_tour.tours").add("test_generate_serial_with_expiration", 
             trigger: ".modal button:contains(save)",
             run: "click",
         },
-        // Saving the detailed-operations dialog persists the picking, so the
-        // form's own save button is already hidden by `.invisible` here. The
-        // tour used to click it and waited out the timeout on an element that
-        // cannot become visible; assert the saved state instead.
         {
             trigger: ".o_form_saved",
         },

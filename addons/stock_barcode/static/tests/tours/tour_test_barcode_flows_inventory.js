@@ -24,7 +24,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment", {
         {
             trigger: ".o_barcode_line",
             run: function () {
-                // Checks the product code and name are on separate lines.
                 const line = helper.getLine({ barcode: "product1" });
                 helper.assert(
                     line.querySelectorAll(
@@ -55,7 +54,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment", {
         {
             trigger: ".o_barcode_line",
             run: function () {
-                // Checks the product code and name are on separate lines.
                 const line = helper.getLine({ barcode: "product1" });
                 helper.assert(
                     line.querySelectorAll(
@@ -120,7 +118,6 @@ registry
                     helper.assertLineSourceLocation(line2, "WH/Stock/Section 2");
                 },
             },
-            // Scan WH/Stock/Section 1.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan LOC-01-01-00",
@@ -146,7 +143,6 @@ registry
                     helper.assertLineSourceLocation(selectedLine, "WH/Stock");
                 },
             },
-            // Scans product1 -> A new line for this product should be created in Section 1.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan product1",
@@ -167,12 +163,10 @@ registry
 
 registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company", {
     steps: () => [
-        // Open the company switcher.
         {
             trigger: ".o_switch_company_menu > button",
             run: "click",
         },
-        // Ensure the first company is selected and open the Barcode App, then the Inventory Adjustment.
         {
             trigger: ".o_switch_company_menu .oe_topbar_name:contains('Comp A')",
         },
@@ -185,7 +179,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company
             trigger: "button.o_button_inventory span:contains('1')",
             run: "click",
         },
-        // Scan product1 and product_no_company, they should be added in the inventory adj.
         {
             trigger: ".o_barcode_client_action",
             run: "scan product1",
@@ -194,7 +187,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company
             trigger: ".o_barcode_line[data-barcode='product1']",
             run: "scan product_no_company",
         },
-        // Try to scan product2 who belongs to the second company -> Should not be found.
         {
             trigger: ".o_barcode_line[data-barcode='product_no_company']",
             run: "scan product2",
@@ -212,13 +204,11 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company
                 helper.assertLinesCount(2);
             },
         },
-        // Validate the Inventory Adjustment.
         {
             trigger: ".o_apply_page.btn-primary",
             run: "scan OBTVALI",
         },
 
-        // Go back on the app launcher and change the company.
         {
             trigger: ".o_stock_barcode_main_menu a.oi-apps",
             run: "click",
@@ -232,7 +222,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company
             run: "click",
             expectUnloadPage: true,
         },
-        // Open again the Barcode App then the Inventory Adjustment.
         {
             trigger: ".o_switch_company_menu .oe_topbar_name:contains('Comp B')",
         },
@@ -245,7 +234,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company
             trigger: "button.o_button_inventory:not(:has(span))",
             run: "click",
         },
-        // Scan product2 and product_no_company, they should be added in the inventory adj.
         {
             trigger: ".o_barcode_client_action",
             run: "scan product2",
@@ -254,7 +242,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company
             trigger: ".o_barcode_line[data-barcode='product2']",
             run: "scan product_no_company",
         },
-        // Try to scan product1 who belongs to the first company -> Should not be found.
         {
             trigger: ".o_barcode_line[data-barcode='product_no_company']",
             run: "scan product1",
@@ -272,7 +259,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_multi_company
                 helper.assertLinesCount(2);
             },
         },
-        // Validate the Inventory Adjustment.
         ...stepUtils.validateBarcodeOperation(),
         {
             trigger:
@@ -370,7 +356,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_tracked_produ
             trigger:
                 ".o_notification:has(.bg-danger):text(The scanned serial number serial1 is already used.)",
             run: function () {
-                // Check that other lines is correct
                 let line = helper.getLine({ barcode: "productserial1" });
                 helper.assertLineQty(line, "1");
                 helper.assert(
@@ -413,7 +398,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_tracked_produ
                 helper.assertSublinesCount(3);
             },
         },
-        // Add a new line (it also triggers a save.)
         {
             trigger: ".o_add_line",
             run: "click",
@@ -430,7 +414,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_tracked_produ
             trigger: ".o_save",
             run: "click",
         },
-        // Scan tracked by lots product, then scan new lots.
         {
             trigger: ".o_sublines .o_barcode_line:nth-child(4)",
             run: function () {
@@ -450,8 +433,6 @@ registry.category("web_tour.tours").add("test_inventory_adjustment_tracked_produ
             trigger: '.o_barcode_line .o_barcode_line.o_selected:contains("lot2")',
             run: "scan lot3",
         },
-        // Must have 6 lines in two groups: lot1, lot2, lot3 and serial1, serial2, serial3.
-        // Grouped lines for `productlot1` should be unfolded.
         {
             trigger:
                 '.o_barcode_line:contains("productlot1") .o_sublines>.o_barcode_line.o_selected:contains("lot3")',
@@ -486,7 +467,6 @@ registry
                     helper.assertLineQty(1, "0/5");
                 },
             },
-            // Scans Section 1 then scans productlot1 -> It should update the first productlot1's line.
             {
                 trigger: ".o_barcode_line",
                 run: "scan LOC-01-01-00",
@@ -506,7 +486,6 @@ registry
                     helper.assertLineQty(1, "0/5");
                 },
             },
-            // Scans productserial1 -> As we are in Section 1, it should get sn1, sn2 and sn3.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan productserial1",
@@ -537,13 +516,11 @@ registry
                     );
                 },
             },
-            // Hides sublines.
             {
                 trigger:
                     ".o_barcode_line.o_selected .btn.o_toggle_sublines .fa-angle-up",
                 run: "click",
             },
-            // Scans Section 2 then scans productlot1 -> It should update the second productlot1's line.
             {
                 trigger: ".o_barcode_line",
                 run: "scan LOC-01-02-00",
@@ -566,7 +543,6 @@ registry
                     helper.assertLineQty(2, "1/5");
                 },
             },
-            // Scans productserial1 -> No existing quant in Section 2 for this product so creates a new line.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan productserial1",
@@ -607,7 +583,6 @@ registry
                 },
             },
 
-            // Scan a product tracked by lot that has a quant without trace_id, then scan a product's lot.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan productlot1",
@@ -630,8 +605,6 @@ registry
                 trigger: ".o_barcode_client_action",
                 run: "scan lot1",
             },
-            // Must have 2 lines in one group: one without lot and one with lot1.
-            // Grouped lines for `productlot1` should be unfolded.
             {
                 trigger:
                     '.o_sublines .o_barcode_line.o_selected:contains("lot1") .qty-done:contains(2)',
@@ -674,7 +647,6 @@ registry.category("web_tour.tours").add("test_inventory_create_quant", {
             },
         },
 
-        // Scans product 1: must have 1 quantity and buttons +1/-1 must be visible.
         {
             trigger: ".o_barcode_client_action",
             run: "scan product1",
@@ -691,7 +663,6 @@ registry.category("web_tour.tours").add("test_inventory_create_quant", {
             },
         },
 
-        // Edits the line to set the counted quantity to zero.
         {
             trigger: ".o_edit",
             run: "click",
@@ -741,7 +712,6 @@ registry
                     helper.assertLineSourceLocation(2, "WH/Stock/Section 2");
                 },
             },
-            // Scan 1 SN for productserial1 in Section 1 and apply => Dialog should be displayed.
             { trigger: ".o_scan_message.o_scan_src", run: "scan LOC-01-01-00" },
             {
                 trigger: ".o_scan_message.o_scan_product_or_src",
@@ -750,7 +720,6 @@ registry
             { trigger: ".o_barcode_line.o_selected", run: "scan sn1" },
             { trigger: ".o_apply_page:enabled", run: "click" },
             { trigger: ".o_stock_barcode_apply_quant_dialog" },
-            // Apply only counted quant and reopen the Inv. Adjust. => other Section 1 quants are still here.
             { trigger: ".o_dialog button.o_apply", run: "click" },
             { trigger: ".o_button_inventory", run: "click" },
             {
@@ -768,7 +737,6 @@ registry
                     helper.assertLineSourceLocation(2, "WH/Stock/Section 2");
                 },
             },
-            // Scan a SN for productserial1 in Section 1 and apply => Apply also not counted SN.
             { trigger: ".o_scan_message.o_scan_src", run: "scan LOC-01-01-00" },
             {
                 trigger: ".o_scan_message.o_scan_product_or_src",
@@ -779,7 +747,6 @@ registry
             { trigger: ".o_apply_page:enabled", run: "click" },
             { trigger: ".o_stock_barcode_apply_quant_dialog" },
             { trigger: ".o_dialog button.o_apply_all", run: "click" },
-            // Reopen the Inventory Adjustment.
             { trigger: ".o_button_inventory", run: "click" },
             {
                 trigger: ".o_barcode_client_action",
@@ -793,8 +760,6 @@ registry
                     helper.assertLineSourceLocation(1, "WH/Stock/Section 2");
                 },
             },
-            // Scan all SN for productserial1 in Section 2 and apply => Dialog should
-            // not be displayed (remaining SN in this location is for another product.)
             { trigger: ".o_scan_message.o_scan_src", run: "scan LOC-01-02-00" },
             {
                 trigger: ".o_scan_message.o_scan_product_or_src",
@@ -803,7 +768,6 @@ registry
             { trigger: ".o_barcode_line.o_selected", run: "scan sn4,sn5,sn6" },
             { trigger: ".o_barcode_line.o_selected.o_line_completed" },
             { trigger: ".o_apply_page", run: "scan OBTVALI" },
-            // Reopen the Inventory Adjustment and scan remaining SN for productserial2.
             { trigger: ".o_button_inventory", run: "click" },
             {
                 trigger: ".o_barcode_client_action",
@@ -820,7 +784,6 @@ registry
                 run: "scan productserial2",
             },
             { trigger: ".o_barcode_line.o_selected", run: "scan sn1,sn2,sn3" },
-            // Apply => No dialog because all SN are counted.
             ...stepUtils.validateBarcodeOperation(
                 ".o_barcode_line.o_selected.o_line_completed",
             ),
@@ -864,7 +827,7 @@ registry.category("web_tour.tours").add("test_inventory_nomenclature", {
         },
         {
             trigger: ".o_barcode_client_action",
-            run: "scan 2145631123457", // 12.345 kg
+            run: "scan 2145631123457",
         },
         {
             trigger: '.o_product_label:contains("product_weight")',
@@ -914,7 +877,6 @@ registry.category("web_tour.tours").add("test_inventory_packaging", {
             trigger: ".o_button_inventory",
             run: "click",
         },
-        // Scans a packaging when there is no existing quant for its product.
         {
             trigger: ".o_barcode_client_action",
             run: "scan pack007",
@@ -946,12 +908,10 @@ registry.category("web_tour.tours").add("test_inventory_packaging", {
             trigger: ".o_button_inventory",
             run: "click",
         },
-        // Scans a packaging when a quant for its product exists.
         {
             trigger: ".o_barcode_client_action",
             run: "scan pack007",
         },
-        // Verifies it takes the packaging's quantity.
         {
             trigger: ".o_barcode_line",
             run: function () {
@@ -1116,7 +1076,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
             run: "click",
         },
 
-        // Scans product 1: must have 1 quantity and buttons +1/-1 must be visible.
         {
             trigger: ".o_barcode_client_action",
             run: "scan product1",
@@ -1133,7 +1092,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "delete_line", false);
             },
         },
-        // Clicks on -1 button: must have 0 quantity, -1 button should be hidden.
         {
             trigger: ".o_remove_unit",
             run: "click",
@@ -1150,7 +1108,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "delete_line");
             },
         },
-        // Clicks on +1 button: must have 1 quantity, -1 must be enabled now.
         {
             trigger: ".o_add_quantity",
             run: "click",
@@ -1168,7 +1125,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
             },
         },
 
-        // Scans productserial1: must have 0 quantity.
         { trigger: ".o_barcode_client_action", run: "scan productserial1" },
         {
             trigger: ".o_barcode_client_action .o_barcode_line:nth-child(2)",
@@ -1180,21 +1136,14 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 });
                 helper.assertLineIsHighlighted(line, true);
                 helper.assertLineQty(line, "0");
-                // Should be visible because quantity is set.
                 helper.assertButtonIsVisible(line, "unset");
-                // Should be hide because quantity already on 0.
                 helper.assertButtonIsVisible(line, "count_zero", false);
-                // For tracked by SN product, should be visible when quantity = 0.
                 helper.assertButtonIsVisible(line, "add_quantity");
-                // Should be hide because qty is not greater than 0.
                 helper.assertButtonIsVisible(line, "remove_unit", false);
-                // SHould be visible because a line with 0 qty can be deleted.
                 helper.assertButtonIsVisible(line, "delete_line");
-                // Should be hide for product tracked by SN.
                 helper.assertButtonIsVisible(line, "add_remaining_quantity", false);
             },
         },
-        // Scans a serial number: must have 1 quantity, check button must display a "X".
         {
             trigger: ".o_barcode_client_action",
             run: "scan BNG-118",
@@ -1215,7 +1164,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "add_quantity", false);
             },
         },
-        // Clicks on -1 button
         {
             trigger: '.o_barcode_line:contains("productserial1") button.o_remove_unit',
             run: "click",
@@ -1233,7 +1181,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "add_quantity");
             },
         },
-        // Clicks on unset button.
         {
             trigger: '.o_barcode_line:contains("productserial1") button.o_unset',
             run: "click",
@@ -1255,7 +1202,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
             },
         },
 
-        // Scans productlot1: must have 0 quantity, buttons should be visible.
         {
             trigger: ".o_barcode_client_action",
             run: "scan productlot1",
@@ -1273,7 +1219,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "add_quantity");
             },
         },
-        // Scans a lot number: must have 1 quantity, buttons should still be visible.
         {
             trigger: ".o_barcode_client_action",
             run: "scan toto-42",
@@ -1291,7 +1236,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "add_quantity");
             },
         },
-        // Clicks on -1 button: must have 0 quantity, button -1 must be hide again.
         {
             trigger: '.o_barcode_line:contains("productlot1") .o_remove_unit',
             run: "click",
@@ -1309,7 +1253,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "add_quantity");
             },
         },
-        // Clicks on +1 button: must have 1 quantity, buttons must be visible.
         {
             trigger: '.o_barcode_line:contains("productlot1") .o_add_quantity',
             run: "click",
@@ -1328,7 +1271,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
             },
         },
 
-        // Scans product2 => Should retrieve the quantity on hand and display 1/10.
         {
             trigger: ".o_barcode_client_action",
             run: "scan product2",
@@ -1346,7 +1288,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertButtonIsVisible(line, "add_quantity");
             },
         },
-        // Clicks multiple time on the set quantity button and checks the save is rightly done.
         {
             trigger: ".o_selected button.o_unset",
             run: "click",
@@ -1358,7 +1299,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertLineQty(line, "?/10");
             },
         },
-        // Goes to the quant form view to trigger a save then go back.
         {
             trigger: ".o_selected .o_line_button.o_edit",
             run: "click",
@@ -1375,7 +1315,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
             },
         },
 
-        // Clicks again, should pass from  "? / 10" to "10 / 10"
         {
             trigger:
                 '.o_barcode_line:contains("product2") button.o_add_remaining_quantity',
@@ -1388,7 +1327,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
                 helper.assertLineQty(line, "10/10");
             },
         },
-        // Goes to the quant form view to trigger a save then go back.
         {
             trigger: '.o_barcode_line:contains("product2") .o_line_button.o_edit',
             run: "click",
@@ -1405,7 +1343,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
             },
         },
 
-        // Clicks again, should pass from  "10 / 10" to "? / 10"
         {
             trigger: '.o_barcode_line:contains("product2") button.o_unset',
             run: "click",
@@ -1418,7 +1355,6 @@ registry.category("web_tour.tours").add("test_inventory_using_buttons", {
             },
         },
 
-        // Validates the inventory.
         {
             trigger: ".o_apply_page",
             run: "click",
@@ -1678,7 +1614,6 @@ registry
                         subline3.querySelector(".o_line_lot_name").innerText,
                         "sn3",
                     );
-                    // For product tracked by SN, the set button should be visible no matter the parameter.
                     helper.assertButtonIsVisible(subline1, "count_zero");
                     helper.assertButtonIsVisible(subline1, "remove_unit", false);
                     helper.assertButtonIsVisible(subline1, "add_quantity");
@@ -1716,7 +1651,6 @@ registry
                 trigger: ".o_button_inventory",
                 run: "click",
             },
-            // At first, only the marked as to count quant should be visible.
             {
                 trigger: ".o_barcode_client_action",
                 run: function () {
@@ -1731,7 +1665,6 @@ registry
                 trigger: ".o_barcode_line .o_add_remaining_quantity",
                 run: "click",
             },
-            // Activate Count entire locations.
             {
                 trigger: ".o_barcode_actions",
                 run: "click",
@@ -1744,12 +1677,10 @@ registry
                 trigger: "button.o_close",
                 run: "click",
             },
-            // Scan WH/Stock/Section 1 => Should fetch all quants in this location.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan LOC-01-01-00",
             },
-            // Check that all quants of WH/Stock/Section 1 are loaded with their respective information.
             {
                 trigger: ".o_barcode_line:nth-child(4)",
                 run: function () {
@@ -1770,12 +1701,10 @@ registry
                 },
             },
 
-            // Scan WH/Stock/Section 2 => Should fetch all quants in this location.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan LOC-01-02-00",
             },
-            // Check that all quants of WH/Stock/Section 2 are loaded with their respective information.
             {
                 trigger:
                     '.o_barcode_location_line[data-location="WH/Stock/Section 2"].text-bg-400',
@@ -1803,7 +1732,6 @@ registry
                 trigger: ".o_button_inventory",
                 run: "click",
             },
-            // Only the marked as to count quant should be visible.
             {
                 trigger: ".o_barcode_client_action",
                 run: function () {
@@ -1817,7 +1745,6 @@ registry
                 trigger: ".o_barcode_line .o_add_remaining_quantity",
                 run: "click",
             },
-            // Scan WH/Stock/Section 1 => Should not fetch other quants.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan LOC-01-01-00",
@@ -1929,8 +1856,6 @@ registry.category("web_tour.tours").add("test_inventory_count_with_line_deletion
             run: "click",
         },
         {
-            // Deleting the line dropped the count, not the 5 units in stock: the quant is
-            // still due, now uncounted.
             trigger: ".o_barcode_line .qty-done:contains(?)",
             run: function () {
                 helper.assertLinesCount(1);

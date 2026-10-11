@@ -54,12 +54,6 @@ export class AppointmentValidation extends Interaction {
         this.showGuestAddition = false;
     }
 
-    /**
-     * Store in local storage the appointment booked for the appointment type.
-     * This value is used later to display information on the upcoming appointment
-     * if an appointment is already taken. If the user is logged don't store anything
-     * as everything is computed by the /appointment/get_upcoming_appointments route.
-     */
     start() {
         if (user.userId) {
             return;
@@ -103,11 +97,6 @@ export class AppointmentValidation extends Interaction {
         this.waitForTimeout(() => tooltip.hide(), 1200);
     }
 
-    /**
-     * This function will make the RPC call to add the guests from there email,
-     * if a guest is unavailable then it will give us an error msg on the UI side with
-     * the name of the unavailable guest.
-     */
     async onGuestAdd() {
         const guestEmails = this.el.querySelector(
             "#o_appointment_input_guest_emails",
@@ -134,20 +123,12 @@ export class AppointmentValidation extends Interaction {
         }
     }
 
-    /**
-     * This function displays a textarea on the appointment validation page,
-     * allowing users to enter guest emails if the allow_guest option is enabled.
-     */
     onGuestAdditionOpen() {
         this.showGuestAddition = true;
         this.updateContent();
         this.el.querySelector("#o_appointment_input_guest_emails").focus();
     }
 
-    /**
-     * This function will clear the guest email textarea at the appointment validation page
-     * if allow_guest option is enabled.
-     */
     onGuestDiscard() {
         this.showGuestAddition = false;
         this.el.querySelector("#o_appointment_input_guest_emails").value = "";

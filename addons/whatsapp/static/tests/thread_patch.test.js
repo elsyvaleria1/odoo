@@ -15,7 +15,6 @@ describe.current.tags("desktop");
 defineWhatsAppModels();
 
 beforeEach(() => {
-    // Simulate real user interactions
     patchWithCleanup(Composer.prototype, {
         isEventTrusted() {
             return true;
@@ -36,7 +35,6 @@ test("'Conversation Closed' banner must be visible only in deactivated whatsapp 
         text: "This conversation has been closed as more than 24 hours have passed since the last message received.",
     });
 
-    // Active conversation should not have this button
     const [channel] = pyEnv["discuss.channel"].search_read([["id", "=", channelId]]);
     pyEnv["bus.bus"]._sendone(
         channel,

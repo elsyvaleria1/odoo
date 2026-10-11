@@ -346,7 +346,6 @@ test("favoriteMenu: isDisplayed is re-asked on a search change, not on every sea
     await contains(".o_searchview_input").edit("ab", { confirm: false });
     expect(asked).toBe(1);
 
-    // a confirmed search changes the model and re-asks
     await contains(".o_searchview_input").edit("ab");
     expect(asked).toBe(2);
 });

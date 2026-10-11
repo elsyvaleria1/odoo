@@ -9,7 +9,6 @@ const log = makeLogger("website.utils.videos");
 
 let youtubeAPILoading;
 
-/** Wait for both the script download and the provider's readiness callback. */
 function loadYoutubeAPI() {
     if (!youtubeAPILoading) {
         const previousCallback = window.onYouTubeIframeAPIReady;
@@ -33,8 +32,6 @@ function loadYoutubeAPI() {
                 Promise.all([loadJS("https://www.youtube.com/iframe_api"), ready]),
             )
             .catch((error) => {
-                // Native iframe playback remains available; a later video can
-                // retry the optional API instead of inheriting a stuck promise.
                 log.logic("youtube iframe api failed, allow retry", () => ({ error }));
             })
             .finally(() => {

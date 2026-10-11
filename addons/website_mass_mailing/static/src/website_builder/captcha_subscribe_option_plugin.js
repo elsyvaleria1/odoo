@@ -29,7 +29,6 @@ export class ToggleCaptchaLegalAction extends BuilderAction {
         );
     }
     clean({ editingElement }) {
-        // a notice saved before the captcha module carries reCAPTCHA's class
         editingElement
             .querySelector(".o_captcha_legal_terms, .o_recaptcha_legal_terms")
             .remove();

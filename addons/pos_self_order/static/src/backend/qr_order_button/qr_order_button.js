@@ -14,7 +14,6 @@ async function posQrStands(env, action) {
     }
 
     if (user_data && user_data.success && user_data.redirect_url) {
-        // Temporary form to avoid URL length issues
         const form = document.createElement("form");
         form.method = "POST";
         form.target = "_blank";

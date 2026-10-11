@@ -724,7 +724,6 @@ test("opening positions once; only a later resize of the content repositions", a
         message: "the observer's first delivery is the mount size, not a resize",
     });
 
-    // a change the popover itself never renders for: only the observer sees it
     grow();
     await animationFrame();
     await animationFrame();

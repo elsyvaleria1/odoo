@@ -240,8 +240,6 @@ test("Can Insert odoo formulas from Insert > Functions > Odoo", async function (
 
     setCellContent(model, "A1", `Hi :)`);
 
-    // Skip the visibility checks because on small screens (height <~700 px) the menus become too
-    // tall for the screen and need to be scrolled to have the "Odoo" menu item visible.
     const skipVisibilityChecks = { visible: false, display: false };
     await contains(".o-topbar-menu[data-id='insert']", skipVisibilityChecks).click();
     await contains(

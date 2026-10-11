@@ -16,7 +16,6 @@ export class PlanningCalendarSidePanel extends CalendarSidePanel {
         this.ui = useService("ui");
     }
 
-    // overwrite to allow the display of the datepicker when a mode other than 'filter' was selected in the month scale
     get showDatePicker() {
         return (
             this.props.model.showDatePicker &&

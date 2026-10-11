@@ -447,7 +447,6 @@ export class X2ManyField extends FieldComponent {
         if (editable) {
             const editedRecord = this.list.editedRecord;
             if (editedRecord) {
-                // leaveEditMode asks the fields for their pending changes itself
                 await this.list.leaveEditMode({ canAbandon: false });
             }
             if (!this.list.editedRecord) {

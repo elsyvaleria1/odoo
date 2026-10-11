@@ -20,7 +20,7 @@ import {
 defineTimesheetModels();
 beforeEach(() => {
     patchSession();
-    HRTimesheet._views.kanban = /* xml */ `
+    HRTimesheet._views.kanban = `
         <kanban js_class="timesheet_timer_kanban">
             <templates>
                 <field name="name"/>

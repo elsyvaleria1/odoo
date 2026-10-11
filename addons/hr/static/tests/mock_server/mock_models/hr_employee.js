@@ -11,11 +11,6 @@ export class HrEmployee extends models.ServerModel {
     work_location_id = fields.Many2one({ relation: "hr.work.location" });
     job_title = fields.Char();
 
-    // The employee delegates to its party and reads active and user_id off its
-    // resource; the server-backed mock follows those definitions, so a fixture
-    // that gives only a name would read nameless, inactive and userless. The
-    // mock mints the party and the resource the way the ORM does, for records
-    // created by a test and for a module's seeded _records alike.
     _mintDelegates(values) {
         values.partner_id ??= this.env["res.partner"].create({
             name: values.name,

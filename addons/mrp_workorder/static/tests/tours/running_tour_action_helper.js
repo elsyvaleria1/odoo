@@ -1,5 +1,3 @@
-// Carries its own two assert helpers rather than importing stock's, so the
-// shop floor tours need nothing beyond this file.
 function fail(errorMessage) {
     throw new Error(errorMessage);
 }
@@ -12,10 +10,6 @@ function assert(current, expected, info) {
 import { appContextOf } from "@web/core/app_context";
 import { registry } from "@web/core/registry";
 
-// Registered, not patched onto TourHelpers.prototype: that class lives in the
-// lazy web_tour.automatic bundle, and a patch from web.assets_tests reaches a
-// second copy. The registry is a cross-bundle singleton. stock_barcode
-// registers the same action with the same body, so the first one wins.
 const tourHelperActions = registry.category("web_tour.helpers");
 if (!tourHelperActions.contains("scan")) {
     tourHelperActions.add("scan", async function (barcode) {
@@ -26,8 +20,6 @@ if (!tourHelperActions.contains("scan")) {
         await new Promise((resolve) => requestAnimationFrame(resolve));
     });
 }
-
-// Helper's methods.
 
 /**
  * Get and returns exactly one record (MO or WO), fails if multiple records are found.
@@ -55,8 +47,6 @@ export function getRecords(options = {}) {
     }
     return recordsEl;
 }
-
-// Assert's methods.
 
 /**
  * Check the given MO has the expected amount of Work Order lines.
@@ -183,7 +173,6 @@ export function assertWorkOrderValues(values) {
     const recordEl = recordEls[values.index || 0];
     const headerEl = recordEl.querySelector("&>.card-header");
     const linesEl = recordEl.querySelectorAll("&>ul>li");
-    // Check record's name (and operation in case of a Work Order.)
     const moName = headerEl.querySelector(".o_record_name h4").innerText;
     const operationName = headerEl.querySelector("h5")?.innerText;
     assert(moName, name, "Wrong record's name");
@@ -194,13 +183,11 @@ export function assertWorkOrderValues(values) {
             `Record "${name}" is for the operation "${operation}" but no operation expected`,
         );
     }
-    // Check produced product and quantities.
     const product = headerEl.querySelector(".o_finished_product").innerText;
     assert(product, values.product, `Wrong finished product for record "${name}"`);
     const quantity = headerEl.querySelector(".o_quantity").innerText;
     assert(quantity, values.quantity, `Wrong quantity to produce for record "${name}"`);
 
-    // Check every record's line label and value.
     assert(
         linesEl.length,
         steps.length,

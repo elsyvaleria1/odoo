@@ -7,7 +7,6 @@ import { prepareStaticActionMenuItems } from "@web/views/view_utils";
 export class KnowledgeArticleController extends ListController {
     setup() {
         super.setup();
-        // Hide create button (creation cannot be deactivated to allow imports)
         this.activeActions.create = false;
     }
 

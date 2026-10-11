@@ -484,7 +484,6 @@ export class Record {
             return false;
         }
         if (collection instanceof RecordList) {
-            // a deleted record shares its localId with any record re-inserted after it
             return this.exists() && collection.includes(this);
         }
         return collection.some(

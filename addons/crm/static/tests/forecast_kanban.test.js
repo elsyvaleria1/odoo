@@ -281,9 +281,6 @@ test("Forecast on years, until the end of the year of the latest data", async ()
 
 test.tags("desktop");
 test("Add column extends the period the view is actually grouped by", async () => {
-    // The renderer used to read `granularity` off the field descriptor, which
-    // has no such property: it always resolved to "month" and expanded a period
-    // nothing read, so Add column did nothing at any other granularity.
     mockDate("2021-10-10 00:00:00");
     Lead._records = [{ id: 1, name: "Lead 1", date_deadline: "2021-10-15" }];
     const endBounds = [];
@@ -311,9 +308,6 @@ test("Add column extends the period the view is actually grouped by", async () =
 
     await quickCreateKanbanColumn();
 
-    // mount asks for the computed 4-year period; loadGroupedList then shrinks the
-    // period to the last group holding data (2022-01-01), so that is what one
-    // expand() must build on.
     expect(beforeAdd).toBe("2025-01-01");
     expect(endBounds.at(-1)).toBe("2023-01-01", {
         message:

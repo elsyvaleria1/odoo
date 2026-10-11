@@ -12,7 +12,7 @@ defineSpreadsheetModels();
 describe.current.tags("desktop");
 
 class Parent extends Component {
-    static template = xml /* xml */ `
+    static template = xml`
         <NewPivotSidePanel onCloseSidePanel="() => {}"/>
     `;
     static components = { NewPivotSidePanel };

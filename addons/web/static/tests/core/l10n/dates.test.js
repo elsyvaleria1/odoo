@@ -885,7 +885,6 @@ test("toLocaleDateTimeString omits the year of the date it shows, not of the val
     mockTimeZone(+2);
     mockDate("2027-01-01 12:00:00");
     const lastYearInUtc = parseISO("2026-12-31T23:30:00", "UTC");
-    // shown in the default zone this is 2027-01-01 01:30, the current year
     expect(toLocaleDateTimeString(lastYearInUtc)).not.toInclude("2026");
     expect(toLocaleDateTimeString(lastYearInUtc, { tz: "utc" })).toInclude("2026");
 });

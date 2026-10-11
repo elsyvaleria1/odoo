@@ -15,8 +15,6 @@ const ProductScreen = { ...ProductScreenPos, ...ProductScreenResto };
 registry.category("web_tour.tours").add("PosResTipScreenTour", {
     steps: () =>
         [
-            // Create order that is synced when draft.
-            // order 1
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
             FloorScreen.clickTable("2"),
@@ -34,7 +32,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             TipScreen.isShown(),
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("4"),
-            // order 2
             ProductScreen.addOrderline("Coca-Cola", "2", "2"),
             ProductScreen.totalAmountIs("4.0"),
             Chrome.clickPlanButton(),
@@ -45,8 +42,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             },
             Chrome.clickPlanButton(),
 
-            // Create without syncing the draft.
-            // order 3
             FloorScreen.clickTable("5"),
             ProductScreen.addOrderline("Minute Maid", "3", "2"),
             ProductScreen.totalAmountIs("6.0"),
@@ -57,7 +52,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             TipScreen.isShown(),
             Chrome.clickPlanButton(),
             FloorScreen.clickNewOrder(),
-            // order 4
             ProductScreen.addOrderline("Coca-Cola", "4", "2"),
             ProductScreen.totalAmountIs("8.0"),
             ProductScreen.clickControlButton("Guests"),
@@ -72,7 +66,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             {
                 trigger: `.ticket-screen .orders .order-row:contains(Tipping):contains($ 6.00)`,
             },
-            // Tip 20% on order1
             TicketScreen.selectOrderByPrice("2.0"),
             TicketScreen.loadSelectedOrder(),
             TipScreen.isShown(),
@@ -87,7 +80,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             Chrome.clickOrders(),
             TicketScreen.selectFilter("Active"),
 
-            // Tip 25% on order3
             TicketScreen.selectOrderByPrice("6.0"),
             TicketScreen.loadSelectedOrder(),
             TipScreen.isShown(),
@@ -101,7 +93,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             FloorScreen.isShown(),
             Chrome.clickOrders(),
 
-            // finalize order 4 then tip custom amount
             TicketScreen.selectOrderByPrice("8.0"),
             TicketScreen.loadSelectedOrder(),
             ProductScreen.isShown(),
@@ -122,7 +113,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
 
-            // settle tips here
             Chrome.clickOrders(),
             TicketScreen.selectFilter("Tipping"),
             TicketScreen.tipContains("1.00"),
@@ -131,8 +121,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             {
                 trigger: `.ticket-screen .orders .order-row:contains(Ongoing):contains($ 4.00)`,
             },
-            // tip order2 during payment
-            // tip screen should not show after validating payment screen
             TicketScreen.selectOrderByPrice("4.0"),
             TicketScreen.loadSelectedOrder(),
             ProductScreen.clickPayButton(false),
@@ -147,8 +135,6 @@ registry.category("web_tour.tours").add("PosResTipScreenTour", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.isShown(),
 
-            // order 5
-            // Click directly on "settle" without selecting a Tip
             ReceiptScreen.clickNextOrder(),
             FloorScreen.clickTable("2"),
             ProductScreen.addOrderline("Minute Maid", "3", "2"),
@@ -174,7 +160,6 @@ registry.category("web_tour.tours").add("test_tip_after_payment", {
             ProductScreen.addOrderline("Minute Maid", "1", "3"),
             ProductScreen.clickPayButton(false),
             ProductScreen.discardOrderWarningDialog(),
-            // case 1: remaining < 0 => increase PaymentLine amount
             PaymentScreen.enterPaymentLineAmount("Bank", "1"),
             PaymentScreen.clickTipButton(),
             {
@@ -184,7 +169,6 @@ registry.category("web_tour.tours").add("test_tip_after_payment", {
             },
             Dialog.confirm(),
             PaymentScreen.selectedPaymentlineHas("Bank", "2.00"),
-            // case 2: remaining >= 0 and remaining >= tip => don't change PaymentLine amount
             PaymentScreen.clickPaymentlineDelButton("Bank", "2.00"),
             PaymentScreen.enterPaymentLineAmount("Bank", "5"),
             PaymentScreen.clickTipButton(),
@@ -195,7 +179,6 @@ registry.category("web_tour.tours").add("test_tip_after_payment", {
             },
             Dialog.confirm(),
             PaymentScreen.selectedPaymentlineHas("Bank", "5.00"),
-            // case 3: remaining >= 0 and remaining < tip => increase by the difference
             PaymentScreen.clickPaymentlineDelButton("Bank", "5.00"),
             PaymentScreen.enterPaymentLineAmount("Bank", "5"),
             PaymentScreen.clickTipButton(),

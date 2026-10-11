@@ -7,7 +7,6 @@ const log = makeLogger("spreadsheet.geo_json");
 
 const diacriticalMarksRegex = /[\u0300-\u036f]/g;
 
-/** Put the feature name in lowercase and remove the accents */
 function normalizeFeatureName(name) {
     return name.normalize("NFD").replace(diacriticalMarksRegex, "").toLowerCase();
 }
@@ -155,7 +154,6 @@ export const geoJsonService = {
             },
             geoFeatureNameToId: function (region, name) {
                 if (region === "usa") {
-                    // State display names are appended with the country in odoo (e.g. "California (US)").
                     const match = name.match(stateNameRegex);
                     if (match) {
                         name = match[1].trim();

@@ -1,10 +1,3 @@
-// Service worker of the driver screen, served by /stock_fleet_trace/driver/sw.js
-// with its version filled in: a new version of any shell file changes these
-// bytes, so the browser installs the new worker and drops the old cache.
-// The page is network-first with a short wait (it carries who is logged in) and
-// falls back to its cached copy without signal; its files are cache-first. The
-// JSON-RPC routes (POST) are never cached.
-
 const VERSION = "__SFT_DRIVER_VERSION__";
 const CACHE = `sft-driver-${VERSION}`;
 const PAGE = "/stock_fleet_trace/driver";
@@ -20,7 +13,6 @@ const SHELL = [
     "/web/static/img/odoo-icon-512x512.png",
 ];
 
-/** A response worth keeping: never the login page an expired session redirects to. */
 function cacheable(response) {
     return response && response.ok && !response.redirected && response.type === "basic";
 }
@@ -34,9 +26,6 @@ async function fetchAndStore(cache, url) {
 }
 
 self.addEventListener("install", (event) => {
-    // All or nothing: a shell that cannot be cached whole (no signal, or an
-    // expired session sending the page to the login) leaves the previous worker,
-    // and its cache, in charge.
     event.waitUntil(
         caches
             .open(CACHE)
@@ -90,8 +79,6 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
         caches.open(CACHE).then(async (cache) => {
             if (isPage) {
-                // The page carries who is logged in: fresh whenever the network
-                // answers in time, the cached copy otherwise.
                 try {
                     const response = await Promise.race([
                         fetchAndStore(cache, key),
@@ -102,9 +89,7 @@ self.addEventListener("fetch", (event) => {
                     if (cacheable(response)) {
                         return response;
                     }
-                } catch {
-                    // No signal or too slow: the cached page below.
-                }
+                } catch {}
                 return (
                     (await cache.match(key, { ignoreSearch: true })) || fetch(request)
                 );

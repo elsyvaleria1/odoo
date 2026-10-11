@@ -9,9 +9,6 @@ patch(SelectAddDocumentCreateDialog.prototype, {
         super.setup(...arguments);
         this.appContext = useAppContext();
     },
-    /**
-     * Convert Odoo Spreadsheet to .xlsx format
-     */
     async _processAttachments(attachmentRecords) {
         return createXlsxAttachment(this.appContext, this.orm, attachmentRecords);
     },

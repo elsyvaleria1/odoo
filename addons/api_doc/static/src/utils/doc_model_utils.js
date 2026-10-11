@@ -13,8 +13,6 @@ const FIELDS_DEFAULT = [
         value: false,
     },
     {
-        // `Date.now.toString()` stringified the *function*, so every required
-        // date field's example read "function now() { [native code] }".
         types: ["datetime"],
         value: "2024-01-01 00:00:00",
     },
@@ -128,10 +126,6 @@ export function getCrudMethodsExamples(model) {
                 domain: [["display_name", "ilike", "a%"]],
             },
         },
-        // The signature's own defaults are an empty groupby and no aggregate,
-        // which the ORM rejects outright ("returned more columns than
-        // expected"). A curated example is the difference between a Run button
-        // that demonstrates the method and one that only ever errors.
         formatted_read_group: {
             request: {
                 domain: [["display_name", "ilike", "a%"]],
@@ -142,9 +136,6 @@ export function getCrudMethodsExamples(model) {
     };
 }
 
-// Keyed by the OUTERMOST type of the annotation, which is the one that decides
-// the shape of the value: `dict[str, list[str]]` wants {}, `list[dict]` wants
-// [], and a substring search cannot tell those apart.
 const ANNOTATION_DEFAULTS = {
     domaintype: () => [["display_name", "ilike", "a%"]],
     dict: () => ({}),
@@ -163,10 +154,6 @@ const ANNOTATION_DEFAULTS = {
     str: () => "",
 };
 
-/**
- * The leading type name of an annotation, lowercased and undotted.
- * `collections.abc.Sequence[str] | None` -> "sequence"
- */
 function annotationHead(annotation) {
     const match = /^\s*([A-Za-z_][\w.]*)/.exec(annotation ?? "");
     return match ? match[1].split(".").at(-1).toLowerCase() : "";
@@ -176,9 +163,6 @@ export function getParameterDefaultValue(name, parameter) {
     if ("default" in parameter) {
         return parameter.default;
     }
-    // `parameter.annotation` is the key the server publishes. Reading
-    // `parameter.type` here -- a key that has never existed in the payload --
-    // sent every domain out as "", which the server rejects outright.
     const build = ANNOTATION_DEFAULTS[annotationHead(parameter.annotation)];
     if (build) {
         return build();

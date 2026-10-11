@@ -31,7 +31,6 @@ export class PaymentMercadoPago extends PaymentInterface {
 
     createPaymentIntent(line) {
         const order = line.pos_order_id;
-        // "external_reference" is sent back with the webhook notification
         return this._callMercadoPago("mp_payment_intent_create", {
             amount: this.pos.currency.toMinorUnits(line.amount),
             additional_info: {
@@ -57,7 +56,6 @@ export class PaymentMercadoPago extends PaymentInterface {
         await super.sendPaymentRequest(...arguments);
         const line = this.pos.getOrder().getPaymentlineByUuid(uuid);
         try {
-            // During payment creation, user can't cancel the payment intent
             line.setPaymentStatus("waitingCapture");
             const paymentIntent = await this.createPaymentIntent(line);
             if (!paymentIntent?.id) {
@@ -85,8 +83,6 @@ export class PaymentMercadoPago extends PaymentInterface {
             this._settle(line, false);
             return true;
         }
-        // The intent may have finished on the terminal meanwhile: its result
-        // decides, never the failed cancel.
         await this.checkPaymentIntent(line);
         if (!this._isAwaiting(line, paymentIntentId)) {
             return true;
@@ -192,7 +188,6 @@ export class PaymentMercadoPago extends PaymentInterface {
         resolver?.(isPaymentSuccessful);
     }
 
-    // private methods
     _showMsg(msg, title) {
         this.env.services.dialog.add(AlertDialog, {
             title: "Mercado Pago " + title,

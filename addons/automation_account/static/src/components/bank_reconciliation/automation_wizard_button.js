@@ -7,7 +7,6 @@ patch(BankRecButtonList.prototype, {
     get buttons() {
         const buttons = super.buttons;
         const runtimeId = this.statementLineData.automation_runtime_id?.id;
-        // Not a primary key in buttonsToDisplay, so it lands in the dropdown.
         if (!runtimeId) {
             buttons.automation = {
                 label: _t("Start Automation"),
@@ -37,9 +36,6 @@ patch(BankRecButtonList.prototype, {
 
     async actionOpenAutomationWizard() {
         const stLineId = this.statementLineData.id;
-        // The wizard's default_get derives amount, date, currency and the
-        // line's own partner from active_id. Only the customer an approval
-        // names needs pre-filling: the line's partner then stands in for him.
         const context = {
             active_id: stLineId,
             active_model: "account.bank.statement.line",
@@ -57,11 +53,7 @@ patch(BankRecButtonList.prototype, {
             if (partnerCnId) {
                 context.default_partner_id = partnerCnId;
             }
-        } catch {
-            // bank_statement_line_id belongs to approval_account, which this
-            // module does not depend on. Without it the line's partner is
-            // the run's partner.
-        }
+        } catch {}
 
         await this.action.doAction({
             name: _t("Create Automation Workflow"),

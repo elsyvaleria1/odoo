@@ -6,15 +6,13 @@ async function splitPill(helpers, index = 0) {
         pillEl.scrollIntoView({ block: "end" });
         await new Promise(requestAnimationFrame);
     }
-    const style = getComputedStyle(pillEl.parentElement); // wrapper style
+    const style = getComputedStyle(pillEl.parentElement);
     const first = +style.getPropertyValue("grid-column-start").slice(1);
     const last = +style.getPropertyValue("grid-column-end").slice(1);
     const span = last - first;
     const { width, height } = pillEl.getBoundingClientRect();
     const position = { x: ((index + 1) * width) / span, y: height / 2 };
     await helpers.hover(pillEl, { position, relative: true });
-    // the tool can render a frame after the hover (a stale hover on the last
-    // pill is processed first): click only once it is there
     await helpers.waitFor(".o_gantt_pill_split_tool");
     helpers.click(pillEl, { position, relative: true });
 }

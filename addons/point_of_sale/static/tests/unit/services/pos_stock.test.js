@@ -40,7 +40,6 @@ for (const staleFails of [false, true]) {
         service.refresh();
         await microTick();
         expect(requests.map(({ ids }) => ids)).toEqual([[1], [1]]);
-        // Resolve in reverse order: a completed payment must keep the new stock.
         requests[1]?.deferred.resolve({ 1: 4 });
         await microTick();
         if (staleFails) {

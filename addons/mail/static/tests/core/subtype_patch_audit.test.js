@@ -5,7 +5,6 @@ import { registry } from "@web/core/registry";
 
 describe.current.tags("headless");
 
-/** Parent patches reviewed as meant for the parent's own records only. */
 const KNOWN_SHADOWED_PATCHES = new Set([]);
 
 test("no patch of a parent model is silently shadowed by a subtype", () => {

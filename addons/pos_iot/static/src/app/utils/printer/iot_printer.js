@@ -2,9 +2,6 @@
 import { PRINTER_MESSAGES } from "@iot/device_messages";
 import { BasePrinter } from "@point_of_sale/app/utils/printer/base_printer";
 import { _t } from "@web/core/translation";
-/**
- * Used to send print requests to the IoT box through the provided `device` - a `DeviceController` instance.
- */
 export class IoTPrinter extends BasePrinter {
     setup({ device, iot_http }) {
         super.setup(...arguments);
@@ -34,7 +31,7 @@ export class IoTPrinter extends BasePrinter {
                 }
                 resolve({
                     ...printResult,
-                    result: false, // used to make the pos call ``getResultsError``
+                    result: false,
                 });
             };
 
@@ -86,7 +83,6 @@ export class IoTPrinter extends BasePrinter {
                 );
                 break;
             case "warning":
-                // e.g. "low_paper"
                 title = _t("Printing warning");
                 body = PRINTER_MESSAGES[printResult.message] ?? printResult.message;
                 break;

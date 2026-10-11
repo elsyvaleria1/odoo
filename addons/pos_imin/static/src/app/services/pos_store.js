@@ -9,7 +9,6 @@ patch(PosStore.prototype, {
     async afterProcessServerData() {
         const result = await super.afterProcessServerData(...arguments);
         if (this.config.other_devices) {
-            // Check if the Imin printer is available; if not, fallback to the existing printer
             this.detectIminPrinter();
         }
         return result;
@@ -21,7 +20,7 @@ patch(PosStore.prototype, {
             });
             const isAvailable = await iminPrinterAdapter.isAvailable();
             if (isAvailable) {
-                this.iminPrinterAdapter = iminPrinterAdapter; // Store the adapter for later use
+                this.iminPrinterAdapter = iminPrinterAdapter;
                 this.hardwareProxy.printer = this.iminPrinterAdapter;
                 await this.iminPrinterAdapter.connect();
             }

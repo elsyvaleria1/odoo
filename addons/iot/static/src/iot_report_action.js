@@ -66,7 +66,6 @@ export async function getSelectedPrintersForReport(reportId, env) {
         return deviceSettings.selectedDevices;
     }
 
-    // Open IoT devices selection wizard
     const openDeviceSelectionWizard = await orm.call(
         "ir.actions.report",
         "action_select_printers",
@@ -74,13 +73,11 @@ export async function getSelectedPrintersForReport(reportId, env) {
     );
     await action.doAction(openDeviceSelectionWizard);
 
-    // If the UI is currently blocked, we need to temporarily unblock it or the user won't be able to select the printer
     const uiWasBlocked = ui.isBlocked;
     if (uiWasBlocked) {
         ui.unblock();
     }
 
-    // Wait for the popup to be closed and a printer selected
     return new Promise((resolve) => {
         const onPrinterSelected = (event) => {
             if (event.detail.reportId === reportId) {
@@ -104,19 +101,17 @@ async function iotReportActionHandler(action, options, env) {
         action.data ??= {};
         const args = [
             action.id,
-            action.context.active_ids.filter((e) => typeof e === "number"), // remove string uuid ids (e.g. PoS)
+            action.context.active_ids.filter((e) => typeof e === "number"),
             action.data,
         ];
         const reportId = action.id;
         const printerIds = await getSelectedPrintersForReport(reportId, env);
 
         if (!printerIds) {
-            // If the user does not select any printer, fall back to normal printing
             return false;
         }
 
         env.services.ui.block();
-        // Try longpolling then websocket
         await printReport(env, args, printerIds);
         env.services.ui.unblock();
 

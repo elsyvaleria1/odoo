@@ -36,7 +36,6 @@ export function isDownloadAllowed(data) {
  * @property {(context: DocumentActionContext, data: Object) => any} run
  */
 
-/** A document or a folder of the tree, not one of its special roots (MY, COMPANY…). */
 const isRealDocument = (data) => typeof data?.id === "number";
 
 /**
@@ -86,7 +85,6 @@ export const documentActions = {
         isVisible: (documentService, data) =>
             documentService.userIsInternal && isRealDocument(data),
         run: ({ documentService, record }) => {
-            // a row shows its own details; the cog, the focused folder's
             if (record && documentService.focusedRecord?.id !== record.id) {
                 documentService.focusRecord(record);
                 if (!documentService.rightPanelReactive.visible) {
@@ -121,7 +119,6 @@ export const documentActions = {
         icon: (data) =>
             data.is_user_favorite ? "fa-solid fa-star" : "fa-regular fa-star",
         label: (data) => (data.is_user_favorite ? _t("Remove Star") : _t("Add Star")),
-        // a star is the user's own, not a change to the document: reading it is enough
         isVisible: (documentService, data) =>
             isRealDocument(data) && data.active !== false,
         run: ({ model }, data) => model.toggleFavorite([data.id]),
@@ -129,7 +126,6 @@ export const documentActions = {
     trash: {
         icon: "fa-regular fa-trash-can",
         label: _t("Move to Trash"),
-        // the server's answer (user_can_trash): what action_archive accepts
         isVisible: (documentService, data) =>
             documentService.userIsInternal &&
             documentService.isEditable(data) &&

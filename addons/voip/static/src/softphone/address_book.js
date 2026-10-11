@@ -8,9 +8,6 @@ import { useDebounced } from "@web/core/utils/timing";
 
 /** @typedef {import("models").ResPartner} ResPartner */
 
-/**
- * List of contacts, i.e. people you can call.
- */
 export class AddressBook extends Component {
     static components = tabComponents;
     static props = {

@@ -3,7 +3,6 @@ import { registry } from "@web/core/registry";
 registry.category("web_tour.tours").add("test_website_page_manager", {
     url: "/odoo/action-test_website.action_test_model_multi_website",
     steps: () => [
-        // Part 1: check that the website filter is working
         {
             content: "Check that we see records from My Website",
             trigger:
@@ -45,14 +44,11 @@ registry.category("web_tour.tours").add("test_website_page_manager", {
             run: "click",
         },
         {
-            // This step is just here to ensure there is more records than the 2
-            // available on website 1, to ensure the test is actually testing something.
             content: "Check that we see records from My Website 2",
             trigger:
                 ".o_list_table .o_data_row .o_data_cell[name=name]:contains('Test Model Multi Website 2') " +
                 "~ .o_data_cell[name=website_id]:contains('My Website 2')",
         },
-        // Part 2: ensure Kanban View is working / not crashing
         {
             content: "Click on Kanban View",
             trigger: ".o_cp_switch_buttons .o_kanban",

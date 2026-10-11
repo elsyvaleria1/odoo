@@ -404,20 +404,20 @@ test("the membership set of a record list follows every mutator", async () => {
     };
     team.members.add(people[0], people[1]);
     agrees(team.members);
-    people[2].team = team; // inverse path (addNoinv)
+    people[2].team = team;
     agrees(team.members);
-    team.members.add(people[2]); // already a member: no duplicate
+    team.members.add(people[2]);
     expect(team.members.length).toBe(3);
     team.members.splice(1, 1, people[3], people[4]);
     agrees(team.members);
     team.members.delete(people[0]);
     agrees(team.members);
-    people[3].team = undefined; // inverse removal (deleteNoinv)
+    people[3].team = undefined;
     agrees(team.members);
-    team.members = [people[5], people[1]]; // assign
+    team.members = [people[5], people[1]];
     agrees(team.members);
     team.lead = people[0];
-    team.lead = people[1]; // One replace
+    team.lead = people[1];
     agrees(raw(team).lead);
     team.members.clear();
     agrees(team.members);

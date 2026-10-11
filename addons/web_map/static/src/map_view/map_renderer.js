@@ -31,10 +31,6 @@ const colors = [
     "#2C8397",
 ];
 
-// "The number of waypoints allowed varies by the platform where the link opens,
-// with up to three waypoints supported on mobile browsers, and a maximum of
-// nine waypoints supported otherwise."
-// -- developers.google.com/maps/documentation/urls/get-started
 const GOOGLE_MAPS_MAX_WAYPOINTS = 9;
 const GOOGLE_MAPS_MAX_WAYPOINTS_MOBILE = 3;
 
@@ -69,9 +65,6 @@ export class MapRenderer extends Component {
 
     setup() {
         this.ui = useService("ui");
-        // Subscribe to the model instead of reading it off the raw prop, so a
-        // `notify()` re-renders this component on its own. Previously only the
-        // controller's blanket deep render refreshed the map.
         useLifecycleLog(log);
         this.model = useReactiveModel(this.props.model);
         this.leafletMap = null;
@@ -84,8 +77,6 @@ export class MapRenderer extends Component {
             dismissedAlerts: {},
         });
         this.nextId = 1;
-        // What the map is currently showing, so an unrelated re-render neither
-        // rebuilds every marker nor throws the user's pan/zoom away.
         this.renderedMarkerSignature = null;
         this.fittedBoundsSignature = null;
         this.groupedByKey = this.model.data.groupByKey;
@@ -110,8 +101,6 @@ export class MapRenderer extends Component {
             },
             () => [],
         );
-        // Leaflet draws outside the template: the effect reads what it draws,
-        // so a geocoded partner or a new route redraws the map
         useLayoutEffect(
             () => this.updateMap(),
             () => [
@@ -137,9 +126,6 @@ export class MapRenderer extends Component {
 
         onWillUnmount(this.onWillUnmount);
     }
-    /**
-     * Remove map and the listeners on its markers and routes.
-     */
     onWillUnmount() {
         this.removeMarkers();
         this.removeRoutes();
@@ -279,9 +265,6 @@ export class MapRenderer extends Component {
      */
     getMarkerSignature(markersInfos) {
         return JSON.stringify([
-            // A load that returns the same ids at the same coordinates still
-            // replaces every record object, and the markers' click handlers
-            // close over the ones they were built from.
             this.model.data.revision,
             this.model.metaData.numbering,
             this.model.data.isGrouped,
@@ -299,10 +282,6 @@ export class MapRenderer extends Component {
         ]);
     }
 
-    /**
-     * If there's located records, adds the corresponding marker on the map.
-     * Binds events to the created markers.
-     */
     addMarkers() {
         const endMarkers = log.perf("addMarkers");
         this.removeMarkers();
@@ -320,14 +299,12 @@ export class MapRenderer extends Component {
                 params.color = this.getGroupColor(record.groupId);
             }
 
-            // Icon creation
             const iconInfo = {
                 className: "o-map-renderer--marker",
                 html: renderToString("web_map.marker", params),
             };
 
             const offset = markerInfo.pinInSamePlace * 0.000025;
-            // Attach marker with icon and popup
             const marker = L.marker(
                 [
                     record.partner.partner_latitude + offset,
@@ -343,11 +320,6 @@ export class MapRenderer extends Component {
         }
         endMarkers({ markers: this.markers.length });
     }
-    /**
-     * If there are computed routes, create polylines and add them to the map.
-     * each element of this.model.data.routes[0].legs array represent the route between
-     * two waypoints thus each of these must be a polyline.
-     */
     addRoutes() {
         this.removeRoutes();
         log.logic("addRoutes", () => ({
@@ -503,9 +475,6 @@ export class MapRenderer extends Component {
                 fieldsView.push({
                     id: this.nextId++,
                     value,
-                    // `string` is optional on a map field, and an inheriting
-                    // view adding one rarely spells it: fall back to the
-                    // field's own label rather than an empty popup row.
                     string: field.string || fields[field.fieldName].string,
                 });
             }
@@ -521,7 +490,6 @@ export class MapRenderer extends Component {
      */
     getMarkerPopupData(markerInfo) {
         const record = this.getMarkerRecord(markerInfo);
-        // Only display address in multi coordinates marker popup
         if (markerInfo.ids.length > 1) {
             const fieldsView = [];
             if (!this.model.metaData.hideAddress) {
@@ -561,9 +529,6 @@ export class MapRenderer extends Component {
         if (!addresses.length) {
             return {};
         }
-        // Without a destination the link opens a blank destination form
-        // rather than a route, so the last address is always the destination,
-        // routing enabled or not.
         const params = { destination: addresses.pop() };
         if (addresses.length) {
             params.waypoints = this.joinWaypoints(addresses);
@@ -597,9 +562,6 @@ export class MapRenderer extends Component {
         const query = new URLSearchParams({ api: "1", ...params });
         return `https://www.google.com/maps/dir/?${query}`;
     }
-    /**
-     * Remove the markers from the map and empty the markers array.
-     */
     removeMarkers() {
         for (const marker of this.markers) {
             marker.off("click");
@@ -607,9 +569,6 @@ export class MapRenderer extends Component {
         }
         this.markers = [];
     }
-    /**
-     * Remove the routes from the map and empty the the polyline array.
-     */
     removeRoutes() {
         for (const polyline of this.polylines) {
             polyline.off("click");
@@ -617,14 +576,6 @@ export class MapRenderer extends Component {
         }
         this.polylines = [];
     }
-    /**
-     * Update position in the map, markers and routes.
-     *
-     * Runs after every render, so each step first asks whether what it draws
-     * has actually moved: refitting unconditionally threw away the user's
-     * pan/zoom and closed the popup they had just opened, and rebuilding the
-     * markers unconditionally re-rendered every icon.
-     */
     updateMap() {
         if (this.groupedByKey !== this.model.data.groupByKey) {
             this.groupedByKey = this.model.data.groupByKey;
@@ -670,7 +621,6 @@ export class MapRenderer extends Component {
             return;
         }
         this.state.expandedPinList = false;
-        // wait the next owl render to avoid marker popup create => destroy
         await delay(0);
         const popup = this.createMarkerPopup({
             records: [record],

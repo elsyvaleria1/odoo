@@ -508,9 +508,6 @@ test("should not display subject when subject is the same as the thread name", a
     });
 });
 
-// Beside a form whose control panel is laid over it, the chatter's top padding is
-// the panel's height, which grows with the breadcrumbs; a kept position is the
-// messages' offset under that padding, not the raw scrollTop.
 function chatterPaddingTop() {
     return parseFloat(getComputedStyle(queryFirst(".o-mail-Chatter:first")).paddingTop);
 }

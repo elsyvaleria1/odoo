@@ -11,8 +11,6 @@ import { patch } from "@web/core/utils/patch";
 registerMessageAction("insertToComposer", {
     condition: ({ message, store, thread }) =>
         !!thread?.aiSpecialActions?.insert &&
-        // after a reload aiInsertButtonTarget and aiChatSource are both undefined, which would
-        // make the next condition true and wrongly show the button
         store.aiInsertButtonTarget &&
         (store.aiInsertButtonTarget === thread.aiChatSource || store.env.isSmall) &&
         !message.isSelfAuthored,

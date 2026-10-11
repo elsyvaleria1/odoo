@@ -3,9 +3,6 @@ import { DocumentsKanbanModel } from "@document/views/kanban/document_kanban_mod
 import { DocumentsListModel } from "@document/views/list/document_list_model";
 import { patch } from "@web/core/utils/patch";
 
-// Factory: each patch() call must receive its own fresh extension object
-// (patch() mutates it to build the `super` chain), so this is applied to
-// several record prototypes (see also documents_activity_model.js).
 export const AccountIsViewablePatch = () => ({
     /**
      * @override

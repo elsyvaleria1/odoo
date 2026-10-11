@@ -275,7 +275,6 @@ test("an inverse without a target model reports the owning field at boot", async
     (class Thread extends Record {
         static id = "name";
         name;
-        // Simulate malformed runtime metadata, which can arrive outside typed callers.
         members = fields.Many(/** @type {any} */ (undefined), { inverse: "thread" });
     }).register(badRegistry);
     expect(() => makeStore(env, { localRegistry: badRegistry })).toThrow(

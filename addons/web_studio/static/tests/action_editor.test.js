@@ -77,7 +77,6 @@ test("disable the view from studio", async () => {
 test("add groups on action", async () => {
     onRpc("/web_studio/edit_action", async (request) => {
         const { params } = await request.json();
-        // x2ManyCommands.link: [LINK, id, false] — the 3-element wire format
         expect(params.args.group_ids[0]).toEqual([4, 11, false]);
     });
 

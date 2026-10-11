@@ -11,10 +11,6 @@ function formatter(value, options = {}) {
     return formatFloatFactor(value, options);
 }
 
-/**
- * A grid cell edited by cycling through a fixed range of values rather than
- * by typing one, so its editor is a button instead of `GridCell`'s input.
- */
 export class FloatToggleGridCell extends GridCell {
     static props = { ...GridCell.props, factor: t.number().optional() };
     static template = "web_grid.FloatToggleGridCell";

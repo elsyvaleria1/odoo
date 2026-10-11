@@ -11,11 +11,6 @@ registry.category("web_tour.tours").add("portal_composer_actions_tour_internal_u
         },
         {
             trigger: "#chatterRoot:shadow .o-mail-Composer-input",
-            // `contains` polls, unlike the previous one-shot `this.anchor.value`
-            // read: the click mutates `composer.composerText`, and the textarea
-            // only shows it after OWL re-renders the `t-model` binding, which
-            // happens after this step's trigger (an element that already
-            // existed) has matched.
             async run() {
                 await contains(".o-mail-Composer-input", {
                     value: "::",

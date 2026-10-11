@@ -14,7 +14,6 @@ import { applyOnlinePaymentSelfOrderPaymentMethodRecords } from "./pos_payment_m
  */
 export const definePosOnlinePaymentSelfOrderModels = (extraModels = []) => {
     definePosSelfModels(extraModels);
-    // Per-test scoped — see pos_restaurant's definer for why.
     beforeEach(applyOnlinePaymentSelfOrderConfigRecords);
     beforeEach(applyOnlinePaymentSelfOrderPaymentMethodRecords);
 };

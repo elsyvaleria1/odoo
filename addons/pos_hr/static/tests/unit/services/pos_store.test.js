@@ -17,10 +17,6 @@ test("employeeIsAdmin", async () => {
     store.setCashier(emp);
     expect(store.employeeIsAdmin).toBe(true);
 });
-// The three below assign `cashier` directly rather than through
-// `setCashier()`, which writes to pos.session and cannot produce the
-// undefined/false states these assert on. `module_pos_hr` itself no longer
-// needs stating -- the fixture reaches every test via beforeEach.
 test("getCashierUserId returns the user id, not the res.users record", async () => {
     const store = await setupPosEnv();
     store.cashier = store.models["hr.employee"].get(3);
@@ -28,9 +24,6 @@ test("getCashierUserId returns the user id, not the res.users record", async () 
 });
 test("getCashierUserId returns null when no cashier is logged in", async () => {
     const store = await setupPosEnv();
-    // The Navbar evaluates this on mount, before LoginScreen has picked a
-    // cashier, so `cashier` is still undefined -- the state the guard on
-    // `employeeIsAdmin` was added for. `resetCashier()` leaves false instead.
     store.cashier = undefined;
     expect(store.getCashierUserId()).toBe(null);
     store.cashier = false;
@@ -41,7 +34,6 @@ test("the employee who opened the session can close the register", async () => {
     store.cashier = store.models["hr.employee"].get(3);
     store.session.user_id = store.models["res.users"].get(3);
     expect(store.employeeIsAdmin).toBe(false);
-    // Third clause of the "Close Register" t-if in pos_hr's Navbar template.
     expect(store.getCashierUserId()).toBe(store.session.user_id?.id);
 });
 test("_getConnectedCashier", async () => {

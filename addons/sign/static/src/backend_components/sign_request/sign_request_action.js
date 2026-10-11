@@ -41,7 +41,7 @@ export class SignRequest extends Component {
 
         this.signInfo.reset({
             documentId: context.id || (action.params && action.params.id),
-            signRequestToken: context.token || (action.params && action.params.token), // token could be sign.request.item's token if signabledocument
+            signRequestToken: context.token || (action.params && action.params.token),
             createUid:
                 context.create_uid || (action.params && action.params.create_uid),
             signRequestState: context.state || (action.params && action.params.state),

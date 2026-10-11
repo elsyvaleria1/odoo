@@ -66,7 +66,6 @@ export class LocalMediaController {
      * @returns {Promise<Pick<BlurManager, "stream" | "close" | "backgroundBlur" | "edgeBlur">>}
      */
     async applyBlurEffect(videoStream) {
-        // a failed load rejects here, into the callers' notify-and-disable path
         await selfieSegmentationLoader.load();
         const settings = this.hooks.getSettings();
         return new BlurManager(videoStream, {

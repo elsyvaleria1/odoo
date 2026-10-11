@@ -42,10 +42,7 @@ test("a command that has a keyboard shortcut shows it", async function () {
     await mountSpreadsheet(model);
     await press(["control", "k"]);
     await animationFrame();
-    // `confirm: false`: confirming would run the selected command and close
-    // the palette.
     await contains(".o_command_palette_search input").edit("Copy", { confirm: false });
     await animationFrame();
-    // `toInclude`, not `toEqual`: web's own hotkey commands fuzzy-match too.
     expect(queryAllTexts(".o_command_hotkey")).toInclude("Edit / Copy\nCONTROL + C");
 });

@@ -1503,7 +1503,6 @@ test("out-of-focus notif on needaction message in group chat contributes only on
     await contains(`${discussTab("chat")} .o-mail-MessagingMenu-tabCounter`, {
         text: "1",
     });
-    // the group chat counts its own mention: the needaction counter lists none
     expect(getService("mail.store").needaction_counter).toBe(0);
     await expect.waitForSteps(["(1) General"]);
 });

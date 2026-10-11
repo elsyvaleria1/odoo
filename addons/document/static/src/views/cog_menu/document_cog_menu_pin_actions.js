@@ -25,7 +25,6 @@ export class DocumentCogMenuPinAction extends Component {
         this.notification = useService("notification");
 
         this.documentsState = proxy({ actions: [], isLoading: true });
-        // batches quick toggles; the menu closing must not drop the reload
         this._reloadSearchModel = useDebounced(
             () => this.searchModel._reloadSearchModel(true),
             1500,
@@ -60,7 +59,6 @@ export class DocumentCogMenuPinAction extends Component {
     }
 
     async onEnableAction(actionId) {
-        // isDisplayed: an editable folder, so a real one
         const currentFolderId = this.searchModel.getSelectedFolderId();
         const action = this.documentsState.actions.find((a) => a.id === actionId);
         if (!action) {

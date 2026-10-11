@@ -15,13 +15,6 @@ const getBoundingClientRect = Element.prototype.getBoundingClientRect;
 
 function normalizeXML(str) {
     const doc = parseXML(str);
-    /* Recursively trim text nodes conditionally
-     * if they start or end with a newline (\n).
-     * In that case we make the assumption that all whitespaces
-     * are materializing indentation.
-     * If there are only spaces (\s), we make the assumption that they
-     * are actual spaces that are visible to the naked eye of the user.
-     */
     const nodes = [...doc.childNodes];
     for (const node of nodes) {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -103,10 +96,6 @@ function openEditorPowerBox(element, offsets = null) {
     return insertText(element, "/", offsets);
 }
 
-// This function allows to use and test the feature that automatically
-// saves when we leave the reportEditor.
-// Implem detail: it is done at willUnmount, so we need to wait for the promise
-// to be sure we leave the tour when the save is done.
 function patchReportEditorModelForSilentSave() {
     const saveProms = [];
     const { ReportEditorModel } = odoo.loader.modules.get(
@@ -186,7 +175,6 @@ registry.category("web_tour.tours").add("web_studio.test_basic_report_edition", 
             run: "editor edited with odoo editor 2",
         },
         {
-            // Don't explicitly save, this is a feature
             trigger: ".o_web_studio_leave a",
             run(helpers) {
                 silentPatch = patchReportEditorModelForSilentSave();
@@ -384,7 +372,6 @@ registry.category("web_tour.tours").add("web_studio.test_basic_report_edition_er
             run: "editor edited with odoo editor",
         },
         {
-            // Brutally add a t-else: this will crash in python on save
             trigger:
                 ".o-web-studio-report-editor-wysiwyg :iframe .odoo-editor-editable",
             run() {
@@ -591,7 +578,6 @@ registry.category("web_tour.tours").add("web_studio.test_table_rendering", {
 registry.category("web_tour.tours").add("web_studio.test_field_placeholder", {
     steps: () => [
         {
-            // 1 sec delay to make sure we call the download route
             trigger:
                 ".o-web-studio-report-editor-wysiwyg :iframe .odoo-editor-editable p:eq(2)",
             async run(helpers) {
@@ -629,8 +615,6 @@ registry.category("web_tour.tours").add("web_studio.test_field_placeholder", {
                             ".o-web-studio-report-dynamic-placeholder-popover",
                         ),
                     );
-                    // The field placeholder should have followed its anchor, and it happens that the anchor's container
-                    // has been scrolled, so the anchor has moved upwards (and is actually outside of the viewPort, to the top)
                     return placeholderBox.top > newPlaceholderbox.top;
                 });
                 this.anchor.scrollTop = 0;
@@ -682,17 +666,14 @@ registry.category("web_tour.tours").add("web_studio.test_field_placeholder", {
 registry.category("web_tour.tours").add("web_studio.test_add_field_blank_report", {
     steps: () => [
         {
-            // edit reports
             trigger: ".o_web_studio_menu button:contains(Reports)",
             run: "click",
         },
         {
-            // create a new report
             trigger: ".o_control_panel .o-kanban-button-new",
             run: "click",
         },
         {
-            // select basic layout
             trigger:
                 '.o_web_studio_report_layout_dialog div[data-layout="web.basic_layout"]',
             run: "click",
@@ -733,8 +714,6 @@ registry.category("web_tour.tours").add("web_studio.test_add_field_blank_report"
                             ".o-web-studio-report-dynamic-placeholder-popover",
                         ),
                     );
-                    // The field placeholder should have followed its anchor, and it happens that the anchor's container
-                    // has been scrolled, so the anchor has moved upwards (and is actually outside of the viewPort, to the top)
                     return placeholderBox.top > newPlaceholderbox.top;
                 });
                 this.anchor.scrollTop = 0;
@@ -767,7 +746,6 @@ registry.category("web_tour.tours").add("web_studio.test_add_field_blank_report"
             trigger: "body:not(:has(.o-web-studio-report-dynamic-placeholder-popover))",
         },
         {
-            // check that field was added successfully
             trigger:
                 ":iframe .odoo-editor-editable .page div > span[data-oe-demo='some default value']:contains(some default value)",
         },
@@ -1065,7 +1043,7 @@ registry.category("web_tour.tours").add("web_studio.test_report_edition_binary_f
                 ".o-web-studio-report-editor-wysiwyg :iframe .odoo-editor-editable p:eq(2)",
             async run(helpers) {
                 const el = this.anchor;
-                openEditorPowerBox(el, { start: nodeSize(el) }); // after the file field
+                openEditorPowerBox(el, { start: nodeSize(el) });
             },
         },
         {
@@ -1373,8 +1351,6 @@ registry.category("web_tour.tours").add("web_studio.test_remove_branding_on_copy
                 const copy = originNode.cloneNode(true);
                 originNode.insertAdjacentElement("afterend", copy);
                 editor.shared.history.addStep();
-                // Wait for a full macrotask tick and a frame to let the mutation observer
-                // of the ReportEditorWysiwyg to catch up on the change and finish its operations
                 await nextTick();
                 const attributeCopy = {};
                 for (const attr of copy.attributes) {

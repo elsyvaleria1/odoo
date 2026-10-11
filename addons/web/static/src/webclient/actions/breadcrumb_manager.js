@@ -241,9 +241,6 @@ export async function controllersFromState(state, am) {
     if (!state?.actionStack?.length) {
         return [];
     }
-    // a crumb's action needs a jsId like a loaded one's, or replaceCurrentAction
-    // and replacePreviousAction cannot tell it from its neighbours; consecutive
-    // crumbs of one action (a list under its form) share it, as loaded ones do
     let previousKey;
     let previousJsId;
     const controllers = state.actionStack

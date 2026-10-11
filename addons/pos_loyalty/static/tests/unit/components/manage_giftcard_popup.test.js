@@ -10,7 +10,6 @@ definePosLoyaltyModels();
 test("addBalance", async () => {
     const store = await setupPosEnv();
 
-    // Freeze current date so now() is fixed
     mockDate("2025-01-01");
 
     let payloadResult = null;
@@ -43,7 +42,6 @@ test("addBalance", async () => {
 
     expect(payloadResult.code).toBe("101");
     expect(payloadResult.amount).toBe(100);
-    // expiration is +1 year
     expect(payloadResult.expDate).toBe("2026-01-01");
 });
 

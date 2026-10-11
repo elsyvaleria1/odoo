@@ -258,8 +258,6 @@ function _deepCopyObject(value, cache) {
     if (Markup.isMarkup(value)) {
         return value;
     }
-    // a reactive proxy is new on every read: copy its target, so the
-    // circular cache recognises an object it has already copied
     value = toRaw(value);
     if (isInstanceOf(value, String, Number, Boolean)) {
         return value;
@@ -610,8 +608,6 @@ const GENERIC_SERIALIZERS = new Map([
     [String, (v) => v.valueOf()],
     [URL, (v) => v.toString()],
     [URLSearchParams, (v) => v.toString()],
-    // a Temporal value keeps its state in internal slots: without its string,
-    // any two instances of a type would compare equal
     ...[
         "Duration",
         "Instant",
@@ -1047,8 +1043,6 @@ export function generateHash(...strings) {
  * @param {unknown} value
  */
 export function getConstructor(value) {
-    // read through the prototype: a reactive proxy wraps the functions it
-    // returns, `constructor` included
     const constructor = Object.getPrototypeOf(value)?.constructor ?? value.constructor;
     if (constructor !== Object) {
         return constructor || EMPTY_CONSTRUCTOR;

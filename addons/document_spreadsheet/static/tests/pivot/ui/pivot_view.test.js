@@ -84,7 +84,7 @@ test("simple pivot export", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="foo" type="measure"/>
                         </pivot>`,
@@ -105,11 +105,11 @@ test("open side panel in desktop mode", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="foo" type="measure"/>
                         </pivot>`,
-                "partner,false,search": /* xml */ `<search/>`,
+                "partner,false,search": `<search/>`,
             },
         },
     });
@@ -122,11 +122,11 @@ test("don't open side panel in mobile mode", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="foo" type="measure"/>
                         </pivot>`,
-                "partner,false,search": /* xml */ `<search/>`,
+                "partner,false,search": `<search/>`,
             },
         },
     });
@@ -138,7 +138,7 @@ test("simple pivot export with two measures", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="foo" type="measure"/>
                             <field name="probability" type="measure"/>
@@ -164,7 +164,7 @@ test("Insert in spreadsheet is disabled when data is empty", async () => {
     await mountView({
         type: "pivot",
         resModel: "partner",
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="measure"/>
                 </pivot>`,
@@ -176,7 +176,7 @@ test("Insert in spreadsheet is disabled when no measure is specified", async () 
     await mountView({
         type: "pivot",
         resModel: "partner",
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="measure"/>
                 </pivot>`,
@@ -191,7 +191,7 @@ test("Insert in spreadsheet is disabled when same groupby occurs in both columns
     await mountView({
         type: "pivot",
         resModel: "partner",
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="id" type="col"/>
                 <field name="id" type="row"/>
@@ -208,7 +208,7 @@ test("Insert in spreadsheet is disabled when columns or rows contain duplicate g
     await mountView({
         type: "pivot",
         resModel: "partner",
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="id" type="col"/>
                     <field name="bar" type="row"/>
@@ -226,7 +226,7 @@ test("Insert in spreadsheet is disabled when columns and rows both contains same
     await mountView({
         type: "pivot",
         resModel: "partner",
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" interval="year" type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -241,7 +241,7 @@ test("Can insert in spreadsheet when group by the same date fields with differen
     await mountView({
         type: "pivot",
         resModel: "partner",
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" interval="year" type="col"/>
                     <field name="date" interval="month" type="col"/>
@@ -257,7 +257,7 @@ test("groupby date field without interval defaults to month", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot string="Partners">
                             <field name="foo" type="col"/>
                             <!-- no interval specified -->
@@ -332,7 +332,7 @@ test("groupby date field on row gives correct name", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot string="Partners">
                             <field name="date" type="row"/>
                             <field name="probability" type="measure"/>
@@ -360,7 +360,7 @@ test("pivot with two levels of group bys in rows", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="bar" type="row"/>
                             <field name="product_id" type="row"/>
@@ -401,7 +401,7 @@ test("verify that there is a record for an undefined many2one header", async () 
         serverData: {
             models: data,
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="product_id" type="row"/>
                             <field name="probability" type="measure"/>
@@ -429,7 +429,7 @@ test("undefined date is inserted in pivot", async () => {
         serverData: {
             models: data,
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="date" interval="day" type="row"/>
                             <field name="probability" type="measure"/>
@@ -445,7 +445,7 @@ test("pivot with two levels of group bys in cols", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="bar" type="col"/>
                             <field name="product_id" type="col"/>
@@ -482,7 +482,7 @@ test("pivot with count as measure", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="probability" type="measure"/>
                         </pivot>`,
@@ -499,7 +499,6 @@ test("pivot with count as measure", async () => {
 
 test("pivot with two levels of group bys in cols with not enough cols", async () => {
     const data = getBasicData();
-    // add many values in a subgroup
     for (let i = 0; i < 70; i++) {
         Product._records.push({
             id: i + 9999,
@@ -516,7 +515,7 @@ test("pivot with two levels of group bys in cols with not enough cols", async ()
         serverData: {
             models: data,
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                             <pivot>
                                 <field name="bar" type="col"/>
                                 <field name="product_id" type="col"/>
@@ -526,7 +525,6 @@ test("pivot with two levels of group bys in cols with not enough cols", async ()
             },
         },
     });
-    // 72 products * 1 groups + 1 row header + 1 total col
     expect(model.getters.getNumberCols(model.getters.getActiveSheetId())).toBe(75);
 });
 
@@ -535,7 +533,7 @@ test("groupby week is sorted", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot string="Partners">
                             <field name="foo" type="col"/>
                             <field name="date" interval="week" type="row"/>
@@ -554,7 +552,7 @@ test("Can save a pivot in a new spreadsheet", async () => {
     const serverData = {
         models: getBasicData(),
         views: {
-            "partner,false,pivot": /* xml */ `
+            "partner,false,pivot": `
                  <pivot string="Partners">
                      <field name="probability" type="measure"/>
                  </pivot>`,
@@ -592,7 +590,7 @@ test("Can save a pivot in existing spreadsheet", async () => {
     const serverData = {
         models: getBasicData(),
         views: {
-            "partner,false,pivot": /* xml */ `
+            "partner,false,pivot": `
                     <pivot>
                         <field name="probability" type="measure"/>
                     </pivot>`,
@@ -625,9 +623,9 @@ test("Can save a pivot in existing spreadsheet", async () => {
     await contains(".o_pivot_add_spreadsheet").click();
     await contains(".o-spreadsheet-grid div[data-id='2']").click();
     await contains(".modal-content > .modal-footer > .btn-primary").click();
-    await animationFrame(); // Wait for the mounted to be executed
+    await animationFrame();
     expect(".o_spreadsheet_pivot_side_panel").toHaveCount(1);
-    await getService("action").doAction(1); // leave the spreadsheet action
+    await getService("action").doAction(1);
     expect.verifySteps(["/spreadsheet/data/", "write"]);
 });
 
@@ -661,7 +659,7 @@ test("Add pivot sheet at the end of existing sheets", async () => {
     await contains(".o_pivot_add_spreadsheet").click();
     await contains(".o-spreadsheet-grid div[data-id='456']").click();
     await contains(".modal-content > .modal-footer > .btn-primary").click();
-    await animationFrame(); // Wait for the mounted to be executed
+    await animationFrame();
     expect(".o-sheet").toHaveCount(3, { message: "it should have a third sheet" });
     const sheets = fixture.querySelectorAll(".o-sheet");
     const activeSheet = fixture.querySelector(".o-sheet.active");
@@ -737,12 +735,12 @@ test("pivot with a contextual domain", async () => {
             bar: true,
         },
     ];
-    serverData.views["partner,false,search"] = /* xml */ `
+    serverData.views["partner,false,search"] = `
             <search>
                 <filter string="Filter" name="filter" domain="[('foo', '=', uid)]"/>
             </search>
         `;
-    serverData.views["partner,false,pivot"] = /* xml */ `
+    serverData.views["partner,false,pivot"] = `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -783,7 +781,7 @@ test("pivot with a quote in name", async function () {
         serverData: {
             models: data,
             views: {
-                "product,false,pivot": /*xml*/ `
+                "product,false,pivot": `
                         <pivot>
                             <field name="display_name" type="col"/>
                             <field name="id" type="row"/>
@@ -797,12 +795,11 @@ test("pivot with a quote in name", async function () {
 });
 
 test("group by related field with archived record", async function () {
-    // TODOAFTERSPLIT this doesn't seem to have any archived record
     const { model } = await createSpreadsheetFromPivotView({
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="product_id" type="col"/>
                             <field name="name" type="row"/>
@@ -821,7 +818,7 @@ test("group by regular field with archived record", async function () {
     const { model } = await createSpreadsheetFromPivotView({
         serverData: {
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="product_id" type="col"/>
                             <field name="foo" type="row"/>
@@ -907,11 +904,8 @@ test("pivot related context is not saved in the spreadsheet", async function () 
         },
     });
     expect.verifySteps([
-        // initial view
         "probability:avg,__count",
-        // adding count in the view
         "probability:avg,__count",
-        // loaded in the spreadsheet
         "probability:avg,__count",
     ]);
     expect(model.exportData().pivots[pivotId].context).toEqual(
@@ -946,8 +940,8 @@ test("sort first pivot column (ascending)", async () => {
 test("sort first pivot column (descending)", async () => {
     const { model, pivotId } = await createSpreadsheetFromPivotView({
         actions: async (target) => {
-            await contains("thead .o_pivot_measure_row").click(); // first click toggles ascending
-            await contains("thead .o_pivot_measure_row").click(); // second is descending
+            await contains("thead .o_pivot_measure_row").click();
+            await contains("thead .o_pivot_measure_row").click();
         },
     });
     expect(getCellValue(model, "A3")).toBe("Yes");
@@ -993,10 +987,10 @@ test("sort second pivot column (descending)", async () => {
         actions: async (target) => {
             await contains(
                 target.querySelectorAll("thead .o_pivot_measure_row")[1],
-            ).click(); // first click toggles ascending
+            ).click();
             await contains(
                 target.querySelectorAll("thead .o_pivot_measure_row")[1],
-            ).click(); // second is descending
+            ).click();
         },
     });
     expect(getCellValue(model, "A3")).toBe("No");
@@ -1019,7 +1013,7 @@ test("sort second pivot measure (ascending)", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot string="Partners">
                             <field name="product_id" type="row"/>
                             <field name="probability" type="measure"/>
@@ -1051,7 +1045,7 @@ test("sort second pivot measure (descending)", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot string="Partners">
                             <field name="product_id" type="row"/>
                             <field name="probability" type="measure"/>
@@ -1090,7 +1084,7 @@ test("sorting on a date column works", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                     <pivot default_order="probability desc">
                         <field name="create_date" interval="year" type="col"/>
                         <field name="create_date" interval="quarter" type="col"/>
@@ -1119,7 +1113,7 @@ test("remove sorting if measure is removed", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                     <pivot default_order="probability desc">
                         <field name="product_id" type="row"/>
                         <field name="probability" type="measure"/>
@@ -1129,7 +1123,7 @@ test("remove sorting if measure is removed", async () => {
         },
         actions: async (target) => {
             await toggleMenu("Measures");
-            await toggleMenuItem("Probability"); // remove probability measure
+            await toggleMenuItem("Probability");
         },
     });
     expect(model.getters.getPivotCoreDefinition(pivotId).sortedColumn).toBe(undefined);
@@ -1141,10 +1135,10 @@ test("search view with group by and additional row group", async () => {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                         <pivot>
                         </pivot>`,
-                "partner,false,search": /* xml */ `
+                "partner,false,search": `
                     <search>
                         <group>
                             <filter name="group_name" context="{'group_by':'name'}"/>
@@ -1158,7 +1152,6 @@ test("search view with group by and additional row group", async () => {
             await contains(
                 target.querySelectorAll("tbody .o_pivot_header_cell_closed")[0],
             ).click();
-            // group by foo
             await contains(".dropdown-menu span:nth-child(2)").click();
         },
     });
@@ -1295,8 +1288,6 @@ test("Test Autofill component", async function () {
     setCellContent(model, "B3", "");
     await pointerDown(".o-autofill-handler");
     await animationFrame();
-    // dispatching the underlying command by hand because the dragndrop in o_spreadsheet.js
-    // does not react well to the events
     model.dispatch("AUTOFILL_SELECT", { col: 1, row: 2 });
     await animationFrame();
     expect(".o-autofill-nextvalue:first").toHaveText("1");
@@ -1323,7 +1314,7 @@ test("The table has the correct number of headers when inserting a pivot", async
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                             <pivot>
                                 <field name="date" interval="year" type="col"/>
                                 <field name="date" interval="month" type="col"/>
@@ -1349,13 +1340,13 @@ test("Can collapse pivot header group", async function () {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /* xml */ `
+                "partner,false,pivot": `
                             <pivot>
                                 <field name="date" interval="year" type="col"/>
                                 <field name="date" interval="month" type="col"/>
                                 <field name="probability" type="measure"/>
                             </pivot>`,
-                "partner,false,search": /* xml */ `<search/>`,
+                "partner,false,search": `<search/>`,
             },
         },
     });

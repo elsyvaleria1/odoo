@@ -15,12 +15,6 @@ export class TaskSharingGanttRenderer extends TaskGanttRendererCommon {
         return false;
     }
 
-    /**
-     * Determines whether the task should allow Resize/Drag based on the following conditions:
-     * 1. The task is not grouped exclusively by 'step_id' or 'tag_ids'.
-     * 2. The task depends on other tasks (predecessor_ids is not empty).
-     * 3. Other tasks depend on this task (dependent_tasks_count is truthy).
-     */
     disableResizeDrag(record) {
         const { groupBy } = this.model.searchParams;
         return (
@@ -41,10 +35,6 @@ export class TaskSharingGanttRenderer extends TaskGanttRendererCommon {
         return pill;
     }
 
-    /**
-     *
-     * The connector line highlight and display buttons will be hidden.
-     */
     toggleConnectorHighlighting() {
         return;
     }

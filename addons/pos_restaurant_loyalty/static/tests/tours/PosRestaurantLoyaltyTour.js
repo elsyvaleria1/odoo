@@ -28,13 +28,11 @@ registry.category("web_tour.tours").add("test_loyalty_reward_with_courses", {
         [
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
-            // Add product after selecting a course
             FloorScreen.clickTable("5"),
             ProductScreen.clickCourseButton(),
             ProductScreen.clickDisplayedProduct("Water"),
             PosLoyalty.hasRewardLine("10% on your order", "-0.22", "1"),
             Chrome.clickPlanButton(),
-            // Add product before selecting a course
             FloorScreen.clickTable("2"),
             ProductScreen.clickDisplayedProduct("Water"),
             PosLoyalty.hasRewardLine("10% on your order", "-0.22", "1"),

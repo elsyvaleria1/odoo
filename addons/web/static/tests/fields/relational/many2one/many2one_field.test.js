@@ -3731,7 +3731,6 @@ test("search more pager is reset when doing a new search", async () => {
 
     expect(".modal .o_pager_limit").toHaveText("173");
     expect(".modal .o_pager_value").toHaveText("81-160");
-    // a page is built a screenful at a time
     await waitFor(".modal tr.o_data_row:eq(79)");
     expect(".modal tr.o_data_row").toHaveCount(80);
 

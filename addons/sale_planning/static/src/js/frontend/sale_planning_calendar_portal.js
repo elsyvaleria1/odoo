@@ -4,7 +4,6 @@ import { PlanningCalendarFront } from "@planning/interactions/planning_calendar_
 import { patch } from "@web/core/utils/patch";
 
 patch(PlanningCalendarFront.prototype, {
-    // override popup of calendar
     eventFunction(calEvent) {
         super.eventFunction(calEvent);
         const saleLineEl = document.getElementById("sale_line");

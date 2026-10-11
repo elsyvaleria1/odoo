@@ -61,9 +61,6 @@ export class SpreadsheetName extends Component {
         const context = canvas.getContext("2d");
         context.font = font;
         const width = context.measureText(text).width;
-        // add a small extra margin, otherwise the text jitters in
-        // the input because it overflows very slightly for some
-        // letters (?).
         return Math.ceil(width) + WIDTH_MARGIN;
     }
 

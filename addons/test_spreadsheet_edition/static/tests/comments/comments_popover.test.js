@@ -160,7 +160,6 @@ test("Spreadsheet cell thread composer shows only one send button", async () => 
     selectCell(model, "A2");
     await animationFrame();
 
-    // There should only be one send button (from chat window composer)
     expect(".o-mail-Composer .o-mail-Composer-send").toHaveCount(0);
     expect(".o-mail-Composer button[name='send-message']").toHaveCount(1);
 });

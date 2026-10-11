@@ -29,7 +29,6 @@ test("normalizeRange orders the bounds and snaps them to the column grid", () =>
     expect(iso(r.startDate)).toBe("2019-03-05");
     expect(iso(r.stopDate)).toBe("2019-03-20");
     expect(iso(r.globalStart)).toBe("2019-03-01");
-    // The stop day is inclusive: the grid ends at the boundary after it.
     expect(iso(r.globalStop)).toBe("2019-04-01");
     const day = normalizeRange({
         startDate: dt("2019-03-05"),
@@ -48,7 +47,6 @@ test("normalizeRange clamps a range past ten years on the side that did not move
     });
     expect(iso(forward.startDate)).toBe("2019-01-01");
     expect(iso(forward.stopDate)).toBe("2028-12-31");
-    // Given backwards, the stop is what the user set, so the start gives way.
     const backward = normalizeRange({
         startDate: dt("2040-01-01"),
         stopDate: dt("2019-01-01"),
@@ -105,7 +103,6 @@ test("customRangeAround: three months from a start, up to a stop, or around the 
         "2019-03-20",
         "2019-03-20",
     ]);
-    // Both given: the pair as is, today as the focus unless it lies outside.
     const both = {
         startDate: dt("2019-03-01"),
         stopDate: dt("2019-03-31"),

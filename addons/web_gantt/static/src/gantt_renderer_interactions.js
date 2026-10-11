@@ -54,7 +54,7 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
             },
             () => this.onInteractionChange(),
         );
-        this.onInteractionChange(); // Used to hook into "interaction"
+        this.onInteractionChange();
         /** @type {ResizeBadge} */
         this.timeDisplayBadgeReactiveStart = proxy({});
         this.timeDisplayBadgeReactiveStop = proxy({});
@@ -77,9 +77,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         );
         useListener(window, "keydown", (ev) => this.onWindowKeyDown(ev));
         useListener(window, "keyup", (ev) => this.onWindowKeyUp(ev));
-        // Releasing Control over another window fires no keyup here, which used
-        // to leave the gantt in copy mode until the key was pressed and
-        // released again inside it.
         useListener(window, "blur", () => this.releaseCopyModifier());
         useMultiHover({
             ref: this.gridRef,
@@ -94,15 +91,12 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         this.dragStates = [dragState, resizeState];
 
         if (!this.model.hasMultiCreate) {
-            // Un-draggable pills
             const unDragState = useGanttUndraggable({
-                // Refs and selectors
                 ref: this.gridRef,
                 elements: ".o_undraggable",
                 ignore: ".o_resize_handle,.o_connector_creator_bullet",
                 edgeScrolling: { enabled: false },
                 onWillStartDrag: this.cleanMultiSelection.bind(this),
-                // Handlers
                 onDragStart: () => {
                     this.interaction.mode = "locked";
                 },
@@ -130,13 +124,11 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         const scale = () => this.model.metaData.scale;
         return {
             enable: () => Boolean(this.cellForDrag.el),
-            // Refs and selectors
             ref: this.gridRef,
             hoveredCell: this.cellForDrag,
             elements: ".o_draggable",
             ignore: ".o_resize_handle,.o_connector_creator_bullet",
             cells: ".o_gantt_cell:not(.o_gantt_readonly)",
-            // Style classes
             cellDragClassName: "o_gantt_cell o_drag_hover",
             ghostClassName: "o_dragged_pill_ghost",
             rtl,
@@ -147,7 +139,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
             }),
             addStickyCoordinates: this.addStickyCoordinates.bind(this),
             onWillStartDrag: this.cleanMultiSelection.bind(this),
-            // Handlers
             onDragStart: ({ pill }) => {
                 this.initBadges(pill);
                 this.popover.close();
@@ -170,12 +161,10 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
     pillResizeOptions() {
         const scale = () => this.model.metaData.scale;
         return {
-            // Refs and selectors
             ref: this.gridRef,
             hoveredCell: this.cellForDrag,
             elements: ".o_resizable",
             innerPills: ".o_gantt_pill",
-            // Other params
             handles: "o_resize_handle",
             edgeScrolling: { speed: 40, threshold: 150, direction: "horizontal" },
             scale,
@@ -193,7 +182,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
             },
             rtl,
             onWillStartDrag: this.cleanMultiSelection.bind(this),
-            // Handlers
             onDragStart: ({ pill, addClass }) => {
                 this.initBadges(pill);
                 this.popover.close();
@@ -221,7 +209,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
 
         const { connector, collapsableColumnHeader, hoverable } = this.hovered;
 
-        // Update cell in drag
         const isCellHovered = hoverable?.matches(".o_gantt_cell");
         this.cellForDrag.el = isCellHovered ? hoverable : null;
         this.cellForDrag.part = 0;
@@ -240,7 +227,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         }
 
         if (!this.connectorDragState.dragging) {
-            // Highlight connector
             const hoveredConnectorId = connector?.dataset.connectorId || null;
             if (
                 this.highlightedConnectorId &&
@@ -255,7 +241,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         }
 
         this.toggleCollapsableColumnHeaderHighlighting(collapsableColumnHeader);
-        // Update progress bars
         this.progressBarsReactive.hoveredRowId =
             hoverable && !hoverable.classList.contains("o_gantt_cell_folded")
                 ? hoverable.dataset.rowId
@@ -290,7 +275,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         const params = this.getScheduleParams(pill);
         const isCopyMode = this.interaction.dragAction === "copy";
         if (!isCopyMode && !diff && cellSrc.dataset.rowId === rowId) {
-            // Dropped where it was picked up: nothing to write, nothing to undo.
             return;
         }
 
@@ -337,7 +321,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
             }
         }
 
-        // If the pill lands on a closed group -> open it
         if (cellDst.classList.contains("o_gantt_group") && this.model.isClosed(rowId)) {
             this.model.toggleRow(rowId);
         }
@@ -372,7 +355,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
                         name: _t("Undo"),
                         icon: "fa-undo",
                         onClick: async () => {
-                            // Undo the last drag & drop action
                             const result = await this.orm.call(
                                 this.model.metaData.resModel,
                                 "gantt_undo_drag_drop",
@@ -516,7 +498,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         const startingRowId = this.pills[this.stickyPillId].rowId;
         const rowIdx = this.rows.findIndex((r) => r.id === startingRowId);
         this.toggleReadonly(this.rows[rowIdx], addReadonly);
-        // Also update rows that are part of the same "child group"
         if (this.rows[rowIdx].readonlyChild) {
             for (const row of this.rows.slice(0, rowIdx).reverse()) {
                 if (!row.readonlyChild) {
@@ -599,7 +580,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
      * @param {Event} ev
      */
     computeHoverParams(ev) {
-        // Lazily compute elements from point as it is a costly operation
         let els = null;
         let position = {};
         if (ev.type === "scroll") {
@@ -612,7 +592,6 @@ export class GanttRendererInteractions extends GanttRendererConnectors {
         const pointedEls = () =>
             els || (els = document.elementsFromPoint(position.x, position.y));
 
-        // To find hovered elements, also from pointed elements
         const find = (selector) =>
             ev.target.closest?.(selector) ||
             pointedEls().find((el) => el.matches(selector)) ||

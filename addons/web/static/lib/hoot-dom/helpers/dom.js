@@ -340,7 +340,6 @@ function getNodeContent(node) {
 
 /** @type {NodeFilter} */
 function getNodeIframe(node) {
-    /** @see parseSelector */
     const doc = node.contentDocument;
     return doc && doc.readyState !== "loading" ? doc : false;
 }
@@ -993,7 +992,6 @@ class HootDomError extends Error {
 }
 
 const R_CHAR = /[\w-]/;
-/** \s without \n and \v */
 const R_HORIZONTAL_WHITESPACE =
     /[\r\t\f \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+/g;
 const R_LINEBREAK = /\s*\n+\s*/g;

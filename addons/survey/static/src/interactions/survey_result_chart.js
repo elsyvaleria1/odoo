@@ -5,17 +5,9 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { Interaction } from "@web/public/interaction";
 
-/**
- * Interaction responsible for the initialization and the drawing of the various charts.
- *
- */
 export class SurveyResultChart extends Interaction {
     static selector = ".survey_graph";
 
-    /**
-     * Initializes the interaction based on its defined graph_type and loads the chart.
-     *
-     */
     start() {
         this.graphData = JSON.parse(this.el.dataset.graphData);
         this.rightAnswers = this.el.dataset.rightAnswers || [];
@@ -46,10 +38,6 @@ export class SurveyResultChart extends Interaction {
         await loadChartJS();
     }
 
-    /**
-     * Returns a standard multi bar chart configuration.
-     *
-     */
     getMultibarChartConfig() {
         return {
             type: "bar",
@@ -71,7 +59,6 @@ export class SurveyResultChart extends Interaction {
                     x: {
                         ticks: {
                             callback: function (val, index) {
-                                // For a category axis, the val is the index so the lookup via getLabelForValue is needed
                                 const value = this.getLabelForValue(val);
                                 const tickLimit = 25;
                                 return value?.length > tickLimit
@@ -100,10 +87,6 @@ export class SurveyResultChart extends Interaction {
         };
     }
 
-    /**
-     * Returns a standard bar chart configuration.
-     *
-     */
     getBarChartConfig() {
         return {
             type: "bar",
@@ -135,7 +118,6 @@ export class SurveyResultChart extends Interaction {
                     x: {
                         ticks: {
                             callback: function (val, index) {
-                                // For a category axis, the val is the index so the lookup via getLabelForValue is needed
                                 const value = this.getLabelForValue(val);
                                 const tickLimit = 35;
                                 return value?.length > tickLimit
@@ -155,10 +137,6 @@ export class SurveyResultChart extends Interaction {
         };
     }
 
-    /**
-     * Returns a standard pie chart configuration.
-     *
-     */
     getPieChartConfig() {
         const counts = this.graphData.map(function (point) {
             return point.count;
@@ -184,10 +162,6 @@ export class SurveyResultChart extends Interaction {
         };
     }
 
-    /**
-     * Returns a standard doughnut chart configuration.
-     *
-     */
     getDoughnutChartConfig() {
         const totalsGraphData = this.graphData.totals;
         const counts = totalsGraphData.map(function (point) {
@@ -221,29 +195,6 @@ export class SurveyResultChart extends Interaction {
         };
     }
 
-    /**
-     * Displays the survey results grouped by section.
-     * For each section, user can see the percentage of answers
-     * - Correct
-     * - Partially correct (multiple choices and not all correct answers ticked)
-     * - Incorrect
-     * - Unanswered
-     *
-     * e.g:
-     *
-     * Mathematics:
-     * - Correct 75%
-     * - Incorrect 25%
-     * - Partially correct 0%
-     * - Unanswered 0%
-     *
-     * Geography:
-     * - Correct 0%
-     * - Incorrect 0%
-     * - Partially correct 50%
-     * - Unanswered 50%
-     *
-     */
     getSectionResultsChartConfig() {
         const sectionGraphData = this.graphData.by_section;
 
@@ -302,7 +253,6 @@ export class SurveyResultChart extends Interaction {
                     x: {
                         ticks: {
                             callback: function (val, index) {
-                                // For a category axis, the val is the index so the lookup via getLabelForValue is needed
                                 const value = this.getLabelForValue(val);
                                 const tickLimit = 20;
                                 return value?.length > tickLimit
@@ -344,10 +294,6 @@ export class SurveyResultChart extends Interaction {
         );
     }
 
-    /**
-     * Loads the chart using the provided Chart library.
-     *
-     */
     loadChart() {
         this.el.style.position = "relative";
         const canvas = this.el.querySelector("canvas");

@@ -51,7 +51,6 @@ export class DocumentsDocument extends models.Model {
     user_can_move = fields.Boolean({ default: true });
     user_can_manage = fields.Boolean({ default: true });
     access_url = fields.Char();
-    // the server's answers for the current user, recomputed on every write
     is_locked_by_other = fields.Boolean({ compute: "_compute_capabilities" });
     user_can_trash = fields.Boolean({ compute: "_compute_capabilities" });
 
@@ -320,7 +319,6 @@ export class DocumentsDocument extends models.Model {
 
     toggle_lock(id) {
         const record = this.browse(id)[0];
-        // as the server: a lock is taken for oneself
         record.lock_uid = record.lock_uid ? false : serverState.userId;
         this._compute_capabilities();
     }
@@ -501,7 +499,6 @@ export class MailAliasDomain extends models.Model {
  * @param {object?} data
  * @return {{}}
  */
-/** Who the mock server answers for: patch `isManager` for a Documents manager. */
 export const documentsMockUser = { isManager: false };
 
 /**

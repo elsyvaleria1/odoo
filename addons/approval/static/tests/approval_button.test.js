@@ -128,7 +128,6 @@ test("the pager does not wait for the approvals of the record it opened", async 
     await contains(".o_pager_next").click();
     expect(".o_field_widget[name=name] input").toHaveValue("second");
     expect(".o_pager_next").toBeEnabled();
-    // the previous record's approvers are not shown on this one meanwhile
     expect(".o_approval_button_waiting").toHaveCount(0);
     pending.resolve();
     await animationFrame();
@@ -311,7 +310,6 @@ test("a kanban card's action button is checked before it runs", async () => {
                 </templates>
             </kanban>`,
     });
-    // a kanban card's action button is debounced
     await contains(".o_kanban_record:eq(1) button[name='42'] span:first").click();
     await runAllTimers();
     expect.verifySteps(["check 2 42"]);

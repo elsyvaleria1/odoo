@@ -86,7 +86,7 @@ test("Reinsert a pivot with a contextual search domain", async function () {
     const serverData = getBasicServerData();
     const uid = user.userId;
     serverData.models.partner.records = [{ id: 1, probability: 0.5, foo: uid }];
-    serverData.views["partner,false,search"] = /* xml */ `
+    serverData.views["partner,false,search"] = `
                 <search>
                     <filter string="Filter" name="filter" domain="[('foo', '=', uid)]"/>
                 </search>
@@ -148,7 +148,7 @@ test("Reinsert a pivot with new data", async function () {
     const { model, env } = await createSpreadsheetWithPivot();
     MockServer.env["partner"].create({
         active: true,
-        foo: 25, // <- New value inserted
+        foo: 25,
         bar: false,
         date: "2016-12-11",
         product_id: 41,
@@ -173,7 +173,6 @@ test("Reinsert a pivot with an updated record", async function () {
     const partnerRecords = MockServer.env["partner"];
     partnerRecords[0].foo = 99;
     partnerRecords[1].foo = 99;
-    // updated measures
     partnerRecords[0].probability = 88;
     partnerRecords[1].probability = 77;
     selectCell(model, "A10");
@@ -236,7 +235,7 @@ test("Reinsert an Odoo pivot which has no formula on the sheet (meaning the data
 
 test("Keep applying filter when pivot is re-inserted", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                     <pivot>
                         <field name="bar" type="col"/>
                         <field name="product_id" type="row"/>
@@ -312,7 +311,7 @@ test("reinsert pivot with anchor on merge but not top left", async function () {
         target: [{ top: 0, bottom: 1, left: 0, right: 0 }],
         force: true,
     });
-    selectCell(model, "A2"); // A1 and A2 are merged; select A2
+    selectCell(model, "A2");
     const { col, row } = toCartesian("A2");
     expect(model.getters.isInMerge({ sheetId, col, row })).toBe(true);
     await doMenuAction(topbarMenuRegistry, reinsertDynamicPivotPath, env);
@@ -366,14 +365,13 @@ test("Verify presence of pivots in top menu bar in a spreadsheet with a pivot", 
     });
 
     const root = topbarMenuRegistry.getMenuItems().find((item) => item.id === "data");
-    const childrenNames = root.children(env).map((name) => name.name(env).toString()); // toString to force translation
+    const childrenNames = root.children(env).map((name) => name.name(env).toString());
     expect(childrenNames.find((name) => name === "(#1) Partners by Foo")).not.toBe(
         undefined,
     );
     expect(childrenNames.find((name) => name === "(#2) Partner Pivot")).not.toBe(
         undefined,
     );
-    // bottom children
     expect(childrenNames.find((name) => name === "Refresh all data")).not.toBe(
         undefined,
     );
@@ -441,7 +439,7 @@ test("Can rebuild the Odoo domain of records based on the according merged pivot
     model.dispatch("ADD_MERGE", {
         sheetId,
         target: [toZone("C3:D3")],
-        force: true, // there are data in D3
+        force: true,
     });
     selectCell(model, "D3");
     await animationFrame();
@@ -480,7 +478,7 @@ test("See records is not visible if the formula is in error", async function () 
         model,
         "B4",
         getCellFormula(model, "B4").replace(`PIVOT.VALUE(1`, `PIVOT.VALUE("5)`),
-    ); //Invalid id
+    );
     expect(getEvaluatedCell(model, "B4").message).not.toBe(undefined);
     expect(root.isVisible(env)).toBe(false);
 });
@@ -517,7 +515,7 @@ test("Context is passed correctly to the action service", async function () {
     const serverData = getBasicServerData();
     const actionXmlId = "spreadsheet.partner_action";
 
-    serverData.views["partner,false,search"] = /* xml */ `
+    serverData.views["partner,false,search"] = `
         <search>
             <filter string="Filter" name="filter" context="{'search_default_filter': 1}" />
         </search>

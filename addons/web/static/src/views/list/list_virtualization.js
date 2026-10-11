@@ -330,8 +330,6 @@ export function useListVirtualization(
         measured: proxy({ rowHeight: 0, groupRowHeight: 0 }),
         threshold,
     });
-    // before the grid's hooks: its layout effect attaches the scroll listener
-    // to the scroller, which must be resolved by then
     onMounted(() => virt.resolveScroller());
     onPatched(() => virt.resolveScroller());
     virt.setVirtualGrid(

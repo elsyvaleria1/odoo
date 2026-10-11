@@ -64,12 +64,6 @@ registry.category("web_tour.tours").add("calendar_appointments_hour_tour", {
             content: "Change the calendar view to Month",
             run: "click",
         },
-        // A step clicking `.fc-col-header-cell.fc-day.fc-day-mon` used to sit
-        // here. It asserted nothing this test is named for, it depended on the
-        // day of the week the suite happens to run on -- the event is created
-        // for *today* -- and clicking a day header in month view switches the
-        // scale away from the month this test is checking. The two steps below
-        // are the assertion: the month view shows the event's start hour.
         {
             trigger: '.fc-time:contains("10:00")',
             content: "Check the time is properly displayed",
@@ -84,8 +78,6 @@ registry.category("web_tour.tours").add("calendar_appointments_hour_tour", {
 
 const clickOnTheEvent = {
     content: "Click on the event (focus + waiting)",
-    // Not `a .fc-event-main`: FullCalendar only renders the event as an <a>
-    // when it carries a url, and these do not.
     trigger: '.fc-event-main:contains("Test Event")',
     async run(actions) {
         await actions.click();

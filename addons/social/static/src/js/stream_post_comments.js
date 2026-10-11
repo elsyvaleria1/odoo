@@ -29,9 +29,6 @@ export class StreamPostComments extends SocialPostFormatterMixin(Component) {
             displayModal: true,
             showLoadMoreComments: false,
             isEditMode: false,
-            // because this component is inside a modal, it's not possible to
-            // change his props from his parent with a event handler without
-            // re-creating the modal, so we duplicate the message into the state
             message: this._formatStreamPostForEdition(
                 this.originalPost.message.raw_value,
             ),
@@ -43,10 +40,6 @@ export class StreamPostComments extends SocialPostFormatterMixin(Component) {
             closeCommentsModal: this.closeCommentsModal.bind(this),
         });
     }
-
-    //----------
-    // Handlers
-    //----------
 
     onClickMoreImages(index, images) {
         this.dialog.add(ImagesCarouselDialog, {
@@ -60,9 +53,7 @@ export class StreamPostComments extends SocialPostFormatterMixin(Component) {
         this.state.displayModal = false;
     }
 
-    loadMoreComments() {
-        // to be defined by social-media sub-implementations
-    }
+    loadMoreComments() {}
 
     onAddComment(newComment) {
         this.comments.unshift(newComment);

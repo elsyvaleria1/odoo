@@ -5,16 +5,12 @@ import { Asserts } from "./asserts.js";
 registry.category("web_tour.tours").add("account_reports", {
     url: "/odoo/action-account.action_account_report_bs",
     steps: () => [
-        //--------------------------------------------------------------------------------------------------------------
-        // Foldable
-        //--------------------------------------------------------------------------------------------------------------
         {
             content: "Initial foldable",
             trigger: "table",
             run: async () => {
                 Asserts.DOMContainsNumber("tbody > tr:not(.d-none):not(.empty)", 25);
 
-                // Since the total line is not displayed (folded), the amount should be on the line
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(4) td:nth-child(2)")
                         .textContent,
@@ -33,7 +29,6 @@ registry.category("web_tour.tours").add("account_reports", {
             run: () => {
                 Asserts.DOMContainsNumber("tbody > tr:not(.d-none):not(.empty)", 27);
 
-                // Since the total line is displayed (unfolded), the amount should not be on the line
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(4) td:nth-child(2)")
                         .textContent,
@@ -53,9 +48,6 @@ registry.category("web_tour.tours").add("account_reports", {
                 Asserts.DOMContainsNumber("tbody > tr:not(.d-none):not(.empty)", 25);
             },
         },
-        //--------------------------------------------------------------------------------------------------------------
-        // Sortable
-        //--------------------------------------------------------------------------------------------------------------
         {
             content: "Unfold first line",
             trigger: "tr:nth-child(4) td:first()",
@@ -79,7 +71,6 @@ registry.category("web_tour.tours").add("account_reports", {
             content: "Initial sortable",
             trigger: "tr:nth-child(11) td:nth-child(2):text(100.00)",
             run: () => {
-                // Bank and Cash Accounts
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(5) td:nth-child(2)")
                         .textContent,
@@ -91,7 +82,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "75.00",
                 );
 
-                // Receivables
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(8) td:nth-child(2)")
                         .textContent,
@@ -103,7 +93,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "25.00",
                 );
 
-                // Current Assets
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(11) td:nth-child(2)")
                         .textContent,
@@ -143,7 +132,6 @@ registry.category("web_tour.tours").add("account_reports", {
             content: "Sortable (asc)",
             trigger: "tr:nth-child(11) td:nth-child(2):contains('50.00')",
             run: () => {
-                // Bank and Cash Accounts
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(5) td:nth-child(2)")
                         .textContent,
@@ -155,7 +143,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "75.00",
                 );
 
-                // Receivables
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(8) td:nth-child(2)")
                         .textContent,
@@ -167,7 +154,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "25.00",
                 );
 
-                // Current Assets
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(11) td:nth-child(2)")
                         .textContent,
@@ -194,7 +180,6 @@ registry.category("web_tour.tours").add("account_reports", {
             content: "Sortable (desc)",
             trigger: "tr:nth-child(11) td:nth-child(2):contains('100.00')",
             run: () => {
-                // Bank and Cash Accounts
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(5) td:nth-child(2)")
                         .textContent,
@@ -206,7 +191,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "75.00",
                 );
 
-                // Receivables
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(8) td:nth-child(2)")
                         .textContent,
@@ -218,7 +202,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "25.00",
                 );
 
-                // Current Assets
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(11) td:nth-child(2)")
                         .textContent,
@@ -245,7 +228,6 @@ registry.category("web_tour.tours").add("account_reports", {
             content: "Sortable (reset)",
             trigger: "tr:nth-child(5) td:nth-child(2):contains('75.00')",
             run: () => {
-                // Bank and Cash Accounts
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(5) td:nth-child(2)")
                         .textContent,
@@ -257,7 +239,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "75.00",
                 );
 
-                // Receivables
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(8) td:nth-child(2)")
                         .textContent,
@@ -269,7 +250,6 @@ registry.category("web_tour.tours").add("account_reports", {
                     "25.00",
                 );
 
-                // Current Assets
                 Asserts.isEqual(
                     document.querySelector("tr:nth-child(11) td:nth-child(2)")
                         .textContent,

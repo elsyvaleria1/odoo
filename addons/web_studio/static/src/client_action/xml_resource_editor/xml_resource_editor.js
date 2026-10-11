@@ -65,8 +65,6 @@ class ViewSelector extends SelectMenu {
         return composedChoices;
     }
 
-    // Parents of displayed options must also be visible when doing a search
-    // Based on the filtered choices, they must be added from the list of choices
     filterOptions(searchString) {
         super.filterOptions(searchString);
         const childChoices = this.filtered.choices.filter(

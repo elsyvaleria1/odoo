@@ -73,8 +73,6 @@ test("profiling qweb view field renders delay and query", async function () {
         </form>`,
     });
 
-    // ace renders again from its own frame loop while the timers run, and
-    // each render restarts the badges' debounce
     await runAllTimers();
     await runAllTimers();
 

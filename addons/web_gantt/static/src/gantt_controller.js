@@ -57,8 +57,6 @@ export class GanttController extends Component {
 
         const rootRef = (this.rootRef = elementRef());
 
-        // `useState` so the controller template's model reads subscribe it; it
-        // previously relied on the model's blanket deep render.
         this.model = proxy(
             useModelWithSampleData(this.props.Model, this.props.modelParams),
         );
@@ -158,10 +156,6 @@ export class GanttController extends Component {
 
         let removeRecord;
         if (canDelete && props.resId) {
-            // FormViewDialog closes itself once this resolves, so declining
-            // deliberately never settles: that is how "leave the form open" is
-            // expressed. Rejecting instead would surface as an unhandled
-            // rejection, and resolving would close the form the user kept.
             removeRecord = () =>
                 new Promise((resolve) => {
                     this.dialogService.add(ConfirmationDialog, {
@@ -217,15 +211,6 @@ export class GanttController extends Component {
         );
     }
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
-    /**
-     * "New" with nothing selected: create at whatever the view is focused on.
-     * Overridden by five addons, so it is an extension point rather than an
-     * internal, and it is named without the `_` that said otherwise.
-     */
     createAtFocusDate() {
         this.create(this.getCreateContext());
     }
@@ -236,7 +221,6 @@ export class GanttController extends Component {
         }
     }
 
-    /** The context a record created at the focus date should be created with. */
     getCreateContext() {
         const { scale } = this.model.metaData;
         const focusDate = this.getCurrentFocusDate();

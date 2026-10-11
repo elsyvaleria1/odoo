@@ -65,7 +65,6 @@ class Partner extends models.Model {
 
 defineModels([Picking, Partner]);
 
-/** Answer the geocoding provider so no test reaches the network. */
 function blockProviders() {
     const original = browser.fetch;
     patchWithCleanup(browser, {
@@ -88,10 +87,6 @@ async function mountStockMap() {
 describe.tags("desktop");
 describe("stock_map_view", () => {
     test("the popup of a shared address lists every transfer exactly once", async () => {
-        // The three transfers share one delivery address, so they cluster onto
-        // one marker. The cluster used to keep only its *last* record and push
-        // that same record into `relatedRecords`, so this popup showed the last
-        // transfer twice and the first one not at all.
         await mountStockMap();
 
         expect(".o-map-renderer--marker").toHaveCount(1);
@@ -112,8 +107,6 @@ describe("stock_map_view", () => {
         const view = await mountStockMap();
         const renderer = findComponent(view, (c) => c instanceof StockMapRenderer);
 
-        // Regression: this getter called a helper the base class did not
-        // declare, so any stock map with a warehouse threw a TypeError here.
         const params = renderer.googleMapParams;
 
         expect(params.origin).toBe("Rue de l'Entrepot 9");
@@ -126,10 +119,6 @@ describe("stock_map_view", () => {
     });
 
     test('an empty stock map under sample="1" degrades instead of throwing', async () => {
-        // MapModel.hasData() makes sample mode reachable for this view too, and
-        // SampleServer answers a nested many2one specification with
-        // `{id, display_name}` only -- so the sample warehouse arrives without
-        // the `contact_address_complete` this renderer routes from.
         Picking._records = [];
         Partner._records = [];
         blockProviders();

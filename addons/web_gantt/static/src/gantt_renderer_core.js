@@ -186,7 +186,7 @@ export class GanttRendererCore extends Component {
         this.columns = [];
         /** @type {Pill[]} */
         /** @type {Record<PillId, Pill>} */
-        this.pills = {}; // mapping to retrieve pills from pill ids
+        this.pills = {};
         /** @type {Row[]} */
         this.rows = [];
         /** @type {SubColumn[]} */
@@ -248,7 +248,7 @@ export class GanttRendererCore extends Component {
 
     get controlsProps() {
         return {
-            displayExpandCollapseButtons: this.rows[0]?.isGroup, // all rows on same level have same type
+            displayExpandCollapseButtons: this.rows[0]?.isGroup,
             model: this.model,
             ...this.controlsCallbacks,
         };
@@ -310,7 +310,7 @@ export class GanttRendererCore extends Component {
      */
     addTo(pill, group) {
         group.pills.push(pill);
-        group.aggregateValue++; // pill count
+        group.aggregateValue++;
         return true;
     }
 
@@ -359,7 +359,6 @@ export class GanttRendererCore extends Component {
                 }
                 addedInPreviousCol = added;
             }
-            // here col = this.getLastGridCol(pill)
             if (addedInPreviousCol && col < lastCol) {
                 const group = getGroup(col);
                 group.break = true;
@@ -474,9 +473,6 @@ export class GanttRendererCore extends Component {
         }
     }
 
-    /**
-     * give bounds only
-     */
     getVisibleCols() {
         const [firstIndex, lastIndex] = this.virtualGrid.columnsIndexes;
         const startIndex = this.getIndexInTotalGrid(firstIndex);
@@ -487,9 +483,6 @@ export class GanttRendererCore extends Component {
         return [firstVisibleCol, lastVisibleCol];
     }
 
-    /**
-     * give bounds only
-     */
     getVisibleRows() {
         const [firstIndex, lastIndex] = this.virtualGrid.rowsIndexes;
         const firstVisibleRow = firstIndex + 1;
@@ -523,8 +516,6 @@ export class GanttRendererCore extends Component {
                 row.unavailabilities?.length &&
                 row.cellColorsFor !== this.subColumnsKey
             ) {
-                // The colours depend on the visible sub-columns and the row's
-                // unavailabilities only; a vertical scroll changes neither.
                 row.cellColors = this.getRowCellColors(row);
                 row.cellColorsFor = this.subColumnsKey;
             }
@@ -578,8 +569,6 @@ export class GanttRendererCore extends Component {
 
     computeSomeWidths() {
         const { cellPart, minimalColumnWidth } = this.model.metaData.scale;
-        // measured from onWillRender: a tracked read of the ref would render
-        // again as soon as the content binds it
         this.contentRefWidth =
             untrack(() => this.props.contentRef.el)?.clientWidth ??
             document.body.clientWidth;
@@ -605,9 +594,6 @@ export class GanttRendererCore extends Component {
 
     computeDerivedParams() {
         const endDerive = log.perf("computeDerivedParams");
-        // Stamp what this build was derived from. `onWillRender` compares the
-        // model's epoch against it, so the derived params rebuild when the model
-        // changed and not merely when the component re-rendered.
         this._builtFromEpoch = this.model.updateEpoch;
         const { rows: modelRows } = this.model.data;
 
@@ -638,7 +624,7 @@ export class GanttRendererCore extends Component {
         this.gridRows = [];
         this.nextPillId = 1;
 
-        this.pills = {}; // mapping to retrieve pills from pill ids
+        this.pills = {};
         this.rows = [];
         this.rowPills = {};
         this.rowByIds = {};
@@ -659,8 +645,6 @@ export class GanttRendererCore extends Component {
             this.setupInitialReadonly();
         }
 
-        // The rows are built; the connector and multi-create indexes are
-        // derived from them rather than written as each row goes by.
         this.indexPillsForMultiCreate();
         if (this.shouldRenderConnectors()) {
             this.indexPillsForConnectors();
@@ -757,8 +741,6 @@ export class GanttRendererCore extends Component {
      * @param {Group} previousGroup
      */
     getAggregateValue(group, previousGroup) {
-        // both groups have the same pills by construction
-        // here the aggregateValue is the pill count
         return group.aggregateValue;
     }
 
@@ -973,7 +955,6 @@ export class GanttRendererCore extends Component {
             grid: group.grid,
         };
 
-        // Enrich the aggregates with consolidation data
         if (consolidate && field) {
             newPill.consolidationValue = 0;
             for (const pill of group.pills) {
@@ -1188,11 +1169,6 @@ export class GanttRendererCore extends Component {
     }
 
     onWillRender() {
-        // A `model.notify()` used to reach here as a FORCED subtree render, which
-        // fires `onWillUpdateProps` on children even when their props are
-        // identical -- that is what re-ran `computeDerivedParams`. Now that the
-        // render is reactive rather than forced, the rebuild is driven by the
-        // model's own epoch, which is what `Model.updateEpoch` exists for.
         if (this.model.updateEpoch !== this._builtFromEpoch) {
             this.computeDerivedParams();
         }
@@ -1315,7 +1291,6 @@ export class GanttRendererCore extends Component {
             this.isTouchDevice &&
             (!gridRowTypes.t1 || gridRowTypes.t1 === 1)
         ) {
-            // In mobile: rows span over 2 rows to alllow progressbars to properly display
             gridRowTypes.t1 = (gridRowTypes.t1 || 0) + 1;
         }
         return { rowPills, gridRowTypes, progressBar };
@@ -1326,13 +1301,13 @@ export class GanttRendererCore extends Component {
             rowPill.id = `__pill__${this.nextPillId++}`;
             const pillFirstRow = this.currentGridRow + rowPill.level;
             rowPill.grid = {
-                ...rowPill.grid, // rowPill is a shallow copy of a prePill (possibly copied several times)
+                ...rowPill.grid,
                 row: [pillFirstRow, pillFirstRow + 1],
             };
             rowPill.rowId = rowId;
             this.pills[rowPill.id] = rowPill;
         }
-        this.rowPills[rowId] = rowPills; // all row pills
+        this.rowPills[rowId] = rowPills;
     }
 
     rowThumbnailUrl(groupedByField, resId) {
@@ -1428,23 +1403,15 @@ export class GanttRendererCore extends Component {
         );
     }
 
-    /**
-     * For all rows to render, specify whether the row is grouped by a readonly
-     * field or is a child of a row grouped by a readonly field - by setting its'
-     * 'readonly' and 'readonlyChild' properties.
-     */
     setupInitialReadonly() {
         let foundReadonlyField = false;
         const readonlyGroups = [];
         const readonlyChildren = [];
         for (const groupedByField of this.props.model.metaData.groupedBy) {
-            // Field itself is readonly
             if (this.model.metaData.fields[groupedByField].readonly) {
                 foundReadonlyField = true;
                 readonlyGroups.push(groupedByField);
-            }
-            // There is a readonly parent group
-            else if (foundReadonlyField) {
+            } else if (foundReadonlyField) {
                 readonlyChildren.push(groupedByField);
             }
         }

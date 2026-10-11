@@ -8,7 +8,7 @@ import { mountWithCleanup, patchWithCleanup } from "@web/../tests/web_test_helpe
 
 describe.current.tags("desktop");
 
-defineMailModels(); // meh
+defineMailModels();
 test("ImgGroup's inner Img components should not be blocked before src load", async () => {
     const defs = {
         img1: new Deferred(),
@@ -16,8 +16,6 @@ test("ImgGroup's inner Img components should not be blocked before src load", as
         img3: new Deferred(),
     };
     patchWithCleanup(Img.prototype, {
-        // the test's deferred alone decides when an image has loaded: the
-        // browser's error for an empty src fires after a variable delay
         loadImage() {
             return defs[this.props.class];
         },

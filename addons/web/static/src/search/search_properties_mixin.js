@@ -219,7 +219,6 @@ export const SearchPropertiesMixin = (Base) =>
                             this.query.some(
                                 (item) => item.searchItemId === existingSearchItem.id,
                             );
-                        // Always visit the query, even when its title already changed.
                         activeLabelChanged =
                             refreshChoiceLabels(
                                 this.query,

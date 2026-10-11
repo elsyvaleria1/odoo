@@ -11,8 +11,6 @@ describe.current.tags("desktop");
 
 test("Size should not be displayed on CORS protected images", async () => {
     setupCORSProtectedImg();
-    // The next line is needed in order to correctly run the test without the
-    // fix.
     onRpc("/web/image/__odoo__unknown__src__/", () => dataURItoBlob(dummyBase64Img));
     const { waitSidebarUpdated } = await setupHTMLBuilder(
         `<img src="${dummyCORSSrc}">`,

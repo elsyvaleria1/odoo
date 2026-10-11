@@ -101,9 +101,6 @@ export class SignTemplateBody extends Component {
 
         onWillStart(async () => {
             if (!this.props.signTemplate.active) {
-                /* When uploading a PDF for signing, we check how many times a PDF with that
-                name was used and if it is bigger than two, then suggest the user saving it
-                as template with in a notification with a button. */
                 const documentUsedTimes = await this.orm.searchCount("sign.request", [
                     ["reference", "ilike", this.props.signTemplate.display_name],
                 ]);
@@ -135,7 +132,6 @@ export class SignTemplateBody extends Component {
         });
     }
 
-    // Dropdowns rely on document clicks; iframe clicks don't propagate, so close all dropdowns manually
     attachDropdownCloseOnIframeClick(iframeDoc) {
         if (!iframeDoc) {
             return;
@@ -211,10 +207,6 @@ export class SignTemplateBody extends Component {
         this.props.setIframe(iframe);
     }
 
-    /**
-     * Prevents opening files in the pdf js viewer when dropping files/images to the viewerContainer
-     * Ref: https://stackoverflow.com/a/68939139
-     */
     preventDroppingImagesOnViewerContainer() {
         const viewerContainer =
             this.PDFIframe.el.contentDocument.querySelector("#viewerContainer");
@@ -244,8 +236,6 @@ export class SignTemplateBody extends Component {
         );
 
         if (!newId2ItemIdMap) {
-            // updatedSignItems returns {} if there are no changes to be saved.
-            // In this case, we don't need to show the dialog.
             if (updatedSignItems && Object.keys(updatedSignItems).length > 0) {
                 this.showBlockedTemplateDialog();
             }

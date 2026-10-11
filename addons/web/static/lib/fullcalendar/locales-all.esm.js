@@ -1,15 +1,7 @@
-// AgroMarin: native-ESM locale bundle. Imports the live `Shared` registry
-// from the FullCalendar module and pushes the bundled locales into it,
-// replacing the old classic-script reliance on `globalThis.FullCalendar`.
 import { Shared } from "./fullcalendar.esm.js";
 
-/*!
-FullCalendar (Vanilla JS) v7.1.0
-Docs & License: https://fullcalendar.io
-(c) 2026 Adam Shaw
-*/
 (function ({ F: globalLocales }) {
-  
+
 
   var __zh_tw$l78 = {
       code: 'zh-tw',
@@ -29,9 +21,8 @@ Docs & License: https://fullcalendar.io
   var __zh_cn$l77 = {
       code: 'zh-cn',
       week: {
-          // GB/T 7408-1994《数据元和交换格式·信息交换·日期和时间表示法》与ISO 8601:1988等效
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: '上月',
       nextText: '下月',
@@ -51,8 +42,8 @@ Docs & License: https://fullcalendar.io
   var __vi$l76 = {
       code: 'vi',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Trước',
       nextText: 'Tiếp',
@@ -73,8 +64,8 @@ Docs & License: https://fullcalendar.io
   var __uz$l75 = {
       code: 'uz',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Oldingi',
       nextText: 'Keyingi',
@@ -94,8 +85,8 @@ Docs & License: https://fullcalendar.io
   var __uz_cy$l74 = {
       code: 'uz-cy',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Олин',
       nextText: 'Кейин',
@@ -114,8 +105,8 @@ Docs & License: https://fullcalendar.io
   var __uk$l73 = {
       code: 'uk',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Попередній',
       nextText: 'далі',
@@ -149,8 +140,8 @@ Docs & License: https://fullcalendar.io
   var __tr$l71 = {
       code: 'tr',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'geri',
       nextText: 'ileri',
@@ -169,8 +160,8 @@ Docs & License: https://fullcalendar.io
   var __th$l70 = {
       code: 'th',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'ก่อนหน้า',
       nextText: 'ถัดไป',
@@ -190,8 +181,8 @@ Docs & License: https://fullcalendar.io
   var __ta_in$l69 = {
       code: 'ta-in',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'முந்தைய',
       nextText: 'அடுத்தது',
@@ -211,8 +202,8 @@ Docs & License: https://fullcalendar.io
   var __sv$l68 = {
       code: 'sv',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Förra',
       nextText: 'Nästa',
@@ -247,8 +238,8 @@ Docs & License: https://fullcalendar.io
   var __sr$l67 = {
       code: 'sr',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Prethodna',
       nextText: 'Sledeći',
@@ -269,8 +260,8 @@ Docs & License: https://fullcalendar.io
   var __sr_cyrl$l66 = {
       code: 'sr-cyrl',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Претходна',
       nextText: 'следећи',
@@ -291,8 +282,8 @@ Docs & License: https://fullcalendar.io
   var __sq$l65 = {
       code: 'sq',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'mbrapa',
       nextText: 'Përpara',
@@ -328,8 +319,8 @@ Docs & License: https://fullcalendar.io
   var __sl$l63 = {
       code: 'sl',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Prejšnji',
       nextText: 'Naslednji',
@@ -347,8 +338,8 @@ Docs & License: https://fullcalendar.io
   var __sk$l62 = {
       code: 'sk',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Predchádzajúci',
       nextText: 'Nasledujúci',
@@ -369,8 +360,8 @@ Docs & License: https://fullcalendar.io
   var __si_lk$l61 = {
       code: 'si-lk',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'පෙර',
       nextText: 'පසු',
@@ -389,8 +380,8 @@ Docs & License: https://fullcalendar.io
   var __ru$l60 = {
       code: 'ru',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Пред',
       nextText: 'След',
@@ -411,8 +402,8 @@ Docs & License: https://fullcalendar.io
   var __ro$l59 = {
       code: 'ro',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'precedentă',
       nextText: 'următoare',
@@ -433,8 +424,8 @@ Docs & License: https://fullcalendar.io
   var __pt$l58 = {
       code: 'pt',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Anterior',
       nextText: 'Seguinte',
@@ -488,8 +479,8 @@ Docs & License: https://fullcalendar.io
   var __pl$l56 = {
       code: 'pl',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Poprzedni',
       nextText: 'Następny',
@@ -508,8 +499,8 @@ Docs & License: https://fullcalendar.io
   var __nn$l55 = {
       code: 'nn',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Førre',
       nextText: 'Neste',
@@ -527,8 +518,8 @@ Docs & License: https://fullcalendar.io
   var __nl$l54 = {
       code: 'nl',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Vorige',
       nextText: 'Volgende',
@@ -544,10 +535,10 @@ Docs & License: https://fullcalendar.io
   };
 
   var __ne$l53 = {
-      code: 'ne', // code for nepal
+      code: 'ne',
       week: {
-          dow: 7, // Sunday is the first day of the week.
-          doy: 1, // The week that contains Jan 1st is the first week of the year.
+          dow: 7,
+          doy: 1,
       },
       prevText: 'अघिल्लो',
       nextText: 'अर्को',
@@ -565,8 +556,8 @@ Docs & License: https://fullcalendar.io
   var __nb$l52 = {
       code: 'nb',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Forrige',
       nextText: 'Neste',
@@ -592,8 +583,8 @@ Docs & License: https://fullcalendar.io
   var __ms$l51 = {
       code: 'ms',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Sebelum',
       nextText: 'Selepas',
@@ -632,8 +623,8 @@ Docs & License: https://fullcalendar.io
   var __lv$l49 = {
       code: 'lv',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Iepr.',
       nextText: 'Nāk.',
@@ -654,8 +645,8 @@ Docs & License: https://fullcalendar.io
   var __lt$l48 = {
       code: 'lt',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Atgal',
       nextText: 'Pirmyn',
@@ -674,8 +665,8 @@ Docs & License: https://fullcalendar.io
   var __lb$l47 = {
       code: 'lb',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Zréck',
       nextText: 'Weider',
@@ -694,8 +685,8 @@ Docs & License: https://fullcalendar.io
   var __ku$l46 = {
       code: 'ku',
       week: {
-          dow: 6, // Saturday is the first day of the week.
-          doy: 12, // The week that contains Jan 1st is the first week of the year.
+          dow: 6,
+          doy: 12,
       },
       direction: 'rtl',
       prevText: 'پێشتر',
@@ -729,8 +720,8 @@ Docs & License: https://fullcalendar.io
   var __km$l44 = {
       code: 'km',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'មុន',
       nextText: 'បន្ទាប់',
@@ -748,8 +739,8 @@ Docs & License: https://fullcalendar.io
   var __kk$l43 = {
       code: 'kk',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Алдыңғы',
       nextText: 'Келесі',
@@ -808,8 +799,8 @@ Docs & License: https://fullcalendar.io
   var __it$l40 = {
       code: 'it',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Prec',
       nextText: 'Succ',
@@ -830,8 +821,8 @@ Docs & License: https://fullcalendar.io
   var __is$l39 = {
       code: 'is',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Fyrri',
       nextText: 'Næsti',
@@ -849,8 +840,8 @@ Docs & License: https://fullcalendar.io
   var __id$l38 = {
       code: 'id',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'mundur',
       nextText: 'maju',
@@ -869,8 +860,8 @@ Docs & License: https://fullcalendar.io
   var __hy_am$l37 = {
       code: 'hy-am',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Նախորդ',
       nextText: 'Հաջորդ',
@@ -891,8 +882,8 @@ Docs & License: https://fullcalendar.io
   var __hu$l36 = {
       code: 'hu',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Vissza',
       nextText: 'Előre',
@@ -910,8 +901,8 @@ Docs & License: https://fullcalendar.io
   var __hr$l35 = {
       code: 'hr',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Prijašnji',
       nextText: 'Sljedeći',
@@ -932,8 +923,8 @@ Docs & License: https://fullcalendar.io
   var __hi$l34 = {
       code: 'hi',
       week: {
-          dow: 0, // Sunday is the first day of the week.
-          doy: 6, // The week that contains Jan 1st is the first week of the year.
+          dow: 0,
+          doy: 6,
       },
       prevText: 'पिछला',
       nextText: 'अगला',
@@ -970,8 +961,8 @@ Docs & License: https://fullcalendar.io
   var __gl$l32 = {
       code: 'gl',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Ant',
       nextText: 'Seg',
@@ -1005,8 +996,8 @@ Docs & License: https://fullcalendar.io
   var __fr$l31 = {
       code: 'fr',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Précédent',
       nextText: 'Suivant',
@@ -1025,8 +1016,8 @@ Docs & License: https://fullcalendar.io
   var __fr_ch$l30 = {
       code: 'fr-ch',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Précédent',
       nextText: 'Suivant',
@@ -1061,8 +1052,8 @@ Docs & License: https://fullcalendar.io
   var __fi$l28 = {
       code: 'fi',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Edellinen',
       nextText: 'Seuraava',
@@ -1081,8 +1072,8 @@ Docs & License: https://fullcalendar.io
   var __fa$l27 = {
       code: 'fa',
       week: {
-          dow: 6, // Saturday is the first day of the week.
-          doy: 12, // The week that contains Jan 1st is the first week of the year.
+          dow: 6,
+          doy: 12,
       },
       direction: 'rtl',
       prevText: 'قبلی',
@@ -1104,8 +1095,8 @@ Docs & License: https://fullcalendar.io
   var __eu$l26 = {
       code: 'eu',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Aur',
       nextText: 'Hur',
@@ -1124,8 +1115,8 @@ Docs & License: https://fullcalendar.io
   var __et$l25 = {
       code: 'et',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Eelnev',
       nextText: 'Järgnev',
@@ -1146,8 +1137,8 @@ Docs & License: https://fullcalendar.io
   var __es$l24 = {
       code: 'es',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Ant',
       nextText: 'Sig',
@@ -1181,8 +1172,8 @@ Docs & License: https://fullcalendar.io
   var __es_us$l23 = {
       code: 'es',
       week: {
-          dow: 0, // Sunday is the first day of the week.
-          doy: 6, // The week that contains Jan 1st is the first week of the year.
+          dow: 0,
+          doy: 6,
       },
       prevText: 'Ant',
       nextText: 'Sig',
@@ -1210,8 +1201,8 @@ Docs & License: https://fullcalendar.io
   var __eo$l22 = {
       code: 'eo',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Antaŭa',
       nextText: 'Sekva',
@@ -1230,8 +1221,8 @@ Docs & License: https://fullcalendar.io
   var __en_nz$l21 = {
       code: 'en-nz',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       weekTextShort: 'W',
       todayHint: 'This $0',
@@ -1247,8 +1238,8 @@ Docs & License: https://fullcalendar.io
   var __en_gb$l20 = {
       code: 'en-gb',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       weekTextShort: 'W',
       todayHint: 'This $0',
@@ -1264,8 +1255,8 @@ Docs & License: https://fullcalendar.io
   var __en_au$l19 = {
       code: 'en-au',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       weekTextShort: 'W',
       todayHint: 'This $0',
@@ -1281,8 +1272,8 @@ Docs & License: https://fullcalendar.io
   var __el$l18 = {
       code: 'el',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4st is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Προηγούμενος',
       nextText: 'Επόμενος',
@@ -1305,8 +1296,8 @@ Docs & License: https://fullcalendar.io
   var __de$l17 = {
       code: 'de',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Zurück',
       nextText: 'Vor',
@@ -1329,14 +1320,12 @@ Docs & License: https://fullcalendar.io
           return `Nächste${__de$affix(unitText)} ${unitText}`;
       },
       todayHint(unitText) {
-          // → Heute, Diese Woche, Dieser Monat, Dieses Jahr
           if (unitText === 'Tag') {
               return 'Heute';
           }
           return `Diese${__de$affix(unitText)} ${unitText}`;
       },
       viewHint(unitText) {
-          // → Tagesansicht, Wochenansicht, Monatsansicht, Jahresansicht
           const glue = unitText === 'Woche' ? 'n' : unitText === 'Monat' ? 's' : 'es';
           return unitText + glue + 'ansicht';
       },
@@ -1357,8 +1346,8 @@ Docs & License: https://fullcalendar.io
   var __de_at$l16 = {
       code: 'de-at',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Zurück',
       nextText: 'Vor',
@@ -1381,14 +1370,12 @@ Docs & License: https://fullcalendar.io
           return `Nächste${__de_at$affix(unitText)} ${unitText}`;
       },
       todayHint(unitText) {
-          // → Heute, Diese Woche, Dieser Monat, Dieses Jahr
           if (unitText === 'Tag') {
               return 'Heute';
           }
           return `Diese${__de_at$affix(unitText)} ${unitText}`;
       },
       viewHint(unitText) {
-          // → Tagesansicht, Wochenansicht, Monatsansicht, Jahresansicht
           const glue = unitText === 'Woche' ? 'n' : unitText === 'Monat' ? 's' : 'es';
           return unitText + glue + 'ansicht';
       },
@@ -1405,8 +1392,8 @@ Docs & License: https://fullcalendar.io
   var __da$l15 = {
       code: 'da',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Forrige',
       nextText: 'Næste',
@@ -1424,8 +1411,8 @@ Docs & License: https://fullcalendar.io
   var __cy$l14 = {
       code: 'cy',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Blaenorol',
       nextText: 'Nesaf',
@@ -1443,8 +1430,8 @@ Docs & License: https://fullcalendar.io
   var __cs$l13 = {
       code: 'cs',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Dříve',
       nextText: 'Později',
@@ -1465,8 +1452,8 @@ Docs & License: https://fullcalendar.io
   var __ca$l12 = {
       code: 'ca',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Anterior',
       nextText: 'Següent',
@@ -1485,8 +1472,8 @@ Docs & License: https://fullcalendar.io
   var __bs$l11 = {
       code: 'bs',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 7, // The week that contains Jan 1st is the first week of the year.
+          dow: 1,
+          doy: 7,
       },
       prevText: 'Prošli',
       nextText: 'Sljedeći',
@@ -1507,8 +1494,8 @@ Docs & License: https://fullcalendar.io
   var __bn$l10 = {
       code: 'bn',
       week: {
-          dow: 0, // Sunday is the first day of the week.
-          doy: 6, // The week that contains Jan 1st is the first week of the year.
+          dow: 0,
+          doy: 6,
       },
       prevText: 'পেছনে',
       nextText: 'সামনে',
@@ -1528,8 +1515,8 @@ Docs & License: https://fullcalendar.io
   var __bg$l9 = {
       code: 'bg',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'назад',
       nextText: 'напред',
@@ -1549,8 +1536,8 @@ Docs & License: https://fullcalendar.io
   var __az$l8 = {
       code: 'az',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Əvvəl',
       nextText: 'Sonra',
@@ -1570,8 +1557,8 @@ Docs & License: https://fullcalendar.io
   var __ar$l7 = {
       code: 'ar',
       week: {
-          dow: 6, // Saturday is the first day of the week.
-          doy: 12, // The week that contains Jan 1st is the first week of the year.
+          dow: 6,
+          doy: 12,
       },
       direction: 'rtl',
       prevText: 'السابق',
@@ -1590,8 +1577,8 @@ Docs & License: https://fullcalendar.io
   var __ar_tn$l6 = {
       code: 'ar-tn',
       week: {
-          dow: 1, // Monday is the first day of the week.
-          doy: 4, // The week that contains Jan 4th is the first week of the year.
+          dow: 1,
+          doy: 4,
       },
       direction: 'rtl',
       prevText: 'السابق',
@@ -1610,8 +1597,8 @@ Docs & License: https://fullcalendar.io
   var __ar_sa$l5 = {
       code: 'ar-sa',
       week: {
-          dow: 0, // Sunday is the first day of the week.
-          doy: 6, // The week that contains Jan 1st is the first week of the year.
+          dow: 0,
+          doy: 6,
       },
       direction: 'rtl',
       prevText: 'السابق',
@@ -1630,8 +1617,8 @@ Docs & License: https://fullcalendar.io
   var __ar_ma$l4 = {
       code: 'ar-ma',
       week: {
-          dow: 6, // Saturday is the first day of the week.
-          doy: 12, // The week that contains Jan 1st is the first week of the year.
+          dow: 6,
+          doy: 12,
       },
       direction: 'rtl',
       prevText: 'السابق',
@@ -1650,8 +1637,8 @@ Docs & License: https://fullcalendar.io
   var __ar_ly$l3 = {
       code: 'ar-ly',
       week: {
-          dow: 6, // Saturday is the first day of the week.
-          doy: 12, // The week that contains Jan 1st is the first week of the year.
+          dow: 6,
+          doy: 12,
       },
       direction: 'rtl',
       prevText: 'السابق',
@@ -1670,8 +1657,8 @@ Docs & License: https://fullcalendar.io
   var __ar_kw$l2 = {
       code: 'ar-kw',
       week: {
-          dow: 0, // Sunday is the first day of the week.
-          doy: 12, // The week that contains Jan 1st is the first week of the year.
+          dow: 0,
+          doy: 12,
       },
       direction: 'rtl',
       prevText: 'السابق',
@@ -1690,8 +1677,8 @@ Docs & License: https://fullcalendar.io
   var __ar_dz$l1 = {
       code: 'ar-dz',
       week: {
-          dow: 0, // Sunday is the first day of the week.
-          doy: 4, // The week that contains Jan 1st is the first week of the year.
+          dow: 0,
+          doy: 4,
       },
       direction: 'rtl',
       prevText: 'السابق',
@@ -1710,8 +1697,8 @@ Docs & License: https://fullcalendar.io
   var __af$l0 = {
       code: 'af',
       week: {
-          dow: 1, // Maandag is die eerste dag van die week.
-          doy: 4, // Die week wat die 4de Januarie bevat is die eerste week van die jaar.
+          dow: 1,
+          doy: 4,
       },
       prevText: 'Vorige',
       nextText: 'Volgende',
@@ -1727,7 +1714,7 @@ Docs & License: https://fullcalendar.io
   };
 
   globalLocales.push(
-    __af$l0, __ar_dz$l1, __ar_kw$l2, __ar_ly$l3, __ar_ma$l4, __ar_sa$l5, __ar_tn$l6, __ar$l7, __az$l8, __bg$l9, __bn$l10, __bs$l11, __ca$l12, __cs$l13, __cy$l14, __da$l15, __de_at$l16, __de$l17, __el$l18, __en_au$l19, __en_gb$l20, __en_nz$l21, __eo$l22, __es_us$l23, __es$l24, __et$l25, __eu$l26, __fa$l27, __fi$l28, __fr_ca$l29, __fr_ch$l30, __fr$l31, __gl$l32, __he$l33, __hi$l34, __hr$l35, __hu$l36, __hy_am$l37, __id$l38, __is$l39, __it$l40, __ja$l41, __ka$l42, __kk$l43, __km$l44, __ko$l45, __ku$l46, __lb$l47, __lt$l48, __lv$l49, __mk$l50, __ms$l51, __nb$l52, __ne$l53, __nl$l54, __nn$l55, __pl$l56, __pt_br$l57, __pt$l58, __ro$l59, __ru$l60, __si_lk$l61, __sk$l62, __sl$l63, __sm$l64, __sq$l65, __sr_cyrl$l66, __sr$l67, __sv$l68, __ta_in$l69, __th$l70, __tr$l71, __ug$l72, __uk$l73, __uz_cy$l74, __uz$l75, __vi$l76, __zh_cn$l77, __zh_tw$l78, 
+    __af$l0, __ar_dz$l1, __ar_kw$l2, __ar_ly$l3, __ar_ma$l4, __ar_sa$l5, __ar_tn$l6, __ar$l7, __az$l8, __bg$l9, __bn$l10, __bs$l11, __ca$l12, __cs$l13, __cy$l14, __da$l15, __de_at$l16, __de$l17, __el$l18, __en_au$l19, __en_gb$l20, __en_nz$l21, __eo$l22, __es_us$l23, __es$l24, __et$l25, __eu$l26, __fa$l27, __fi$l28, __fr_ca$l29, __fr_ch$l30, __fr$l31, __gl$l32, __he$l33, __hi$l34, __hr$l35, __hu$l36, __hy_am$l37, __id$l38, __is$l39, __it$l40, __ja$l41, __ka$l42, __kk$l43, __km$l44, __ko$l45, __ku$l46, __lb$l47, __lt$l48, __lv$l49, __mk$l50, __ms$l51, __nb$l52, __ne$l53, __nl$l54, __nn$l55, __pl$l56, __pt_br$l57, __pt$l58, __ro$l59, __ru$l60, __si_lk$l61, __sk$l62, __sl$l63, __sm$l64, __sq$l65, __sr_cyrl$l66, __sr$l67, __sv$l68, __ta_in$l69, __th$l70, __tr$l71, __ug$l72, __uk$l73, __uz_cy$l74, __uz$l75, __vi$l76, __zh_cn$l77, __zh_tw$l78,
   );
 
 })(Shared);

@@ -35,7 +35,6 @@ export function claimReward(rewardName) {
     return [
         ...ProductScreen.clickControlButton("Reward"),
         {
-            // There should be description because a program always has a name.
             trigger: ".selection-item span:nth-child(2)",
         },
         {
@@ -99,7 +98,6 @@ export function eWalletButtonState({ highlighted, text = "eWallet", click = fals
     const steps = [...ProductScreen.clickControlButtonMore(), step];
     if (!click) {
         steps.push({
-            //Previous step is just a check. No need to keep modal openened
             trigger: ".modal header .btn-close",
             run: "click",
         });

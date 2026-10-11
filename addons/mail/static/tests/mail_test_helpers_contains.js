@@ -576,9 +576,6 @@ class Contains {
         this.done = false;
         this.def = new Deferred();
         this.scrollListeners = new Set();
-        // an event can fire inside a commit (a mounted hook focusing an input)
-        // while sibling components have not run their mounted hooks yet: act
-        // after the current task, as the mutation observer and a user do
         const runAfterEvent = (/** @type {string} */ whenMessage) => () =>
             queueMicrotask(() => {
                 if (this.done) {

@@ -27,7 +27,6 @@ export class SendcloudProductSelectionWidget extends Component {
 
     get activeProduct() {
         let product = this.products.find((pr) => pr.code === this.state.code);
-        // Product may be undefined if the user removed the carrier from his sendcloud account
         if (product === undefined) {
             product = this.products[0];
         }
@@ -50,11 +49,11 @@ export class SendcloudProductSelectionWidget extends Component {
     }
 
     get boolFunctionalities() {
-        return this.functionalities.bool_func; //array of string
+        return this.functionalities.bool_func;
     }
 
     get detailFunctionalities() {
-        return this.functionalities.detail_func; //dict of string
+        return this.functionalities.detail_func;
     }
 
     get maxHeight() {
@@ -113,8 +112,6 @@ export class SendcloudProductSelectionWidget extends Component {
                         func_cache.detail_func[name].join(", ");
                 }
             }
-            // When multiple parameters are available for the same functionality,
-            //  add the 'technical description' appart for later user-customization
             if (value.length > 1) {
                 func_cache.customizable[key] = value;
             }
@@ -135,11 +132,9 @@ export class SendcloudProductSelectionWidget extends Component {
             return 0;
         }
         if (!("max_" + name in this.activeProduct.local_cache)) {
-            // Ensure normalization in cm
-            // [method].properties.max_dimensions.unit is in {millimeter, centimeter, meter}
             const size = this.activeProduct.methods.map((x) => {
                 const val = parseInt(x.properties.max_dimensions[name]);
-                let factor = 1.0; // centimeter per default
+                let factor = 1.0;
                 const unit = x.properties.max_dimensions["unit"];
                 if (unit === "millimeter") {
                     factor = 0.1;

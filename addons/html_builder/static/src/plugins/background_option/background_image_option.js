@@ -13,8 +13,6 @@ export class BackgroundImageOption extends BaseOptionComponent {
     setup() {
         this.editingElement = useBuilderContext().getEditingElement();
         super.setup();
-        // done here because we have direct access to the editing element
-        // (which we don't have in the normalize of the current plugin)
         this.toggleBgImageClasses();
     }
     toggleBgImageClasses() {

@@ -17,7 +17,7 @@ const WEEK_HALF = {
 };
 
 function window(params) {
-    const globalStart = dt("2019-01-07"); // a Monday
+    const globalStart = dt("2019-01-07");
     return visibleColumns({
         firstIndex: 0,
         lastIndex: 13,
@@ -52,7 +52,6 @@ test("an unfolded window: one column per day, two sub-columns each, a group per 
         [15, 29],
     ]);
     expect(columnsGroups.map((g) => g.isFolded)).toEqual([false, false]);
-    // Every sub-column line plus the two group edges.
     expect(Object.keys(coarseGridCols)).toHaveLength(29);
 });
 
@@ -60,9 +59,6 @@ test("a partial window keeps each group header on its whole week", () => {
     patchWithCleanup(localization, { weekStart: 1 });
     const { columns, columnsGroups } = window({ firstIndex: 5, lastIndex: 9 });
     expect(columns.map((c) => c.index)).toEqual([5, 6, 7, 8, 9]);
-    // The headers are clipped to the range and to the weeks of the rendered
-    // columns, not to the columns themselves: the sticky header of a
-    // half-rendered week still spans the week.
     expect(columnsGroups.map((g) => g.grid.column)).toEqual([
         [1, 15],
         [15, 29],
@@ -71,8 +67,6 @@ test("a partial window keeps each group header on its whole week", () => {
 
 test("a folded run collapses into one column that spans it and keeps no sub-columns", () => {
     patchWithCleanup(localization, { weekStart: 1 });
-    // Days 5 and 6 (the weekend) folded: the folded grid has 13 columns, the
-    // sixth spanning two total columns.
     const foldedColumns = [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0];
     const spans = [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1];
     const toTotal = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13];

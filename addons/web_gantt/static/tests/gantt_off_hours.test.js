@@ -23,13 +23,10 @@ test("coveredSlots flags the slots an unavailability covers entirely", () => {
     ];
     expect(coveredSlots(slots, [])).toEqual([0, 0, 0, 0]);
     expect(coveredSlots(slots)).toEqual([0, 0, 0, 0]);
-    // 08:30 -> 10:00 covers only the 09-10 slot entirely.
     expect(coveredSlots(slots, [slot("08:30", "10:00")])).toEqual([0, 1, 0, 0]);
-    // Two disjoint ones; the last slot after the last unavailability is untouched.
     expect(coveredSlots(slots, [slot("08", "09"), slot("10:00", "11:30")])).toEqual([
         1, 0, 1, 0,
     ]);
-    // One that ends mid-slot still flags the slots before the cut.
     expect(coveredSlots(slots, [slot("08:00", "11:30")])).toEqual([1, 1, 1, 0]);
 });
 
@@ -49,7 +46,6 @@ test("computeFoldableColumns: only columns every row is off for, uncrossed by a 
         { isGroup: false, unavailabilities: [off(1, 3), off(5, 5)] },
         { isGroup: false, unavailabilities: [off(2, 3), off(5, 6)] },
     ];
-    // Day scale: a lone off column (5) is not foldable; the 2-3 run is.
     let result = computeFoldableColumns({
         columns,
         rows,
@@ -64,7 +60,6 @@ test("computeFoldableColumns: only columns every row is off for, uncrossed by a 
         stopIndex: 2,
     });
     expect(result.foldableColumnsMapping[2]).toBe(result.foldableColumnsMapping[1]);
-    // Week scale keeps the lone column.
     result = computeFoldableColumns({
         columns,
         rows,
@@ -78,7 +73,6 @@ test("computeFoldableColumns: only columns every row is off for, uncrossed by a 
         startIndex: 4,
         stopIndex: 4,
     });
-    // A pill over columns 2-3 (grid columns 3..7 at cellPart 2) keeps them open.
     result = computeFoldableColumns({
         columns,
         rows,
@@ -87,7 +81,6 @@ test("computeFoldableColumns: only columns every row is off for, uncrossed by a 
         unit: "week",
     });
     expect(result.foldableColumns).toEqual([0, 0, 0, 0, 1, 0]);
-    // A row with no unavailability folds nothing.
     result = computeFoldableColumns({
         columns,
         rows: [...rows, { isGroup: false }],
@@ -112,8 +105,6 @@ test("computeFoldedGrid collapses each folded run into one grid column and maps 
         [1, 1],
         [2, 3],
     ]);
-    // total sub-columns 1..8 -> folded grid sub-columns; the run's four
-    // land on the folded column's two, its middle line shared.
     expect([...folded.mappingTotalGridToFoldedGridSubColumns]).toEqual([
         [1, 1],
         [2, 2],
@@ -125,7 +116,6 @@ test("computeFoldedGrid collapses each folded run into one grid column and maps 
         [8, 6],
         [9, 7],
     ]);
-    // The user's own fold state ANDs with what is foldable; all-open clears.
     expect(
         computeFoldedGrid({
             foldableColumns: [0, 1, 1, 0],

@@ -11,7 +11,7 @@ patch(AccountReportController.prototype, {
         this.chatterState = proxy({
             model: undefined,
             id: undefined,
-            lineId: undefined, // To identify the line when editing / deleting a message
+            lineId: undefined,
         });
     },
 

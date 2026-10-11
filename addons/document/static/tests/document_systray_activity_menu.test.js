@@ -9,8 +9,6 @@ defineDocumentsModels();
 test("activity menu widget: documents request button", async () => {
     mockService("action", {
         doAction(action) {
-            // The web client with no action in the URL opens the home menu
-            // through this same service; only the button's dispatch is asserted.
             if (action !== "menu") {
                 expect.step(action);
             }

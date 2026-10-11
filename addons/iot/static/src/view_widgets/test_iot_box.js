@@ -45,7 +45,6 @@ export class TestIotBox extends Component {
             },
         );
 
-        // Check webRTC only for versions that support it
         if (!/\d{4}\.\d{2}\.\d{2}/.test(version)) {
             try {
                 await this.iotHttpService.webRtc.onMessage(
@@ -64,12 +63,10 @@ export class TestIotBox extends Component {
                     "test_protocol",
                 );
             } catch {
-                // Catch connection timeout (not going through onFailure)
                 failureCallback("WebRTC");
             }
         }
 
-        // Check longpolling (no onMessage as we only check if the endpoint is reachable)
         try {
             await this.iotHttpService.longpolling.sendMessage(
                 ip,
@@ -84,7 +81,6 @@ export class TestIotBox extends Component {
             failureCallback("Longpolling");
         }
 
-        // Check websocket
         this.iotHttpService.websocket.onMessage(
             identifier,
             identifier,
@@ -146,7 +142,7 @@ export class TestIotBox extends Component {
             ),
             {
                 type,
-                autocloseDelay: 6000, // display longer to read (= websocket timeout)
+                autocloseDelay: 6000,
             },
         );
     }

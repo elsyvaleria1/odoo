@@ -32,8 +32,6 @@ export class MessagingMenuItem extends Component {
         this.isMobileOS = isMobileOS();
         this.rootRef = elementRef();
         this.actionsDropdown = useDropdownState();
-        // an item lists one kind of record for its whole life: only a message
-        // item has message actions
         this.messageActions = this.props.message
             ? useMessageActions({
                   owner: this,

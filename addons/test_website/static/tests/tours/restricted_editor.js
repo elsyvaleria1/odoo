@@ -73,7 +73,6 @@ registerWebsitePreviewTour(
         url: "/",
     },
     () => [
-        // Home
         checkNoTranslate,
         ...clickOnEditAndWaitEditMode(),
         {
@@ -92,7 +91,6 @@ registerWebsitePreviewTour(
         ...translate,
         ...closeErrorDialog,
         ...switchTo("en"),
-        // Model item
         {
             trigger: ":iframe body:contains(welcome to your)",
         },
@@ -123,7 +121,6 @@ registerWebsitePreviewTour(
         url: "/",
     },
     () => [
-        // Home
         checkNoTranslate,
         ...clickOnEditAndWaitEditMode(),
         {
@@ -135,7 +132,6 @@ registerWebsitePreviewTour(
         ...translate,
         ...closeErrorDialog,
         ...switchTo("en"),
-        // Model item
         ...goToMenuItem,
         checkNoTranslate,
         ...clickOnEditAndWaitEditMode(),

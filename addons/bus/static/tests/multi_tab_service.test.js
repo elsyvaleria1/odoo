@@ -10,13 +10,6 @@ import { browser } from "@web/core/browser/browser";
 import { registry } from "@web/core/registry";
 import { session } from "@web/session";
 
-// `navigator.locks` is mocked per test by `mock_websocket.js`'s
-// `setupWebSocketWorker` (run via the `MockServer.prototype.start` patch that
-// `makeMockEnv` triggers), so these tests run against the deterministic
-// in-memory lock manager, shared across the tabs they simulate.
-
-// Ensure the real (locks-based) service is the registered one even if another
-// suite swapped it.
 registry.category("services").remove("multi_tab");
 registry.category("services").add("multi_tab", multiTabService);
 describe.current.tags("desktop");
@@ -32,8 +25,6 @@ test("the first tab is main, a second concurrent tab is not", async () => {
 test("election passes to the next tab on pagehide", async () => {
     const tab1 = await makeMockEnv();
     expect(await tab1.services.multi_tab.isOnMainTab()).toBe(true);
-    // Prevent the second tab from receiving the pagehide event so only tab1
-    // leaves.
     patchWithCleanup(browser, {
         addEventListener(eventName, callback) {
             if (eventName !== "pagehide") {
@@ -77,11 +68,6 @@ test("pagehide then a bfcache pageshow re-registers the tab", async () => {
 });
 
 test("a fast-path lock grant landing after unregister() must not seize the lock", async () => {
-    // Real LockManager grants are always asynchronous, so `unregister()` can run
-    // between issuing the `ifAvailable` request and its callback firing. That
-    // request carries no abort signal, so only the internal attempt/terminated
-    // guard can stop a dead tab from grabbing (and never releasing) the lock,
-    // which would wedge the whole-origin election: no tab runs main-tab duties.
     let fireGrant;
     let lockReleased = false;
     patchWithCleanup(browser.navigator, {
@@ -92,13 +78,9 @@ test("a fast-path lock grant landing after unregister() must not seize the lock"
                     options = {};
                 }
                 if (options.ifAvailable) {
-                    // Defer the grant so the test controls when it lands.
                     return new Promise((resolveRequest) => {
                         fireGrant = () => {
                             const held = callback({ name, mode: "exclusive" });
-                            // A held lock keeps `held` pending; the guard makes
-                            // the callback return undefined instead, so the lock
-                            // is released as soon as the callback settles.
                             Promise.resolve(held).then(() => {
                                 lockReleased = true;
                             });
@@ -107,12 +89,10 @@ test("a fast-path lock grant landing after unregister() must not seize the lock"
                     });
                 }
                 if (options.mode === "shared") {
-                    // A backend tab's presence: granted, held.
                     return Promise.resolve().then(() =>
                         callback({ name, mode: "shared" }),
                     );
                 }
-                // Blocking request: never granted in this test.
                 return new Promise(() => {});
             },
         },
@@ -145,8 +125,6 @@ test("a bfcache re-acquire invalidated in the same task still settles isOnMainTa
     expect(await env.services.multi_tab.isOnMainTab()).toBe(true);
     const pageshow = new Event("pageshow");
     Object.defineProperty(pageshow, "persisted", { value: true });
-    // Same task, so the lock callback armed by the re-acquire has not run yet
-    // when the pagehide invalidates its attempt token.
     browser.dispatchEvent(pageshow);
     browser.dispatchEvent(new Event("pagehide"));
     let resolved = false;
@@ -161,8 +139,6 @@ test("a bfcache re-acquire invalidated in the same task still settles isOnMainTa
 });
 
 test("a refused lock settles the tab as main instead of hanging", async () => {
-    // A LockManager can refuse outright (SecurityError in an opaque-origin
-    // frame); every `await isOnMainTab()` used to wait forever.
     patchWithCleanup(browser.navigator, {
         locks: {
             request() {
@@ -203,7 +179,6 @@ test("a website tab alone is the main tab", async () => {
 });
 
 test("a backend tab takes the main tab over from a website tab", async () => {
-    // a backend tab does every duty a website tab does, and more
     const website = await openTab(true, { first: true });
     expect(await website.services.multi_tab.isOnMainTab()).toBe(true);
     trackMainTab("website", website);
@@ -228,7 +203,6 @@ test("a second backend tab does not take the main tab from the first", async () 
 test("a website tab handed the main tab gives it to a backend tab waiting for it", async () => {
     const leaving = await openTab(false, { first: true });
     expect(await leaving.services.multi_tab.isOnMainTab()).toBe(true);
-    // queued first, so the lock goes to it when the first tab leaves
     const website = await openTab(true);
     const backend = await openTab(false);
     expect(await website.services.multi_tab.isOnMainTab()).toBe(false);

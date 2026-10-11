@@ -43,7 +43,6 @@ export class EventRegistrationSummaryDialog extends Component {
             ) {
                 this.props.playSound("error");
             }
-            // Without this, repeat barcode scans don't work as focus is lost
             this.continueButtonRef.el?.focus();
         });
     }

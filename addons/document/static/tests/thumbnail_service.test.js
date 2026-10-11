@@ -162,11 +162,6 @@ test("a PDF the route refuses is marked failed, not retried forever", async () =
 });
 
 test("an image thumbnail is read without logging a view, blocked or not", async () => {
-    // /documents/content logs: with no `download` it wrote a "Downloaded" row
-    // (and a blocked image answered 403, never getting a thumbnail); with
-    // ?download=0 a "view" row, which also put the image in the editor's
-    // Recent folder. /web/content logs nothing and serves a blocked image,
-    // which is renderable.
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(3, "Blocked Image", {
             thumbnail_status: "client_generated",

@@ -135,8 +135,6 @@ export class Thread extends Record {
     }
 
     delete() {
-        // the followers' onDelete cascade runs when a follower leaves the list,
-        // never when the thread itself is deleted
         for (const follower of [...this.followers, this.selfFollower]) {
             follower?.delete();
         }
@@ -190,7 +188,6 @@ export class Thread extends Record {
             if (a1.uploading !== a2.uploading) {
                 return a1.uploading ? -1 : 1;
             }
-            // temporary ids of uploads count down from -1: the newest is the lowest
             return a1.uploading ? a1.id - a2.id : a2.id - a1.id;
         },
     });
@@ -1076,7 +1073,6 @@ export class Thread extends Record {
         /** @type {import("models").Message} */
         const message = this.store["mail.message"].get(data.message_id);
         if (!message) {
-            // deleted before the response arrived, or absent from its store data
             log.logic("processMessagePostResponse message missing", () => ({
                 thread: this.localId,
                 messageId: data.message_id,

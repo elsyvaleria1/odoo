@@ -21,9 +21,6 @@ registry.category("web_tour.tours").add("sign_report_modal_tour", {
             run: "click",
         },
         {
-            // The report's scripts are ES modules, which run after the markup is
-            // parsed: the link exists before Bootstrap's modal handler does. The
-            // report action marks the body once the iframe's load event has fired.
             trigger:
                 ':iframe body.o_in_iframe .green-savings-page a[data-bs-target=".modal_green_savings"]',
         },

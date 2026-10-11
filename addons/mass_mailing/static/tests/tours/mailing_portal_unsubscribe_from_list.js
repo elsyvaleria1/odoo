@@ -1,9 +1,5 @@
 import { registry } from "@web/core/registry";
 
-/*
- * Tour: unsubscribe from a mailing done on lists (aka playing with opt-out flag
- * instead of directly blocking emails).
- */
 registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_list", {
     steps: () => [
         {
@@ -58,12 +54,6 @@ registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_list", 
     ],
 });
 
-/*
- * Tour: unsubscribe from a mailing done on lists (aka playing with opt-out flag
- * instead of directly blocking emails), then play with list subscriptions and
- * blocklist addition / removal. This is mainly an extended version of the tour
- * hereabove, easing debug and splitting checks.
- */
 registry
     .category("web_tour.tours")
     .add("mailing_portal_unsubscribe_from_list_with_update", {

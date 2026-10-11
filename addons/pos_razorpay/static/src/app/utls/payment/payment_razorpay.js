@@ -37,7 +37,6 @@ export class PaymentRazorpay extends PaymentInterface {
     }
 
     _handleOdooConnectionFailure(data = {}) {
-        // handle timeout
         const line = this.pendingRazorpayline();
         if (line) {
             line.setPaymentStatus("retry");
@@ -48,13 +47,9 @@ export class PaymentRazorpay extends PaymentInterface {
             ),
         );
 
-        return Promise.reject(data); // prevent subsequent onFullFilled's from being called
+        return Promise.reject(data);
     }
 
-    /**
-     * This method handles the response that comes from Razorpay
-     * when we make a request for payment/cancel.
-     */
     _razorpayHandleResponse(response) {
         const line = this.pendingRazorpayline();
         if (response.error) {
@@ -78,7 +73,6 @@ export class PaymentRazorpay extends PaymentInterface {
         const data = { p2pRequestId: line.razorpay_p2p_request_id };
         return this._callRazorpay(data, "razorpay_cancel_payment_request").then(
             (data) => {
-                // This proficiently tackles scenarios where payment initiation is in progress and close to the completion phase
                 if (data.errorMessage) {
                     this._showError(data.errorMessage);
                     return Promise.resolve(false);
@@ -220,10 +214,6 @@ export class PaymentRazorpay extends PaymentInterface {
         }
     }
 
-    /**
-     * This method verifies the card payment before processing.
-     * If the payment is settled, we will proceed with the refund; otherwise, we will void it.
-     */
     async _checkPaymentStatus(line) {
         const data = { p2pRequestId: line?.uiState.razorpay_p2p_request_id };
         const response = await this._callRazorpay(
@@ -233,12 +223,6 @@ export class PaymentRazorpay extends PaymentInterface {
         return response;
     }
 
-    /**
-     * Polling
-     * This method calls and handles the razorpay status response
-     * calls every 10 sec until payment is not resolved.
-     */
-
     async _waitForPaymentConfirmation() {
         const paymentLine = this.pos.getOrder().getSelectedPaymentline();
         if (!paymentLine || paymentLine.payment_status === "retry") {
@@ -247,15 +231,12 @@ export class PaymentRazorpay extends PaymentInterface {
         const data = { p2pRequestId: paymentLine?.razorpay_p2p_request_id };
         this._stopPendingPayment().then(() => (this.payment_stopped = true));
         const razorpayFetchPaymentStatus = async (resolve, reject) => {
-            //Clear previous timeout before setting a new one
             clearTimeout(this.pollingTimeout);
 
-            // If the user navigates to another screen, stop the polling
             if (this.pos.router.state.current !== "PaymentScreen") {
                 return;
             }
 
-            //Within 90 seconds, inactivity will result in transaction cancellation and payment termination.
             if (this.payment_stopped) {
                 this._razorpayCancel().then(() => {
                     paymentLine.setPaymentStatus("retry");
@@ -292,8 +273,6 @@ export class PaymentRazorpay extends PaymentInterface {
             } else if (resultCode === "AUTHORIZED") {
                 this._updatePaymentLine(paymentLine, response);
                 paymentLine.razorpay_p2p_request_id = response?.p2pRequestId;
-                // `createdTime` is provided in milliseconds in local GMT+5.5 timezone.
-                // Thus, we need to subtract 19800000 to get the correct time in milliseconds.
                 paymentLine.payment_date = this._getPaymentDate(
                     response?.createdTime - 19800000,
                 );

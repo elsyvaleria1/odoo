@@ -167,7 +167,6 @@ export class MediaDialog extends Component {
                 TABS.ICONS.Component.tagNames.includes(this.props.media.tagName)
             ) {
                 const classes = this.props.media.className.split(/\s+/);
-                // the media's own face first: a few names exist in two faces
                 const byAffinity = [...fonts].sort(
                     (a, b) => classes.includes(b.base) - classes.includes(a.base),
                 );
@@ -258,8 +257,6 @@ export class MediaDialog extends Component {
             element.classList.remove(...this.initialIconClasses);
             element.classList.remove("o_modified_image_to_save");
             element.classList.remove("oe_edited_link");
-            // a tab may own several classes but stamp only some on a given
-            // media (an icon font renders in exactly one face)
             const specificClasses =
                 ActiveComponent.getMediaSpecificClasses?.(selectedMedia[index]) ??
                 ActiveComponent.mediaSpecificClasses;

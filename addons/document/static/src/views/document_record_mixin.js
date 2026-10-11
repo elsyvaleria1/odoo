@@ -25,7 +25,6 @@ export const DocumentsRecordMixin = (component) =>
                 delete changes.name;
                 this.setEvalContext();
             }
-            // the details panel's record reads unselected: its edits stay its own
             const movedRecordsIds =
                 this.selected && this.model.multiEdit
                     ? this.model.root.selection.map((rec) => rec.id)
@@ -33,11 +32,8 @@ export const DocumentsRecordMixin = (component) =>
             const originalFolderId = this.data.folder_id?.id ?? false;
             let ret = await super.update(changes, options);
             if (this.isDetailsPanelRecord) {
-                // saved at once, after the onchanges `save: true` would skip
                 ret = await this.save();
             }
-            // a record leaves the view only where the view is one folder:
-            // Recent or a scoped "All" still holds it
             const showsOneFolder =
                 typeof this.model.viewContext.searchModel.getSelectedFolderId() ===
                 "number";
@@ -71,7 +67,6 @@ export const DocumentsRecordMixin = (component) =>
                 {
                     files: input.files,
                     accessToken: this.data.access_token,
-                    // not read by the server: the progress bars match their record by it
                     context: { document_id: this.data.id },
                 },
             );
@@ -119,7 +114,6 @@ export const DocumentsRecordMixin = (component) =>
         async onClickPreview(ev) {
             if (this.isRequest()) {
                 ev.stopPropagation();
-                // the card's input in kanban, the type icon's in a list row
                 ev.target.querySelector("input.o_input_file")?.click();
             } else if (this.isViewable()) {
                 ev.stopPropagation();
@@ -130,10 +124,6 @@ export const DocumentsRecordMixin = (component) =>
             }
         }
 
-        /**
-         * Previews this document; when it is part of a wider selection, the
-         * viewer pages through the selection's viewable documents.
-         */
         openPreview() {
             const selection = this.model.root.selection;
             const documents =
@@ -180,7 +170,6 @@ export const DocumentsRecordMixin = (component) =>
          */
         async _goToFolder(folderId) {
             const searchModel = this.model.viewContext.searchModel;
-            // the panel only: toggling the folder loads its records
             if (!searchModel.getFolderById(folderId)) {
                 await searchModel._reloadSearchPanel(true);
             }

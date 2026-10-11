@@ -41,7 +41,6 @@ test("presenter option validation follows a prop schema patched after first use"
         target,
         probeComponent(() => {}),
         {},
-        // This test extends the runtime schema beyond the static option type.
         /** @type {any} */ ({ patchedOption: "value" }),
     );
     await remove();

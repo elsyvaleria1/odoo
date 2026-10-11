@@ -137,8 +137,6 @@ export class FlowEditor extends Component {
     suppressNodeClick = false;
     /** @type {number | null} */
     viewportAnimationFrame = null;
-    // True while the viewport is the editor's own fit, false once the reader
-    // or the consumer placed it: only a fit follows the canvas when it resizes.
     framed = false;
     /** @type {ResizeObserver | null} */
     canvasObserver = null;
@@ -167,8 +165,6 @@ export class FlowEditor extends Component {
             if (!this.props.viewport) {
                 this.fitToContent();
             }
-            // A canvas mounted out of sight -- an inactive page, a box sized
-            // after its first paint -- measures nothing until it is laid out.
             this.canvasObserver = new ResizeObserver(() => this.onCanvasResize());
             this.canvasObserver.observe(this.canvasEl);
         });

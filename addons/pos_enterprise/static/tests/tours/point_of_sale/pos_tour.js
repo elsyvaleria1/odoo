@@ -9,8 +9,6 @@ import { registry } from "@web/core/registry";
 registry.category("web_tour.tours").add("PreparationDisplayTour", {
     steps: () =>
         [
-            // First order should send these orderlines to preparation:
-            // - Letter Tray x10
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
@@ -29,7 +27,6 @@ registry.category("web_tour.tours").add("PreparationDisplayTour", {
 
             ReceiptScreen.clickNextOrder(),
 
-            // Should not send anything to preparation
             ProductScreen.addOrderline("Magnetic Board", "5"),
             ProductScreen.selectedOrderlineHas("Magnetic Board", "5"),
             ProductScreen.addOrderline("Monitor Stand", "1"),
@@ -54,7 +51,6 @@ registry.category("web_tour.tours").add("PreparationDisplayPrinterTour", {
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Bank"),
             PaymentScreen.clickValidate(),
-            //This steps is making sure that we atleast tried to call the printer
             Dialog.is({ title: "Printing failed" }),
         ].flat(),
 });
@@ -119,13 +115,11 @@ registry.category("web_tour.tours").add("PosOrderCreationTourPdis", {
         [
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
-            // Make simple order "Eat in"
             ProductScreen.clickDisplayedProduct("Desk Pad", true, "1.0"),
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Bank"),
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
-            // Make Takeaway order for tomorrow
             ProductScreen.clickDisplayedProduct("Letter Tray", true, "1.0"),
             ProductScreen.selectPreset("Eat in", "Takeaway"),
             Chrome.selectSlotDays("6"),
@@ -134,7 +128,6 @@ registry.category("web_tour.tours").add("PosOrderCreationTourPdis", {
             PaymentScreen.clickPaymentMethod("Bank"),
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
-            // Make a Delivery order
             ProductScreen.clickDisplayedProduct("Whiteboard Pen", true, "1.0"),
             ProductScreen.selectPreset("Eat in", "Delivery"),
             ProductScreen.clickPayButton(),

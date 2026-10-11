@@ -12,7 +12,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
         this.lineModel = this.resModel;
         this.validateMessage = _t("The inventory count has been updated");
         this.validateMethod = "action_validate";
-        // The trash button drops the operator's count; applying it is the Apply button's job.
         this.deleteLineMethod = "action_barcode_remove_count";
     }
 
@@ -32,8 +31,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
         if (this.checkBeforeApply()) {
             const { shouldConfirm = false, shouldWaitReview = false } = options;
             const confirm = (context) => this._apply(context);
-            // Awaited: navigating back while the save RPC is still in flight risks losing the
-            // counted quantities the user asked to keep for review.
             const waitReview = async () => {
                 await this.save();
                 this.trigger("history-back");
@@ -63,7 +60,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
             this.notification(message, { type: "warning" });
             return false;
         }
-        // Checks if there are not counted serial numbers in the same location than counted quants.
         const countedSerialNumbers = this.groupedLines.filter(
             (gl) =>
                 gl.lines &&
@@ -78,12 +74,10 @@ export default class BarcodeQuantModel extends BarcodeModel {
                 }
             }
         }
-        // In case there is not counted SN, asks the user if they want to count them as missing.
         if (notCountedSiblingSerialNumbers.length) {
             this.dialogService.add(ApplyQuantDialog, {
                 onApply: this._apply.bind(this),
                 onApplyAll: () => {
-                    // Set not counted SN as counted before to apply.
                     for (const line of notCountedSiblingSerialNumbers) {
                         this.toggleAsCounted(line);
                     }
@@ -110,7 +104,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
         );
         const notifyAndGoAhead = (res) => {
             if (res && res.special) {
-                // Do nothing if come from a discarded wizard.
                 return this.trigger("refresh");
             }
             this.notification(this.validateMessage, { type: "success" });
@@ -127,14 +120,12 @@ export default class BarcodeQuantModel extends BarcodeModel {
     }
 
     get barcodeInfo() {
-        // Takes the parent line if the current line is part of a group.
         let line = this._getParentLine(this.selectedLine) || this.selectedLine;
         if (!line && this.lastScanned.packageId) {
             line = this.pageLines.find(
                 (l) => l.package_id && l.package_id.id === this.lastScanned.packageId,
             );
         }
-        // Defines some messages who can appear in multiple cases.
         const messages = {
             scanProduct: {
                 class: "scan_product",
@@ -160,7 +151,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
         };
 
         if (line) {
-            // Message depends of the selected line's state.
             const { tracking } = line.product_id;
             const trackingNumber = this.getLotName(line);
             if (this._lineIsNotComplete(line)) {
@@ -169,10 +159,8 @@ export default class BarcodeQuantModel extends BarcodeModel {
                 }
                 return messages.scanProduct;
             } else if (tracking !== "none" && !trackingNumber) {
-                // Line's quantity is fulfilled but still waiting a tracking number.
                 return tracking === "lot" ? messages.scanLot : messages.scanSerial;
             } else {
-                // Line's quantity is fulfilled.
                 if (
                     this.groups.group_stock_multi_locations &&
                     line.location_id.id === this.location.id
@@ -188,7 +176,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
                 return messages.scanProduct;
             }
         }
-        // No line selected, returns default message (depends if multilocation is enabled).
         if (this.groups.group_stock_multi_locations) {
             if (!this.lastScanned.sourceLocation) {
                 return {
@@ -271,13 +258,12 @@ export default class BarcodeQuantModel extends BarcodeModel {
                 !floatIsZero(line.inventory_quantity - line.quantity, this.precision)
             );
         }
-        return false; // Never show a line as faulty if we don't display the expected quantity.
+        return false;
     }
 
     lineIsTracked(line) {
         const lineIsTracked = super.lineIsTracked(...arguments);
         if (lineIsTracked && line.product_id.tracking === "serial") {
-            // Count quants tracked by SN as untracked if they have no SN and multiple quantity.
             return (
                 this.getLotName(line) ||
                 (this.getQtyDone(line) <= 1 && this.getQtyDemand(line) <= 1)
@@ -320,10 +306,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
         });
     }
 
-    // --------------------------------------------------------------------------
-    // Private
-    // --------------------------------------------------------------------------
-
     _getCommands() {
         return Object.assign(super._getCommands(), {
             OBTAPPLY: this.apply.bind(this),
@@ -364,8 +346,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
     }
 
     async _createNewLine(params) {
-        // When creating a new line, we need to know if a quant already exists
-        // for this line, and in this case, update the new line fields.
         const product = params.fieldsParams.product_id;
         if (!product.is_storable) {
             const productName =
@@ -405,21 +385,17 @@ export default class BarcodeQuantModel extends BarcodeModel {
         }
         let newLine = false;
         if (quants.length) {
-            // Found existing quants: create a line for each one.
             const lineIds = this.currentState.lines.map((l) => l.id);
             for (const quant of quants) {
                 if (lineIds.includes(quant.id)) {
-                    continue; // Don't create line for quant if there is already a line for it.
+                    continue;
                 }
                 const lineParams = {
                     fieldsParams: Object.assign({}, quant, params.fieldsParams),
                 };
                 const newlyCreatedLine = await super._createNewLine(lineParams);
                 this.selectedLineVirtualId = newlyCreatedLine.virtual_id;
-                // Keeps the first created line so that the one who will be selected.
                 newLine = newLine || newlyCreatedLine;
-                // If the quant already exits, we add it into the `initialState` to
-                // avoid comparison issue with the `currentState` when the save occurs.
                 const lineWithOriginalQuantValues = Object.assign(
                     {},
                     newlyCreatedLine,
@@ -434,7 +410,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
                 this.initialState.lines.push(lineWithOriginalQuantValues);
             }
         } else {
-            // No existing quant: creates an empty new line.
             newLine = await super._createNewLine(params);
         }
         return newLine;
@@ -442,7 +417,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
 
     _convertDataToFieldsParams(args) {
         const params = {};
-        // Set the fields in `params` only if they are in `args`.
         if (args.packaging && args.product.tracking === "serial") {
             params.inventory_quantity = 1;
         } else if (args.quantity) {
@@ -468,9 +442,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
             quantity: (fieldsParams && fieldsParams.quantity) || 0,
             user_id: this.userId,
         });
-        // Marks the new line's quantity as set only if it's not an existing quant (no `quantity`)
-        // or if it already has a counted quantity. It's to avoid tragedy if the user applies by
-        // mistake the inventory adjustment after scanned a product with multiple serial/lot numbers
         if (fieldsParams.quantity === undefined || fieldsParams.inventory_quantity) {
             defaultValues.inventory_quantity_set = true;
         }
@@ -527,21 +498,16 @@ export default class BarcodeQuantModel extends BarcodeModel {
         let recPackage = barcodeData.package;
         this.lastScanned.packageId = false;
         if (!recPackage && !packageType && !packageName) {
-            return; // No Package data to process.
+            return;
         }
-        // Scan a new package and/or a package type -> Create a new package with those parameters.
         const currentLine = this.selectedLine || this.lastScannedLine;
         if (
             currentLine?.package_id &&
             packageType &&
             !recPackage &&
             !packageName &&
-            // Was `currentLine.package_id.id !== packageType`: a package id against a package
-            // TYPE record, so always true — the write below fired even when the package already
-            // carried the scanned type.
             currentLine.package_id.package_type_id?.id !== packageType.id
         ) {
-            // Changes the package type for the scanned one.
             await this.orm.write("stock.package", [currentLine.package_id.id], {
                 package_type_id: packageType.id,
             });
@@ -555,9 +521,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
             barcodeData.stopped = true;
             return this.notification(message, { type: "success" });
         }
-        // A second, identical block used to follow this one, re-deriving `currentLine` and
-        // testing the same condition: unreachable either way, since this block sets
-        // `recPackage` whenever its guard holds and the guard is the same.
         if (!recPackage && currentLine && !currentLine.package_id) {
             const valueList = {};
             if (packageName) {
@@ -580,8 +543,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
         ) {
             return;
         }
-        // TODO: can check if quants already in cache to avoid to make a RPC if
-        // there is all in it (or make the RPC only on missing quants).
         const res = await this.orm.call(
             "stock.quant",
             "get_stock_barcode_counting_data",
@@ -592,7 +553,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
             this.cache.getRecord("stock.quant", id),
         );
         if (!quants.length) {
-            // Empty package => Assigns it to the last scanned line.
             const currentLine = this.selectedLine || this.lastScannedLine;
             if (currentLine && !currentLine.package_id) {
                 const fieldsParams = this._convertDataToFieldsParams({
@@ -608,7 +568,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
         }
         this.cache.setCache(res.records);
 
-        // Checks if the package is already scanned.
         let alreadyExisting = 0;
         for (const line of this.pageLines) {
             if (
@@ -623,13 +582,11 @@ export default class BarcodeQuantModel extends BarcodeModel {
             barcodeData.error = _t("This package is already scanned.");
             return;
         }
-        // For each quants, creates or increments a barcode line.
         for (const quant of quants) {
             const product = this.cache.getRecord("product.product", quant.product_id);
             const searchLineParams = Object.assign({}, barcodeData, { product });
             const currentLine = this._findLine(searchLineParams);
             if (currentLine) {
-                // Updates an existing line.
                 const fieldsParams = this._convertDataToFieldsParams({
                     quantity: quant.quantity,
                     lotName: barcodeData.lotName,
@@ -639,7 +596,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
                 });
                 await this.updateLine(currentLine, fieldsParams);
             } else {
-                // Creates a new line.
                 const fieldsParams = this._convertDataToFieldsParams({
                     product,
                     quantity: quant.quantity,
@@ -708,14 +664,12 @@ export default class BarcodeQuantModel extends BarcodeModel {
 
     _updateLineQty(line, args) {
         if (args.quantity) {
-            // Set stock quantity.
             line.quantity = args.quantity;
         }
         if (args.inventory_quantity) {
             if (args.uom) {
                 const lineUOM = line.product_uom_id;
                 if (args.uom.factor !== lineUOM.factor) {
-                    // Convert the scanned qty into the product UoM.
                     const factor = args.uom.factor / lineUOM.factor;
                     args.inventory_quantity = args.inventory_quantity * factor;
                     args.uom = lineUOM;
@@ -742,7 +696,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
 
     async _updateLotName(line, lotName) {
         if (line.lot_name === lotName) {
-            // No need to update the line's tracking number if it's already set.
             return;
         }
         line.lot_name = lotName;
@@ -759,8 +712,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
             },
         );
         if (existingQuant && existingQuant.length) {
-            // The line becomes that quant's line: its fields as the lines state builds
-            // them (records, not the raw cache's ids), under the line's own virtual id.
             const quantLine = this._quantToLine(
                 this.cache.getRecord("stock.quant", existingQuant[0].id),
             );
@@ -789,13 +740,8 @@ export default class BarcodeQuantModel extends BarcodeModel {
                 (quant.user_id && quant.user_id !== this.userId) ||
                 quant.inventory_date > today
             ) {
-                // Doesn't take quants who must be counted by another user or in the future.
-                // A quant with no date stays: a save answers with the quants it wrote, and
-                // one it updated can have none.
                 continue;
             }
-            // Checks if this line is already in the quant state to get back
-            // its `virtual_id` (and so, avoid to set a new `virtual_id`).
             const prevLine = previousLines.get(id);
             lines.push(this._quantToLine(quant, prevLine && prevLine.virtual_id));
         }
@@ -842,7 +788,6 @@ export default class BarcodeQuantModel extends BarcodeModel {
 
     _selectLine(line) {
         if (this.selectedLineVirtualId !== line.virtual_id) {
-            // Unfolds the group where the line is, folds other lines' group.
             this.unfoldLineKey = this.groupKey(line);
         }
         super._selectLine(...arguments);

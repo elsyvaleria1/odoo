@@ -11,7 +11,6 @@ export class SurveyPrint extends Interaction {
     };
 
     start() {
-        // Will allow the textarea to resize if any carriage return instead of showing scrollbar.
         document.querySelectorAll("textarea").forEach((textarea) => {
             resizeTextArea(textarea);
         });

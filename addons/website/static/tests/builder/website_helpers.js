@@ -231,7 +231,6 @@ export async function setupWebsiteBuilder(
         },
     });
     if (snippets) {
-        // the action preloads the snippets as soon as it mounts
         patchWithCleanup(IrUiView.prototype, {
             render_public_asset: () => getSnippetView(snippets),
         });
@@ -318,10 +317,6 @@ export async function setupWebsiteBuilder(
     };
 }
 
-// A page is more than its JS: the bootstrap, the templates and the bridge
-// registrations only exist on a server-rendered document, so a test that
-// wants the frontend running in the iframe gets the real page the action
-// would navigate to, and swaps its content for the test's.
 function navigateToRealPage(iframe) {
     const ready = new Promise((resolve, reject) => {
         iframe.addEventListener(

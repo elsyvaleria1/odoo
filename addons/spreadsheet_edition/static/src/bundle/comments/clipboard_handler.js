@@ -12,16 +12,12 @@ export class CellThreadsClipboardHandler extends AbstractCellClipboardHandler {
         const zones = data.zones;
         const sheetId = this.getters.getActiveSheetId();
         const sheetThreads = this.getters.getSpreadsheetThreads([sheetId]);
-        // we only support cut which means one 1 zone - no need to fetch the entire planet
         const threads = sheetThreads.filter((thread) =>
             isInside(thread.col, thread.row, zones[0]),
         );
         return { threads, zones };
     }
 
-    /**
-     * Paste the clipboard content in the given target
-     */
     paste(target, content, options) {
         if (!content.threads?.length || !target.zones.length) {
             return;

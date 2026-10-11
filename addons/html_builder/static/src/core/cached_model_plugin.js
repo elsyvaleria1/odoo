@@ -50,19 +50,16 @@ export class CachedModelPlugin extends Plugin {
     }
     useModelEdit({ model, recordId, field }) {
         const modelEdit = this.modelEditCache.read({ model, recordId, field });
-        // track el ?
         return modelEdit;
     }
     async savePendingRecords() {
-        const inventory = {}; // model => { recordId => { field => value } }
+        const inventory = {};
         for (const modelEdit of Object.values(this.modelEditCache.cache)) {
             modelEdit.collect(inventory);
         }
-        // Save inventoried changes.
         for (const [model, records] of Object.entries(inventory)) {
             for (const [recordId, record] of Object.entries(records)) {
                 for (const [field, value] of Object.entries(record)) {
-                    // Currently only ids selection values are supported.
                     const proms = value
                         .filter((value) => typeof value.id === "string")
                         .map((value) =>

@@ -62,8 +62,6 @@ export class SearchModal extends Component {
     }
 
     onInput(event) {
-        // Emptying the box has to search too, otherwise the previous results
-        // stay on screen with nothing left that produced them.
         this.search(event.target.value.trim());
     }
 

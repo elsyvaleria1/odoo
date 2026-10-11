@@ -127,8 +127,6 @@ export class CalendarCommonPopover extends Component {
         } else {
             format = formattersRegistry.get(field.type);
         }
-        // a selection resolves its label from the field, a monetary its currency
-        // from the record
         return format(record.data[fieldName], { field, data: record.data });
     }
 

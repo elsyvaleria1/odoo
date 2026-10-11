@@ -84,7 +84,6 @@ export class SignTemplateSidebarRoleItems extends Component {
     }
 
     onSignerNameTextClick() {
-        /* If the input is not focused, focus it. */
         if (!this.props.hasSignRequests && !this.props.isCollapsed) {
             this.state.canEditSignerName = true;
             const input = this.roleInputRef.el;
@@ -94,11 +93,9 @@ export class SignTemplateSidebarRoleItems extends Component {
                     input &&
                     !input.parentElement.parentElement.classList.contains("d-none")
                 ) {
-                    // Input is visible, so we can focus
                     input.focus();
                     input.select();
                 } else {
-                    // Input is still hidden, keep checking in the next frame
                     requestAnimationFrame(waitForVisibility);
                 }
             };
@@ -112,7 +109,6 @@ export class SignTemplateSidebarRoleItems extends Component {
     }
 
     onChangeRoleName(name) {
-        // Check if the new role name is different from the current one
         if (name && this.props.roleId && name !== this.state.roleName) {
             this.state.roleName = name;
             this.props.updateRoleName(this.props.roleId, this.state.roleName);

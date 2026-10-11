@@ -29,9 +29,6 @@ const utilsWith = (configs, vectorLayersResult, resModel = VIEW_MODEL) => {
 
 describe("Map fit ignores cross-model layers", () => {
     test("a layer on another model is left out of the fit", () => {
-        // The live GPS map pairs device.device pins with a res.partner
-        // overlay; a search filters the devices only, so the partners must
-        // not decide the frame.
         const utils = utilsWith(
             [
                 { resId: 7, model: VIEW_MODEL },
@@ -95,8 +92,6 @@ describe("Map fit ignores cross-model layers", () => {
     });
 
     test("the fit falls back to every layer when the view's model drew nothing", () => {
-        // An overlay-only map (every device off, or none reporting) must
-        // still frame itself instead of leaving the view where it was.
         const utils = utilsWith([{ resId: 10, model: "res.partner" }], [layer(10)]);
         const asked = [];
         utils._extentOf = (layers) => {

@@ -78,9 +78,6 @@ export class GridCell {
         return Domain.and(domains);
     }
 
-    /**
-     * Get the context to get the default values
-     */
     get context() {
         return {
             ...this.model.searchParams.context,
@@ -112,9 +109,6 @@ export class GridCell {
 
     async _update(value) {
         const oldValue = this.value;
-        // The grid this cell belongs to. `model.mutex` serialises cell updates
-        // against each other but not against a reload, and a reload replaces
-        // `model.data` wholesale.
         const data = this.model.data;
         const result = await this.model.orm.call(
             this.model.resModel,
@@ -127,11 +121,6 @@ export class GridCell {
             return;
         }
         if (this.model.data !== data) {
-            // Reloaded while the write was in flight: this row, column and
-            // section are no longer the ones on screen, so applying the delta
-            // to them changes nothing anyone can see -- and the reload's own
-            // fetch went out before the write landed, so what is on screen is
-            // behind the server. Ask again instead.
             await this.model.reload();
             return;
         }
@@ -161,18 +150,10 @@ export class GridRow {
     ) {
         this._domain = domain;
         this.model = model;
-        // The load this row belongs to. Its row and section fields are read
-        // from here, not off the model: the model publishes a load's fields
-        // only once that load has won, so while it is still being built --
-        // where a subclass adds rows and reads the sections it has -- the
-        // model still describes the previous grid, or none.
         this.data = data;
         this.cells = {};
         this.valuePerFieldName = valuePerFieldName;
         this.id = data.nextRowId++;
-        // A row without a section does not exist: `domain`, `getSection` and
-        // `updateCell` all dereference it. Only a GridSection, which overrides
-        // all three, is constructed without one.
         this.section = section;
         this.section?.addRow(this);
         this.grandTotal = 0;
@@ -190,8 +171,6 @@ export class GridRow {
         for (const rowField of this.data.rowFields) {
             let title = this.valuePerFieldName[rowField.name];
             if (this.model.isPairValued(rowField)) {
-                // A pair-valued row field with no value is labelled "None"
-                // only when it leads the label; later ones are simply left out.
                 title = title ? title[1] : !labelArray.length && _t("None");
             }
             if (title) {
@@ -213,9 +192,6 @@ export class GridRow {
         const rowFieldPerName = Object.fromEntries(
             this.data.rowFields.map((r) => [r.name, r]),
         );
-        // Every value the row carries becomes a default, not just the ones the
-        // grid groups by: a subclass adding rows of its own puts the values its
-        // "Add a line" needs in here too.
         for (const [name, value] of Object.entries(this.valuePerFieldName)) {
             context[`default_${name}`] = this.model.getGroupValue(
                 rowFieldPerName[name] || { name },
@@ -441,7 +417,6 @@ export class GridNavigationInfo {
         if (this.range.span !== "week") {
             return startOf(this.anchor, dateUnit(this.range.span));
         }
-        // The ISO week runs Monday to Sunday; the grid's starts on the locale's first day.
         return withWeekday(this.anchor, this._targetWeekday);
     }
 
@@ -449,7 +424,6 @@ export class GridNavigationInfo {
         if (this.range.span !== "week") {
             return endOf(this.anchor, dateUnit(this.range.span));
         }
-        // The ISO week runs Monday to Sunday; the grid's starts on the locale's first day.
         return withWeekday(this.anchor, this._targetWeekday).add({ days: 6 });
     }
 
@@ -463,13 +437,6 @@ export class GridNavigationInfo {
         );
     }
 
-    /**
-     * Resolve whatever the period needs before it can be read -- nothing, for
-     * a period that is a calendar span of the anchor. A period the server
-     * defines (a fiscal year) overrides this and fetches it, once per anchor
-     * it covers. Called before a load and before deciding where a moved
-     * anchor lands.
-     */
     async prepare() {}
 }
 
@@ -481,12 +448,6 @@ export class GridModel extends Model {
     static Section = GridSection;
     static NavigationInfo = GridNavigationInfo;
 
-    /**
-     * The grid: sections, rows and cells, class instances updated in place
-     * (a cell's value, a running timer). It is held raw, so no cell is tracked:
-     * a load replaces it whole, a change in place is published by notify(),
-     * and reading it reads that revision.
-     */
     get data() {
         void this.updateEpoch;
         return this._data;
@@ -526,9 +487,6 @@ export class GridModel extends Model {
         if (range) {
             this.navigationInfo.range = range;
         } else if (this.columnFieldIsDate) {
-            // this.navigationInfo.range stays unset without a declared <range>, and
-            // every period getter (periodStart/periodEnd/columnGroupByFieldName/...)
-            // unconditionally dereferences it once columnFieldIsDate is true.
             throw new Error(
                 "A grid view whose column field is a date must declare at least one <range> element.",
             );
@@ -551,10 +509,6 @@ export class GridModel extends Model {
     }
 
     get aggregates() {
-        // `id:array_agg` hands back the id of every record behind every cell,
-        // on every load. The only thing that reads them is `record.resIds`,
-        // which exists for the arch's <button>s -- so a grid declaring none
-        // was paying for the whole grid's ids to fill an array nobody opened.
         const aggregates = [this.measureGroupByFieldName];
         if (this.withRecordIds) {
             aggregates.push("id:array_agg");
@@ -586,8 +540,6 @@ export class GridModel extends Model {
     }
 
     get maxColumnsTotal() {
-        // Math.max() of nothing is -Infinity, which the bar chart then divides
-        // by; a grid with every column filtered away is an ordinary state.
         return Math.max(0, ...this.columnsArray.map((c) => c.grandTotal));
     }
 
@@ -596,9 +548,6 @@ export class GridModel extends Model {
     }
 
     get measureGroupByFieldName() {
-        // GridArchParser refuses a measure with no aggregator, so there is no
-        // bare-name form to fall back to: read_group answers a bare `field`
-        // with a value this model does not know how to read.
         return `${this.measureFieldName}:${this.measureField.aggregator}`;
     }
 
@@ -745,8 +694,6 @@ export class GridModel extends Model {
             month: { month: "long", year: "numeric" },
         }[granularity];
 
-        // The day read at UTC midnight in UTC: in any other zone, a zone west
-        // of UTC showed the previous day.
         const parts = new Intl.DateTimeFormat(locale, {
             ...options,
             timeZone: "UTC",
@@ -759,7 +706,6 @@ export class GridModel extends Model {
             return parts.map((p) => p.value).join("");
         }
 
-        // split after the first literal
         while (++splitIndex < parts.length) {
             if (parts[splitIndex].type === "literal") {
                 break;
@@ -819,9 +765,6 @@ export class GridModel extends Model {
         }
     }
 
-    /**
-     * Reset the anchor
-     */
     async resetAnchor() {
         await this.setAnchor(this.defaultAnchor);
     }
@@ -846,12 +789,6 @@ export class GridModel extends Model {
         } else {
             throw Error("Invalid argument");
         }
-        // Stepping back into the period that holds today lands on today, not
-        // on the day of the period the anchor happened to sit on: the anchor
-        // is what a record created from here defaults its date to. The period
-        // is asked of the moved anchor, which a server-defined one has to
-        // resolve first -- read stale, it held today and snapped the anchor
-        // back to where it came from.
         await this.navigationInfo.prepare();
         if (this.navigationInfo.contains(this.today)) {
             this.navigationInfo.anchor = this.today;
@@ -861,9 +798,6 @@ export class GridModel extends Model {
 
     async loadData(metaData) {
         await this.navigationInfo.prepare();
-        // The columns, the groups and the additional rows are three
-        // independent questions; ask them together. Only assembling the grid
-        // needs all three answered.
         const [initialData, dataFetched, additionalDataFetched] = await Promise.all([
             this._getInitialData(metaData),
             this.fetchData(metaData),
@@ -1001,9 +935,6 @@ export class GridModel extends Model {
                     continue;
                 }
                 const { name, granularity } = this._parseGroupBy(groupBy);
-                // The search's granularity is the answer even when it is
-                // absent: it overrides whatever the arch declared for the
-                // same field rather than being merged with it.
                 rowFields.push({
                     ...rowFieldPerFieldName[name],
                     name,
@@ -1018,12 +949,6 @@ export class GridModel extends Model {
             rowFields = this.defaultRowFields.filter((r) => !r.invisible);
         }
 
-        // No period here: `range` is deliberately left unset when the view declares
-        // no ranges, which is every grid whose column field is not a date, and
-        // `periodStart`/`periodEnd` read `range.span`. The rest of the model already
-        // gates period concepts on `columnFieldIsDate`; these two were the exception,
-        // and nothing read them back off the model -- every consumer, here and in the
-        // bridges, goes through `navigationInfo` directly.
         const metaData = {
             searchParams,
             rowFields,
@@ -1069,8 +994,6 @@ export class GridModel extends Model {
             const domainStart = currentDate;
             const domainStop = generateNext(currentDate);
             const domainStartSerialized = serializeDate(domainStart);
-            // Only a day can be a weekend day; a month column that happens to
-            // start on a Saturday is not one.
             const isWeekDay = step !== "day" || currentDate.dayOfWeek < 6;
             const column = new this.constructor.DateColumn(
                 data,
@@ -1131,9 +1054,6 @@ export class GridModel extends Model {
             domain || [],
             fieldsToFetch,
         );
-        // Read the fields by name: `Object.values` would hand the key, the
-        // title and the readonly flag to the column in whatever order the
-        // server happened to serialise the record in.
         return columnRecords.map((record) => fieldsToFetch.map((f) => record[f]));
     }
 
@@ -1146,11 +1066,6 @@ export class GridModel extends Model {
             data: {
                 sectionField,
                 rowFields,
-                // Row and column ids are opaque keys into `rows` and `columns`
-                // and into the `data-row` / `data-column` attributes that find
-                // them again. Each load allocates its own from zero: a load
-                // superseded mid-build and the one that replaced it never
-                // share a counter.
                 nextRowId: 0,
                 nextColumnId: 0,
                 columnsKeyToIdMapping: {},
@@ -1219,8 +1134,6 @@ export class GridModel extends Model {
             this._getGroupByFields(metaData),
             this.aggregates,
         );
-        // Same gate: sample rows are trimmed to the visible period, and there is no
-        // period to trim to without a date column.
         if (this.orm.isSample && this.columnFieldIsDate) {
             dataFetched = dataFetched.filter((group) => {
                 const date = deserializeDate(group[this.columnGroupByFieldName][0]);
@@ -1485,9 +1398,6 @@ export class GridModel extends Model {
             const columnId =
                 data.columnsKeyToIdMapping[this._getColumnKey(readGroupResult)];
             if (!(columnId in data.columns)) {
-                // A record no column can show -- its column field is unset, or
-                // outside the columns the grid resolved -- would otherwise put
-                // a row on screen whose cells and totals leave it out.
                 continue;
             }
             if (this.withRecordIds && !this.orm.isSample) {

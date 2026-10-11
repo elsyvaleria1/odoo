@@ -50,8 +50,6 @@ test("'backbutton' event should close attachment viewer", async () => {
 });
 
 test("[technical] attachment viewer should properly override the back button", async () => {
-    // simulate the feature is available on the current device
-    // component must and will be destroyed before the overrideBackButton is unpatched
     let overrideBackButton = false;
     patchWithCleanup(methods, {
         overrideBackButton({ enabled }) {

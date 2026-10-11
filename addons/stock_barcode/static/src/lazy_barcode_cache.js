@@ -3,17 +3,13 @@ import { rpc } from "@web/core/network";
 
 export default class LazyBarcodeCache {
     constructor(cacheData, productsWithAllQuants = []) {
-        this.dbIdCache = {}; // Cache by model + id
-        this.dbBarcodeCache = {}; // Cache by model + barcode
-        this.dbQuantCache = {}; // Cache by model + quant_id
-        // Products whose internal quants were all fetched: a payload carrying some of a
-        // product's quants (a package's, a location's) does not make its cache complete.
+        this.dbIdCache = {};
+        this.dbBarcodeCache = {};
+        this.dbQuantCache = {};
         this.productsWithAllQuants = new Set();
-        // Set by a model that counts (inventory): every fetch then asks the server to complete
-        // the quants of the products it answers with, whichever path fetches.
         this.completesQuants = false;
         this.missingBarcodesCache = new Set();
-        this.missingBarcodeKeyCache = new Set(); // Used as a cache by `_getMissingRecord`
+        this.missingBarcodeKeyCache = new Set();
         this.barcodeFieldByModel = {
             "stock.location": "barcode",
             "product.product": "barcode",
@@ -21,7 +17,7 @@ export default class LazyBarcodeCache {
             "stock.package.type": "barcode",
             "stock.picking": "name",
             "stock.package": "name",
-            "product.trace": "name", // Also ref, should take in account multiple fields ?
+            "product.trace": "name",
         };
         this.gs1LengthsByModel = {
             "product.product": 14,
@@ -29,7 +25,6 @@ export default class LazyBarcodeCache {
             "stock.location": 13,
             "stock.package": 18,
         };
-        // If there is only one active barcode nomenclature, set the cache to be compliant with it.
         if (cacheData["barcode.nomenclature"].length === 1) {
             this.nomenclature = cacheData["barcode.nomenclature"][0];
         }
@@ -46,14 +41,12 @@ export default class LazyBarcodeCache {
     setCache(cacheData) {
         for (const model in cacheData) {
             const records = cacheData[model];
-            // Adds the model's key in the cache's DB.
             if (this.dbIdCache[model] === undefined) {
                 this.dbIdCache[model] = {};
             }
             if (this.dbBarcodeCache[model] === undefined) {
                 this.dbBarcodeCache[model] = {};
             }
-            // Adds the record in the cache.
             const barcodeField = this._getBarcodeField(model);
             for (const record of records) {
                 this.dbIdCache[model][record.id] = record;
@@ -122,11 +115,6 @@ export default class LazyBarcodeCache {
         return JSON.parse(JSON.stringify(record));
     }
 
-    /**
-     * Caches a server answer. The server names the products whose every internal quant the
-     * answer carries (`products_with_all_quants`): `getQuants` needs no RPC for those, and
-     * nothing else marks a product so.
-     */
     setBarcodeData({ records, products_with_all_quants: productIds = [] }) {
         this.setCache(records);
         this._markProductsWithAllQuants(productIds);
@@ -142,9 +130,6 @@ export default class LazyBarcodeCache {
     async getQuants(product, location_id, params = {}) {
         const trace_id = params.trace_id?.id || params.trace_id || false;
         const package_id = params.package_id?.id || params.package_id || false;
-        // `owner_id` was destructured raw while its two siblings were normalised, so callers
-        // passing a record (barcode_quant_model does) compared an object against the cached id
-        // and the filter below never matched anything.
         const owner_id = params.owner_id?.id || params.owner_id || false;
         const { lot_name } = params;
         if (!this.productsWithAllQuants.has(product.id)) {
@@ -152,8 +137,6 @@ export default class LazyBarcodeCache {
                 await rpc("/stock_barcode/get_quants", { product_ids: [product.id] }),
             );
         }
-        // Keep an (empty) map, not an array: every other write to this cache keys it by
-        // location id.
         this.dbQuantCache[product.id] ||= {};
         const quantsByProduct = this.dbQuantCache[product.id];
         let quants = [];
@@ -170,22 +153,16 @@ export default class LazyBarcodeCache {
             }
         }
         if (!trace_id && !lot_name && !package_id && !owner_id) {
-            // Return all product's quants in the given location.
             return quants;
         }
-        // Return only the quant with the right lot, package, and/or owner, or no quant at all.
         if (trace_id) {
             quants = quants.filter((quant) => quant.trace_id === trace_id);
         } else if (lot_name) {
-            // `filters` is a key of the options object, not the options object: passing it
-            // directly left `options.filters` undefined, so the product constraint was dropped
-            // and the lookup could return another product's lot of the same name.
             const filters = { "product.trace": { product_id: product.id } };
             const lot = await this.getRecordByBarcode(lot_name, "product.trace", {
                 filters,
             });
             if (!lot) {
-                // If there is no existing lot, there is no existing quant.
                 return [];
             }
             quants = quants.filter((quant) => quant.trace_id === lot.id);
@@ -217,7 +194,6 @@ export default class LazyBarcodeCache {
                 if (fetchLater) {
                     this.waitingFetch.push({ barcode, model, options });
                     if (model === "product.product") {
-                        // If the model is a product, we can also try to fetch it as a packaging.
                         this.waitingFetch.push({
                             barcode,
                             model: "product.uom",
@@ -235,7 +211,6 @@ export default class LazyBarcodeCache {
                 if (fetchLater) {
                     this.waitingFetch.push({ barcode, model, options });
                     if (model === "product.product") {
-                        // If the model is a product, we can also try to fetch it as a packaging.
                         this.waitingFetch.push({
                             barcode,
                             model: "product.uom",
@@ -270,7 +245,6 @@ export default class LazyBarcodeCache {
                     return record;
                 }
             }
-            // Cached, but for another product or company: the filtered record may still exist.
             if (!onlyInCache && Object.keys(filters).length) {
                 await this._getMissingRecord(barcode, model, filters);
                 return this.getRecordByBarcode(barcode, model, {
@@ -280,7 +254,6 @@ export default class LazyBarcodeCache {
             }
         } else {
             const result = new Map();
-            // Returns object {model: record} of possible record.
             const models = Object.keys(this.dbBarcodeCache);
             for (const model of models) {
                 if (this.dbBarcodeCache[model][barcode]) {
@@ -318,16 +291,6 @@ export default class LazyBarcodeCache {
         }
     }
 
-    /**
-     * Forget which barcodes were searched for and not found.
-     *
-     * Misses are remembered so that a mistyped or unknown barcode is not re-queried on every
-     * scan, but the memory has no expiry: a record created after the page loaded — by a
-     * colleague, or by this same user in another tab — stayed invisible for the rest of the
-     * session, and the barcode app would keep sending its name as a new lot to create. Call
-     * this whenever the client re-reads its data from the server, which is the point at which
-     * the server's answer is known to be fresh.
-     */
     forgetMissingBarcodes() {
         this.missingBarcodeKeyCache.clear();
         this.missingBarcodesCache.clear();
@@ -345,14 +308,11 @@ export default class LazyBarcodeCache {
         const missCache = this.missingBarcodeKeyCache;
         const keyCacheWithoutModel = JSON.stringify([barcode, false, {}]);
         if (Object.keys(filters).length) {
-            // If we already tried to find the same model's record for the given barcode but
-            // without the filters, there is no need to try again with the filter.
             const keyCacheWithoutFilters = JSON.stringify([barcode, model, {}]);
             if (missCache.has(keyCacheWithoutFilters)) {
                 return false;
             }
         }
-        // Check if we already try to fetch this missing record.
         if (missCache.has(keyCache) || missCache.has(keyCacheWithoutModel)) {
             return false;
         }
@@ -362,7 +322,6 @@ export default class LazyBarcodeCache {
         } else {
             params.barcode = barcode;
         }
-        // Creates and passes a domain if some filters are provided.
         const domainsByModel = {};
         for (const filter of Object.entries(filters)) {
             const modelName = filter[0];
@@ -393,7 +352,7 @@ export default class LazyBarcodeCache {
 
     async getMissingRecords(params = {}) {
         if (!this.waitingFetch.length) {
-            return; // Nothing to fetch.
+            return;
         }
         params.barcodes_by_model = {};
         params.fetch_quants = this.completesQuants;
@@ -401,7 +360,7 @@ export default class LazyBarcodeCache {
             const { barcode, model } = data;
             const keyCache = JSON.stringify([barcode, model, {}]);
             if (this.missingBarcodeKeyCache.has(keyCache)) {
-                continue; // Avoid already fetched records.
+                continue;
             }
             this.missingBarcodeKeyCache.add(keyCache);
             if (!params.barcodes_by_model[model]) {
@@ -414,7 +373,6 @@ export default class LazyBarcodeCache {
                 await rpc("/stock_barcode/get_specific_barcode_data", params),
             );
             if (params.forceUnrestrictedSearch) {
-                // Create a list of every found records' barcode.
                 const foundBarcodes = [];
                 const missingBarcodes = new Set();
                 for (const model of Object.keys(result)) {
@@ -422,7 +380,6 @@ export default class LazyBarcodeCache {
                         foundBarcodes.push(record[this.barcodeFieldByModel[model]]);
                     }
                 }
-                // Put every searched barcodes with no matching records into a set.
                 for (const model of Object.keys(params.barcodes_by_model)) {
                     for (const barcode of params.barcodes_by_model[model]) {
                         if (
@@ -434,11 +391,8 @@ export default class LazyBarcodeCache {
                         }
                     }
                 }
-                // If there are barcodes with no match, make a second RPC but this
-                // time, search for those barcodes with no assigned model.
                 if (missingBarcodes.size) {
                     const barcodes = [...missingBarcodes];
-                    // Keep in cache the fact those barcodes were search so they won't be in the future.
                     for (const bc of barcodes) {
                         this.missingBarcodeKeyCache.add(
                             JSON.stringify([bc, false, {}]),
@@ -473,13 +427,9 @@ export default class LazyBarcodeCache {
     _setBarcodeInCacheForGS1(barcode, model, record) {
         const length = this.gs1LengthsByModel[model];
         if (!barcode || barcode.length >= length || isNaN(Number(barcode))) {
-            // Barcode already has the good length, or is too long or isn't
-            // fully numerical (and so, it doesn't make sense to adapt it).
             return;
         }
         const paddedBarcode = barcode.padStart(length, "0");
-        // Avoids to override or mix records if there is already a key for this
-        // barcode (which means there is a conflict somewhere).
         if (!this.dbBarcodeCache[model][paddedBarcode]) {
             this.dbBarcodeCache[model][paddedBarcode] = [record.id];
         } else if (!this.dbBarcodeCache[model][paddedBarcode].includes(record.id)) {

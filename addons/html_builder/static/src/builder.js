@@ -30,9 +30,6 @@ import { elementRef } from "@web/core/utils/element_ref";
 import { useService, useServices } from "@web/core/utils/hooks";
 import { MEDIAS_BREAKPOINTS, SIZES } from "@web/ui/viewport";
 
-// These elements should only have inline content (even if they have a `block`
-// display style, for example if they are in a flex)
-// NOTE: h1, h2, ..., p, pre already prevents wrapping their children into block
 const ONLY_ALLOW_INLINE_TAGS = new Set([
     ...["a", "em", "strong", "small", "s", "cite", "q", "abbr", "data", "time", "code"],
     ...["samp", "sub", "sup", "i", "b", "u", "mark", "bdi", "span", "label", "button"],
@@ -72,7 +69,6 @@ export class Builder extends Component {
         this.appServices = useServices();
         this.ThemeTab = this.props.getThemeTab?.();
         this.CustomizeTranslationTab = this.props.getCustomizeTranslationTab?.();
-        // const actionService = useService("action");
         this.builder_sidebarRef = elementRef();
         this.state = proxy({
             canUndo: false,
@@ -99,8 +95,6 @@ export class Builder extends Component {
         this.activeTargetEl = null;
         const mobileBreakpoint = this.props.config.mobileBreakpoint ?? "lg";
 
-        // TODO: maybe do a different config for the translate mode and the
-        // "regular" mode.
         /** @type {Editor} */
         this.editor = new Editor(
             {
@@ -151,7 +145,6 @@ export class Builder extends Component {
                             snippetMenuEl.querySelector("[data-action='save']");
                         delete this.removeLoadingEffect;
                         if (saveButton) {
-                            // Add a loading effect on the save button and disable the other actions
                             this.removeLoadingEffect = addButtonLoadingEffect(
                                 snippetMenuEl.querySelector("[data-action='save']"),
                             );
@@ -176,8 +169,6 @@ export class Builder extends Component {
                     ) => {
                         this.state.currentOptionsContainers = currentOptionsContainers;
                         if (!currentOptionsContainers.length) {
-                            // If there is no option, fallback on the current
-                            // fallback tab.
                             this.setTab(this.noSelectionTab);
                             return;
                         }
@@ -229,9 +220,6 @@ export class Builder extends Component {
 
         onWillStart(async () => {
             await this.snippetModel.load();
-            // Ensure that the iframe is loaded and the editor is created before
-            // instantiating the sub components that potentially need the
-            // editor.
             const iframeEl = await this.props.iframeLoaded;
             if (status(this) === "destroyed") {
                 return;
@@ -245,9 +233,6 @@ export class Builder extends Component {
                 this.editor.config.direction = "rtl";
             }
 
-            // Prevent image dragging in the website builder. Not via css because
-            // if one of the image ancestor has a dragstart listener, the dragstart handler
-            // can be called with the image as target.
             this.onDragStart = (ev) => {
                 if (ev.target.nodeName === "IMG") {
                     ev.preventDefault();
@@ -270,7 +255,6 @@ export class Builder extends Component {
         onMounted(() => {
             this.editor.document.body.classList.add("editor_enable");
             setBuilderCSSVariables(getHtmlStyle(this.editor.document));
-            // TODO: onload editor
             this.updateInvisibleEls();
             this.editableEl.addEventListener("dragstart", this.onDragStart);
         });
@@ -284,7 +268,6 @@ export class Builder extends Component {
                     this.getInvisibleSelector(nextProps.isMobile);
             }
         });
-        // Fallback tab when no option is active.
         this.noSelectionTab = "blocks";
     }
     async triggerDomUpdated() {
@@ -317,18 +300,15 @@ export class Builder extends Component {
      */
     onTabClick(tab, presetId = null) {
         if (this.state.activeTab === tab) {
-            // If the tab is already active, do nothing.
             return;
         }
         this.setTab(tab);
-        // Deactivate the options when clicking on the "BLOCKS" or "THEME" tabs.
         if (tab === "theme" || tab === "blocks") {
             this.colorPresetToShow = presetId;
             this.activeTargetEl = this.activeTargetEl || this.getActiveTarget();
             this.editor.shared.builderOptions.deactivateContainers();
         } else if (this.activeTargetEl) {
             if (isVisible(this.activeTargetEl)) {
-                // Reactivate the previously active element.
                 this.editor.shared.builderOptions.updateContainers(this.activeTargetEl);
             }
             this.activeTargetEl = null;
@@ -337,7 +317,6 @@ export class Builder extends Component {
 
     setTab(tab) {
         this.state.activeTab = tab;
-        // Set the fallback tab on the "THEME" tab if it was selected.
         this.noSelectionTab = tab === "theme" ? "theme" : "blocks";
     }
 

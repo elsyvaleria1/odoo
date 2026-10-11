@@ -101,9 +101,6 @@ test("data source requests are visible to the loading indicator", async () => {
 
     await createSpreadsheetWithList();
 
-    // The list really did go to the server...
     expect(calls.map(([method]) => method)).toInclude("web_search_read");
-    // ...and none of its calls asked the loading indicator to look away:
-    // `loading_indicator.js` drops every request whose settings say `silent`.
     expect(calls.filter(([, silent]) => silent)).toEqual([]);
 });

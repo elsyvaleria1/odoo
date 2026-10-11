@@ -59,9 +59,6 @@ export class SpreadsheetAction extends AbstractSpreadsheetAction {
         ]);
     }
 
-    /**
-     * Create a new sheet and display it
-     */
     async createNewSpreadsheet() {
         const action = await this.orm.call(
             "document.document",
@@ -103,9 +100,6 @@ export class SpreadsheetAction extends AbstractSpreadsheetAction {
         );
     }
 
-    /**
-     * Open the sharing dialog for this spreadsheet.
-     */
     shareSpreadsheet() {
         this.documentService.openSharingDialog([this.resId]);
     }

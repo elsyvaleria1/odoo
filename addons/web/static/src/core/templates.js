@@ -453,10 +453,6 @@ export class TemplateRegistry {
             register();
             return;
         }
-        // a page that must not compile in the browser holds a lazy bundle's
-        // registrations until its artifact arrives: its running apps would
-        // otherwise resolve a template the bundle extends to a chain no
-        // artifact they hold was compiled from
         const pending = register ? [Promise.allSettled(loads).then(register)] : loads;
         for (const loading of pending) {
             const settled = () => this.compiledLoads.delete(loading);
@@ -488,9 +484,6 @@ export class TemplateRegistry {
         for (const [name, [signature, chain, fn]] of Object.entries(named)) {
             const entry = { signature, chain, fn };
             target.named[name] = entry;
-            // a bundle loaded into a page compiles the templates it shares
-            // with the page's bundles against their registrations too: each
-            // artifact's version stays, the one this registry resolves wins
             (target.candidates[name] ||= []).push(entry);
         }
         Object.assign(target.inline, inline);

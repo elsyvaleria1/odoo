@@ -98,7 +98,6 @@ export function insertPivot(pivotData) {
                 pivot_id: model.getters.getPivotFormulaId(pivotId),
             }),
         );
-        // Add an empty sheet in the case of an existing spreadsheet.
         if (!this.isEmptySpreadsheet) {
             const sheetId = uuidGenerator.smallUuid();
             const sheetIdFrom = model.getters.getActiveSheetId();

@@ -75,7 +75,7 @@ export async function editView(params, viewType, arch) {
         [[viewType, viewId]]: arch,
     });
     const result = model.get_views([[viewId || false, viewType]]);
-    result.models[modelName].fields = model.fields_get(); // return all fields
+    result.models[modelName].fields = model.fields_get();
     return result;
 }
 
@@ -137,22 +137,6 @@ export async function mountViewEditor(params) {
     });
 }
 
-/**
- * Keep the floating mail/discuss/bus overlays out of the editor DOM: these
- * tests query the rendered document, and those components inject markup
- * irrelevant to (and perturbing for) the view-editor assertions.
- *
- * Deliberately a DENYLIST of the few noisy components, not an allowlist of
- * "required" services. The previous allowlist enumerated every service the
- * components under test happened to need, which coupled this file to `web`'s
- * internals and rotted the moment `web` added one: `FormController` began
- * calling `useService("multi_company_recovery")`, that name was not in the
- * list, and all 228 form-editor mounts died on "Service multi_company_recovery
- * is not available". A `useService` call is an *undeclared* dependency, so
- * such a list can never be derived or kept correct — only a denylist of the
- * things these tests actively want gone is maintainable. Mirrors the same
- * approach already used by `client_action/report_editor/`.
- */
 function prepareRegistry() {
     registry.category("main_components").remove("mail.ChatHub");
     registry.category("main_components").remove("discuss.CallInvitations");

@@ -66,17 +66,12 @@ export class DocMethod extends Component {
             context: {},
         };
 
-        // `api` holds "model" and/or "readonly". Testing it for truthiness
-        // dropped `ids` from readonly INSTANCE methods too -- web_read and
-        // friends -- whose call then silently ran against no records at all.
         if (this.method.api?.includes("model")) {
             delete request.ids;
         }
 
         for (const paramName in this.method.parameters) {
             const param = this.method.parameters[paramName];
-            // *args / **kwargs are not parameters a caller sends by name: the
-            // extra values go in as keys of their own.
             if (param.kind === "VAR_POSITIONAL" || param.kind === "VAR_KEYWORD") {
                 continue;
             }

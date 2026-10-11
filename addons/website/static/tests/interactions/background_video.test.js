@@ -20,7 +20,6 @@ setupInteractionWhiteList(["website.background_video", "website.cookies_approval
 describe.current.tags("interaction_dev");
 
 test("background video stays hidden during its modal opening transition", async () => {
-    // Exercise modal wiring without loading a third-party video iframe.
     patchWithCleanup(BackgroundVideo.prototype, { appendBgVideo() {} });
     await startInteractions(`
         <div class="modal">
@@ -50,7 +49,6 @@ test("cookie acceptance before the background iframe exists is retained", async 
     expect(interaction.cookiesAccepted).toBe(true);
     expect(interaction.iframeEl).toBe(null);
     appendBgVideo.call(interaction);
-    // The HOOT template processor moves iframe URLs to data-src to avoid navigation.
     expect(interaction.iframeEl).toHaveAttribute("data-src", interaction.videoSrc);
 });
 
@@ -188,7 +186,6 @@ test("background player readiness after teardown does not start playback", async
         <div class="o_background_video" data-bg-video-src="https://www.youtube.com/embed/1?autoplay=1"></div>
     `);
     const interaction = getInteraction(core, BackgroundVideo);
-    // The HOOT template processor keeps iframe URLs in data-src.
     interaction.iframeEl.src = interaction.videoSrc;
     interaction.activateAutoplay();
     await tick();

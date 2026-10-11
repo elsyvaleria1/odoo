@@ -232,10 +232,6 @@ export const checkIdentityService = {
             return pendingCheck;
         };
 
-        // Any navigation closes every dialog (the action manager calls closeAll when
-        // it mounts a controller), and the route the page was opened on can mount
-        // after the inactivity timer has already asked for a check. Closing is not
-        // confirming, so the dialog comes back until the identity is confirmed.
         const keepDialogOpenUntilChecked = async () => {
             let checked = false;
             const onChecked = () => {
@@ -243,8 +239,6 @@ export const checkIdentityService = {
             };
             bus.addEventListener("identityChecked", onChecked, { once: true });
             while (!checked) {
-                // Empty the current view, to not let any confidential data displayed
-                // not even inspecting the dom or through the console using Javascript.
                 env.services.action && env.bus.trigger("ACTION_MANAGER:UPDATE", {});
                 await new Promise((resolve) => {
                     dialog.add(CheckIdentityDialog, {}, { onClose: resolve });
@@ -253,7 +247,6 @@ export const checkIdentityService = {
                     log.logic("dialogReopened");
                 }
             }
-            // Reload the view to display back the data that was displayed before.
             env.services.action && env.services.action.doAction("soft_reload");
         };
 
@@ -274,15 +267,12 @@ export const checkIdentityService = {
             }
         });
 
-        // Inactivity: Set a timer after which the check identity automatically appear.
         if (session.lock_timeout_inactivity) {
             const updatePresence = () => {
                 bus_service.send("update_presence", {
                     inactivity_period: presence.getInactivityPeriod(),
                 });
             };
-            // Start the bus to be able to send inactivities / presences, and
-            // send one as soon as it is: the worker holds it until connected.
             bus_service.start().then(updatePresence);
             const startInactivityTimer = () => {
                 inactivityTimer = setTimeout(
@@ -295,9 +285,7 @@ export const checkIdentityService = {
                             presence.getInactivityPeriod() >=
                             session.lock_timeout_inactivity * 1000
                         ) {
-                            // Send the fact the user is away to the server.
                             updatePresence();
-                            // Display the check identity dialog
                             await run();
                         }
                         startInactivityTimer();

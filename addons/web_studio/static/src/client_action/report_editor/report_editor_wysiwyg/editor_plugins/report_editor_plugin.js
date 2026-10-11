@@ -133,9 +133,6 @@ export class ReportEditorPlugin extends Plugin {
             .filter((n) => n.nodeType === Node.ELEMENT_NODE);
 
         if (elements.length === 1 && elements[0].hasAttribute("t-field")) {
-            // For now, ban expressions that contain a parenthesis
-            // That would be a function call (usually sudo)
-            // but we are *really* not sure about this.
             if (elements[0].getAttribute("t-field").includes("(")) {
                 return;
             }

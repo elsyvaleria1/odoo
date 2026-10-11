@@ -109,7 +109,6 @@ test("replying to message should only render relevant part", async () => {
     await contains(".o-mail-Message.o-selected");
     replying = false;
     const result = stopObserve();
-    // a component that did not render at all is absent from the result
     expect(result.get(Composer) ?? 0).toBeLessThan(2);
     expect(result.get(Message) ?? 0).toBeLessThan(2);
 });

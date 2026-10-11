@@ -80,7 +80,7 @@ registry.category("web_tour.tours").add("web_studio_new_app_tour", {
             ),
             tooltipPosition: "bottom",
             run: "drag_and_drop .o_web_studio_form_view_editor .o_inner_group",
-            timeout: 60000 /* previous step reloads registry, etc. - could take a long time */,
+            timeout: 60000,
         },
         {
             trigger: ".o_web_studio_form_view_editor .o_wrap_label label",
@@ -105,7 +105,6 @@ registry.category("web_tour.tours").add("web_studio_new_app_tour", {
                 ".o_web_studio_form_view_editor .o_wrap_label label:contains(My Field)",
         },
         {
-            // wait for the field to be renamed
             trigger: ".o_web_studio_sidebar .o_web_studio_new",
             content: markup(
                 _t(
@@ -113,8 +112,6 @@ registry.category("web_tour.tours").add("web_studio_new_app_tour", {
                 ),
             ),
             tooltipPosition: "bottom",
-            // the rename operation (/web_studio/rename_field + /web_studio/edit_view)
-            // takes a while and sometimes reaches the default 10s timeout
             timeout: 20000,
             run: "click",
         },

@@ -3,9 +3,6 @@ import tourUtils from "@sale/js/tours/tour_utils";
 import { registry } from "@web/core/registry";
 import { stepUtils } from "@web_tour/tour_utils";
 
-// Note: please keep this test without pricelist for maximum coverage.
-// The pricelist is tested on the other tours.
-
 registry.category("web_tour.tours").add("sale_product_configurator_tour", {
     url: "/odoo",
     steps: () => [
@@ -54,7 +51,6 @@ registry.category("web_tour.tours").add("sale_product_configurator_tour", {
         configuratorTourUtils.addOptionalProduct("Conference Chair (TEST)"),
         configuratorTourUtils.addOptionalProduct("Chair floor protection (TEST)"),
         ...configuratorTourUtils.saveConfigurator(),
-        // check that 3 products were added to the SO
         {
             trigger:
                 'td.o_data_cell:contains("Customizable Desk (TEST) (Aluminium, White)")',
@@ -62,7 +58,6 @@ registry.category("web_tour.tours").add("sale_product_configurator_tour", {
         {
             trigger: 'td.o_data_cell:contains("Conference Chair (TEST) (Aluminium)")',
         },
-        // check that additional line is kept if selected but not edited with a click followed by a check
         {
             trigger: 'td.o_data_cell:contains("Chair floor protection")',
             run: "click",

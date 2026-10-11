@@ -19,15 +19,11 @@ export class MapContainer extends Component {
 
     setup() {
         this.state = proxy({ mapStatus: "loading" });
-        // The dialog does not wait for the library: the list and the selected location's
-        // details are usable without the map.
         loadLeaflet().then(
             () => {
                 this.state.mapStatus = "loaded";
             },
             (error) => {
-                // a failed import() rejects with a TypeError, a failed stylesheet with
-                // an AssetsLoadingError; anything else is a bug and must surface
                 if (
                     !(error instanceof AssetsLoadingError || error instanceof TypeError)
                 ) {

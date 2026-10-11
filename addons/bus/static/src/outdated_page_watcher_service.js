@@ -7,14 +7,6 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { session } from "@web/session";
 
-/**
- * Key of the cross-tab shared flag recording that notifications were missed.
- *
- * Scoped by database for the same reason as `lastNotificationIdKey`:
- * `bus_bus.id` is a per-database sequence, so on a multi-database origin a
- * flag raised by another database's tabs would show a false "page is out of
- * date" warning here.
- */
 export function hasMissedNotificationsKey() {
     return `${session.db}.bus.has_missed_notifications`;
 }
@@ -40,27 +32,10 @@ export class OutdatedPageWatcherService {
         bus_service.addEventListener(
             "BUS:WORKER_STATE_UPDATED",
             ({ detail: state }) => {
-                // Only CONNECTED proves a PREVIOUS connection existed. Neither
-                // CONNECTING nor DISCONNECTED does: on a browser session
-                // restore (or a restore while the server is down/restarting),
-                // a joining tab replays the worker's current state, which is
-                // CONNECTING *or* DISCONNECTED (every failed attempt and every
-                // `_stop()` broadcasts DISCONNECTED — see
-                // `websocket_worker._onWebsocketClose`/`_stop`). Treating
-                // either as "already connected" would compare yesterday's
-                // localStorage watermark against the server (whose bus_bus
-                // rows are long GC'd) — a guaranteed, sticky false "page is
-                // out of date", propagated to every tab via the shared flag.
-                // A tab joining during a real reconnect is still covered by
-                // the BUS:CONNECT/BUS:RECONNECT listeners below.
                 wasBusAlreadyConnected = state === CONNECTION_STATE.CONNECTED;
             },
             { once: true },
         );
-        // The transport layer only does the multi-tab bookkeeping on
-        // BUS:OUTDATED (see bus_service): this service owns the single,
-        // deduped (via `closeNotificationFn`) user-facing notification for
-        // every "page is outdated" trigger.
         bus_service.addEventListener("BUS:OUTDATED", () =>
             this.showOutdatedPageNotification(),
         );
@@ -78,13 +53,6 @@ export class OutdatedPageWatcherService {
             wasBusAlreadyConnected = true;
         });
         bus_service.addEventListener("BUS:RECONNECT", () => {
-            // Same guard as BUS:CONNECT: the worker broadcasts BUS:RECONNECT
-            // whenever `isReconnecting` is set, which ANY failed attempt sets —
-            // including the retry of a first-ever connection. Probing then would
-            // compare a stale (possibly GC'd) watermark against the server and
-            // raise a sticky false "page is out of date". A genuine reconnect
-            // always had a prior BUS:CONNECT, so `wasBusAlreadyConnected` is the
-            // right discriminator.
             if (wasBusAlreadyConnected) {
                 this.checkHasMissedNotifications();
             }

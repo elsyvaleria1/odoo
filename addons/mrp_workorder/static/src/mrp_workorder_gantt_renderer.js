@@ -29,7 +29,6 @@ export class MRPWorkorderGanttRenderer extends GanttRenderer {
         for (const [otherStart, otherEnd] of union) {
             pillDuration -= otherEnd.epochMilliseconds - otherStart.epochMilliseconds;
         }
-        // Only a duration reduced by an unavailability refuses the pill.
         if (union.length && !pillDuration) {
             return false;
         }
@@ -44,7 +43,6 @@ export class MRPWorkorderGanttRenderer extends GanttRenderer {
     }
 
     shouldComputeAggregateValues(row) {
-        // compute aggregate values only for total row
         return row.id === "[]";
     }
 

@@ -6,14 +6,7 @@ import {
 
 export { BG_COLORS, COLORS };
 
-/**
- * This allows to list Font Awesome icon, independently of the library version
- * Some icons use the same glyph for multiple classes. Those are filtered to only
- * list the icon once
- */
 export function getFontAwesomeIcons() {
-    // FontAwesome 7 declares each glyph as `.fa-<name> { --fa: "\f06c"; }`
-    // (one custom property, no per-icon `:before` rule).
     const icons = [];
     for (const styleSheet of document.styleSheets) {
         if (!styleSheet.href || !styleSheet.href.includes("/web/")) {

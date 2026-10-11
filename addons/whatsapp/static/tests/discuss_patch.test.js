@@ -58,7 +58,7 @@ test("Invite users into whatsapp channel", async () => {
     pyEnv["res.users"].create({ partner_id: partnerId });
     await start();
     await openDiscuss(channelId);
-    await contains(".o-discuss-ChannelMemberList"); // wait for auto-open of this panel
+    await contains(".o-discuss-ChannelMemberList");
     await click(".o-mail-DiscussContent-header button[title='Invite People']");
     await click(".o-discuss-ChannelInvitation-selectable");
     await click(".o-discuss-ChannelInvitation [title='Invite']:enabled");

@@ -1,12 +1,6 @@
 /** @odoo-module native */
 import { _t } from "@web/core/translation";
 
-/**
- * This object describes the properties editable in studio, depending on
- * one or more attribute of a field. The TypeWidgetProperties component will
- * retrieve the value by itself, or you can set a function with the `getValue`
- * key to compute it specifically for one editable property.
- */
 const EDITABLE_FIELD_ATTRIBUTES = {
     context: {
         name: "context",
@@ -96,31 +90,6 @@ export const FIELD_TYPE_ATTRIBUTES = {
         common: [EDITABLE_FIELD_ATTRIBUTES.placeholder],
     },
 };
-
-/**
- * Computed Options are options that are tied to another option.
- * Their value and visibility depends on another option present in the sidebar.
- *
- * They must be documented using 'supportedOptions' on any field widget.
- * Then, register them under COMPUTED_DISPLAY_OPTIONS using the technical name of the option.
- *
- * Here is how to declare them :
- *
- *      COMPUTED_DISPLAY_OPTIONS = {
- *          dependent_option: {
- *              superOption (string): technical name of another option that has an impact on the dependent option.
- *                                      This option must also be documented under 'supportedOptions'.
- *              getValue (function): compute the value of the dependent option from super option value
- *              getReadonly (function): compute a boolean based on the super value.
- *                                      If true, the option is greyed out and it is not possible to interact with them.
- *                                      Otherwise, the dependent option can still be edited.
- *              getInvisible (function): compute a boolean based on the super value.
- *                                      If true, the option is not present in the sidebar.
- *          },
- *          ...
- *      }
- *
- */
 
 export const COMPUTED_DISPLAY_OPTIONS = {
     collaborative_trigger: {

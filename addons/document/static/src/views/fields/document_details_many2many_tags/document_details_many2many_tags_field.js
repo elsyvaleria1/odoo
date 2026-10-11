@@ -36,7 +36,6 @@ export class DocumentsDetailsMany2ManyTagsField extends Many2ManyTagsField {
         await this._saveTags();
     }
 
-    /** A folder's tags are also its search panel entry's. */
     async _saveTags() {
         await this.props.record.save();
         if (

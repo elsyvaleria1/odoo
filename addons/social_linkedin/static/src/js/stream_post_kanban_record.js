@@ -50,7 +50,6 @@ patch(StreamPostKanbanRecord.prototype, {
                 onPostUpdate: (newMessage) =>
                     this.props.record.update({ message: newMessage }),
                 onPostDeleted: async () => {
-                    // remove the record from the kanban view
                     await this.props.record.model.root.removeRecords([
                         this.props.record.id,
                     ]);

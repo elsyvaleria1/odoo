@@ -20,15 +20,8 @@ export const SocialPostFormatterMixinBase = {
      * @private
      */
     _formatPost(value) {
-        // add emojis support and escape HTML
         value = formatText(value);
-        // highlight URLs
         value = htmlReplace(value, SocialPostFormatterRegex.REGEX_URL, (url) => {
-            /**
-             * markup: value is a Markup object (either escaped inside htmlReplace or flagged safe),
-             * `url` is directly coming from this value, and the regex doesn't do anything crazy to
-             * unescape it.
-             */
             url = markup(url);
             return markup`<a href='${url}' class='text-truncate' target='_blank' rel='noreferrer noopener'>${url}</a>`;
         });

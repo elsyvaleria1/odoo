@@ -6,9 +6,6 @@
         return;
     }
 
-    // Safari ships no Temporal yet (coding_guidelines.rst §5.3). A parser-blocking
-    // script runs before any module of the page; 'strict-dynamic' admits it only
-    // with this shim's nonce.
     if (!globalThis.Temporal && globalThis.document?.readyState === "loading") {
         const nonce = document.currentScript?.nonce;
         document.write(
@@ -26,8 +23,6 @@
             (el?.tagName === "SCRIPT" && (el.src || el.dataset?.src)) ||
             (el?.tagName === "LINK" && el.href) ||
             "";
-        // precompiled templates are optional: without them the page compiles
-        // its templates itself, a reload would not bring them
         return src && src.includes("/web/assets/") && !src.includes("/web/assets/owl/")
             ? String(src)
             : "";
@@ -87,8 +82,6 @@
                     `the page did not provide "${specifier}" to its classic bundle`,
                 );
             }
-            // a bundler's interop takes this for an ES module, default export
-            // included, instead of wrapping it as CommonJS
             return { ...namespace, __esModule: true };
         }
 

@@ -15,14 +15,6 @@ import {
     webModels,
 } from "@web/../tests/web_test_helpers";
 
-/**
- * The map end to end: a real OpenLayers, the real renderer, and a mock
- * server answering get_layers. The 19.0.1.17.0 audit found the map frozen
- * at its first paint for every reload, and nothing in this module could have
- * caught it: every suite either stubbed the renderer or tested a helper.
- * This one mounts the view and counts what is on the map.
- */
-
 function point(x, y) {
     return JSON.stringify({
         type: "Point",

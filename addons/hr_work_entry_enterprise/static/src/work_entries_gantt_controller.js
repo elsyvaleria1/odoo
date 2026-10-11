@@ -25,7 +25,6 @@ export class WorkEntriesGanttController extends GanttController {
 
     openDialog(props) {
         if (!props.resId) {
-            // Add a day to the start date unless it is already the same as the stop date
             const startDate = new Date(props["context"]["default_date_start"]);
             const stopDate = new Date(props["context"]["default_date_stop"]);
             if (

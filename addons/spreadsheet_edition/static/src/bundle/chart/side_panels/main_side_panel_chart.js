@@ -8,11 +8,6 @@ const { ChartTypePicker } = spreadsheet.components;
 
 const GEO_RES_MODELS = ["res.country", "res.country.state"];
 
-/**
- * This patch is necessary to ensure that the chart type cannot be changed
- * between odoo charts and spreadsheet charts.
- */
-
 patch(ChartTypePicker.prototype, {
     setup() {
         super.setup();

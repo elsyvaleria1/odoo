@@ -14,8 +14,6 @@ const special_cards_selector = `.s_card.s_timeline_card, div:is(${card_parent_ha
 const so_snippet_addition_drop_in =
     ":not(p).oe_structure:not(.oe_structure_solo), :not(.o_mega_menu):not(p)[data-oe-type=html], :not(p).oe_structure.oe_structure_solo:not(:has(> section:not(.s_snippet_group), > div:not(.o_hook_drop_zone)))";
 
-// TODO need to split by addons
-
 export class DropZoneSelectorPlugin extends Plugin {
     static id = "dropzone_selector";
     /** @type {import("plugins").BuilderResources} */
@@ -64,7 +62,7 @@ export class DropZoneSelectorPlugin extends Plugin {
         so_content_addition_selector: [
             "blockquote",
             ".s_text_highlight",
-            ".s_donation", // TODO: move to plugin
+            ".s_donation",
             ".o_snippet_drop_in_only",
         ],
     };

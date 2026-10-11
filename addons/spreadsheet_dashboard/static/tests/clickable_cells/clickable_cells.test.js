@@ -184,7 +184,6 @@ test("Clickable ignores spill and empty cells for list sorting", async () => {
                 cells: {
                     A1: "foo",
                     B1: "bar",
-                    // spill cells
                     A2: "=ODOO.LIST.HEADER(1, A1:B1)",
                     A3: '=ODOO.LIST(1, sequence(2), "foo")',
                 },
@@ -213,6 +212,6 @@ test("Clickable ignores spill and empty cells for list sorting", async () => {
     expect(getCellIcons(model, "A4")).toHaveLength(0);
     expect(".o-dashboard-clickable-cell .fa-sort").toHaveCount(0);
 
-    expect(getCellIcons(model, "C10")).toHaveLength(0); // unrelated empty cell
+    expect(getCellIcons(model, "C10")).toHaveLength(0);
     expect(".o-dashboard-clickable-cell .fa-sort").toHaveCount(0);
 });

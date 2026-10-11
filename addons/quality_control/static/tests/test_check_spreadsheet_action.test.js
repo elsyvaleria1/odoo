@@ -55,7 +55,6 @@ describe("quality check spreadsheet action", () => {
         onRpc("wizard.quality.check.decide", "do_pass", (params) => {
             expect(params.args).toEqual([qualityCheckWizardId]);
             expect.step(params.method);
-            // return the next action
             return {
                 type: "ir.actions.client",
                 tag: "action_spreadsheet_quality",
@@ -92,7 +91,6 @@ describe("quality check spreadsheet action", () => {
         await click("button:contains(Save in The check name)");
         await animationFrame();
         expect.verifySteps(["do_pass"]);
-        // leave the spreadsheet by going to another
         getService("action").doAction({
             type: "ir.actions.client",
             tag: "action_spreadsheet_quality",
@@ -120,7 +118,6 @@ describe("quality check spreadsheet action", () => {
         await click("button:contains(Save in The check name)");
         await animationFrame();
         expect.verifySteps(["do_pass"]);
-        // leave the spreadsheet by going to another
         getService("action").doAction({
             type: "ir.actions.client",
             tag: "action_spreadsheet_quality",
@@ -160,7 +157,7 @@ describe("quality check spreadsheet action", () => {
             revisions: [],
             isReadonly: false,
             quality_check_display_name: "The check name",
-            quality_check_cell: false, // False = no value in the py orm
+            quality_check_cell: false,
         }));
         onRpc("quality.check", "do_pass", ({ method }) => {
             expect.step(method);

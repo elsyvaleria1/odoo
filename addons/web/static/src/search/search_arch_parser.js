@@ -476,8 +476,6 @@ export class SearchArchParser {
             ["groupBy", "dateGroupBy"].includes(preSearchItem.type) &&
             node.hasAttribute("domain")
         ) {
-            // A groupby filter may carry a domain: activating it then both
-            // groups and filters, e.g. "Depreciación Fiscal" on assets.
             preSearchItem.domain = node.getAttribute("domain");
         }
         if (node.hasAttribute("invisible")) {

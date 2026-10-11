@@ -45,10 +45,6 @@ export class VisibilityPlugin extends Plugin {
     };
 
     setup() {
-        // Add the `data-invisible="1"` attribute on the elements that are
-        // really hidden, and remove it from the ones that are in fact visible,
-        // depending on if we are in mobile preview or not, so the DOM is
-        // consistent.
         const isMobilePreview = this.config.isMobileView(this.editable);
         this.editable
             .querySelectorAll(deviceInvisibleSelector)
@@ -80,8 +76,6 @@ export class VisibilityPlugin extends Plugin {
                 !el.closest(systemNodeSelectors),
         );
         const targetMobileOrder = target.style.order;
-        // On mobile, if the target has a mobile order (which is independent
-        // from desktop), consider these orders instead of the DOM order.
         if (targetMobileOrder && this.config.isMobileView(target)) {
             visibleSiblingEls.sort(
                 (a, b) => parseInt(a.style.order) - parseInt(b.style.order),
@@ -116,10 +110,7 @@ export class VisibilityPlugin extends Plugin {
     cleanForSaveVisibility({ root: rootEl }) {
         const invisibleEls = getElementsWithOption(rootEl, invisibleElementsSelector);
         for (const invisibleEl of invisibleEls) {
-            // Hide the invisible elements.
             this.toggleTargetVisibility(invisibleEl, false, false, true);
-            // Remove the `data-invisible` attribute from conditionally hidden
-            // elements.
             if (invisibleEl.matches("[data-visibility='conditional']")) {
                 invisibleEl.removeAttribute("data-invisible");
             }
@@ -127,7 +118,6 @@ export class VisibilityPlugin extends Plugin {
     }
 
     onSnippetDropped({ snippetEl }) {
-        // Show the invisible elements.
         const invisibleEls = getElementsWithOption(
             snippetEl,
             invisibleElementsSelector,

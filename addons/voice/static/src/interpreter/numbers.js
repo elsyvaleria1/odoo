@@ -95,7 +95,6 @@ const UNITS = {
     novecientas: 900,
 };
 
-/** The words a number is said with, for matching what a recogniser misheard. */
 export const NUMBER_WORDS_SPOKEN = Object.freeze([
     ...Object.keys(UNITS).filter((word) => word.length > 2),
     "mil",
@@ -114,7 +113,6 @@ const POINT = new Set(["punto", "coma", "point", "dot"]);
  * @returns {number | null}
  */
 function parseInteger(words) {
-    // "dos y" is a number cut off, not two: a recogniser writes it for "doce"
     if (words.length && JOINERS.has(words[words.length - 1])) {
         return null;
     }
@@ -210,8 +208,6 @@ export function parseSpokenNumber(text) {
         .trim()
         .replace(/[.,;:!?]+$/u, "")
         .replace(/\s+/g, "");
-    // "3,200" is how a recogniser writes three thousand two hundred in Mexico;
-    // only a comma not followed by three digits is a decimal one ("12,5")
     if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(compact)) {
         return Number(compact.replaceAll(",", ""));
     }

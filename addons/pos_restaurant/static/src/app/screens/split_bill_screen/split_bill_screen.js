@@ -23,7 +23,6 @@ export class SplitBillScreen extends Component {
         useRouterParamsChecker();
 
         onWillDestroy(() => {
-            // Removing on all lines because the current order change during the split
             this.pos.models["pos.order.line"].map((l) => (l.uiState.splitQty = false));
         });
     }
@@ -106,7 +105,6 @@ export class SplitBillScreen extends Component {
     }
 
     async transferSplittedOrder(event) {
-        // Prevents triggering the 'startTransferOrder' event listener
         event.stopPropagation();
         const totalQty = this.totOrderQty;
         const selectedQty = this.getNumberOfProducts();
@@ -135,7 +133,6 @@ export class SplitBillScreen extends Component {
         newOrder.uiState.splittedOrderUuid = curOrderUuid;
         originalOrder.uiState.splittedOrderUuid = newOrder.uuid;
 
-        // Create lines for the new order
         const comboMap = new Map();
         const lineToDel = [];
         const newCourses = new Map();
@@ -143,7 +140,6 @@ export class SplitBillScreen extends Component {
             if (this.qtyTracker[line.uuid]) {
                 let newCourse;
                 if (line.course_id) {
-                    // Create courses in the new order
                     const { course_id: oldCourse } = line;
                     const courseIndex = oldCourse.index;
                     newCourse = newCourses.get(courseIndex);
@@ -157,7 +153,6 @@ export class SplitBillScreen extends Component {
                 }
                 const data = { ...line.raw };
 
-                // Combo lines will be relinked by the children
                 delete data.combo_line_ids;
                 delete data.uuid;
                 delete data.id;

@@ -12,8 +12,6 @@ import {
 const { topbarMenuRegistry } = registries;
 const { HighlightStore } = stores;
 
-// Spreadsheet top bar menu items
-
 topbarMenuRegistry.addChild("new_sheet", ["file"], {
     name: _t("New"),
     sequence: 10,

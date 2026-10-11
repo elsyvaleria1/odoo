@@ -50,7 +50,7 @@ class LinesSections extends models.Model {
         },
     ];
     _views = {
-        form: /* xml */ `
+        form: `
             <form>
                 <field name="title" />
             </form>
@@ -84,9 +84,9 @@ test("normal list view", async () => {
                 </form>
             `,
     });
-    expect("td.o_survey_description_page_cell").toHaveCount(2); // Check if we have the two rows in the list
+    expect("td.o_survey_description_page_cell").toHaveCount(2);
 
-    expect("tr.o_is_section").toHaveCount(1); // Check if we have only one section row
+    expect("tr.o_is_section").toHaveCount(1);
     expect(SELECTORS.section).toHaveProperty("colSpan", 2);
 
     await contains(SELECTORS.section).click();
@@ -112,16 +112,14 @@ test("list view with random count", async () => {
                 </form>
             `,
     });
-    expect("td.o_survey_description_page_cell").toHaveCount(2); // Check if we have the two rows in the list
+    expect("td.o_survey_description_page_cell").toHaveCount(2);
 
-    expect("tr.o_is_section").toHaveCount(1); // Check if we have only one section row
+    expect("tr.o_is_section").toHaveCount(1);
     expect(SELECTORS.section).toHaveProperty("colSpan", 2);
 
-    // We can edit the section title
     await contains(SELECTORS.section).click();
     expect(SELECTORS.section + " div.input-group").toHaveCount(1);
 
-    // We can edit the number of random questions selected
     await contains(SELECTORS.numberQuestions).click();
     expect(SELECTORS.numberQuestions + " div").toHaveCount(1);
 });
@@ -145,9 +143,9 @@ test("list view with random but with question_type at the left of the title", as
                 </form>
             `,
     });
-    expect("td.o_survey_description_page_cell").toHaveCount(2); // Check if we have the two rows in the list
+    expect("td.o_survey_description_page_cell").toHaveCount(2);
 
-    expect("tr.o_is_section").toHaveCount(1); // Check if we have only one section row
+    expect("tr.o_is_section").toHaveCount(1);
     expect(SELECTORS.section).toHaveProperty("colSpan", 1);
 
     await contains(SELECTORS.section).click();
@@ -175,9 +173,9 @@ test("list view with random and question_type at the beginning of row", async ()
                 </form>
             `,
     });
-    expect("td.o_survey_description_page_cell").toHaveCount(2); // Check if we have the two rows in the list
+    expect("td.o_survey_description_page_cell").toHaveCount(2);
 
-    expect("tr.o_is_section").toHaveCount(1); // Check if we have only one section row
+    expect("tr.o_is_section").toHaveCount(1);
     expect(SELECTORS.section).toHaveProperty("colSpan", 1);
 
     await contains(SELECTORS.section).click();
@@ -209,7 +207,6 @@ test("deleting a question used as a trigger elsewhere saves the whole form", asy
             `,
     });
 
-    // record 1 (firstSectionTitle) is used as a trigger by record 2 (recordTitle)
     await contains(".o_data_row:eq(0) .o_list_record_remove").click();
 
     expect(".o_data_row").toHaveCount(1);

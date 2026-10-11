@@ -10,10 +10,8 @@ patch(PaymentForm.prototype, {
     setup() {
         super.setup();
         this.adyenCheckout = undefined;
-        this.adyenComponents = {}; // Store the component of each instantiated payment method.
+        this.adyenComponents = {};
     },
-
-    // #=== DOM MANIPULATION ===#
 
     /**
      * Prepare the inline form of Adyen for direct payment.
@@ -39,22 +37,18 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Check if instantiation of the component is needed.
         if (flow === "token") {
-            return; // No component for tokens.
+            return;
         } else if (this.adyenComponents[paymentOptionId]) {
-            this._setPaymentFlow("direct"); // Overwrite the flow even if no re-instantiation.
+            this._setPaymentFlow("direct");
             if (paymentMethodCode === "paypal") {
-                // PayPal uses its own button to submit.
                 this._hideInputs();
             }
-            return; // Don't re-instantiate if already done for this payment method.
+            return;
         }
 
-        // Overwrite the flow of the selected payment method.
         this._setPaymentFlow("direct");
 
-        // Extract and deserialize the inline form values.
         const radio = document.querySelector('input[name="o_payment_radio"]:checked');
         const inlineFormValues = JSON.parse(radio.dataset["adyenInlineFormValues"]);
         const formattedAmount = inlineFormValues["formatted_amount"];
@@ -81,10 +75,8 @@ patch(PaymentForm.prototype, {
         );
         const { AdyenCheckout, createComponent } = window.AdyenWeb;
 
-        // Create the checkout object if not already done for another payment method.
         if (!this.adyenCheckout) {
             try {
-                // Await the RPC to let it create AdyenCheckout before using it.
                 const response = await this.waitFor(
                     rpc("/payment/adyen/payment_methods", {
                         provider_id: providerId,
@@ -92,7 +84,6 @@ patch(PaymentForm.prototype, {
                         formatted_amount: formattedAmount,
                     }),
                 );
-                // Create the Adyen Checkout SDK.
                 const providerState = this._getProviderState(radio);
                 const configuration = {
                     paymentMethodsResponse: response,
@@ -125,17 +116,14 @@ patch(PaymentForm.prototype, {
             }
         }
 
-        // Instantiate and mount the component.
         const componentConfiguration = {
             showPayButton: false,
         };
         if (paymentMethodCode === "card") {
             componentConfiguration["hasHolderName"] = true;
             componentConfiguration["holderNameRequired"] = true;
-            // Forbid Bancontact cards in the card component.
             componentConfiguration["brands"] = ["mc", "visa", "amex", "discover"];
         } else if (paymentMethodCode === "paypal") {
-            // PayPal requires the form to be submitted with its own button.
             Object.assign(componentConfiguration, {
                 style: {
                     disableMaxWidth: true,
@@ -145,7 +133,6 @@ patch(PaymentForm.prototype, {
                 blockPayPalPayLaterButton: true,
             });
             this._hideInputs();
-            // Define necessary fields as the step submitForm is missed.
             Object.assign(this.paymentContext, {
                 tokenizationRequested: false,
                 providerId: providerId,
@@ -162,8 +149,6 @@ patch(PaymentForm.prototype, {
             componentConfiguration,
         ).mount(adyenContainer);
     },
-
-    // #=== PAYMENT FLOW ===#
 
     /**
      * Trigger the payment processing by submitting the component.
@@ -182,20 +167,17 @@ patch(PaymentForm.prototype, {
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
         if (providerCode !== "adyen" || flow === "token") {
-            // Tokens are handled by the generic flow
             await super._initiatePaymentFlow(...arguments);
             return;
         }
 
         if (!this.adyenComponents[paymentOptionId]) {
-            // Component creation failed.
             this._enableButton();
             return;
         }
 
         this.adyenComponents[paymentOptionId].submit();
 
-        // The `onError` event handler is not used to validate inputs anymore since v5.0.0.
         if (!this.adyenComponents[paymentOptionId].isValid) {
             this._displayErrorDialog(_t("Incorrect payment details"));
             this._enableButton();
@@ -213,15 +195,13 @@ patch(PaymentForm.prototype, {
      */
     async _adyenOnSubmit(state, component, actions) {
         try {
-            // Create the transaction and retrieve the processing values.
             const processingValues = await this.waitFor(
                 rpc(
                     this.paymentContext["transactionRoute"],
                     this._prepareTransactionRouteParams(),
                 ),
             );
-            component.reference = processingValues.reference; // Store final reference.
-            // Initiate the payment.
+            component.reference = processingValues.reference;
             const paymentResponse = await this.waitFor(
                 rpc("/payment/adyen/payments", {
                     provider_id: processingValues.provider_id,
@@ -239,8 +219,7 @@ patch(PaymentForm.prototype, {
                 return;
             }
             if (paymentResponse.action && paymentResponse.action.type !== "redirect") {
-                this._hideInputs(); // Only the inputs of the inline form should be used.
-                // The page is blocked at this point; unblock it.
+                this._hideInputs();
                 this.env.bus.trigger("ui", "unblock");
             }
             actions.resolve(paymentResponse);

@@ -60,9 +60,6 @@ export class PayrollDashboardStats extends Component {
         return this.props.data[this.state.monthly ? "monthly" : "yearly"];
     }
 
-    /**
-     * Creates and binds the chart on `canvasRef`.
-     */
     renderChart() {
         if (this.chart) {
             this.chart.destroy();

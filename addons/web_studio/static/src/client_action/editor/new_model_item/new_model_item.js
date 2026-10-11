@@ -35,10 +35,6 @@ class SimpleNewModelDialog extends Component {
                         context: user.context,
                     },
                 );
-                // This continuation deliberately outlives the dialog (confirm()
-                // closes it first): call reload on the raw service, because the
-                // useService view cancels its async methods once the dialog is
-                // destroyed, which would silently drop the rest of the flow.
                 await this.appServices.menu.reload();
                 const action = await this.action.loadAction(action_id);
                 this.menus.setCurrentMenu(menu_id);

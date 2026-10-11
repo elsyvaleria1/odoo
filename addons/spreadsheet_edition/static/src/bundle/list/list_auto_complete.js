@@ -29,7 +29,6 @@ registries.autoCompleteProviders.add("list_relational_fields", {
                     : [];
             let fields = await loadFields(env, model, fieldNames);
             if (!fields) {
-                // the last field is not a relation or an incomplete path
                 fieldNames = fieldNames.slice(0, -1);
                 fields = await loadFields(env, model, fieldNames);
             }
@@ -62,7 +61,6 @@ registries.autoCompleteProviders.add("list_relational_fields", {
     },
     selectProposal: function selectListProposal(tokenAtCursor, value) {
         insertTokenAfterArgSeparator.call(this, tokenAtCursor, value);
-        // move the cursor back before the double quotes to chain relations with "." ("user_id.country_id")
         const beforeClosingDoubleQuotes = this.composer.composerSelection.end - 1;
         this.composer.changeComposerCursorSelection(
             beforeClosingDoubleQuotes,
@@ -86,7 +84,7 @@ function canAutoCompleteListField(tokenAtCursor) {
     const functionContext = tokenAtCursor.functionContext;
     return (
         functionContext?.parent.toUpperCase() === "ODOO.LIST" &&
-        functionContext.argPosition === 2 // the field is the third argument: =ODOO.LIST(1,2,"email")
+        functionContext.argPosition === 2
     );
 }
 
@@ -94,7 +92,7 @@ function canAutoCompleteListHeaderField(tokenAtCursor) {
     const functionContext = tokenAtCursor.functionContext;
     return (
         functionContext?.parent.toUpperCase() === "ODOO.LIST.HEADER" &&
-        functionContext.argPosition === 1 // the field is the second argument: =ODOO.LIST.HEADER(1,"email")
+        functionContext.argPosition === 1
     );
 }
 

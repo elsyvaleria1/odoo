@@ -1,28 +1,4 @@
 /** @odoo-module native */
-/**
- * Golden vectors for the barcode parser -- the single source of truth for both
- * runtimes.
- *
- * The parser exists twice, in Python (barcodes/models/barcode_nomenclature.py)
- * and in JS (barcodes/static/src/js/barcode_parser.js), and the two silently
- * drifted apart for years: UPC/EAN conversion worked on the client and was dead
- * on the server, "$"-anchored patterns matched trailing garbage on the server
- * only, and a barcode containing "." failed to match on the server only.
- *
- * Read by:
- *   JS     -> barcodes/static/tests/barcode_conformance.test.js
- *   Python -> barcodes/tests/test_barcode_conformance.py, which slices the
- *             template literal below and json.loads it.
- *
- * The payload is a JSON string rather than an object literal on purpose:
- * prettier rewrites an object literal into JS style (dropping the quotes around
- * keys), which is not JSON any more and broke the Python half. Inside a
- * template literal it is left alone, so one file can serve both runtimes. The
- * literal is raw (String.raw) so a backslash reaches JSON.parse as Python reads it.
- *
- * Add a case here, and a change that moves one runtime and not the other fails
- * on the side that did not move.
- */
 
 export const VECTORS = JSON.parse(String.raw`
 {

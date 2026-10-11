@@ -11,9 +11,6 @@ function onHoliday(component) {
     return Boolean(component.value?.includes("holiday"));
 }
 
-// `back on <date>` where a date is known, and the plain label where it is not:
-// hr_holidays guards the same field before formatting it, and an employee can be
-// flagged absent without an end date having reached this record.
 function backOn(component, label) {
     const end = component.props.record.data.leave_date_to;
     if (!end) {
@@ -25,10 +22,6 @@ function backOn(component, label) {
     });
 }
 
-// Each getter answers ONLY for a holiday and delegates everything else. The
-// location branches these used to carry were a verbatim copy of hr_homeworking's,
-// which this module is patched on top of, so `super` already answers them -- and
-// a copy is how the two come to disagree.
 const patchHrPresenceStatus = () => ({
     get color() {
         if (onHoliday(this)) {

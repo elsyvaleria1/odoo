@@ -28,8 +28,7 @@ beforeEach(() => {
 });
 
 class Parent extends Component {
-    // We need to wrap the component in a div with `o-spreadsheet` to have a correct portal target for spreadsheet popovers
-    static template = xml /* xml */ `
+    static template = xml`
         <div class="o-spreadsheet">
             <PivotDetailsSidePanel onCloseSidePanel="this.props.onCloseSidePanel" pivotId="this.props.pivotId"/>
         </div>
@@ -166,7 +165,6 @@ test("Open pivot properties properties with non-loaded field", async function ()
         (handler) => handler instanceof PivotUIPlugin,
     );
     const dataSource = Object.values(pivotPlugin.pivots)[0];
-    // remove all loading promises and the model to simulate the data source is not loaded
     dataSource._loadPromise = undefined;
     dataSource._createModelPromise = undefined;
     dataSource._model = undefined;
@@ -266,11 +264,9 @@ test("can drag a column dimension to row", async function () {
     await animationFrame();
     expect(".pivot-defer-update .fa-undo").toHaveCount(1);
     expect(".pivot-defer-update .sp_apply_update").toHaveCount(1);
-    // TODO use a snapshot
     definition = JSON.parse(
         JSON.stringify(model.getters.getPivotCoreDefinition(pivotId)),
     );
-    // update is not applied until the user clicks on the save button
     expect(definition.columns).toEqual([{ fieldName: "foo" }]);
     expect(definition.rows).toEqual([{ fieldName: "bar" }]);
     await contains(".pivot-defer-update .o-button-link").click();
@@ -318,7 +314,7 @@ test("remove pivot dimension", async function () {
 
 test("remove pivot date time dimension", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" type="row" interval="year"/>
                 <field name="date" type="row" interval="month"/>
@@ -339,7 +335,7 @@ test("remove pivot date time dimension", async function () {
 
 test("add column dimension", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -360,7 +356,7 @@ test("add column dimension", async function () {
 
 test("add row dimension", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -381,7 +377,7 @@ test("add row dimension", async function () {
 
 test("add column dimension on a related model", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -410,7 +406,7 @@ test("add column dimension on a related model", async function () {
 
 test("add row dimension on a related model", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -494,7 +490,7 @@ test("Cannot follow relation of a non store field the server cannot group by", a
         groupable: false,
     });
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -515,7 +511,7 @@ test("Can follow relation of a non store field the server groups by", async func
         groupable: true,
     });
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -536,7 +532,7 @@ test("Cannot follow relation of a m2m field", async function () {
         string: "Product",
     });
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -551,7 +547,7 @@ test("Cannot follow relation of a m2m field", async function () {
 
 test("select dimensions with arrow keys", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -632,7 +628,7 @@ test("add and search dimension", async function () {
         { id: 1, foo: 12, bar: true, foobar: "foobar", probability: 10 },
     ];
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -694,7 +690,7 @@ test("add measure", async function () {
 
 test("change measure aggregator", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -737,7 +733,7 @@ test("pivot with a reference field measure", async function () {
     Partner._records = [{ id: 1, currency_reference: "res.currency,1" }];
 
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="currency_reference" type="measure"/>
             </pivot>
@@ -752,7 +748,7 @@ test("pivot with a reference field measure", async function () {
 
 test("change dimension order", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="foo" type="row"/>
                 <field name="probability" type="measure"/>
@@ -771,7 +767,6 @@ test("change dimension order", async function () {
     );
     expect(definition.rows).toEqual([{ fieldName: "foo", order: "desc" }]);
 
-    // reset to automatic
     await contains(".pivot-dimensions select").select("");
     await contains(".pivot-defer-update .o-button-link").click();
     definition = JSON.parse(
@@ -782,7 +777,7 @@ test("change dimension order", async function () {
 
 test("change date dimension granularity", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" interval="day" type="row"/>
                 <field name="probability" type="measure"/>
@@ -806,7 +801,7 @@ test("change date dimension granularity", async function () {
 
 test("pivot with twice the same date field with different granularity", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" interval="year" type="row"/>
                 <field name="date" interval="day" type="row"/>
@@ -862,7 +857,7 @@ test("display pivot related filters panel", async function () {
 
 test("PivotModelFieldSelectorPopover in debug mode for column", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>
@@ -878,7 +873,7 @@ test("PivotModelFieldSelectorPopover in debug mode for column", async function (
 
 test("PivotModelFieldSelectorPopover in debug mode for row", async function () {
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>

@@ -32,7 +32,6 @@ homeTileRegistry.addValidation(
 class HomeTileBoundary extends ErrorBoundary {
     setup() {
         super.setup();
-        // Runs before the boundary's own handler, which takes the error on.
         onError((/** @type {unknown} */ error) => {
             console.warn("Home tile failed to render", error);
             throw error;

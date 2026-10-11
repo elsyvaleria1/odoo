@@ -7,11 +7,6 @@ import { detectGeoJSONProjection } from "./geoengine_renderer_utils.js";
 
 const debugLog = makeGeoLogger("TrailLayer");
 
-/**
- * Builds the animated WebGL trail layer of a `webgl_trail` view: one XYM
- * line per record, timestamps interpolated where the record carries fewer
- * than its vertices, and a style variable the time slider drives.
- */
 export class TrailLayerBuilder {
     /**
      * @param {GeoengineRenderer} renderer

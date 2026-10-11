@@ -1,11 +1,6 @@
 import { expect, getFixture, test } from "@odoo/hoot";
 import { blendColors, rgbaToHex, rgbToHex } from "@web/core/utils/format/colors";
 
-// `rgbToHex` and `blendColors` used to be two copies of the same compositing
-// rule that disagreed by one step on every channel whose blend was not an exact
-// integer -- `Math.floor` against `Math.round`. They are one implementation
-// now, so each pair below asserts the same value on purpose.
-
 test("should convert an rgb and rgba color to hexadecimal", async () => {
     expect(rgbToHex("rgb(0, 0, 255)")).toBe("#0000ff");
     expect(rgbToHex("rgb(0,0,255)")).toBe("#0000ff");

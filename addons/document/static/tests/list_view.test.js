@@ -180,7 +180,6 @@ test("Required document name", async function () {
         await animationFrame();
         expect(".o_notification").toHaveCount(1);
         expect(".o_notification").toHaveText("Name cannot be empty.");
-        // closing the notification is a click outside the row: it leaves edit mode
         await contains(".o_notification .o_notification_close").click();
         await animationFrame();
         expect(lr(documentName, ".o_data_cell[name='name']")).toHaveText(documentName, {
@@ -565,7 +564,6 @@ test("focusing the open folder again is the same focus", async function () {
             return super.updateDocumentURL(...arguments);
         },
     });
-    // mounting focused the folder already: clicking its empty area changes nothing
     await contains(".o_list_renderer").click();
     await contains(".o_list_renderer").click();
     expect.verifySteps([]);
@@ -584,7 +582,6 @@ test("Move to Trash is offered only when something would move", async function (
         }),
     ]);
     await makeDocumentsMockEnv({ serverData });
-    // the mock user passes every group check: a manager sees through locks
     patchWithCleanup(getService("document.document"), { userIsDocumentManager: false });
     await mountDocumentsListView();
     await contains(".o_data_row:contains('Theirs') .o_list_record_selector").click();
@@ -627,7 +624,6 @@ test("a lock never narrows what the user who took it may do", async function () 
 });
 
 test("a lock the server says does not stop this user leaves the trash offered", async function () {
-    // a Documents manager: lock_uid is someone else's, is_locked_by_other false
     patchWithCleanup(documentsMockUser, { isManager: true });
     const serverData = getDocumentsTestServerModelsData([
         makeDocumentRecordData(2, "Theirs", {
@@ -733,7 +729,6 @@ test("the cog is there at a root too, with its global entries; a folder adds its
     expect(items).toInclude("Export All");
     expect(items).toInclude("Rename…");
 
-    // from a folder to another: the menu follows, no remount needed
     searchModel.toggleCategoryValue(searchModel.folderCategory.id, 3);
     await animationFrame();
     expect(await cogItems()).not.toInclude("Rename…", {
@@ -1053,7 +1048,6 @@ test("a download with nothing to zip sends no request", async function () {
         return "";
     });
     await makeDocumentsMockEnv({ serverData: getDocumentsTestServerModelsData() });
-    // a domain selection of links and requests only
     await getService("document.document").downloadDocuments([], []);
     expect.verifySteps([]);
 });

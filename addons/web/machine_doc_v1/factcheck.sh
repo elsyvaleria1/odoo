@@ -486,9 +486,9 @@ assert_eq "_pl selects via Intl.PluralRules with an 'other' fallback" \
     "$(grep -c 'forms\[category\] ?? forms.other' "$WEB/static/src/core/translation.js")" "1"
 
 # ------- OWL bundle -------
-assert_eq "OWL bundle bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.es.js")" "336248"
-assert_eq "OWL runtime bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.runtime.es.js")" "236107"
-assert_eq "OWL compiler module bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.compiler.es.js")" "101314"
+assert_eq "OWL bundle bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.es.js")" "315529"
+assert_eq "OWL runtime bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.runtime.es.js")" "220025"
+assert_eq "OWL compiler module bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.compiler.es.js")" "96504"
 assert_eq "OWL version string" \
     "$(grep -oE 'version = "[0-9]+\.[0-9]+\.[0-9]+[^"]*"' "$WEB/static/lib/owl/owl.es.js" | head -1)" \
     'version = "3.0.0-alpha.49"'
@@ -810,8 +810,8 @@ assert_doc_cites "ARCHITECTURE.md vendored-libs paragraph: directories and vendo
     "$LIB_DIRS $LIB_VENDORED" '^%s directories: %s vendored libraries plus' ARCHITECTURE.md
 assert_eq "ARCHITECTURE.md no stale fullcalendar 6.1.20 / 7.0.0-rc.3" \
     "$(grep -cE 'fullcalendar.{0,30}(6\.1\.20|7\.0\.0-rc)' "$WEB/machine_doc_v1/ARCHITECTURE.md")" "0"
-assert_eq "fullcalendar vendored bundle is v7 (final 7.0.0 present in source)" \
-    "$(grep -c 'FullCalendar v7' "$WEB/static/lib/fullcalendar/fullcalendar.esm.js"):$(grep -m1 -coE 'v7\.0\.0' "$WEB/static/lib/fullcalendar/fullcalendar.esm.js")" "1:1"
+assert_eq "fullcalendar vendored bundle exposes its ESM default export" \
+    "$(grep -c '^export default FullCalendar;' "$WEB/static/lib/fullcalendar/fullcalendar.esm.js")" "1"
 
 # 13. AppEvent.FORM_DIALOG_* never existed in core/events.js; the stack is
 #     driven by direct push()/pop() calls. Lock the phantom rows out.

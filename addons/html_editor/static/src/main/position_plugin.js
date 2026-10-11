@@ -12,11 +12,6 @@ export class PositionPlugin extends Plugin {
     static id = "position";
     /** @type {import("plugins").EditorResources} */
     resources = {
-        // `layoutGeometryChange` is reassigned to a throttled wrapper in
-        // `setup()`, which runs after these class fields are initialized —
-        // wrapping the call instead of pre-binding here ensures each handler
-        // resolves `this.layoutGeometryChange` at call time, always getting
-        // the throttled version.
         external_history_step_handlers: (...args) => this.layoutGeometryChange(...args),
         history_reset_from_steps_handlers: (...args) =>
             this.layoutGeometryChange(...args),

@@ -6,11 +6,9 @@ import { markup } from "@odoo/owl";
 import { _t } from "@web/core/translation";
 
 const savableSelector = "[data-snippet], a.btn";
-// TODO `so_submit_button_selector` ?
 const savableExclude =
     ".o_no_save, .s_donation_donate_btn, .s_website_form_send, .js_subscribe_btn";
 
-// Checks if the element can be saved as a custom snippet.
 function isSavable(el) {
     return el.matches(savableSelector) && !el.matches(savableExclude);
 }

@@ -47,7 +47,6 @@ export function getDefaultColors(editingElement) {
     }
     const shapeContainerClonedEl = shapeContainerEl.cloneNode(true);
     shapeContainerClonedEl.classList.add("d-none");
-    // Needs to be in document for bg-image class to take effect
     editingElement.ownerDocument.body.appendChild(shapeContainerClonedEl);
     shapeContainerClonedEl.style.setProperty("background-image", "");
     const shapeSrc =

@@ -26,11 +26,9 @@ patch(WebFileViewer.prototype, {
     async openSignTemplate() {
         const file = this.state.file;
 
-        // Need res_id or res_model to reference to the sign request
         const { model: res_model, id: res_id } = file.thread;
         const attachment_id = file.id;
 
-        // If the res_model is sign.request as it's not allowed in reference field selection in the backend,
         if (res_model === "sign.request" || !res_id || !res_model) {
             return;
         }

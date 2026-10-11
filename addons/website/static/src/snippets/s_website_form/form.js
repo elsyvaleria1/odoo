@@ -90,8 +90,6 @@ export class Form extends Interaction {
         this.inputEls = this.el.querySelectorAll(
             ".s_website_form_field.s_website_form_field_hidden_if .s_website_form_input",
         );
-        // before the dynamic content disables the inputs it hides: destroy
-        // restores what the page had, not what this interaction wrote
         for (const inputEl of this.inputEls) {
             this.disabledStates.set(inputEl, inputEl.disabled);
         }
@@ -113,7 +111,6 @@ export class Form extends Interaction {
             captcha: !this.el.classList.contains("s_website_form_no_recaptcha"),
             userPrefill: !!user.userId,
         }));
-        // the class is the one saved forms carry, whatever the provider
         if (!this.el.classList.contains("s_website_form_no_recaptcha")) {
             this.captchaLoaded = true;
             const endCaptcha = log.perf("willStart captcha load");

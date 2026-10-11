@@ -93,9 +93,6 @@ export class DataMergeListController extends DataCleaningCommonListController {
         return this.orm.call("data_merge.group", action, [groupId, recordIds]);
     }
 
-    /**
-     * Merge all the selected records
-     */
     async onValidateClick() {
         const records = this.model.root.selection;
         let group_ids = {};

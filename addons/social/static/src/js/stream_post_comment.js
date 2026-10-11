@@ -29,10 +29,6 @@ export class StreamPostComment extends SocialPostFormatterMixin(Component) {
         });
     }
 
-    //----------
-    // Handlers
-    //----------
-
     async _onLoadReplies() {
         this.action.showSubComment = true;
     }
@@ -57,10 +53,6 @@ export class StreamPostComment extends SocialPostFormatterMixin(Component) {
         });
     }
 
-    //---------
-    // Private
-    //---------
-
     async _confirmDeleteComment() {
         await rpc(this.deleteCommentEndpoint, {
             stream_post_id: this.originalPost.id.raw_value,
@@ -70,17 +62,9 @@ export class StreamPostComment extends SocialPostFormatterMixin(Component) {
         this.props.onDeleteComment();
     }
 
-    //-------
-    // Utils
-    //-------
-
     formatComment(commentMessage) {
         return this._formatPost(commentMessage);
     }
-
-    //----------
-    // Getters
-    //----------
 
     get comment() {
         return this.state.editedComment ?? this.props.comment;

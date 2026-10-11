@@ -59,7 +59,6 @@ export class SignRefusalDialog extends Component {
             refusal_reason: reason,
         };
 
-        // When not logged in, add name and email of the public user.
         if (!this.user) {
             const name = this.refuseNameEl.el.value;
             const email = this.refuseEmailEl.el.value;

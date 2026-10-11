@@ -39,7 +39,6 @@ export function showsSelectionActions({ previewedDocument, focusedRecord }, sele
 
 export const DocumentsControllerMixin = (component) =>
     class extends component {
-        /** Whether this view carries the selection's action menus. */
         static hasSelectionActions = true;
 
         setup() {
@@ -54,7 +53,6 @@ export const DocumentsControllerMixin = (component) =>
             this.documentStates = proxy({ previewStore: {} });
             this.rightPanelState = proxy(this.documentService.rightPanelReactive);
 
-            // a picker opened in a dialog must not take the menus of the view below
             const providesActions =
                 this.constructor.hasSelectionActions &&
                 !this.searchModel.context.documents_view_secondary;
@@ -68,7 +66,6 @@ export const DocumentsControllerMixin = (component) =>
 
             useLayoutEffect(() => this.openInitialPreview());
 
-            // the Documents app reopens on the layout last chosen on a large screen
             const viewConfig = useViewConfig();
             if (
                 viewConfig.actionXmlId === "document.document_action" &&
@@ -80,22 +77,18 @@ export const DocumentsControllerMixin = (component) =>
         }
 
         provideSelectionActions() {
-            // Registered synchronously: the control panel's DocumentsAction reads
-            // it from its own mounted effect, which runs before this component's.
             const provider = () => ({
                 getTopbarActions: () => this.getTopBarActionMenuItems(),
                 getMenuProps: () => this.actionMenuProps,
             });
             this.documentService.selectionActions.provider = provider;
             onWillDestroy(() => {
-                // On a view switch the next controller has already registered its own.
                 if (this.documentService.selectionActions.provider === provider) {
                     this.documentService.selectionActions.provider = null;
                 }
             });
         }
 
-        /** On a small screen the selection bar takes the folder menu's room. */
         get hidesFolderMenu() {
             const hides = Boolean(this.ui.isSmall && this.model.root.selection.length);
             log.logic("hidesFolderMenu", () => ({
@@ -150,7 +143,6 @@ export const DocumentsControllerMixin = (component) =>
                 return;
             }
             this.model.pendingPreviewId = undefined;
-            // a file the viewer cannot show (an archive) stays selected only
             if (doc.isViewable()) {
                 doc.openPreview();
             }
@@ -220,8 +212,6 @@ export const DocumentsControllerMixin = (component) =>
 
         getEmbeddedActions() {
             const embeddedActions = getCommonEmbeddedActions(this.model.targetRecords);
-            // an integer key would put the folder's actions in id order, not the
-            // order the server sequenced them in
             return Object.fromEntries(
                 embeddedActions.map((e) => [
                     `embedded_action_${e.id}`,
@@ -359,7 +349,6 @@ export const DocumentsControllerMixin = (component) =>
                     groupNumber: COG_GROUP.RECORD,
                 },
                 lock: {
-                    // the lock of another is theirs (or a manager's) to lift
                     isAvailable: () =>
                         userIsInternal &&
                         singleSelection &&

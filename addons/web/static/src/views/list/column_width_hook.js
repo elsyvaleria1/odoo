@@ -450,9 +450,6 @@ export class MagicColumnWidths {
         if (signature === this.contentSignature) {
             return;
         }
-        // rows are built a screenful at a time, and a group is opened under
-        // rows that stay: labels joining the ones a column was sized for
-        // leave it as it is, unless one of them does not fit
         const fits =
             this.columnWidths &&
             this.contentLabels?.length === labels.length &&

@@ -19,8 +19,6 @@ patch(Spreadsheet.prototype, {
 patch(Grid.prototype, {
     setup() {
         super.setup();
-        // Remove the Ctrl+K hotkey (open a link) from the grid to avoid conflict
-        // with the command palette.
         delete this.keyDownMapping["Ctrl+K"];
     },
 });

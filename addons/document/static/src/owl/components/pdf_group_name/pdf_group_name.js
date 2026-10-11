@@ -17,7 +17,6 @@ export class PdfGroupName extends Component {
 
     setup() {
         this.nameInputRef = elementRef();
-        // an autofocus attribute is ignored on an element inserted after load
         useAutofocus({ ref: this.nameInputRef, selectAll: true });
     }
 

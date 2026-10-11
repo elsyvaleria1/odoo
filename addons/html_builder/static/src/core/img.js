@@ -19,13 +19,6 @@ const svgCache = new Cache(async (src) => {
         const response = await window.fetch(src);
         text = await response.text();
     } catch {
-        // In some tours, the tour finishes before the fetch is done
-        // and when a tour is finished, the python side will ask the
-        // browser to stop loading resources. This causes the fetch
-        // to fail and throw an error which crashes the test even
-        // though it completed successfully.
-        // So return an empty SVG to ensure everything completes
-        // correctly.
         text = "<svg></svg>";
     }
     const parser = new window.DOMParser();
@@ -81,8 +74,6 @@ export class Img extends Component {
                     this.isSvg(this.props.src) &&
                     this.svg.children.length
                 ) {
-                    // We can't use t-out with markup because it is parsed as HTML,
-                    // but SVG need to be parsed as XML for all features to work.
                     const children = [];
                     for (const child of this.svg.children) {
                         children.push(child.cloneNode(true));

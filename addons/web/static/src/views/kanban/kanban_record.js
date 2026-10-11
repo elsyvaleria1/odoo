@@ -236,10 +236,6 @@ export class KanbanRecord extends Component {
                 this.formattedRecord = getFormattedRecord(nextProps.record);
             }
         });
-        // a microtask boundary before the first render: a card created by a
-        // render fiber that a concurrent state write supersedes would otherwise
-        // render on the discarded fiber (pinned by "rerenders only once after
-        // resequencing records")
         onWillStart(() => Promise.resolve());
         this.rootRef = elementRef();
         this.hasTouch = hasTouch();

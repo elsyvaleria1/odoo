@@ -263,9 +263,6 @@ export function setupTestEnvironment() {
     ]) {
         delete content[name];
     }
-    // the form view notes every record it shows a second later; a test that
-    // lists all its RPCs would see that beacon, so it is inert unless a test
-    // starts the real service itself
     if (content.recent_records) {
         serviceReg.add(
             "recent_records",
@@ -273,9 +270,6 @@ export function setupTestEnvironment() {
             { force: true },
         );
     }
-    // the mock template processor makes the registry refuse every precompiled
-    // template, so the artifacts would be fetched for nothing, and through the
-    // loadJS a test patches to watch its own scripts
     if (content.precompiled_templates) {
         serviceReg.add("precompiled_templates", { start() {} }, { force: true });
     }

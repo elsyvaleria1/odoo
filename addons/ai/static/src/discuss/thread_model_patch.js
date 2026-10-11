@@ -12,9 +12,6 @@ patch(DiscussChannel.prototype, {
         this.ai_prompt_buttons = fields.Many("ai.prompt.button", {
             inverse: "thread_id",
             compute() {
-                // ``getItem`` may yield ``undefined`` (storage mocks) or the
-                // literal string ``"undefined"`` (polluted entry); both make
-                // ``JSON.parse`` throw and abort the whole Store insert.
                 const raw = browser.localStorage.getItem(
                     AI_PROMPT_BUTTONS.concat(this.id),
                 );

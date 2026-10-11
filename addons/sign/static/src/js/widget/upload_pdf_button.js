@@ -18,16 +18,12 @@ export class UploadPdfButton extends Component {
 
     setup() {
         super.setup(...arguments);
-        // Import and assign functions from useSignViewButtons to enable access to `requestFile`,
-        // which is essential for handling file uploads.
         this.uploadFileInputRef = elementRef();
         const functions = useSignViewButtons(this, this.uploadFileInputRef);
         Object.assign(this, functions);
     }
 
     onClickUpload(context) {
-        // Set `resModel` to 'sign.template' as it is required by the file upload logic
-        // to properly associate the uploaded files with the correct model.
         this.props.resModel = "sign.template";
         return this.requestFile(context);
     }

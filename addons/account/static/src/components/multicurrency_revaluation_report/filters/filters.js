@@ -7,9 +7,6 @@ import { _t } from "@web/core/translation";
 export class MulticurrencyRevaluationReportFilters extends AccountReportFilters {
     static template = "account.MulticurrencyRevaluationReportFilters";
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Custom filters
-    //------------------------------------------------------------------------------------------------------------------
     async filterExchangeRate(ev, currencyId) {
         try {
             this.controller.cachedFilterOptions.currency_rates[currencyId].rate =

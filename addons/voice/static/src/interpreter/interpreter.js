@@ -40,11 +40,6 @@ import {
 import { parseSpokenNumber } from "./numbers.js";
 import { rewriteTerms } from "./terms.js";
 
-/**
- * How much a proposal may change before the user sees it.
- * NAVIGATE and SEARCH run at once and can be undone; STAGE writes into the
- * record without saving; COMMIT waits for an explicit confirmation.
- */
 export const RISK = Object.freeze({ NAVIGATE: 0, SEARCH: 1, STAGE: 2, COMMIT: 3 });
 
 const MENU_THRESHOLD = 0.8;
@@ -233,10 +228,6 @@ function phraseAt(words, start, phrases) {
     }
     return 0;
 }
-
-// ---------------------------------------------------------------------------
-// proposals
-// ---------------------------------------------------------------------------
 
 /**
  * @param {import("./vocabulary.js").MenuTerm} term
@@ -433,10 +424,6 @@ function openSomething(tokens, text, vocabulary) {
 function single(text, proposal) {
     return { text, proposals: [proposal], candidates: [], blocked: null };
 }
-
-// ---------------------------------------------------------------------------
-// search
-// ---------------------------------------------------------------------------
 
 /**
  * @param {string[]} words
@@ -660,10 +647,6 @@ export function searchProposal(spec, labels) {
         description: labels.join(" · "),
     };
 }
-
-// ---------------------------------------------------------------------------
-// form
-// ---------------------------------------------------------------------------
 
 /**
  * @param {import("./vocabulary.js").FormFieldTerm} field
@@ -1157,8 +1140,6 @@ export function commandProposal(command) {
         description: command.name,
     };
 }
-
-// ---------------------------------------------------------------------------
 
 /**
  * @param {Interpretation} interpretation

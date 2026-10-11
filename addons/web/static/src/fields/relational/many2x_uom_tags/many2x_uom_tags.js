@@ -10,15 +10,8 @@ import {
 } from "@web/fields/relational/many2many_tags";
 import { Many2XAutocomplete } from "@web/fields/relational/many2x_autocomplete";
 
-// These three helpers are called with `this` bound to the host field component
-// (`Many2OneUomField` or `Many2ManyUomTagsField`), which is why they read from
-// `this.props` rather than taking an argument: it keeps a single source of truth
-// for "which product / quantity is this UoM widget attached to" shared by both
-// the many2one and the many2many variants (and their templates).
-
 export function getProductRelatedModel() {
     const field = this.props.record.fields[this.props.productField];
-    // The widget is either used alongside a product related field or used in a product view.
     const resModel = field?.relation || this.props.record.resModel;
     if (!["product.product", "product.template"].includes(resModel)) {
         throw new Error(
@@ -30,8 +23,6 @@ export function getProductRelatedModel() {
 
 export function getProductId() {
     const { record } = this.props;
-    // On a product form the record *is* the product; elsewhere the product is
-    // reached through the configured product field (defaults to `product_id`).
     if (["product.product", "product.template"].includes(record.resModel)) {
         return record.resId || 0;
     }
@@ -52,16 +43,7 @@ export class Many2XUomTagsAutocomplete extends Many2XAutocomplete {
 
     setup() {
         super.setup();
-        // Monotonic token: when the product changes faster than the RPCs
-        // resolve, only the newest fetch is allowed to commit `referenceUnit`,
-        // so a slow early response can never clobber a newer one. A `KeepLast`
-        // would express the same intent but leaves superseded promises pending
-        // forever, and search() below *awaits* this handle -- awaiting a
-        // never-settling promise would wedge the dropdown open on a spinner.
         this.referenceUnitSeq = 0;
-        // Kept off OWL's render path on purpose: an `await` here (or an async
-        // onWillUpdateProps callback returning a promise) would block the field
-        // from patching on every product change.
         this.updateReferenceUnit();
         onWillUpdateProps((nextProps) => {
             if (
@@ -74,11 +56,6 @@ export class Many2XUomTagsAutocomplete extends Many2XAutocomplete {
     }
 
     updateReferenceUnit(props = this.props) {
-        // Handle kept so search() can wait for the in-flight fetch instead of
-        // reading a still-undefined `referenceUnit`: opening the dropdown
-        // before the initial RPC landed used to silently degrade to an
-        // unsorted, unannotated list, which made the widget's behaviour a race
-        // against the network.
         this.referenceUnitReady = this._loadReferenceUnit(
             props,
             ++this.referenceUnitSeq,
@@ -109,7 +86,6 @@ export class Many2XUomTagsAutocomplete extends Many2XAutocomplete {
                 );
                 referenceUnit = products[0]?.uom_id || undefined;
             } catch {
-                // deleted or inaccessible product: degrade to a plain autocomplete
                 referenceUnit = undefined;
             }
         }
@@ -119,8 +95,6 @@ export class Many2XUomTagsAutocomplete extends Many2XAutocomplete {
     }
 
     async search(name) {
-        // The reference unit decides both the ordering and the annotations
-        // below, so the dropdown must not be built before it is known.
         await this.referenceUnitReady;
         const fields = ["id", "display_name", "factor", "reference_uom_id"];
         const domain = [...this.props.getDomain(), ["name", "ilike", name]];
@@ -129,19 +103,6 @@ export class Many2XUomTagsAutocomplete extends Many2XAutocomplete {
         const referenceRoot = reference?.reference_uom_id?.id;
         let records;
         if (referenceRoot) {
-            // Compatible units (sharing the reference unit's dimension) come
-            // first; both queries are bounded, the overflow is sliced off
-            // below. `reference_uom_id` is an indexed column, so this is an
-            // equality test rather than the `parent_path` prefix LIKE it
-            // replaces.
-            //
-            // The second query is issued even when the first already fills the
-            // dropdown, which does happen (the mm and ml families have 8
-            // members each, against a limit of searchLimit + 1 = 8). Skipping
-            // it means waiting for the first result before deciding, and a
-            // second round-trip on every keystroke costs the user more than a
-            // sometimes-discarded query costs the server. Kept parallel on
-            // purpose.
             const sameDimension = ["reference_uom_id", "=", referenceRoot];
             const [common, others] = await Promise.all([
                 this.orm.searchRead(
@@ -165,17 +126,6 @@ export class Many2XUomTagsAutocomplete extends Many2XAutocomplete {
         }
         const quantity = this.props.productQuantity || 1;
         return records.map((record) => {
-            // Only advertise a conversion for units actually convertible into
-            // the product's unit (i.e. sharing its reference root), and always
-            // express it *in the product's unit*.
-            //
-            // This used to branch on whether the candidate had a parent: a
-            // candidate with one was shown as `qty * relative_factor` of its
-            // own parent, which is the product's unit only when the parent
-            // happens to be it. With a product in Dozens, "Pack of 6" read
-            // "42 Units" -- a correct number in the wrong unit, sitting in the
-            // same dropdown as "0.58 Dozen" for a root candidate. The single
-            // factor-ratio form below is the general case and subsumes both.
             let relativeInfo = "";
             if (
                 reference &&

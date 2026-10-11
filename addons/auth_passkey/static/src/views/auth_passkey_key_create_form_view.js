@@ -18,7 +18,6 @@ export class PassKeyNameFormController extends FormController {
                 const registration = await passkeyLib
                     .startRegistration(serverOptions)
                     .catch((e) => console.error(e));
-                // In case the user cancelled the passkey browser check, just interrupt.
                 if (!registration) {
                     return false;
                 }

@@ -12,7 +12,6 @@ patch(GroupedLineComponent.prototype, {
     sublineProps(subline) {
         const props = super.sublineProps(subline);
         if (this.model.resModel === "stock.picking.batch") {
-            // Don't display the picking on sublines if already displayed on grouped line.
             props.hidePickingName = Boolean(this.pickingName);
         }
         return props;

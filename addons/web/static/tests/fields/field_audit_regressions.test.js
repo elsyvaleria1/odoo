@@ -391,8 +391,6 @@ test("Field evaluates readonly/required once per render", async () => {
     }
     defineModels([Probe]);
 
-    // installed by whichever of the label and the field sets up first: OWL 3
-    // may render the label before the field's setup runs
     const probe = (/** @type {any} */ record) => {
         const raw = toRaw(record);
         if (!raw.__auditProbed) {

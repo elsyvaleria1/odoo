@@ -403,10 +403,6 @@ test(`test exceptions are correctly rendered in multicalendar`, async () => {
 });
 
 test("every partner is asked for once, and as a number", async () => {
-    // `Object.keys(partnerColorMap)` yields STRINGS, so the guard against adding
-    // the current user twice compares a string array to a numeric partner id and
-    // never matches: the id goes out twice, and the payload mixes strings with
-    // numbers for a domain that is compared against integer columns.
     let sent;
     onRpc("get_worklocation", ({ args }) => {
         sent = args[0];
@@ -424,10 +420,6 @@ test("every partner is asked for once, and as a number", async () => {
 });
 
 test("a user with two employees keeps both work locations", async () => {
-    // `multiCalendar` asks whether any location belongs to somebody else. A user
-    // with an employee in each of two companies answers "no" to that, and the
-    // single-calendar branch keeps one event per day — so the second employee
-    // overwrites the first and one of the two silently disappears.
     onRpc("get_worklocation", () => ({
         1: {
             ...EMPLOYEE_WORK_LOCATIONS[1],
@@ -449,11 +441,6 @@ test("a user with two employees keeps both work locations", async () => {
 });
 
 test("a work location that is not yours offers no edit or delete", async () => {
-    // `hasFooter` gates the footer on `record.userId === user.userId`, so the
-    // calendar is self-service: an HR user looking at somebody else's week can
-    // see it and cannot act on it. Nothing covered that, and it is the guard that
-    // makes the weekly-delete path unreachable for an employee with no user at
-    // all -- `user_id` is false there, and false never equals a user id.
     onRpc("get_worklocation", () => EMPLOYEE_WORK_LOCATIONS);
     await mountHomeWorkingView();
     await contains(

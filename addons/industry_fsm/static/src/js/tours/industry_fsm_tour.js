@@ -105,7 +105,6 @@ registry.category("web_tour.tours").add("industry_fsm_tour", {
             run: "click",
         },
         {
-            // check the task is marked as done
             trigger: "div[name='state'] .btn-outline-success",
             id: "fsm_invoice_create",
         },

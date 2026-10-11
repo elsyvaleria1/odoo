@@ -21,8 +21,6 @@ const DROP_IN_ONLY_SNIPPETS = {
     s_video: ".media_iframe_video",
 };
 
-// The preview replaces the browser URL with its iframe's once that loads, so
-// the list is read from the URL the test started on, not from the location.
 function getSnippetsNames(startUrl) {
     const url = new URL(startUrl, window.location.origin);
     const path = url.searchParams.get("path");

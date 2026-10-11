@@ -20,8 +20,6 @@ export class AppointmentTypeSelect extends Interaction {
     };
 
     start() {
-        // Load an image when no appointment types are found
-        // TODO: maybe define a "replace" position in renderAt
         const el = this.el.querySelector(".o_appointment_svg i");
         if (el) {
             this.renderAt("Appointment.appointment_svg", {}, el, "afterend");

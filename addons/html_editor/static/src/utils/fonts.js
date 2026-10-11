@@ -1,9 +1,5 @@
 /** @odoo-module native */
 const DEFAULT_FACE = "fa-solid";
-// FontAwesome 7 glyph rules set only `--fa`; the face they belong to is the
-// last `--fa-family` marker rule before them in source order (`.fab,
-// .fa-brands {...}` opens brands.css), unless the rule names its own family,
-// as the v4 shims do.
 const FACE_MARKERS = {
     fab: "fa-brands",
     "fa-brands": "fa-brands",
@@ -41,10 +37,6 @@ export const fonts = {
             return this.cacheCssSelectors[cacheKey];
         }
         this.cacheCssSelectors[cacheKey] = [];
-        // FontAwesome 7 writes an icon and each of its aliases as separate
-        // rules with the same glyph, canonical name first; one icon per
-        // glyph, or the picker lists it twice and stores whichever name
-        // was clicked.
         const byCss = new Map();
         const sheets = document.styleSheets;
         let currentFace = DEFAULT_FACE;

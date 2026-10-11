@@ -75,8 +75,6 @@ export class HomeTilesModel {
         this.queued++;
         this.state.saving = true;
         try {
-            // one at a time: each answer is the whole layout after it, and two
-            // in flight could land in either order
             await this.mutex.exec(async () => {
                 const settings = await this.orm.call(
                     "res.users.settings",

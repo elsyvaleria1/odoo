@@ -50,8 +50,6 @@ export class GanttArchParser extends ViewArchParser {
                     break;
                 }
                 case "templates": {
-                    // the popover body and footer are templates the renderer
-                    // compiles: the <templates> sub-tree is materialised once
                     const templates = irToElement(node, { text: literalNbsp });
                     const body =
                         templates.querySelector("[t-name=gantt-popover]") || null;
@@ -120,9 +118,6 @@ function parseConsolidation(attrs) {
 function parseAllowedRanges(attrs) {
     const allowedRanges = new Set();
     if (attrs.scales) {
-        // Unknown entries are dropped on purpose, so an untrimmed one is
-        // dropped too: `scales="day, week"` used to yield the day range alone,
-        // silently and with nothing in the arch to suggest it.
         for (const key of attrs.scales.split(",")) {
             if (RANGES[key.trim()]) {
                 allowedRanges.add(key.trim());
@@ -143,14 +138,12 @@ function parseAllowedRanges(attrs) {
     return { allowedRanges, defaultRange };
 }
 
-// precision = {'day': 'hour:half', 'week': 'day:half', 'month': 'day', 'year': 'month:quarter'}
 function parseCellPrecisions(attrs) {
     const cellPrecisions = {};
     const precisionAttrs = attrs.precision ? evaluateExpr(attrs.precision) : {};
     for (const scaleId in SCALES) {
         if (precisionAttrs[scaleId]) {
-            const precision = precisionAttrs[scaleId].split(":"); // hour:half
-            // precision[0] (the cell interval) is ignored — it is not yet customizable.
+            const precision = precisionAttrs[scaleId].split(":");
             if (
                 precision[1] &&
                 Object.keys(SCALES[scaleId].cellPrecisions).includes(precision[1])
@@ -165,8 +158,6 @@ function parseCellPrecisions(attrs) {
 
 /** @returns {Record<string, Range>} */
 function buildRanges(allowedRanges, cellPrecisions) {
-    // One object per scale id, shared by every range that draws at it, so that
-    // two ranges on the same granularity compare equal rather than merely alike.
     const scalesById = {};
     function getScale(scaleId) {
         if (!(scaleId in scalesById)) {

@@ -27,8 +27,6 @@ export class FsmTaskCalendarModel extends ProjectTaskCalendarModel {
         return context;
     }
 
-    // An FSM task is a whole-day intervention, so it always starts where the
-    // click landed, on every scale.
     planStartsAtCalendarClick() {
         return true;
     }

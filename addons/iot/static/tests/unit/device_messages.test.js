@@ -30,9 +30,6 @@ test("a device type nobody registered still reads", () => {
 });
 
 test("normalize may turn an apparent success into the failure it really is", () => {
-    // The seam a fiscal data module needs: it reports failure in the body
-    // rather than in `status`, so the event has to be rewritten before anything
-    // reads it. Registered here rather than depending on a driver module.
     deviceMessages.add("test.device", {
         messages: { 201: "Card broken" },
         defaultMessage: "All good",

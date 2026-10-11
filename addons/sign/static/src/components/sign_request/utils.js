@@ -146,7 +146,6 @@ export function startSmoothScroll(
     const dragAmount = 10;
     const el = dragImageElement || element;
     function updateMousePosition(e) {
-        // calculates the event's position relative to the container
         mouse.x = e.clientX - containerOffset.left - offsetX;
         mouse.y = e.clientY - containerOffset.top - offsetY;
         helperLines.show(el, { x: e.clientX - offsetX, y: e.clientY - offsetY });
@@ -277,7 +276,6 @@ export function startResize(signItem, onResize) {
 export function buildPDFViewerURL(attachmentLocation, isSmall) {
     const date = new Date().toISOString();
     const baseURL = "/web/static/lib/pdfjs/web/viewer.html";
-    // encodes single quote and double quotes as encodeURIComponent does not handle those
     attachmentLocation = encodeURIComponent(attachmentLocation)
         .replace(/'/g, "%27")
         .replace(/"/g, "%22");
@@ -285,8 +283,6 @@ export function buildPDFViewerURL(attachmentLocation, isSmall) {
 }
 
 export function injectPDFCustomStyles(iframeDoc) {
-    /* Apply custom styles for documents's PDF viewers as early as possible
-    to minimize the visibility of default PDF.js styles during rendering. */
     const link = iframeDoc.createElement("link");
     link.rel = "stylesheet";
     link.type = "text/css";
@@ -352,9 +348,6 @@ export function getAutoScrollOffset(
         });
     }
 
-    /**
-     * Stops the auto-scrolling animation
-     */
     function stopScrolling() {
         if (scrollCleanup) {
             scrollCleanup();

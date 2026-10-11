@@ -27,8 +27,6 @@ test("Cursor position is correct after backspace in the middle of a number", asy
     const inputEl = document.querySelector(".o-voip-Keypad-searchBar input");
     inputEl.setSelectionRange(3, 3);
 
-    // TODO this would not be needed if `useSelection.moveCursor` would actually
-    // move the cursor in mobile also. To change in master?
     await new Promise(setTimeout);
 
     await click(".o-voip-Keypad-backspace");
@@ -47,8 +45,6 @@ test("Cursor position is correct after inserting a number in the middle of a num
     const inputEl = document.querySelector(".o-voip-Keypad-searchBar input");
     inputEl.setSelectionRange(3, 3);
 
-    // TODO this would not be needed if `useSelection.moveCursor` would actually
-    // move the cursor in mobile also. To change in master?
     await new Promise(setTimeout);
 
     await click(".o-voip-Keypad-digitBtn:has(> span:text('8'))");

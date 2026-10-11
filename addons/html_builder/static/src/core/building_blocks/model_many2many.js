@@ -40,7 +40,6 @@ export class ModelMany2Many extends Component {
             searchModel: undefined,
         });
         this.modelEdit = undefined;
-        // This `useDomState` is here to get update from history when undo/redo
         this.domState = useDomState((el) => {
             if (!this.modelEdit) {
                 return { selection: [] };
@@ -63,11 +62,9 @@ export class ModelMany2Many extends Component {
             [props.m2oField],
         );
         const selectedRecordIds = record[props.m2oField];
-        // TODO: handle no record
         const modelData = await this.fields.loadFields(props.baseModel, {
             fieldNames: [props.m2oField],
         });
-        // TODO: simultaneously fly both RPCs
         this.state.searchModel = modelData[props.m2oField].relation;
         this.modelEdit = this.cachedModel.useModelEdit({
             model: this.props.baseModel,
@@ -91,7 +88,6 @@ export class ModelMany2Many extends Component {
         this.builderContext.editor.shared.history.addStep();
     }
     create(name) {
-        // TODO maybe this can be in base layer
         this.setSelection([
             ...this.domState.selection,
             {

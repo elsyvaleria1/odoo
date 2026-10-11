@@ -1,7 +1,4 @@
 /** @odoo-module native */
-/**
- * Add custom steps to take products and sales order into account
- */
 import "@industry_fsm/js/tours/industry_fsm_tour";
 
 import { markup } from "@odoo/owl";

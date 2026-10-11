@@ -65,7 +65,6 @@ class PrivateCardViewDialog extends Component {
             this.send2FARequest();
         });
     }
-    // Common
     async initStripeJS() {
         const result = await this.ormCardCall("get_stripe_js_init_params");
         if (!result) {
@@ -77,7 +76,6 @@ class PrivateCardViewDialog extends Component {
         });
     }
 
-    // Card View
     async fetchCardInfo() {
         try {
             const result = (
@@ -116,7 +114,6 @@ class PrivateCardViewDialog extends Component {
             },
         });
 
-        // Small Fix as sometimes when we click on the numbers it calls focus which is not available for issuing elements
         cardNumberElement.focus = () => {};
         cardNumberElement.mount(this.numberPlaceholder.el);
 
@@ -133,7 +130,6 @@ class PrivateCardViewDialog extends Component {
                 },
             },
         });
-        // Small Fix as sometimes when we click on the numbers it calls focus which is not available for issuing elements
         cardCvcElement.focus = () => {};
         cardCvcElement.mount(this.cvcPlaceholder.el);
 
@@ -151,12 +147,10 @@ class PrivateCardViewDialog extends Component {
                     },
                 },
             });
-            // Small Fix as sometimes when we click on the numbers it calls focus which is not available for issuing elements
             cardPinElement.focus = () => {};
             cardPinElement.mount(this.pinPlaceholder.el);
         }
 
-        //Copy buttons
         const cardNumberCopyElement = elements.create("issuingCardCopyButton", {
             toCopy: "number",
             style: {
@@ -188,7 +182,6 @@ class PrivateCardViewDialog extends Component {
         });
     }
 
-    // 2FA
     async send2FARequest() {
         const phoneResult = await this.ormCardCall("action_send_iap_2fa_code");
         this.state.session = phoneResult.session_id;
@@ -213,11 +206,10 @@ class PrivateCardViewDialog extends Component {
         }
     }
 
-    // Utility functions
     ormCardCall(functionName, ...params) {
         try {
             return this.orm.call("hr.expense.stripe.card", functionName, [
-                this.card_id, // res_id
+                this.card_id,
                 ...params,
             ]);
         } catch (error) {

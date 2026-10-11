@@ -137,7 +137,6 @@ describe("_updateCategoryValue", () => {
     }
 
     test("a remembered special root this panel lacks opens All", () => {
-        // a portal user's panel: no COMPANY root
         const category = makeCategory({
             rootIds: [false],
             folders: [
@@ -155,7 +154,6 @@ describe("_updateCategoryValue", () => {
             folders: [
                 { id: false, childrenIds: [7] },
                 { id: 7, parentId: false, childrenIds: [] },
-                // remembered, but its own parent is no longer listed
                 { id: 9, parentId: false, childrenIds: [] },
             ],
         });

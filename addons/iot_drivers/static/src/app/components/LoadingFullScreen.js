@@ -11,8 +11,6 @@ export class LoadingFullScreen extends Component {
     setup() {
         this.store = useStore();
 
-        // We delay the RPC verification for 10 seconds to be sure that the Odoo service
-        // was already restarted
         onMounted(() => {
             setTimeout(() => {
                 setInterval(async () => {

@@ -65,13 +65,6 @@ export class StudioDynamicPlaceholderPopover extends Component {
         if (this.props.showOnlyX2ManyFields) {
             return ["one2many", "many2many"].includes(fieldDef.type);
         } else {
-            /**
-             * We don't want to display x2many fields inside a report as it would not make sense.
-             * We also don't want to display boolean fields.
-             * This override is necessary because we want to be able to select non-searchable fields.
-             * There is no reason as to why this wouldn't be allowed inside a report as we don't search on those fields,
-             * we simply render them.
-             */
             return !["one2many", "boolean", "many2many"].includes(fieldDef.type);
         }
     }

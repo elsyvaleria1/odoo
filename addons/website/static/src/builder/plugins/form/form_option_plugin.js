@@ -1600,7 +1600,6 @@ export class SetFormCustomFieldValueListAction extends BuilderAction {
     apply({ editingElement: fieldEl, value, loadResult: fields }) {
         let valueList = JSON.parse(value);
         if (isFieldCustom(fieldEl)) {
-            // A custom field posts its labels, so each value follows its label.
             valueList = valueList.map((record) => ({
                 ...record,
                 id: isSmallInteger(record.display_name)

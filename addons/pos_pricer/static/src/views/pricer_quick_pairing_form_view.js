@@ -21,7 +21,6 @@ export class PricerQuickPairingForm extends FormController {
                 return;
             }
 
-            // Handlers
             const productBarcodeFocusoutHandler = async (event) => {
                 const productBarcode = event.target.value;
                 if (!productBarcode) {
@@ -72,9 +71,6 @@ export class PricerQuickPairingForm extends FormController {
                     return;
                 } else if (
                     !(
-                        // Check tag id validity in js to avoid ValidationError popup
-                        // Should be 1 letter followed by 16 digits
-                        // Example: N4081315789813275
                         pricerTagBarcode.length === PRICER_TAG_ID_LENGTH &&
                         isNaN(pricerTagBarcode[0]) &&
                         !isNaN(pricerTagBarcode.substring(1))
@@ -145,7 +141,6 @@ export class PricerQuickPairingForm extends FormController {
                 }
             };
 
-            // =========== ADD EVENT LISTENERS ===========
             inputDumProdBarcode.addEventListener(
                 "focusout",
                 productBarcodeFocusoutHandler,
@@ -158,7 +153,6 @@ export class PricerQuickPairingForm extends FormController {
             inputDumTagBarcode.addEventListener("keydown", tagBarcodeKeydownHandler);
 
             return () => {
-                // Remove the listeners at the end so they don't multiply
                 inputDumProdBarcode.removeEventListener(
                     "focusout",
                     productBarcodeFocusoutHandler,

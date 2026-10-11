@@ -140,9 +140,7 @@ test(`each provider is synchronized as the view loads`, async () => {
     });
     expect.verifySteps(["sync_data", "search_read"]);
 
-    // select the partner filter
     await toggleSectionFilter("partner_ids");
-    // sync_data was called a first time without filter, event from google calendar was created twice
     expect(`.fc-event`).toHaveCount(4, {
         message: "should display 4 events on the month",
     });

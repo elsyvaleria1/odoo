@@ -61,9 +61,6 @@ export class SignItemCustomPopover extends Component {
                 .join("\n");
         });
 
-        /**
-         * Focuses the selection options textarea when the popover is rendered
-         */
         onMounted(() => {
             if (this.props.type === "selection") {
                 const textarea = document.querySelector(
@@ -83,8 +80,6 @@ export class SignItemCustomPopover extends Component {
     }
 
     onGlobalKeyDown(event) {
-        // the popover's own fields keep their keys: Delete edits the text,
-        // Ctrl+C copies the selection
         const target = event.target;
         if (
             target.isContentEditable ||
@@ -110,7 +105,6 @@ export class SignItemCustomPopover extends Component {
     onChange(key, value) {
         this.state[key] = value;
 
-        // Focuses the placeholder input if the item is set as read-only
         if (key === "constant") {
             if (value) {
                 document.querySelector("#o_sign_name")?.focus();

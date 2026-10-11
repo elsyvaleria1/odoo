@@ -303,8 +303,6 @@ export class TimePicker extends Component {
         }
     }
 
-    // a rejected commit leaves the unparseable text until the box is left;
-    // then it shows the value again
     resyncRejectedEdit() {
         this.updateStateValue(this.value, this.props, true);
     }

@@ -47,8 +47,6 @@ async function persistLayout(owner, field, previous, config) {
             state.confirmed = optimistic;
         } else if (owner.embeddedInfos[field] === optimistic) {
             if (field === "embeddedActions") {
-                // A layout rollback must not recreate actions deleted while saving,
-                // or discard newly created actions and refreshed action metadata.
                 owner.sortActions(state.confirmed.map(({ id }) => id));
             } else {
                 const actions = owner.embeddedInfos.embeddedActions;

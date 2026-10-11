@@ -39,7 +39,6 @@ const log = makeLogger("mail.messaging_menu");
 
 export const PLUGIN_FILTER_CHIP_LIMIT = 3;
 
-/** Laid out and closed on its own, never as a submenu of the dropdown holding the menu. */
 export const messagingMenuProps = {
     state: t.any(),
     close: t.any().optional(),
@@ -234,7 +233,6 @@ export class MessagingMenu extends Component {
     }
 
     get isLoading() {
-        // a search the server has not answered yet has no results to deny
         return (
             this.loadStatus === "loading" ||
             (Boolean(this.state.searchTerm) && this.loadStatus === "new")
@@ -274,10 +272,6 @@ export class MessagingMenu extends Component {
         );
     }
 
-    /**
-     * Whether the OdooBot extras (delivery failures, installation and push requests)
-     * belong to the active tab.
-     */
     get showNotificationHubExtras() {
         return Boolean(
             !this.state.searchTerm &&
@@ -425,7 +419,6 @@ export class MessagingMenu extends Component {
         }
         const thread = message.thread;
         if (!thread || message.message_type === "user_notification") {
-            // a user notification shows in no chatter: the dialog is where it can be read
             this.dialog.add(MessageInDialog, { message });
             if (message.needaction) {
                 message.setDone();
@@ -472,8 +465,6 @@ export class MessagingMenu extends Component {
         if (!this.state.isDisplayed) {
             return;
         }
-        // an embedded menu (the Discuss sidebar) shares the page with the composer:
-        // it navigates only while the focus is inside it
         if (!this.props.close && !this.rootRef.el?.contains(document.activeElement)) {
             return;
         }

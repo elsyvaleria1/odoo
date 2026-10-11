@@ -136,8 +136,6 @@ export class PivotModel extends Model {
             domain: [],
             groupBy: [],
         };
-        // the group trees are rewritten in place and read cell by cell: they
-        // stay raw, and a view follows them through updateEpoch (notify)
         this.data = markRaw(
             params.data || {
                 colGroupTree: null,

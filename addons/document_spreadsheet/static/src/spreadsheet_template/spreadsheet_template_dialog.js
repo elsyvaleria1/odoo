@@ -57,7 +57,6 @@ export class TemplateDialog extends Component {
         });
         this.keepLast = new KeepLast();
         this.folderOptions = [
-            // id false cannot be used by the template select option so we use 0 instead.
             { id: 0, display_name: _t("My Drive") },
             ...this.props.folders.map((folder) => ({
                 id: folder.id,
@@ -133,7 +132,7 @@ export class TemplateDialog extends Component {
             ? typeof this.props.folderId === "number"
                 ? this.props.folderId
                 : false
-            : this.folderId || false; // convert 0 into false
+            : this.folderId || false;
         if (templateId) {
             return this.orm.call(
                 "spreadsheet.template",

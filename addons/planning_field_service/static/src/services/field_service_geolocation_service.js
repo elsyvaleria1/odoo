@@ -3,13 +3,6 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { user } from "@web/core/user";
 
-/**
- * Where the phone is, read once when a visit is started or completed.
- *
- * Upstream master also watches the position continuously for a live map; this
- * port keeps the one-off reading only, as the vehicle's GPS already tracks the
- * route and a browser tab cannot be relied on to stay open.
- */
 export class FieldServiceGeolocationService {
     async isFeatureEnabled() {
         const [isGeolocationEnabled, isPlanningUser] = await Promise.all([
@@ -21,8 +14,6 @@ export class FieldServiceGeolocationService {
 
     _getPosition() {
         return new Promise((resolve, reject) => {
-            // Without a timeout a phone with no fix never answers, and Start or
-            // Complete would wait forever without a word.
             navigator.geolocation.getCurrentPosition(resolve, reject, {
                 enableHighAccuracy: true,
                 timeout: 15000,

@@ -7,13 +7,8 @@ import { makeLogger } from "@web/core/debug/debug_logger";
 
 const log = makeLogger("mail.rtc.blur");
 const FPS = 30;
-// MediaPipe publishes no ES module build: the classic script defines
-// window.SelfieSegmentation, a documented classic-by-design exception. The
-// wasm and the model it fetches must come from the same build as the loader,
-// so the CDN version is the exact one vendored, never the moving "@0.1" tag.
 const SELFIE_SEGMENTATION_BUILD = "0.1.1632777926";
 
-/** How the segmentation script is fetched, on the first blur; patchable in tests. */
 export const selfieSegmentationLoader = {
     /** @returns {Promise<void>} rejects with AssetsLoadingError, then retries on the next call */
     load: () => loadJS("/mail/static/lib/selfie_segmentation/selfie_segmentation.js"),

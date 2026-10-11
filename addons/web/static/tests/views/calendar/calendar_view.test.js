@@ -1607,7 +1607,6 @@ test(`deleting from the popover waits for the unlink before the dialog closes`, 
     await contains(`.o_cw_popover_delete`).click();
     expect(`.modal-title`).toHaveText("Bye-bye, record!");
     await contains(`.modal-footer button.btn-primary`).click();
-    // the confirmation dialog owns the wait: buttons disabled, still open
     expect(`.modal`).toHaveCount(1);
     expect(`.modal-footer button.btn-primary`).toHaveAttribute("disabled");
     expect(`.o_event[data-event-id="4"]`).toHaveCount(1);
@@ -1618,8 +1617,6 @@ test(`deleting from the popover waits for the unlink before the dialog closes`, 
     expect(`.o_event[data-event-id="4"]`).toHaveCount(0);
 });
 
-// the popover is a dialog on a small screen; the mobile rendering is covered
-// by "calendar: popover is rendered as dialog in mobile" below
 test.tags("desktop");
 test(`render popover`, async () => {
     await mountView({
@@ -4284,8 +4281,6 @@ test(`a reload that fails after a drag and drop is reported, not swallowed`, asy
     await moveEventToDate(6, "2016-11-27");
     await animationFrame();
 
-    // the write went through; the calendar could not refetch, and the user
-    // is told so instead of looking at positions the server no longer holds
     expect.verifySteps(["write", "search_read"]);
     expect.verifyErrors(["Reload boom"]);
 });
@@ -4309,7 +4304,6 @@ test(`resize rejected by the server resyncs the event`, async () => {
     await animationFrame();
     expect.verifySteps(["write"]);
 
-    // the rejection is reported in a dialog, dismissed before the calendar is used again
     await click(".o_dialog .btn-close");
     await animationFrame();
     await clickEvent(2);
@@ -6512,7 +6506,6 @@ test(`calendar renderer is rendered once after search refresh`, async () => {
     });
     expect.verifySteps(["wrapper rendered", "rendered"]);
     await validateSearch();
-    // the scale's renderer follows the reload; the wrapper shows nothing of it
     expect.verifySteps(["rendered"]);
 });
 

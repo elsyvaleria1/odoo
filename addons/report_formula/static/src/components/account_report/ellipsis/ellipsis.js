@@ -23,9 +23,6 @@ export class AccountReportEllipsis extends Component {
         this.controller = proxy(this.reportContext.controller);
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Ellipsis
-    //------------------------------------------------------------------------------------------------------------------
     get triggersEllipsis() {
         if (this.props.name) {
             return this.props.name.length > this.props.maxCharacters;

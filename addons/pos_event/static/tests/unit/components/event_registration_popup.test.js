@@ -42,6 +42,6 @@ test("confirm payload", async () => {
         "Test User",
         "test@test.com",
         "+911234567890",
-        "1", // Received value is the ID of the answer `Male`, not the name.
+        "1",
     ]);
 });

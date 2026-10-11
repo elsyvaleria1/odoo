@@ -935,7 +935,6 @@ registry
                 run: "click",
             },
             {
-                // trigger: ".o_back_button", TODO: add breacrumb to access multi-record view when closing studio
                 trigger: ".o_nav_entry:contains(new model)",
                 run: "click",
             },
@@ -1762,7 +1761,6 @@ registry.category("web_tour.tours").add("web_studio_test_kanban_field_bold", {
             trigger: ".o_web_studio_navbar_item button:enabled",
             run: "click",
         },
-        // first field has class fw-bold
         {
             trigger:
                 ".o_web_studio_view_renderer .o_kanban_record .o-web-studio-editor--element-clickable",
@@ -1789,7 +1787,6 @@ registry.category("web_tour.tours").add("web_studio_test_kanban_field_bold", {
             trigger:
                 ".o_web_studio_sidebar .o_web_studio_property input[type=checkbox]#bold:not(:checked)",
         },
-        // second field has class fw-bolder
         {
             trigger:
                 ".o_web_studio_view_renderer .o_kanban_record .o-web-studio-editor--element-clickable:eq(1)",
@@ -1803,7 +1800,6 @@ registry.category("web_tour.tours").add("web_studio_test_kanban_field_bold", {
             trigger:
                 ".o_web_studio_sidebar .o_web_studio_property input[type=checkbox]#bold:checked",
         },
-        // third field isn't bold
         {
             trigger:
                 ".o_web_studio_view_renderer .o_kanban_record .o-web-studio-editor--element-clickable:eq(2)",
@@ -1873,7 +1869,7 @@ registry.category("web_tour.tours").add("web_studio_test_kanban_menu_ribbon", {
                 await animationFrame();
                 const { drop, moveTo } = await drag(this.anchor);
                 await moveTo(".o_kanban_record:first");
-                await animationFrame(500); // wait for animations to finish in under 500ms
+                await animationFrame(500);
                 const target = await waitFor(".o_web_studio_hook_visible", {
                     visible: true,
                     timeout: 5000,
@@ -2178,13 +2174,6 @@ registry.category("web_tour.tours").add("web_studio_test_default_value_company",
         {
             trigger: ".o_web_studio_sidebar input[id='default_value']",
             async run(helpers) {
-                // in this flow, only the input's value is changing
-                // We want to wait for the RPC to return. That will
-                // "commit" the value in the input.
-                // Since when the value of an input changes, there are no DOM
-                // mutations, we need to use the waitFor from Hoot
-                // instead of the macro.js machinery to assert that the value has changed
-                // as a consequence of the RPC
                 this.anchor.scrollIntoView();
                 const cb = ({ detail }) => {
                     if (detail.url === "/web_studio/set_default_value") {
@@ -2229,8 +2218,6 @@ registry.category("web_tour.tours").add("web_studio_empty_default_group_by", {
             run: async function () {
                 this.anchor.value = "";
                 this.anchor.dispatchEvent(new InputEvent("input"));
-                // Outwait SelectMenu's 250ms input debounce (with margin) so
-                // the cleared value is committed before blurring.
                 await animationFrame(300);
                 this.anchor.blur();
             },

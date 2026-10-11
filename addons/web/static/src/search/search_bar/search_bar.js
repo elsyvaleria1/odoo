@@ -428,7 +428,6 @@ export class SearchBar extends Component {
                     this._pendingSubItems.delete(key);
                 }
             };
-            // not .finally(): its derived promise would reject a second time
             prom.then(forget, forget);
         }
         return prom;

@@ -22,8 +22,6 @@ export class TableUIPlugin extends Plugin {
                 description: _t("Insert a table"),
                 icon: "fa-table",
                 run: this.openPickerOrInsertTable.bind(this),
-                // A table inside a block that only takes inline content ends
-                // up nested in a <p> or a <span>, which is invalid HTML.
                 isAvailable: (selection) =>
                     isHtmlContentSupported(selection) &&
                     closestElement(selection.anchorNode, allowsParagraphRelatedElements)
@@ -58,9 +56,6 @@ export class TableUIPlugin extends Plugin {
         this.rowMenuOverlayKey = "table-row-menu";
         this.activeTd = null;
 
-        // Dropdown reads `state` once, in setup, so the same object has to
-        // serve every cell the menu is re-targeted at: handing it a fresh one
-        // per hover throws out of onWillUpdateProps.
         this.rowMenuDropdownState = this.createDropdownState(
             this.closeColumnMenu.bind(this),
         );
@@ -158,8 +153,6 @@ export class TableUIPlugin extends Plugin {
         this.activeTd = td;
         this.closeColumnMenu();
         this.closeRowMenu();
-        // Both overlays are gone, so neither menu is open on the cell we are
-        // leaving; the shared state has to say so before the next cell mounts.
         this.rowMenuDropdownState.isOpen = false;
         this.columnMenuDropdownState.isOpen = false;
         if (!td) {

@@ -46,13 +46,6 @@ function openUserPreferencesAtSecurityTab() {
     ];
 }
 
-/**
- * Checks that the TOTP button is in the specified state (true = enabled =
- * can disable, false = disabled = can enable), then closes the preferences dialog
- * if it's one (= hr not installed).
- *
- * If no totp state is provided, just checks that the toggle exists.
- */
 function closePreferencesDialog({ content, totp_state }) {
     let trigger;
     switch (totp_state) {
@@ -121,13 +114,6 @@ registry.category("web_tour.tours").add("totp_tour_setup", {
         },
         {
             content: "Get secret from the disclosure widget",
-            // The secret lives behind a native <details>/<summary> disclosure. It used
-            // to be a Bootstrap collapse driven by <a data-bs-toggle="collapse">, and
-            // this trigger still looked for that anchor after 9251982dca8 retired
-            // Bootstrap's JS from the backend bundle -- so it matched nothing and every
-            // TOTP tour died here on a 10s timeout. Anchor on <summary>, and scope the
-            // lookup to the <details> that owns it rather than to the nearest <div>,
-            // which was only ever the wrapper the old markup happened to provide.
             trigger: `.modal details > summary:contains("Cannot scan it?")`,
             async run(helpers) {
                 const secret = this.anchor
@@ -197,7 +183,6 @@ registry.category("web_tour.tours").add("totp_login_enabled", {
             content: "input incorrect code",
             trigger: "input[name=totp_token]",
             async run(helpers) {
-                // set the offset in the past, so the token will be always wrong
                 await rpc("/totphook", { offset: -2 });
                 await helpers.edit("123456");
             },
@@ -216,7 +201,6 @@ registry.category("web_tour.tours").add("totp_login_enabled", {
             content: "reuse same code",
             trigger: "input[name=totp_token]",
             async run(helpers) {
-                // send the same token as the last one from the setup tour
                 const token = await rpc("/totphook", { offset: 0 });
                 await helpers.edit(token);
             },
@@ -355,9 +339,6 @@ registry.category("web_tour.tours").add("totp_login_device", {
             content: "check we're logged in without 2FA",
             trigger: ".o_user_menu .dropdown-toggle",
         },
-        // now go and disable two-factor authentication would be annoying to do in a separate tour
-        // because we'd need to login & totp again as HttpCase.authenticate can't
-        // succeed w/ totp enabled
         ...openUserPreferencesAtSecurityTab(),
         {
             content: "Open totp wizard",
@@ -420,12 +401,7 @@ registry.category("web_tour.tours").add("totp_login_disabled", {
             run: "click",
             expectUnloadPage: true,
         },
-        // normally we'd end the tour here as it's all we care about but there are a
-        // bunch of ongoing queries from the loading of the web client which cause
-        // issues, so go and open the preferences screen to make sure
-        // everything settles down
         ...openUserPreferencesAtSecurityTab(),
-        // close the dialog if that makes sense
         ...closePreferencesDialog({}),
     ],
 });
@@ -474,7 +450,6 @@ registry.category("web_tour.tours").add("totp_admin_disables", {
             trigger: ".modal div:contains(Enter your current password)",
         },
         {
-            // enhanced security yo
             content:
                 "Check that we have to enter enhanced security mode & input password",
             trigger: ".modal [name=password] input",

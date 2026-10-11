@@ -18,9 +18,6 @@ export class CalendarListController extends ListController {
         };
     }
 
-    /**
-     * Deletes selected records with handling for recurring events.
-     */
     async onDeleteSelectedRecords() {
         const selectedRecords = this.model.root.selection;
         let recurrenceUpdate;

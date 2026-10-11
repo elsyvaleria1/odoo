@@ -65,9 +65,6 @@ export class OdooViewsDataSource extends LoadableDataSource {
         this._metaDataLoaded = true;
     }
 
-    /**
-     * Ensure that the metadata are loaded. If not, throw an error
-     */
     _assertMetaDataLoaded() {
         if (!this._isModelValid) {
             throw this._loadError;
@@ -140,8 +137,6 @@ export class OdooViewsDataSource extends LoadableDataSource {
         }
         this._customDomain = newDomain;
         if (this._loadPromise === undefined) {
-            // if the data source has never been loaded, there's no point
-            // at reloading it now.
             return;
         }
         this.load({ reload: true });

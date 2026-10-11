@@ -30,7 +30,6 @@ export function isDocumentsCogMenuItemVisible(
     ) {
         return false;
     }
-    // a picker in a dialog shows folders to pick from, not to act on
     if (searchModel.context.documents_view_secondary) {
         return false;
     }

@@ -65,8 +65,6 @@ export class TimezoneMismatchField extends SelectionField {
         if (!this.mismatch || recordOffset === null) {
             return super.options;
         }
-        // the default zone is the session user's, not necessarily the record's:
-        // shift UTC by the record's offset and format it as UTC to get its wall clock.
         const recordNow = formatDateTime(now("UTC").add({ minutes: recordOffset }), {
             tz: "utc",
         });

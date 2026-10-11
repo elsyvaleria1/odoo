@@ -38,8 +38,6 @@ import { useService } from "@web/core/utils/hooks";
 import { redirect } from "@web/core/utils/urls";
 import { ConfirmationDialog } from "@web/ui/dialog";
 
-// Time (in ms, so 2 minutes) after which the user is considered inactive
-// and the app goes back to the main screen
 export const INACTIVITY_TIMEOUT = 120000;
 export const REFRESH_INTERVAL = 1000;
 
@@ -97,7 +95,6 @@ export class RoomBookingView extends Component {
             showInstallPwaButton:
                 !isDisplayStandalone() && this.pwaService.isSupportedOnBrowser,
         });
-        // Show bookings updates in live
         useBusChannel(this.props.busChannel);
         useBusSubscription(`room#${this.props.id}/booking/create`, (bookings) =>
             bookings.forEach((booking) =>
@@ -118,10 +115,8 @@ export class RoomBookingView extends Component {
         this.ui = useService("ui");
         onWillStart(this.loadBookings);
 
-        // Every second, check if a booking started/ended
         useInterval(this.refreshBookingView.bind(this), REFRESH_INTERVAL);
 
-        // If the user is inactive for more than the  INACTIVITY_TIMEOUT, reset the view
         ["pointerdown", "keydown"].forEach((event) =>
             useListener(window, event, () => {
                 browser.clearTimeout(this.inactivityTimer);
@@ -132,8 +127,6 @@ export class RoomBookingView extends Component {
         );
         onWillUnmount(() => browser.clearTimeout(this.inactivityTimer));
     }
-
-    // Formats
 
     get timeFormat() {
         return TIME_SIMPLE;
@@ -163,12 +156,6 @@ export class RoomBookingView extends Component {
         return compareDates(booking.interval.start, this.now.add({ minutes })) > 0;
     }
 
-    // Getters
-
-    /**
-     * Return the background color of the main view which depends on the
-     * room's availability
-     */
     get bgColor() {
         return (
             (this.state.currentBooking
@@ -197,8 +184,6 @@ export class RoomBookingView extends Component {
     get roomDescription() {
         return markup(this.props.description);
     }
-
-    // Methods
 
     /**
      * Shows a confirmation dialog to delete the given booking
@@ -255,10 +240,6 @@ export class RoomBookingView extends Component {
         );
     }
 
-    /**
-     * Load the existing bookings for the room.
-     * New bookings will be received through the busService.
-     */
     async loadBookings() {
         const bookings = await rpc(`${this.manageRoomUrl}/get_existing_bookings`);
         for (const booking of bookings) {
@@ -279,12 +260,7 @@ export class RoomBookingView extends Component {
         );
     }
 
-    /**
-     * Update the current status of the room (booked or available), and remove
-     * the booking of the list of bookings if it is finished.
-     */
     refreshBookingView() {
-        // Check if current booking is finished
         if (
             this.state.currentBooking &&
             compareDates(this.state.currentBooking.interval.end, this.now) < 0
@@ -296,19 +272,14 @@ export class RoomBookingView extends Component {
             compareDates(this.state.bookings[0].interval.start, this.now) < 0
                 ? this.state.bookings[0]
                 : null;
-        // Check if next booking has started or if current booking has been rescheduled
         if (this.state.currentBooking?.interval.end !== currentBooking?.interval.end) {
             this.state.currentBooking = currentBooking;
         }
-        // Update the currentDate that is used in the sidebar
         if (!this.state.currentDate.equals(toDate(this.now))) {
             this.state.currentDate = toDate(this.now);
         }
     }
 
-    /**
-     * Get back to the main view
-     */
     resetBookingForm() {
         this.state.scheduleBooking = false;
         this.state.scheduleBookingQuickCreate = false;
@@ -339,8 +310,6 @@ export class RoomBookingView extends Component {
         this.resetBookingForm();
     }
 
-    // Bus Methods
-
     /**
      * Add a booking to the list of bookings, keeping the list sorted by start date
      * @param {Object} newBooking
@@ -349,7 +318,6 @@ export class RoomBookingView extends Component {
      * @param {{ start: Temporal.ZonedDateTime, end: Temporal.ZonedDateTime }} newBooking.interval
      */
     addBooking(newBooking) {
-        // Do not add bookings already added or already finished
         if (
             this.state.bookings.map((booking) => booking.id).includes(newBooking.id) ||
             compareDates(newBooking.interval.end, this.now) < 0
@@ -365,7 +333,6 @@ export class RoomBookingView extends Component {
         } else {
             this.state.bookings.splice(newBookingInsertIdx, 0, newBooking);
         }
-        // If the new booking has already started (eg. book now), refresh the view
         if (compareDates(newBooking.interval.start, this.now) < 0) {
             this.refreshBookingView();
         }
@@ -381,12 +348,10 @@ export class RoomBookingView extends Component {
         );
         if (bookingIdx !== -1) {
             this.state.bookings.splice(bookingIdx, 1);
-            // Refresh view if the booking deleted was the current one
             if (this.state.currentBooking?.id === bookingId) {
                 this.refreshBookingView();
             }
         }
-        // Leave form view if booking being edited has been deleted or updated by another user
         if (this.state.bookingToEdit?.id === bookingId && !this.ui.isBlocked) {
             this.resetBookingForm();
             this.notificationService.add(

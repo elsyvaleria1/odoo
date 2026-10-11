@@ -64,7 +64,6 @@ defineModels([EventMail, MailTemplate, SmsTemplate, SomeTemplate]);
 describe.current.tags("desktop");
 
 test("Reference field displays right icons", async () => {
-    // bypass list controller check
     onRpc("has_group", () => true);
 
     await mountView({
@@ -76,15 +75,12 @@ test("Reference field displays right icons", async () => {
         </list>`,
     });
 
-    // each field cell will be the field of a different record (1 field/line)
     expect(".o_field_cell").toHaveCount(3);
     expect(".o_field_cell.o_EventMailTemplateReferenceField_cell").toHaveCount(3);
     expect(".o_field_cell:eq(0) .fa-envelope").toHaveCount(1);
     expect(".o_field_cell:eq(1) .fa-mobile-screen-button").toHaveCount(1);
     expect(".o_field_cell:eq(2) .fa-envelope").toHaveCount(0);
     expect(".o_field_cell:eq(2) .fa-mobile-screen-button").toHaveCount(0);
-
-    // select a sms.template instead of mail.template
 
     await click(".o_field_cell:eq(0)");
     await animationFrame();
@@ -94,14 +90,11 @@ test("Reference field displays right icons", async () => {
     await click(".o_field_cell:eq(0) .o_field_many2one_selection input");
     await animationFrame();
     await click(".o_field_cell:eq(0) .o-autocomplete--dropdown-item");
-    // click out
     await click(".o_list_renderer");
     await animationFrame();
 
     expect(".o_field_cell:eq(0) .fa-mobile-screen-button").toHaveCount(1);
     expect(".o_field_cell:eq(0) .fa-envelope").toHaveCount(0);
-
-    // select a some other model to check it has no icon
 
     await click(".o_field_cell:eq(0)");
     await animationFrame();
@@ -116,8 +109,6 @@ test("Reference field displays right icons", async () => {
 
     expect(".o_field_cell:eq(0) .fa-mobile-screen-button").toHaveCount(0);
     expect(".o_field_cell:eq(0) .fa-envelope").toHaveCount(0);
-
-    // select no record for the model
 
     await click(".o_field_cell:eq(1)");
     await animationFrame();

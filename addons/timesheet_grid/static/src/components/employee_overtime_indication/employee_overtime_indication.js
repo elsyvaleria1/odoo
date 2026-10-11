@@ -34,14 +34,12 @@ export class EmployeeOvertimeIndication extends Component {
             return null;
         }
         if (this.overtime === 0) {
-            return null; // nothing to display
+            return null;
         }
         let overtimeIndication = this.overtime > 0 ? "+" : "";
         if (this.props.uom === "days") {
-            // format in days
             overtimeIndication += formatFloat(this.overtime);
         } else {
-            // format in hours
             overtimeIndication += formatFloatTime(this.overtime);
         }
         return overtimeIndication;

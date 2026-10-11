@@ -46,7 +46,6 @@ function isFilterGroupBy(node) {
     return false;
 }
 
-/** CONTROLLER STUFF */
 class SearchEditorArchParser {
     parse(xmlDoc) {
         this.fields = [];
@@ -56,7 +55,7 @@ class SearchEditorArchParser {
         this.currentItems = { items: [] };
 
         visitXML(xmlDoc, this.visitNode.bind(this));
-        this.changeCategory(null, true); // Flush
+        this.changeCategory(null, true);
 
         return {
             fields: this.fields,
@@ -238,8 +237,6 @@ class SearchEditorController extends Component {
     }
 }
 
-/** SIDEBAR STUFF */
-
 class SearchComponents extends Component {
     static components = { SidebarDraggableItem };
     static props = {};
@@ -368,7 +365,6 @@ const searchEditor = {
     Sidebar: SearchEditorSidebar,
 };
 
-// The object itself, not a copy: the hooks assigned below register on it.
 Object.assign(searchEditor, {
     label: _t("Search"),
     icon: "oi oi-search",
@@ -453,8 +449,6 @@ async function addSearchViewStructure(
     }
 }
 searchEditor.addViewStructure = addSearchViewStructure;
-
-/** Drag/Drop */
 
 const FILTER_TYPES = ["date", "datetime"];
 const GROUPABLE_TYPES = [

@@ -4,14 +4,6 @@ import { registry } from "@web/core/registry";
 import { FormController, formView } from "@web/views/form";
 import { FormViewDialog } from "@web/views/view_dialogs";
 
-/**
- * This custom Form Dialog (Controller) is used to customize 'custom'
- * appointment types created with slot selection on the calendar view.
- * Using "Select Dates" then using "Configure" button will open a small
- * form in a dialog allowing to customize the created appointment type.
- * This controller is used to handle actions on that form: saving the
- * form and copying the invitation link, and redirecting to full form view.
- */
 export class CustomAppointmentFormController extends FormController {
     static props = {
         ...FormController.props,

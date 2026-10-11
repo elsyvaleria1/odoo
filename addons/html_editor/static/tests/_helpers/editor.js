@@ -24,9 +24,6 @@ const defaultTestConfig = {
     debounceHints: false,
 };
 
-// The contrast plugin rewrites every colour it finds the moment the editor
-// starts, which would move the goalposts under every colour assertion in this
-// suite. Tests that want it ask for it: `config: { Plugins: [...MAIN_PLUGINS] }`.
 export const PLUGINS_TO_EXCLUDE = ["contrast"];
 export const TEST_PLUGINS = MAIN_PLUGINS.filter(
     (p) => !PLUGINS_TO_EXCLUDE.includes(p.id),

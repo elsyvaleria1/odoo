@@ -31,7 +31,6 @@ describe("knowledge comments", () => {
             },
         });
         patchWithCleanup(registry.category("test_comments"), {
-            // prevent the knowledge comments handler from spawning.
             add: () => {},
         });
     });
@@ -40,8 +39,6 @@ describe("knowledge comments", () => {
             config: getCommentsConfig(),
         });
         execCommand(editor, "addComments");
-        // Validate that there is only one \ufeff inside knowledge comments beacons
-        // (instead of 2 for a normal link)
         expect(getContent(el)).toBe(
             unformat(
                 `<p>
@@ -53,15 +50,9 @@ describe("knowledge comments", () => {
                 </p>`,
             ),
         );
-        // This operation will induce a normalization involving a common ancestor of
-        // knowledge comment anchors, and the following step makes sure that the
-        // normalization in this complex case (split a node) produces the desired
-        // `\ufeff` configuration.
         await manuallyDispatchProgrammaticEvent(el, "beforeinput", {
             inputType: "insertParagraph",
         });
-        // Validate that there is only one \ufeff inside knowledge comments beacons
-        // (instead of 3 if we allowed 2 at the previous step, because the anchor has no content)
         expect(getContent(el)).toBe(
             unformat(
                 `<p>

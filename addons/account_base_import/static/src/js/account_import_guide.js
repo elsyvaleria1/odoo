@@ -43,7 +43,7 @@ export class AccountImportGuide extends Component {
         const companyId = user?.activeCompany?.id;
         if (!companyId) {
             return "#";
-        } // Fallback or disable the link
+        }
         return `/web/binary/download_asset_template/${companyId}`;
     }
 

@@ -55,15 +55,10 @@ export class ViewEditor extends Component {
 
     setup() {
         this.studioContext = useStudioEditorContext();
-        /* Services */
         this.studio = useService("studio");
         this.orm = useService("orm");
-        /* MISC */
-        // Avoid pollution from the real actionService's env
-        // Set config compatible with View.js
         provideViewConfig(getDefaultConfig());
 
-        // Usefull for drag/drop
         this.rootRef = elementRef();
         this.rendererRef = elementRef();
 
@@ -79,13 +74,6 @@ export class ViewEditor extends Component {
 
         useSetupAction({
             getLocalState: () => {
-                // Use this as a hook that is triggered when the actionService knows
-                // this component will be unmounted, is still alive and the new action
-                // is being built.
-                // We store the state in the breadcrumbs, because there two ways
-                // to respawn the editor:
-                // - the editor's breadcrumbs
-                // - the standard actionService breadcrumbs
                 const breadcrumbs = this.viewEditorModel.breadcrumbs;
                 breadcrumbs[0].initialState = markRaw({
                     showInvisible: this.viewEditorModel.showInvisible,

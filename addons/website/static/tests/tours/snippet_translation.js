@@ -79,8 +79,6 @@ registerWebsitePreviewTour(
         },
         {
             content: "Open Edit dropdown",
-            // the plain Edit button becomes the dropdown once the iframe's
-            // load handler has read the page's translatable flag
             trigger: ".o_edit_website_container button.o-dropdown-toggle-custo",
             run: "click",
         },

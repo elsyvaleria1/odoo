@@ -37,10 +37,6 @@ export class AccountingPlugin extends OdooUIPlugin {
         return this._serverData;
     }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
     /**
      * Gets the total balance for given account code prefix
      * @param {string[]} codes prefixes of the accounts' codes
@@ -124,10 +120,6 @@ export class AccountingPlugin extends OdooUIPlugin {
     _fetchAccountData(codes, dateRange, offset, companyId, includeUnposted) {
         dateRange = deepCopy(dateRange);
         dateRange.year += offset;
-        // Excel dates start at 1899-12-30, we should not support date ranges
-        // that do not cover dates prior to it.
-        // Unfortunately, this check needs to be done right before the server
-        // call as a date to low (year <= 1) can raise an error server side.
         if (dateRange.year < 1900) {
             throw new EvaluationError(_t("%s is not a valid year.", dateRange.year));
         }
@@ -171,10 +163,6 @@ export class AccountingPlugin extends OdooUIPlugin {
     getAccountResidual(codes, dateRange, offset, companyId, includeUnposted) {
         dateRange = deepCopy(dateRange);
         dateRange.year += offset;
-        // Excel dates start at 1899-12-30, we should not support date ranges
-        // that do not cover dates prior to it.
-        // Unfortunately, this check needs to be done right before the server
-        // call as a date to low (year <= 1) can raise an error server side.
         if (dateRange.year < 1900) {
             throw new EvaluationError(_t("%s is not a valid year.", dateRange.year));
         }
@@ -212,10 +200,6 @@ export class AccountingPlugin extends OdooUIPlugin {
     ) {
         dateRange = deepCopy(dateRange);
         dateRange.year += offset;
-        // Excel dates start at 1899-12-30, we should not support date ranges
-        // that do not cover dates prior to it.
-        // Unfortunately, this check needs to be done right before the server
-        // call as a date to low (year <= 1) can raise an error server side.
         if (dateRange.year < 1900) {
             throw new EvaluationError(_t("%s is not a valid year.", dateRange.year));
         }
@@ -251,10 +235,6 @@ export class AccountingPlugin extends OdooUIPlugin {
     getAccountTagData(accountTagIds, dateRange, offset, companyId, includeUnposted) {
         dateRange = deepCopy(dateRange);
         dateRange.year += offset;
-        // Excel dates start at 1899-12-30, we should not support date ranges
-        // that do not cover dates prior to it.
-        // Unfortunately, this check needs to be done right before the server
-        // call as a date too low (year <= 1) can raise an error server side.
         if (dateRange.year < 1900) {
             throw new EvaluationError(_t("%s is not a valid year.", dateRange.year));
         }

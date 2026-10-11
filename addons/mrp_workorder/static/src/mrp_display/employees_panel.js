@@ -25,7 +25,6 @@ export class MrpDisplayEmployeesPanel extends Component {
     makeDate(str) {
         const datetime = deserializeDateTime(str);
 
-        // Little hack to never show "now" or "x seconds ago" but always at least 1 min ago.
         return Math.abs(Date.now() - datetime.epochMilliseconds) < 60000
             ? datetime.subtract({ seconds: 60 })
             : datetime;

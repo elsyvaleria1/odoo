@@ -49,9 +49,6 @@ const response_from_qfpay_on_pos_refund_webhook = (
     notify_type: "refund",
 });
 
-// Once request for payment/refund has been sent to the qfpay terminal
-// we wait to receive the notification from qfpay on the webhook
-// The simplest way to mock this notification is to send it ourselves.
 export async function mockQFPayWebhook(
     uuid,
     paymentMethodId,

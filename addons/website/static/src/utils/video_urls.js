@@ -21,9 +21,7 @@ export function parseVideoUrl(src) {
     }
     try {
         return new URL(src, window.location.href);
-    } catch {
-        // Incomplete URLs are normal while editing a video placeholder.
-    }
+    } catch {}
 }
 
 /** @param {URL | undefined} url */

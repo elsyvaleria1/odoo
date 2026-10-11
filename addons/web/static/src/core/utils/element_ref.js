@@ -11,12 +11,10 @@ import { signal } from "@odoo/owl";
  */
 export function elementRef(type) {
     const ref = type ? signal.ref(type) : signal.ref();
-    // `.el` keeps OWL 2's ref reading; the signal call `ref()` is the native one
     Object.defineProperty(ref, "el", { get: ref });
     return /** @type {typeof ref & { readonly el: T | null }} */ (ref);
 }
 
-// the ref a template binds where it keeps no element, since t-ref cannot be conditional
 export const noRef = Object.freeze({ set() {} });
 
 /** @returns {Record<string, ElementRef>} */

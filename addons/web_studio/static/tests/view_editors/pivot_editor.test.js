@@ -151,7 +151,6 @@ test("switching column and row groupby fields in pivot editor", async () => {
         "partner_id",
     );
 
-    // set the Row-Second level field value
     await contains(".o_web_studio_sidebar input[name='second_row_groupby']").click();
     await contains(".o-dropdown-item:contains(Toughness)").click();
 
@@ -181,7 +180,6 @@ test("switching column and row groupby fields in pivot editor", async () => {
         "None",
     ]);
 
-    // change the column field value to Name
     await contains(".o_web_studio_sidebar input[name='column_groupby']").click();
     await contains(".o-dropdown-item:contains(Name):not(:contains(Display))").click();
 
@@ -210,7 +208,6 @@ test("switching column and row groupby fields in pivot editor", async () => {
         "None",
     ]);
 
-    // change the Row-First level field value to product_id
     await contains(".o_web_studio_sidebar input[name='first_row_groupby']").click();
     await contains(".o-dropdown-item:contains(product_id)").click();
 

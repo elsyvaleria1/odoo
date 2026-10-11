@@ -295,8 +295,6 @@ test("livechat channel filter loads its sessions from the server", async () => {
     });
     await start();
     await openMessagingMenu("livechat");
-    // three loads in a row, each awaiting the previous render's sentinel: more
-    // than the default two seconds on a loaded machine
     await expect.waitForSteps(["load_more ", "load_more ", "load_more "], {
         timeout: 6000,
     });

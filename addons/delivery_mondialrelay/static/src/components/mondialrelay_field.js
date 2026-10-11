@@ -1,7 +1,6 @@
 /** @odoo-module native */
 import { Component, proxy, useProps, xml } from "@odoo/owl";
 import { loadJS } from "@web/core/assets";
-// temporary for OnNoResultReturned bug
 import { ThirdPartyScriptError } from "@web/core/errors/error_service";
 import { registry } from "@web/core/registry";
 import { elementRef } from "@web/core/utils/element_ref";
@@ -27,14 +26,12 @@ export class MondialRelayField extends Component {
     setup() {
         this.root = elementRef();
         this.state = proxy({
-            libLoaded: false, // Whether the library is loaded or not
+            libLoaded: false,
         });
         useLayoutEffect(() => {
-            // Do nothing if the record is not of type mondial_relay
             if (!this.enabled || this.state.libLoaded) {
                 return;
             }
-            // Load jQuery (required by MR plugin) then load the MR plugin
             const loadLibs = window.jQuery
                 ? loadJS(MONDIALRELAY_SCRIPT_URL)
                 : loadJS(JQUERY_URL).then(() => loadJS(MONDIALRELAY_SCRIPT_URL));
@@ -60,7 +57,7 @@ export class MondialRelayField extends Component {
 
     insertWidget(el) {
         const params = {
-            Target: "", // required but handled by OnParcelShopSelected
+            Target: "",
             Brand: this.props.record.data.mondialrelay_brand,
             ColLivMod: this.props.record.data.mondial_realy_colLivMod,
             AllowedCountries: this.props.record.data.mondialrelay_allowed_countries,
@@ -82,10 +79,6 @@ export class MondialRelayField extends Component {
                 this.props.record.update({ [this.props.name]: values });
             },
             OnNoResultReturned: () => {
-                // HACK while Mondial Relay fix his bug
-                // disable corsErrorHandler for 10 seconds
-                // If code postal not valid, it will crash with Cors Error:
-                // Cannot read property 'on' of undefined at u.MR_FitBounds
                 const randInt = Math.floor(Math.random() * 100);
                 errorHandlerRegistry.add(
                     "corsIgnoredErrorHandler" + randInt,
@@ -98,7 +91,6 @@ export class MondialRelayField extends Component {
             },
         };
         el.style.display = "";
-        // MR plugin is a jQuery plugin — use jQuery wrapper
         window.jQuery(el).MR_ParcelShopPicker(params);
         window.jQuery(el).trigger("MR_RebindMap");
     }

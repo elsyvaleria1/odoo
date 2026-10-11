@@ -57,7 +57,7 @@ test("should render the no content helper of studio actions", async () => {
         type: "ir.actions.act_window",
         res_model: "automation.rule",
         views: [[false, "kanban"]],
-        help: /*xml*/ `
+        help: `
                 <p class="no_content_helper_class">
                     This text content is needed here, otherwise the paragraph won't be rendered.
                 </p>

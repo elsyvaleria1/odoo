@@ -225,14 +225,11 @@ registry.category("web_tour.tours").add("test_self_order_kiosk_product_availabil
         Utils.clickBtn("Order Now"),
         LandingPage.selectLocation("Test-In"),
         ProductPage.clickCategory("Category 2"),
-        // Mark 'Combo Product 5' as unavailable and verify it shows as out of stock
         Utils.setProductAvailability("Combo Product 5", false),
         ProductPage.checkProductOutOfStock("Combo Product 5"),
         ProductPage.clickProduct("Office Combo"),
         ProductPage.clickComboProduct("Combo Product 4"),
         Utils.clickBtn("Add to cart"),
-        // Make 'Office Combo' unavailable and attempt payment
-        // Expect a dialog stating the product is no longer available and user is redirected to product page
         Utils.clickBtn("Checkout"),
         Utils.setProductAvailability("Office Combo", false),
         Utils.clickBtn("Order"),
@@ -240,8 +237,6 @@ registry.category("web_tour.tours").add("test_self_order_kiosk_product_availabil
             "It seems that Office Combo is no longer available. Please go back and edit your order.",
         ),
         Dialog.confirm("OK"),
-        // Add 'Combo Product 4' again and mark 'Combo Product 5' available, then unavailable after adding to cart
-        // Expect unavailable product dialog and user should remain on cart page to process remaining items
         ProductPage.clickProduct("Combo Product 4"),
         Utils.setProductAvailability("Combo Product 5", true),
         ProductPage.clickProduct("Combo Product 5"),

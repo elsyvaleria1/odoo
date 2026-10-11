@@ -109,7 +109,6 @@ patch(SignTemplateSidebarRoleItems.prototype, {
                 const emsignerRoleValues = await this.getEmsignerRoleValues(
                     this.props.propsForEmsigner,
                 );
-                // Show warning if the role is emsigner and there are multiple signers or documents
                 if (
                     (emsignerRoleValues.hasDocument &&
                         emsignerRoleValues.emSignerRole > 0) ||

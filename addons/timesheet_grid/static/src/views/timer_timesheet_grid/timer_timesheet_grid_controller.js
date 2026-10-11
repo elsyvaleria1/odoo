@@ -12,7 +12,6 @@ export class TimerTimesheetGridController extends TimesheetGridController {
     }
 
     get displayAddALine() {
-        // display `Add a line` button si create inline is disabled or if there is no content
         return (
             super.displayAddALine &&
             (!this.props.archInfo.createInline || this.displayNoContent)

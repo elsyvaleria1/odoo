@@ -22,7 +22,6 @@ const log = makeLogger("web.field.special_data");
 /** @type {WeakMap<Map<string, Promise<any>>, Map<string, Set<() => void>>>} */
 const staleReloadSubscribers = new WeakMap();
 
-/** An observed control key lets disposal clear Owl's subscriptions as well. */
 function observeRecord(record, notify) {
     let active = true;
     const callback = () => {
@@ -36,8 +35,6 @@ function observeRecord(record, notify) {
         record: observe(record, callback),
         dispose() {
             active = false;
-            // Reading then changing this key clears every subscription belonging
-            // to callback, including reads made by an obsolete async loader.
             control.version++;
         },
     };
@@ -155,8 +152,6 @@ export function useSpecialData(loadFn) {
         if (destroyed || reloadQueued) {
             return;
         }
-        // Invalidate immediately, before an older response can settle. Batch the
-        // reads so one record update does not load once per changed dependency.
         ++loadTicket;
         keepLast.cancel();
         result.isReady = false;
@@ -164,8 +159,6 @@ export function useSpecialData(loadFn) {
         Promise.resolve().then(() => {
             reloadQueued = false;
             if (!destroyed) {
-                // The initial mount observes currentLoad itself. Do not create
-                // a second rejecting promise outside Owl's error boundary.
                 void requestLoad(currentProps);
             }
         });
@@ -210,7 +203,6 @@ export function useSpecialData(loadFn) {
                         currentObservation?.dispose();
                     }
                 }),
-                // RPC promises may be shared by other field instances.
                 { abort: () => {} },
             );
             if (destroyed || ticket !== loadTicket) {
@@ -233,14 +225,10 @@ export function useSpecialData(loadFn) {
     }
     onWillStart(async () => {
         await requestLoad(componentProps);
-        // Superseding the initial request must not release the first render
-        // while data still has its uninitialized shape.
         while (!destroyed && !result.isReady) {
             await currentLoad;
         }
     });
-    // Do not hold Owl's render on a replacement request: consumers must be
-    // able to render their disabled state while retaining the previous label.
     onWillUpdateProps((props) => {
         void requestLoad(props);
     });

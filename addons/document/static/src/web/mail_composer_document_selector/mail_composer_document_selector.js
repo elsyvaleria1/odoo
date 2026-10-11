@@ -22,7 +22,6 @@ export class MailComposerDocumentSelector extends Component {
         );
     }
 
-    /** The wizard owns its attachment_ids: no chatter thread is involved. */
     addDocumentsAttachment = () => {
         openDocumentsPicker(this.dialogService, {
             onAddAttachments: (attachments) =>

@@ -92,8 +92,6 @@ export class MoleculeEditor extends FieldComponent {
             try {
                 this.molecule = fromMolblock(molblock, this.viewport);
             } catch {
-                // A molblock this editor cannot read is left untouched on the
-                // record: the canvas opens empty rather than overwriting it.
                 this.molecule = { atoms: [], bonds: [] };
                 this.state.relaxNote = _t("This structure could not be drawn here.");
             }
@@ -115,8 +113,6 @@ export class MoleculeEditor extends FieldComponent {
         this.lastWritten = molblock;
         this.props.record.update({ [this.props.name]: molblock });
     }
-
-    /* ------------------------------------------------------------ toolbar */
 
     selectElement(symbol) {
         this.state.element = symbol;
@@ -197,8 +193,6 @@ export class MoleculeEditor extends FieldComponent {
         this.commit();
         this.redraw();
     }
-
-    /* -------------------------------------------------------- interaction */
 
     pointerPosition(event) {
         const rect = this.canvasRef.el.getBoundingClientRect();
@@ -372,8 +366,6 @@ export class MoleculeEditor extends FieldComponent {
         bond.order = bond.order === 3 ? 1 : bond.order + 1;
     }
 
-    /* ------------------------------------------------------------ drawing */
-
     themeColor(name) {
         return (
             getComputedStyle(this.canvasRef.el).getPropertyValue(name).trim() || "#000"
@@ -502,8 +494,6 @@ export class MoleculeEditor extends FieldComponent {
         });
     }
 
-    /* ----------------------------------------------------------------- 3D */
-
     async relaxGeometry() {
         if (!this.molecule.atoms.length) {
             return;
@@ -552,7 +542,6 @@ export class MoleculeEditor extends FieldComponent {
         this.showViewer();
     }
 
-    /** Hand the relaxed geometry to the record that asked for it. */
     useRelaxed() {
         if (!this.model3d || !this.hasRelaxedTarget) {
             return;

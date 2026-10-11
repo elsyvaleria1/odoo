@@ -50,7 +50,6 @@ export class KnowledgeHtmlField extends HtmlField {
 
     getConfig() {
         const config = super.getConfig();
-        // TODO @engagement: fill this array with knowledge components
         if (this.props.embeddedComponents) {
             config.resources.embedded_components = [
                 ...(config.resources.embedded_components || []),

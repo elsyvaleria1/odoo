@@ -31,8 +31,6 @@ function getCounterLog(target, field) {
     const busId = target[`${field}_bus_id`];
     let counterLog = logs.get(field);
     if (counterLog?.busId !== busId) {
-        // the bus id moved outside these helpers (a store insert): that value is
-        // the only known baseline, the deltas logged before it cannot replay on it
         counterLog = { busId, replayableAfter: busId, deltas: [] };
         logs.set(field, counterLog);
     }

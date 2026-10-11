@@ -23,8 +23,6 @@ const TARGET_SELECTOR = [
 
 const OWN_UI = ".o_voice_hud, .o_voice_numbers";
 
-// a button carrying a server method, or one drawn as destructive, is pressed
-// only after a confirmation, as a named button is
 const COMMITTING = "button[type=object], button[type=action], .o_delete, .text-danger";
 
 /**

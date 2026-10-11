@@ -49,10 +49,10 @@ test("apply is called if clean is not defined", async () => {
     await contains(":iframe .s_test").click();
     await contains("[data-action-id='testAction']").click();
     expect("[data-action-id='testAction']").toHaveClass("active");
-    expect.verifySteps(["apply", "apply"]); // preview, apply
+    expect.verifySteps(["apply", "apply"]);
     await contains("[data-action-id='testAction']").click();
     expect("[data-action-id='testAction']").not.toHaveClass("active");
-    expect.verifySteps(["apply"]); // clean
+    expect.verifySteps(["apply"]);
 });
 
 test("check Legacy Builder Option is supported", async () => {
@@ -64,10 +64,10 @@ test("check Legacy Builder Option is supported", async () => {
     await contains(":iframe .s_test").click();
     await contains("[data-action-id='testAction']").click();
     expect("[data-action-id='testAction']").toHaveClass("active");
-    expect.verifySteps(["apply", "apply"]); // preview, apply
+    expect.verifySteps(["apply", "apply"]);
     await contains("[data-action-id='testAction']").click();
     expect("[data-action-id='testAction']").not.toHaveClass("active");
-    expect.verifySteps(["apply"]); // clean
+    expect.verifySteps(["apply"]);
 });
 
 test("custom action and shorthand action: clean actions are independent, apply is called on custom action if clean is not defined", async () => {
@@ -81,10 +81,10 @@ test("custom action and shorthand action: clean actions are independent, apply i
     await contains(":iframe .s_test").click();
     await contains("[data-action-id='testAction']").click();
     expect("[data-action-id='testAction']").toHaveClass("active");
-    expect.verifySteps(["apply", "apply"]); // preview, apply
+    expect.verifySteps(["apply", "apply"]);
     await contains("[data-action-id='testAction']").click();
     expect("[data-action-id='testAction']").not.toHaveClass("active");
-    expect.verifySteps(["apply"]); // clean
+    expect.verifySteps(["apply"]);
 });
 
 test("Prepare is triggered on props updated", async () => {
@@ -118,7 +118,6 @@ test("Prepare is triggered on props updated", async () => {
     await contains(":iframe .test-options-target").click();
     expect.verifySteps(["prepare"]);
     prepareDeferred = new Deferred();
-    // Update prop
     newPropDeferred.resolve();
     await animationFrame();
     expect.verifySteps([]);
@@ -181,14 +180,11 @@ describe("isPreviewing is passed to action's apply and clean", () => {
         );
         await contains(":iframe .test-options-target").click();
 
-        // apply
         await contains("[data-action-id='isPreviewing']").click();
         expect.verifySteps(["apply true", "apply false"]);
 
-        // Hover something else, making sure we have a preview on next click
         await contains(":iframe .test-options-target").click();
 
-        // clean
         await contains("[data-action-id='isPreviewing']").click();
         expect.verifySteps(["clean true", "clean false"]);
     });
@@ -205,7 +201,6 @@ describe("isPreviewing is passed to action's apply and clean", () => {
         );
         await contains(":iframe .test-options-target").click();
 
-        // apply
         await contains("[data-action-id='isPreviewing'] input").edit("truthy");
         expect.verifySteps(["apply true", "apply false"]);
     });
@@ -222,7 +217,6 @@ describe("isPreviewing is passed to action's apply and clean", () => {
         );
         await contains(":iframe .test-options-target").click();
 
-        // apply
         await contains(".o_we_color_preview").click();
         await contains("button:contains(Custom)").click();
         await contains("button[data-color='600']").click();
@@ -258,12 +252,10 @@ describe("isPreviewing is passed to action's apply and clean", () => {
         );
         await contains(":iframe .test-options-target").click();
 
-        // apply
         await contains(".o_select_menu button").click();
         await contains(".o_select_menu_item[data-choice-index='0']").click();
         expect.verifySteps(["apply true", "apply false"]);
 
-        // clean
         await contains(".o_select_menu + button > .oi-close").click();
         expect.verifySteps(["clean true", "clean false"]);
     });
@@ -324,7 +316,6 @@ test("reload action: apply, clean save and reload are called in the right order 
     await setupHTMLBuilder(`<section class="test-options-target">Test</section>`);
     await contains(":iframe .test-options-target").click();
 
-    // Apply
     reloadDef = new Deferred();
     applyDef = new Deferred();
     await contains("[data-action-id='testReload']").click();
@@ -333,7 +324,6 @@ test("reload action: apply, clean save and reload are called in the right order 
     await reloadDef;
     expect.verifySteps(["apply async", "save sync", "save async", "reload"]);
 
-    // Clean
     reloadDef = new Deferred();
     cleanDef = new Deferred();
     await contains("[data-action-id='testReload']").click();

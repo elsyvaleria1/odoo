@@ -23,7 +23,6 @@ patch(ControlButtons.prototype, {
             },
         });
     },
-    // FIXME business method in a compoenent, maybe to move in pos_store
     async applyDiscount(percent) {
         return this.pos.applyDiscount(percent);
     },

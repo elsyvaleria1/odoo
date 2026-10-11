@@ -55,9 +55,6 @@ test("exclamation-triangle when picking is done", async () => {
 
     await mountWebClient({ WebClient: WebClient });
     await getService("action").doAction(clientData.action);
-    // Font Awesome 6 name: the icon is `fa-triangle-exclamation`, and `barcodeInfo` feeds
-    // it through `fa-{{info.icon}}` inside `.o_barcode_pic`. The FA5 spelling this asserted
-    // stopped matching when the fork moved to FA6.
     expect(".o_barcode_pic .fa-triangle-exclamation").toHaveCount(1, {
         message: "Should have warning icon",
     });

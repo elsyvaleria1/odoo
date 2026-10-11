@@ -11,7 +11,6 @@ export class AccountReturnKanbanRecord extends KanbanRecord {
 
     getRecordClasses() {
         let classes = super.getRecordClasses();
-        // Remove the cursor on the card of the return when being on the checks kanban view
         if (this.props.record.context?.in_checks_view) {
             classes = classes.replace(/\bcursor-pointer\b/, "");
         }

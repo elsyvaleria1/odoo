@@ -5,7 +5,6 @@ import { Interaction } from "@web/public/interaction";
 
 import { Captcha } from "./captcha.js";
 
-/** A form posted as a page (login, signup, password reset) sends its token. */
 export class CaptchaForm extends Interaction {
     static selector = "form[data-captcha]";
     dynamicContent = {

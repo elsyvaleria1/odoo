@@ -7,7 +7,6 @@ export class LoyaltyCard extends Base {
     static pythonModel = "loyalty.card";
 
     isExpired() {
-        // If no expiration date is set, the card is not expired
         if (!this.expiration_date) {
             return false;
         }

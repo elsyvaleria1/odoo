@@ -34,11 +34,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
             obj[option.id] = option;
             return obj;
         }, {});
-        /**
-         * This is used to keep track of the sign items that are currently being
-         * fetched from the server. This is used to ensure that the sign item
-         * on which a click event is triggered is completely loaded before
-         */
         this.negativeIds = {};
         this.radioSets = this.props.radioSets;
         this.documentId = this.props.documentId;
@@ -54,49 +49,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
      * @param {SignItem} signItem2
      */
     renderConnectingLine(signItem1, signItem2) {
-        /**
-         * For each sign item we have its coordinates inside the corresponding page.
-         * In order to allow for lines that cover multiple pages we calculate the (x, y) coordinates
-         * with respect to the entire document.
-         *
-            -----------------------------------------
-            |           |                           |
-            |   --------|----------------------     |
-            |   |       y                     |     |
-            |   |       |                     |     |
-            |____x______-----                 |     |
-            |   |       |   |                 |     |
-            |   |       -----                 |     |
-            |   |         |                   |     |
-            |   |       -----                 |     |
-            |   |       |   |                 |     |
-            |   |       -----                 |     |
-            |   |         |                   |     |
-            |   |         |         -----     |     |
-            |   |          ---------|   |     |     |
-            |   |                   -----     |     |
-            |   |                             |     |
-            |   -------------------------------     |
-            |                                       |
-            -----------------------------------------
-
-            To connect two items we do the following:
-                1. Check if we can connect them with one line (horizontal/verical)
-                2. If not, this means that the second item lies in of four quarters with respect to the first item.
-                   Check in which quarter does it lie and draw the two lines accordingly.
-
-                            |               |
-                      (1)   |               |   (2)
-                ------------|----------------------------
-                            |               |
-                            |  first item   |
-                            |               |
-                -----------------------------------------
-                            |               |
-                      (3)   |               |     (4)
-                            |               |
-         */
-
         const page1 = this.getPageContainer(signItem1.data.page);
         const page2 = this.getPageContainer(signItem2.data.page);
         const dx1 = page1.offsetLeft + page1.clientLeft;
@@ -115,7 +67,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         const c2 = { x: x2 + w2 / 2, y: y2 + h2 / 2 };
 
         if (!(x2 > x1 + w1 || x1 > x2 + w2)) {
-            //One vertical line
             const midx = (Math.max(x1, x2) + Math.min(x1 + w1, x2 + w2)) / 2;
             if (y1 > y2) {
                 this.renderLine({
@@ -141,7 +92,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
                 });
             }
         } else if (!(y2 > y1 + h1 || y1 > y2 + h2)) {
-            //One horizontal line
             const midy = (Math.max(y1, y2) + Math.min(y1 + h1, y2 + h2)) / 2;
             if (x1 > x2) {
                 this.renderLine({
@@ -167,9 +117,7 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
                 });
             }
         } else {
-            //we need two lines to connect them
             if (y2 + h2 < y1 && x2 + w2 < x1) {
-                //Quarter (1)
                 const corner = {
                     x: c2.x,
                     y: c1.y,
@@ -189,7 +137,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
                     },
                 });
             } else if (y2 + h2 < y1 && x2 > x1 + w1) {
-                //Quarter (2)
                 const corner = {
                     x: c2.x,
                     y: c1.y,
@@ -209,7 +156,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
                     },
                 });
             } else if (y2 > y1 + h1 && x2 + w2 < x1) {
-                //Quarter (3)
                 const corner = {
                     x: c1.x,
                     y: c2.y,
@@ -229,7 +175,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
                     },
                 });
             } else if (y2 > y1 + h1 && x2 > x1 + w1) {
-                //Quarter (4)
                 const corner = {
                     x: c1.x,
                     y: c2.y,
@@ -269,9 +214,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         ctx.stroke();
     }
 
-    /**
-     * Renders connecting lines between sign items of type "radio"
-     */
     renderAllConnectingLines() {
         const canvas = this.getCanvas();
         if (canvas) {
@@ -326,7 +268,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
      * @param {SignItem} signItem
      */
     async openSignItemPopup(signItem) {
-        // Save the item to the backend if it has a negative ID, as it indicates the item is new and not yet linked to the template.
         if (signItem.data.id < 0) {
             await this.saveChangesOnBackend();
         }
@@ -394,7 +335,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         }
     }
 
-    //Handle copying a single sign item
     onCopyItem(id) {
         const data = this.getSignItemById(id).data;
         const { type, radio_set_id } = data;
@@ -408,9 +348,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         }
     }
 
-    /**
-     * Closes all open popovers
-     */
     closePopover() {
         if (Object.keys(this.closePopoverFns)) {
             for (const id in this.closePopoverFns) {
@@ -579,7 +516,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         if (signItem.data.type === "radio") {
             const radioItem = this.getSignItemById(signItem.data.id);
             if (!radioItem) {
-                /* Check if it was already deleted as radio buttons are deleted in chain. */
                 return;
             }
             return this.deleteRadioSet(radioItem.data.radio_set_id);
@@ -655,9 +591,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         return signItem.alignment;
     }
 
-    /**
-     * Hook executed before rendering the sign items and the sidebar
-     */
     preRender() {
         super.preRender();
         if (this.allowEdit && !isMobileOS()) {
@@ -695,7 +628,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         super.postRender();
         if (this.allowEdit) {
             const viewerContainer = this.root.querySelector("#viewerContainer");
-            // close popover when clicking outside of a sign item
             viewerContainer.addEventListener(
                 "click",
                 (e) => {
@@ -710,9 +642,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         }
     }
 
-    /**
-     * Sets up a resize observer to adjust the sign images on page resize (zoom in/out)
-     */
     setupResizeObserver() {
         const viewerContainer = this.root.querySelector("#viewerContainer");
         if (viewerContainer) {
@@ -725,7 +654,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
 
     handleKeyUp(e) {
         if (e.key === "Delete" && Object.keys(this.closePopoverFns)) {
-            //delete any element that has its popover open
             for (const id in this.closePopoverFns) {
                 const { close, signItem } = this.closePopoverFns[id];
                 typeof close === "function" && close();
@@ -770,7 +698,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
             }
             this.signItems[page][id].data.updated = false;
         });
-        // Assign the radio_set info to the newely created radio items
         if (new_radio_items.length) {
             const info = await this.props.getRadioSetInfo(
                 new_radio_items.map((obj) => obj.id),
@@ -793,7 +720,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
                 };
             });
         }
-        // After saving there should be no negative sign item ids, so we just filter them out.
         for (const radioSet of Object.values(this.radioSets)) {
             radioSet.radio_item_ids = radioSet.radio_item_ids.filter((id) => id > 0);
         }
@@ -920,9 +846,6 @@ export class SignTemplateIframe extends EditablePDFIframeMixin(PDFIframe) {
         await this.saveChangesOnBackend();
     }
 
-    /**
-     * Adjusts the sign images on page resize (zoom in/out)
-     */
     adjustSignImagesOnPageResize() {
         for (const page in this.signItems) {
             for (const id in this.signItems[page]) {

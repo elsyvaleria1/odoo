@@ -93,7 +93,6 @@ class AddPageTemplateBlank extends Component {
         this.websiteContext = useWebsiteContext();
         useLifecycleLog(log);
         this.holderRef = elementRef();
-        // the shared preview wrapper binds a preview element the blank page has no use for
         this.previewRef = noRef;
 
         onMounted(async () => {
@@ -240,9 +239,6 @@ class AddPageTemplatePreview extends Component {
                 imgEl.setAttribute("loading", "eager");
             }
             const endImages = log.perf("AddPageTemplatePreview images loaded");
-            // A single broken image must not reject and abort the rest of the
-            // setup (fonts.ready, o_loading removal, adjustHeight), which would
-            // leave the preview stuck loading.
             await onceAllImagesLoaded(wrapEl).catch(() => {});
             endImages();
             for (const imgEl of lazyLoadedImgEls) {

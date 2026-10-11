@@ -16,7 +16,7 @@ import { contains, defineStyle } from "@web/../tests/web_test_helpers";
 import { OPEN_DELAY } from "@web/ui/tooltip";
 
 function reapplyCollapseTransition() {
-    defineStyle(/* css */ `
+    defineStyle(`
         hoot-fixture:not(.allow-transitions) * .hb-collapse-content {
             transition: height 0.35s ease !important;
         }
@@ -159,7 +159,6 @@ test("reconnects lines across mixed levels", async () => {
     ]);
 });
 
-/* ================= Collapse template ================= */
 const collapseOptionTemplate = ({
     dependency = false,
     expand = false,
@@ -301,7 +300,7 @@ describe("BuilderRow with collapse content", () => {
         expect(".o_hb_collapse_toggler:not(.d-none)").toHaveClass("active");
         expect(".options-container button[data-class-action='b']").toBeVisible();
         await contains(".o_hb_collapse_toggler:not(.d-none)").click();
-        advanceTime(400); // wait for the collapse transition to be over
+        advanceTime(400);
         await animationFrame();
         expect(".o_hb_collapse_toggler:not(.d-none)").not.toHaveClass("active");
         expect(".options-container button[data-class-action='b']").toHaveCount(0);
@@ -326,7 +325,7 @@ describe("BuilderRow with collapse content", () => {
         expect(".options-container button[data-class-action='b']").toBeVisible();
         await contains(".o_hb_collapse_toggler:not(.d-none)").click();
         expect(".o_hb_collapse_toggler:not(.d-none)").not.toHaveClass("active");
-        advanceTime(400); // wait for the collapse transition to be over
+        advanceTime(400);
         await animationFrame();
         expect(".options-container button[data-class-action='b']").not.toBeVisible();
     });
@@ -352,7 +351,7 @@ describe("BuilderRow with collapse content", () => {
         await contains(
             "[data-label='Test Collapse'] span:contains('Test Collapse')",
         ).click();
-        advanceTime(400); // wait for the collapse transition to be over
+        advanceTime(400);
         await animationFrame();
         expect(".o_hb_collapse_toggler:not(.d-none)").not.toHaveClass("active");
         expect(".options-container button[data-class-action='b']").toHaveCount(0);
@@ -381,7 +380,7 @@ describe("BuilderRow with collapse content", () => {
             "[data-label='Test Collapse'] span:contains('Test Collapse')",
         ).click();
         expect(".o_hb_collapse_toggler:not(.d-none)").not.toHaveClass("active");
-        advanceTime(400); // wait for the collapse transition to be over
+        advanceTime(400);
         await animationFrame();
         expect(".options-container button[data-class-action='b']").not.toBeVisible();
     });
@@ -444,7 +443,7 @@ describe("HTML builder tests", () => {
         const label = queryOne(
             "[data-label='Supercalifragilisticexpalidocious'] .text-truncate",
         );
-        expect(label.scrollWidth).toBeGreaterThan(label.clientWidth); // the text is longer than the available width.
+        expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
         expect(".o-tooltip").toHaveText("Supercalifragilisticexpalidocious");
 
         await contains(":iframe .test-options-target").hover();
@@ -465,7 +464,7 @@ describe("HTML builder tests", () => {
         const label = queryOne(
             "[data-label='Supercalifragilisticexpalidocious'] .text-truncate",
         );
-        expect(label.scrollWidth).toBeGreaterThan(label.clientWidth); // the text is longer than the available width.
+        expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
         expect(".o-tooltip").toHaveText(
             "Supercalifragilisticexpalidocious : my tooltip",
         );

@@ -11,9 +11,6 @@ setupInteractionWhiteList("website.website_page");
 describe.current.tags("interaction_dev");
 
 test("a language switch goes through /website/lang with the link's url code", async () => {
-    // the selector's links carry `data-url_code` (an underscore key of the
-    // dataset); reading a camel-cased key sent every visitor to
-    // /website/lang/undefined
     const { core } = await startInteractions(`
         <div id="wrapwrap">
             <div class="js_language_selector">

@@ -21,10 +21,6 @@ patch(StreamPostComment.prototype, {
         return !this.isAuthor;
     },
 
-    /**
-     * Method called when generating a social.lead from a post comment.
-     * It retrieves necessary data for the lead creation and open the wizard.social.stream.post.create.lead wizard.
-     */
     generateLeadFromComment() {
         this.actionService.doAction("social_crm.social_post_to_lead_action", {
             additionalContext: {
@@ -37,8 +33,6 @@ patch(StreamPostComment.prototype, {
                     this.comment.attachment?.type === "photo"
                         ? `["${this.comment.attachment.media.image.src}"]`
                         : false,
-                // expected datetime format by the server
-                // as social comments are not stored as records, we need to do some manual formatting
                 default_post_datetime: serializeDateTime(this.commentCreatedTime),
                 default_post_link: this.originalPost.post_link.raw_value,
             },

@@ -107,7 +107,7 @@ test("Save as template menu", async function () {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /*xml*/ `
+                "partner,false,pivot": `
                         <pivot>
                             <field name="bar" type="col"/>
                             <field name="product_id" type="row"/>

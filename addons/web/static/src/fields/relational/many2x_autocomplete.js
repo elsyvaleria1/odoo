@@ -84,8 +84,6 @@ export class Many2XAutocomplete extends Component {
         dropdown: t.boolean().optional(true),
         fieldString: t.string(),
         getDomain: t.function(),
-        // reads the model at search time, for a field whose model the record
-        // decides; resModel is what the last render saw
         getResModel: t.function().optional(),
         id: t.string().optional(),
         isToMany: t.boolean().optional(),
@@ -99,8 +97,6 @@ export class Many2XAutocomplete extends Component {
         searchMoreLimit: t.number().optional(SEARCH_MORE_LIMIT),
         searchThreshold: t.number().optional(0),
         setInputFloats: t.function().optional(() => () => {}),
-        // resolves once the record's pending changes have landed, so a search
-        // reads the model and domain an onchange is about to set
         settle: t.function().optional(),
         searchMemoization: t
             .customValidator(t.string(), (v) =>

@@ -88,10 +88,6 @@ export class AppointmentForm extends Interaction {
         return Array.from(formData).filter(([key]) => formKeys.includes(key));
     }
 
-    /**
-     * This function will show the guest email textarea where user can enter the
-     * emails of the guests if allow_guests option is enabled.
-     */
     onAddGuest() {
         this.showAddGuest = true;
         this.updateContent();
@@ -136,9 +132,6 @@ export class AppointmentForm extends Interaction {
         }
     }
 
-    /**
-     * This function will hide the guest email textarea if allow_guests option is enabled.
-     */
     onHideGuest() {
         this.errorMessage = "";
         this.showAddGuest = false;

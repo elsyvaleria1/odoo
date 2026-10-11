@@ -72,7 +72,6 @@ class OdooChartFieldMatchingClipboardHandler extends AbstractFigureClipboardHand
         for (const filterId of filterIds) {
             const filter = this.getters.getGlobalFilter(filterId);
             const currentChartMatchings = {};
-            // copy existing matching of other chars for this filter
             for (const chartId of odooChartIds) {
                 currentChartMatchings[chartId] = this.getters.getOdooChartFieldMatching(
                     chartId,
@@ -93,8 +92,6 @@ class OdooChartFieldMatchingClipboardHandler extends AbstractFigureClipboardHand
                 newChartMatchings[chartId] = copiedFieldMatching;
             }
             if (deepEqual(newChartMatchings, currentChartMatchings)) {
-                // avoid dispatching a command if the automatic field matching already set
-                // the same matching
                 continue;
             }
             this.dispatch("EDIT_GLOBAL_FILTER", {

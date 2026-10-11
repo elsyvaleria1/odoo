@@ -4,13 +4,6 @@ import { rpc } from "@web/core/network";
 function makeAddressSession() {
     let current;
 
-    /**
-     * A lookup is one session: it begins with the first suggestions and ends
-     * with the details of the address chosen, after which its token is spent
-     * and the next lookup needs a fresh one. A provider bills the session as
-     * one lookup (Google Places:
-     * https://developers.google.com/maps/documentation/places/web-service/details#session_tokens).
-     */
     function generateUUID() {
         return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
             const r = (Math.random() * 16) | 0,

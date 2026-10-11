@@ -91,7 +91,6 @@ test("a user outside the internal users is not offered it", async () => {
 test("only an action's form record is explained", async () => {
     const { isDisplayed } = registry.category("cogMenu").get("explain-access");
     const model = { root: { resId: 1 } };
-    // isDisplayed reads only the view's config and model: a stub stands for the env
     const env = (/** @type {object} */ config) =>
         /** @type {import("@web/env").OdooEnv} */ (
             /** @type {unknown} */ ({ config, model })

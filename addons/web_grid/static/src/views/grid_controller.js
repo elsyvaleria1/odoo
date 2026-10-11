@@ -41,8 +41,6 @@ export class GridController extends Component {
             defaultAnchor = deserializeDate(this.props.context.grid_anchor);
         }
         this.dialogService = useService("dialog");
-        // `useState` so the controller template's model reads subscribe it; it
-        // previously relied on the model's blanket deep render.
         this.model = proxy(
             useModelWithSampleData(this.props.Model, {
                 resModel: this.props.resModel,
@@ -54,8 +52,6 @@ export class GridController extends Component {
                 fieldsInfo: this.props.relatedModels[this.props.resModel].fields,
                 activeRangeName,
                 ranges: this.props.archInfo.ranges,
-                // `model.record.resIds` exists to be handed to the arch's own
-                // <button>s and is read nowhere else.
                 withRecordIds: this.props.archInfo.buttons.length > 0,
                 defaultAnchor,
             }),

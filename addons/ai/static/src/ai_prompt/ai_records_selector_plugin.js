@@ -44,7 +44,6 @@ export class AIRecordsSelectorPlugin extends Plugin {
     }
 
     normalize(element) {
-        // make sure records are always protected (could be added without this plugin)
         for (const recordEl of element.querySelectorAll(AI_RECORD_SELECTOR)) {
             recordEl.dataset.oeProtected = true;
         }
@@ -61,8 +60,6 @@ export class AIRecordsSelectorPlugin extends Plugin {
             }
             return;
         }
-        // Refresh the labels: a display name changed elsewhere leaves the prompt incoherent, and
-        // the user can only notice it once the stale label is replaced.
         const recordIds = [...recordEls].map((el) => Number(el.dataset.aiRecordId));
         const displayNames = await this.services.name.loadDisplayNames(
             this.config.recordsSelectorResModel,

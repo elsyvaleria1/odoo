@@ -23,8 +23,6 @@ export class SpreadsheetCloneCSVXlsxDialog extends ConfirmationDialog {
      */
     async confirm() {
         this.execButton(async () => {
-            // Replacing call to a props-provided `confirm` method with the
-            // archiving behavior makes a more unified component.
             const spreadsheetId = await this.orm.call(
                 "document.document",
                 "import_to_spreadsheet",

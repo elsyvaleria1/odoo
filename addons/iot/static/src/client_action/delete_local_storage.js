@@ -13,10 +13,8 @@ export function removeIoTReportIdFromBrowserLocalStorage(report_id) {
     );
     delete links[report_id];
     if (Object.keys(links).length === 0) {
-        // If the list is empty, remove the entry
         browser.localStorage.removeItem(IOT_REPORT_PREFERENCE_LOCAL_STORAGE_KEY);
     } else {
-        // Replace the entry in LocalStorage by the same object with the key 'report_id' removed
         browser.localStorage.setItem(
             IOT_REPORT_PREFERENCE_LOCAL_STORAGE_KEY,
             JSON.stringify(links),

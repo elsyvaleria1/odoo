@@ -762,7 +762,6 @@ describe("Range not collapsed", () => {
         });
 
         test("should turn two lines of a paragraph and two lines of a list item into four list items", async () => {
-            // TODO: is this what we want?
             await testEditor({
                 contentBefore:
                     "<p>a<br>x[b<br>y</p><ul><li>c<br>z]d<br>A</li><li>ef</li></ul>",
@@ -773,7 +772,6 @@ describe("Range not collapsed", () => {
         });
 
         test("should turn two lines of a paragraph and two lines of a list item into four list items (reversed selection)", async () => {
-            // TODO: is this what we want?
             await testEditor({
                 contentBefore:
                     "<p>a<br>x]b<br>y</p><ul><li>c<br>z[d<br>A</li><li>ef</li></ul>",

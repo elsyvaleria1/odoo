@@ -174,9 +174,6 @@ export class PaymentPineLabs extends PaymentInterface {
         return this._paymentCancelRequestHandler(response);
     }
 
-    /**
-     * This method processes order data and sends payment requests from POS to Pine Labs.
-     */
     async _processPineLabs() {
         const order = this.pos.getOrder();
         const paymentLine = order.getSelectedPaymentline();
@@ -202,11 +199,10 @@ export class PaymentPineLabs extends PaymentInterface {
                 crypto.randomUUID().replaceAll("-", ""),
         });
 
-        // Pine Labs takes the amount in paisa, the minor unit of INR
         const data = {
             amount: this.pos.currency.toMinorUnits(paymentLine.amount),
             transactionNumber: paymentLine.payment_ref_no,
-            sequenceNumber: sequenceNumber, // In the case of multiple transactions for the same order, it is important to follow the correct sequence of transactions.
+            sequenceNumber: sequenceNumber,
         };
         const response = await this._callPineLabs(
             data,
@@ -215,10 +211,6 @@ export class PaymentPineLabs extends PaymentInterface {
         return await this._makePaymentRequestHandler(response);
     }
 
-    /**
-     * This method waits for the payment to be confirmed by Pine Labs.
-     * Also, this method uses polling to check the payment status..
-     */
     async _waitForPaymentToConfirm() {
         const paymentLine = this.pos.getOrder().getSelectedPaymentline();
         if (
@@ -233,10 +225,8 @@ export class PaymentPineLabs extends PaymentInterface {
         };
         this._stopPendingPayment().then(() => (this.payment_stopped = true));
         const pineLabsFetchPaymentStatus = async (resolve, reject) => {
-            //Clear the previous timeout before setting a new one
             clearTimeout(this.pollingTimeout);
 
-            // If the user navigates to another screen, stop the polling
             if (this.pos.router.state.current !== "PaymentScreen") {
                 this._removePaymentHandler();
                 return;
@@ -268,7 +258,6 @@ export class PaymentPineLabs extends PaymentInterface {
     }
 
     _getPaymentDate(dateString, timeString) {
-        // The dateString value appears as `03122024`, while the timeString value appears as `063515`.
         const localDate = parseFormatted(
             `${dateString} ${timeString}`,
             "ddMMyyyy HHmmss",

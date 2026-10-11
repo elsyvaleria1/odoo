@@ -45,8 +45,6 @@ export class PostLink extends Interaction {
             post();
             return;
         }
-        // with nothing to post, the target renders the same page to a GET,
-        // which a partial navigation region can then take in place
         requestNavigation(this.el, url, post);
     }
 }

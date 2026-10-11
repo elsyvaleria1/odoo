@@ -28,7 +28,6 @@ patch(PosData.prototype, {
         loadData["pos.order"] = loadData["pos.order"].filter(
             (o) => !deliveryOrderIds.has(o.id),
         );
-        // stored rows are raw: a line's order_id and a payment's pos_order_id are ids
         if (loadData["pos.order.line"]) {
             loadData["pos.order.line"] = loadData["pos.order.line"].filter(
                 (ol) => !deliveryOrderIds.has(ol.order_id),

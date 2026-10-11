@@ -3,7 +3,6 @@
 
 import { termPhrases } from "./interpreter/terms.js";
 
-/** The company's voice terms, read once per session. */
 export class VoiceTerms {
     /** @param {any} orm */
     constructor(orm) {

@@ -148,7 +148,6 @@ registry.category("web_tour.tours").add("test_ai_draft_chatter_button", {
         },
         ...stepUtils.toggleHomeMenu(),
         ...stepUtils.goToAppSteps("im_livechat.menu_livechat_root"),
-        // chatbot script has no chatter but has a prompt button
         {
             trigger:
                 ".o_menu_sections button[data-menu-xmlid='im_livechat.livechat_config']",
@@ -211,7 +210,6 @@ registry.category("web_tour.tours").add("test_ai_draft_chatter_button", {
             trigger: ".o_menu_sections button[data-menu-xmlid='crm.crm_menu_config']",
             run: "click",
         },
-        // activity type has no chatter and no prompt button
         {
             trigger: "a[data-menu-xmlid='crm.crm_team_menu_config_activity_types']",
             run: "click",

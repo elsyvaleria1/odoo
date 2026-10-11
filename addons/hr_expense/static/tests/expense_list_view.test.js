@@ -34,8 +34,6 @@ defineModels({ HrExpense });
 describe.current.tags("desktop");
 
 test("a wizard closing with noReload does not reload the expense list", async () => {
-    // the action service passes { noReload: true } to onClose when the
-    // wizard's "Post Expenses" redirects to the created journal entries
     mockService("action", {
         async doAction(action, options) {
             await options.onClose?.({ noReload: true });
@@ -62,7 +60,5 @@ test("a wizard closing with noReload does not reload the expense list", async ()
     expect.verifySteps(["web_search_read"]);
     await contains(".o_data_row .o_list_record_selector input").click();
     await contains("button:contains(Post Entries)").click();
-    // onClose's reload is skipped; only the unconditional reload that
-    // follows the wizard's opening remains
     expect.verifySteps(["web_search_read"]);
 });

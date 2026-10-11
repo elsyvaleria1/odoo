@@ -116,7 +116,6 @@ const setupEditable = async (contentEl) => {
     });
     await setupHTMLBuilder(contentEl);
     await contains(":iframe .parent").click();
-    // Dummy action to mark the editable as "dirty"
     await contains("[data-class-action='dummy']").click();
     await contains("[data-action-id='customAction']").click();
 };

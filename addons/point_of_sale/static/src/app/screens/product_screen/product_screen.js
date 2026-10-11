@@ -76,9 +76,6 @@ export class ProductScreen extends Component {
 
         useLayoutEffect(
             () => {
-                // the dependencies are tracked: an order paid from this screen
-                // re-renders it while the router is already leaving for the
-                // receipt, and a new order there would open its preset's dialogs
                 if (
                     this.currentOrder?.state !== "draft" &&
                     !this.isValidatingOrder &&
@@ -342,7 +339,6 @@ export class ProductScreen extends Component {
             line: last_orderline?.uuid,
         }));
         if (last_orderline) {
-            // a till without line discounts still takes scanned ones: the server checks the scan
             for (const line of [last_orderline, ...last_orderline.combo_line_ids]) {
                 line.discount_barcode = code.code;
             }

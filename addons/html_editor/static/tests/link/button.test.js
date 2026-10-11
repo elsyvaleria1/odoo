@@ -507,8 +507,6 @@ describe("link-creating tools in label and button", () => {
         await animationFrame();
         expect(queryAllTexts(".o-we-command-name")).not.toInclude("Media");
     });
-    // Deliberate asymmetry: a button may legitimately hold an image, so only
-    // the link-creating tools are withdrawn there.
     test("Media is still offered inside a button", async () => {
         const { editor } = await setupEditor("<p><button>ab[]</button></p>");
         await insertText(editor, "/media");

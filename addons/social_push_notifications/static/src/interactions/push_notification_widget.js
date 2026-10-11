@@ -1,7 +1,5 @@
 /** @odoo-module native */
 
-/** @module @social_push_notifications/interactions/push_notification_widget - Firebase web push notifications: permission request popup + token registration */
-
 import { browser } from "@web/core/browser/browser";
 import { rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
@@ -16,18 +14,6 @@ export class PushNotificationWidget extends Interaction {
         this.notification = this.services.notification;
     }
 
-    /**
-     * Firebase dependencies are now provided as standard JavaScript modules.
-     * To ensure the browser recognizes and executes these scripts correctly,
-     * they must be loaded using a `<script>` tag with `type="module"`.
-     * Unfortunately, these dependencies cannot be included in the common
-     * Odoo JS bundle because the bundle is loaded with a `<script>` tag
-     * having `type="text/javascript"`. This difference prevents the browser
-     * from recognizing modern JavaScript module-specific syntax that are
-     * used in the Firebase dependencies (see: `import` and `export`).
-     * To load the dependencies, we have to manually inject in the DOM a
-     * script tag with the "module" type.
-     */
     async willStart() {
         const loadFirebaseAssets = () =>
             new Promise((resolve, reject) => {
@@ -44,16 +30,9 @@ export class PushNotificationWidget extends Interaction {
             });
         try {
             this.firebase = await this.waitFor(loadFirebaseAssets());
-        } catch {
-            // Firebase could not be loaded: the interaction stays inert.
-        }
+        } catch {}
     }
 
-    /**
-     * This will start listening to notifications if permission was already
-     * granted by the user or ask for permission after a timeout (configurable)
-     * and then start listening.
-     */
     start() {
         if (!this._isBrowserCompatible() || !this.firebase) {
             return;
@@ -79,10 +58,6 @@ export class PushNotificationWidget extends Interaction {
             this._onNotificationRequest(...ev.detail),
         );
     }
-
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
 
     /**
      * Will handle Firebase Messaging foreground notifications.
@@ -135,12 +110,10 @@ export class PushNotificationWidget extends Interaction {
      */
     _isBrowserCompatible() {
         if (!("serviceWorker" in navigator)) {
-            // Service Worker isn't supported on this browser
             return false;
         }
 
         if (!("PushManager" in window)) {
-            // Push isn't supported on this browser
             return false;
         }
 
@@ -163,7 +136,6 @@ export class PushNotificationWidget extends Interaction {
             !config.firebase_web_api_key ||
             !config.firebase_web_app_id
         ) {
-            // missing configuration
             return null;
         }
 
@@ -339,7 +311,7 @@ export class PushNotificationWidget extends Interaction {
         };
 
         if (!popupConfig || !popupConfig.title || !popupConfig.body) {
-            return; // this means that the web push notifications are not enabled in the settings
+            return;
         }
         if (forcedPopupConfig) {
             popupConfig = Object.assign({}, popupConfig, forcedPopupConfig);
@@ -385,8 +357,6 @@ export class PushNotificationWidget extends Interaction {
             },
         );
 
-        // Push down the notification window if the main menu nav bar is active.
-        // (We want to avoid covering the nav bar with the notification window)
         if (document.getElementById("oe_main_menu_navbar")) {
             popupEl.classList.add(
                 "o_social_push_notifications_permission_with_menubar",

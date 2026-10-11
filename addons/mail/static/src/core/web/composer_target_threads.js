@@ -20,7 +20,6 @@ export function getComposerTargetThreads(store, record) {
         .filter((resId) => resId)
         .map((resId) => {
             const model = record.data.model;
-            // callers run in renders: an insert creating the thread would re-render its reader
             return untrack(() => store.Thread.insert({ model, id: resId }));
         });
 }

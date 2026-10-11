@@ -266,7 +266,6 @@ test("editor hover restores the original through native image events", async () 
     await interaction.lastMouseEvent;
     expect(interaction.el.getAttribute("src")).not.toBe(original);
     interaction.mouseLeave();
-    // Wait for the reverse image's native load before advancing its zero timer.
     await new Promise((resolve) =>
         interaction.el.addEventListener("load", resolve, { once: true }),
     );

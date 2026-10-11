@@ -34,11 +34,8 @@ export class DocumentsDetailsPanel extends Component {
         this.documentService = useService("document.document");
         this.orm = useService("orm");
         this.dialog = useService("dialog");
-        // the model picked while its record is being chosen; the record
-        // itself is unlinked meanwhile
         this.state = proxy({ pendingModel: null, models: [] });
         this.documentService.getDetailsPanelResModels().then((models) => {
-            // The panel may be gone by the time the RPC answers.
             if (status(this) !== "destroyed") {
                 this.state.models = models;
             }
@@ -88,7 +85,6 @@ export class DocumentsDetailsPanel extends Component {
     }
 
     get userPermissionViewOnly() {
-        // a lock stops the others, not its taker nor a Documents manager
         return (
             Boolean(this.record.data?.is_locked_by_other) ||
             this.record.data?.user_permission !== "edit" ||
@@ -122,12 +118,10 @@ export class DocumentsDetailsPanel extends Component {
         return user.allowedCompanies.length > 1;
     }
 
-    /** `mail.alias.domain` is created by base.group_erp_manager */
     get canCreateAliasDomain() {
         return user.isAdmin;
     }
 
-    /** `mail.activity.type` is created by base.group_system */
     get canCreateActivityType() {
         return user.isSystem;
     }
@@ -136,10 +130,6 @@ export class DocumentsDetailsPanel extends Component {
         return user.activeCompanies.map((c) => c.id);
     }
 
-    /**
-     * Links the document to a record of the model picked, once one is chosen:
-     * the current link stays until then, and through a picker cancelled.
-     */
     async onModelSelected(value) {
         if (!value.technical) {
             this.state.pendingModel = null;

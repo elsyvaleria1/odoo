@@ -36,11 +36,6 @@ export class SearchBar extends Interaction {
         const orderByEl = this.el.querySelector(".o_search_order_by");
         const form = orderByEl.closest("form");
         this.order = orderByEl.value;
-        // `|| 5` turned the editor's own "0 results" into 5. The Suggestions
-        // option is a BuilderNumberInput with min="0", and the option panel
-        // hides the display sub-options when it is 0, so 0 is a supported
-        // setting meaning "no autocomplete dropdown" -- which the three
-        // `this.limit` guards below exist to honour and never saw.
         const configuredLimit = parseInt(this.inputEl.dataset.limit);
         this.limit = Number.isNaN(configuredLimit) ? 5 : configuredLimit;
         this.wasEmpty = !this.inputEl.value;

@@ -21,11 +21,10 @@ export function useSpreadsheetCurrencies() {
     const orm = useService("orm");
     async function loadCurrencies() {
         const odooCurrencies = await orm.searchRead(
-            "res.currency", // model
-            [], // domain
-            ["symbol", "full_name", "position", "name", "decimal_places"], // fields
+            "res.currency",
+            [],
+            ["symbol", "full_name", "position", "name", "decimal_places"],
             {
-                // opts
                 order: "active DESC, full_name ASC",
                 context: { active_test: false },
             },
@@ -53,7 +52,6 @@ export function useSpreadsheetThumbnail() {
         canvasResizer.width = size;
         canvasResizer.height = size;
         const canvasCtx = canvasResizer.getContext("2d");
-        // use only 25 first rows in thumbnail
         const sourceSize = Math.min(
             25 * dimensions.DEFAULT_CELL_HEIGHT,
             canvas.width,

@@ -3,10 +3,6 @@ import {
     registerWebsitePreviewTour,
 } from "@website/js/tours/tour_utils";
 
-/**
- * The purpose of this tour is to check the link on image flow.
- */
-
 const selectImageSteps = [
     {
         content: "select block",

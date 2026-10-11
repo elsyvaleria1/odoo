@@ -168,6 +168,4 @@ function getCohortData({ kwargs, model }) {
     };
 }
 
-// Register inside a global `beforeEach` (not module top-level) so the route is
-// applied before every test under native ESM.
 beforeEach(() => onRpc("get_cohort_data", getCohortData), { global: true });

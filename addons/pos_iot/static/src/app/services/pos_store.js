@@ -25,7 +25,6 @@ patch(PosStore.prototype, {
     },
     customerDisplayTokenNotification(payload) {
         super.customerDisplayTokenNotification(payload);
-        // the box's display reloaded into the refusal of its revoked link
         this.openIotCustomerDisplay();
     },
     openIotCustomerDisplay() {

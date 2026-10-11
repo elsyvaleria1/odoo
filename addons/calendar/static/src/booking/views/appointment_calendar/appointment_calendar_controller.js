@@ -53,7 +53,6 @@ patch(AttendeeCalendarController.prototype, {
                 user.hasGroup("calendar.group_appointment_manager"),
                 user.hasGroup("calendar.group_appointment_user"),
             ]);
-            // Using this context key is a stable workaround, to be improved in master
             this.isResourceView =
                 this.props.context.appointment_default_assign_user_attendees === false;
         });
@@ -64,7 +63,7 @@ patch(AttendeeCalendarController.prototype, {
             "/appointment/appointment_type/create_custom",
             {
                 slots: this._getSlots(),
-                context: this.props.context, // This allows to propagate keys like default_opportunity_id / default_applicant_id
+                context: this.props.context,
             },
         );
         if (customAppointment.appointment_type_id) {
@@ -77,9 +76,6 @@ patch(AttendeeCalendarController.prototype, {
         }
     },
 
-    /**
-     * Returns whether we have slot events.
-     */
     hasSlotEvents() {
         return Object.keys(this.model.data.slots).length;
     },
@@ -174,8 +170,6 @@ patch(AttendeeCalendarController.prototype, {
         }
 
         if (this.appointmentState.lastAppointment.isCustom) {
-            // The url copy paste may be done in the configuration dialog.
-            // This is used in order to not display the "Link Copied" message too early.
             this.appointmentState.lastAppointment.waitingCopyLinkCustomType =
                 this.appointmentCalendarContext.calendarState.mode === "slots-creation";
             this.displayDialog(CustomAppointmentFormViewDialog, {

@@ -21,7 +21,6 @@ import {
 } from "../utils.js";
 import { BuilderComponent } from "./builder_component.js";
 
-// TODO replace by useInputBuilderComponent after extracting unit handling
 export function useColorPickerBuilderComponent(comp) {
     const { getAllActions, callOperation } = getAllActionsAndOperations(comp);
     const getAction = comp.builderContext.editor.shared.builderActions.getAction;
@@ -47,10 +46,6 @@ export function useColorPickerBuilderComponent(comp) {
             },
         );
     function getState(editingElement) {
-        // if (!editingElement || !editingElement.isConnected) {
-        //     // TODO try to remove it. We need to move hook in BuilderComponent
-        //     return {};
-        // }
         const actionWithGetValue = getAllActions().find(({ actionId }) =>
             getAction(actionId).has("getValue"),
         );
@@ -60,8 +55,6 @@ export function useColorPickerBuilderComponent(comp) {
             params: actionParam,
         });
         return {
-            // defaultTab is the tab to open if the user has not done a selection yet.
-            // If the user has already selected a color, the tab of the last selection is opened
             defaultTab: comp.props.selectedTab,
             mode: actionParam.mainParam || actionId,
             selectedColor: actionValue || comp.props.defaultColor,
@@ -87,7 +80,6 @@ export function useColorPickerBuilderComponent(comp) {
         callOperation(applyOperation.commit, { userInputValue: getColor(colorValue) });
     }
     let onPreview = (colorValue) => {
-        // Avoid previewing the same color twice.
         if (previewValue === colorValue) {
             return;
         }

@@ -797,7 +797,6 @@ export class Message extends Record {
         };
     }
 
-    /** Whether the store's needaction counter counts this message: a channel counts its own. */
     get countsInNotifications() {
         return !this.thread?.channel;
     }

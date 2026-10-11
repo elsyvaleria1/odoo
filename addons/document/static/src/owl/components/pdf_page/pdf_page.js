@@ -3,13 +3,11 @@ import { Component, onMounted, onPatched, proxy, t, useProps } from "@odoo/owl";
 import { elementRef } from "@web/core/utils/element_ref";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
 
-/** How far off screen a page starts drawing: a screen ahead of the scroll. */
 const NEAR_SCREEN_MARGIN = "100% 0px";
 
 export class PdfPage extends Component {
     static props = {
         canvas: t.object().optional(),
-        /** the manager's thumbnails by page id, read here so only this page re-renders */
         canvases: t.object().optional(),
         isPreview: t.boolean().optional(false),
         isSelected: t.boolean().optional(false),
@@ -17,7 +15,6 @@ export class PdfPage extends Component {
         onPageClicked: t.function().optional(),
         onPageDropped: t.function().optional(),
         onSelectClicked: t.function().optional(),
-        /** asked once, when the page first comes near the screen */
         onVisible: t.function().optional(),
         toRender: t.boolean().optional(),
         pageId: t.string(),
@@ -34,8 +31,6 @@ export class PdfPage extends Component {
 
         onMounted(() => this.renderPage(this.canvas));
         onPatched(() => this.renderPage(this.canvas));
-        // a page is drawn when it comes near: a long file opens at once, and
-        // keeps in memory only the pictures someone scrolled to
         useLayoutEffect(
             (el) => {
                 if (!el || !this.props.onVisible || this.canvas) {
@@ -61,7 +56,6 @@ export class PdfPage extends Component {
         return this.props.canvas ?? this.props.canvases?.[this.props.pageId]?.canvas;
     }
 
-    /** The thumbnail could not be drawn: the page splits all the same. */
     get failed() {
         return Boolean(this.props.canvases?.[this.props.pageId]?.failed);
     }
@@ -135,8 +129,6 @@ export class PdfPage extends Component {
      * @param {MouseEvent} ev
      */
     onDrop(ev) {
-        // onDragOver made this a drop target: a file from the desktop would
-        // otherwise be opened by the browser in place of the splitter
         ev.preventDefault();
         this.state.isHover = false;
         if (!ev.dataTransfer.types.includes("o_documents_pdf_data")) {

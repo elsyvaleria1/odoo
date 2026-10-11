@@ -40,10 +40,6 @@ export class PDFIframe {
         }
     }
 
-    /**
-     * The iframe navigated again or left the page since this manager was made
-     * for its document: the manager of the new document takes over.
-     */
     get isDetached() {
         return !this.root.defaultView;
     }
@@ -85,8 +81,6 @@ export class PDFIframe {
         eventBus.on("scalechange", () => this.updateFontSize());
         eventBus.on("rotationchanging", () => this.updateFontSize());
 
-        // We need to refresh just one more time after we assign the eventbus on the pageredered
-        // as the page could have rendered before we assigned the bus
         this.refreshSignItems();
     }
 
@@ -100,7 +94,6 @@ export class PDFIframe {
             const signItem = this.signItems[page][id].el;
             signItem.classList.remove("d-none");
             if (signItem.hasAttribute("data-signature")) {
-                // one shared handler: re-adding it on every refresh is a no-op
                 signItem.addEventListener("dragstart", preventDrag);
             }
             if (
@@ -145,7 +138,6 @@ export class PDFIframe {
             element.style.display = "none";
         });
         this.root.querySelector("#lastPage").nextElementSibling.style.display = "none";
-        // prevent password from being autocompleted in search input
         this.root.querySelector("#findInput").value = "";
         this.root.querySelector("#findInput").setAttribute("autocomplete", "off");
         const passwordInputs = this.root.querySelectorAll("[type=password]");
@@ -154,9 +146,6 @@ export class PDFIframe {
         );
     }
 
-    /**
-     * Adds canvas layer used to draw connecting lines between radio items.
-     */
     addCanvasLayer() {
         const viewer = this.root.querySelector("#viewer");
         const layer = document.createElement("canvas");
@@ -172,7 +161,6 @@ export class PDFIframe {
         layer.height = viewer.offsetHeight / scale;
         viewer.appendChild(layer);
 
-        // Add ResizeObserver to update canvas dimensions when the viewer is resized
         const resizeObserver = new ResizeObserver(() => {
             const newScale = this.getCanvasScale();
             layer.style.width = viewer.offsetWidth + "px";
@@ -197,22 +185,14 @@ export class PDFIframe {
         this.renderAllConnectingLines();
     }
 
-    /**
-     * Renders connecting lines between radio items.
-     */
-
     renderAllConnectingLines() {}
 
-    /**
-     * register sign item events. in template edition, should be overwritten to add drag/drop events
-     */
     enableCustom(signItem) {}
 
     startPinchService() {
         const pinchTarget = this.root.querySelector("#viewerContainer #viewer");
         const handleTouchMove = (e) => {
             if (e.touches.length === 2) {
-                // To allow zooming in pdf only.
                 e.preventDefault();
             }
         };
@@ -260,7 +240,6 @@ export class PDFIframe {
             );
             signItem.options = options;
         }
-        // handles prefilled values with 0
         if (signItem.value === 0) {
             signItem.value = "0";
         }
@@ -305,9 +284,6 @@ export class PDFIframe {
         }
     }
 
-    /**
-     * Hook executed before rendering the sign items and the sidebar
-     */
     preRender() {
         const viewerContainer = this.root.querySelector("#viewerContainer");
         viewerContainer.style.visibility = "visible";
@@ -317,9 +293,6 @@ export class PDFIframe {
         return this.root.querySelector(".page").clientHeight * 0.015;
     }
 
-    /**
-     * Updates the font size of all sign items in case there was a zoom/resize of element
-     */
     updateFontSize() {
         for (const page in this.signItems) {
             for (const id in this.signItems[page]) {
@@ -450,7 +423,6 @@ export class PDFIframe {
      * @returns scale of the canvas if its height exceeds the maximum size, else 1.
      */
     getCanvasScale() {
-        //@see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/canvas#maximum_canvas_size
         const MAX_CANVAS_HEIGHT = 16384;
         const viewer_height = this.root.querySelector("#viewer").offsetHeight;
         return Math.ceil(viewer_height / MAX_CANVAS_HEIGHT);
@@ -474,7 +446,6 @@ export class PDFIframe {
                     !signatureItem.parentElement ||
                     !signatureItem.parentElement.classList.contains("page")
                 ) {
-                    // checks if element is detached from pdf js
                     this.refreshSignItems();
                 }
                 const { width: boxWidth, height: boxHeight } =

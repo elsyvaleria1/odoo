@@ -140,7 +140,6 @@ class BuilderContainer extends Component {
         });
         this.iframeLoaded = new Promise((resolve) => {
             onMounted(async () => {
-                // Fix for Firefox < 148.
                 if (
                     isBrowserFirefox() &&
                     !(this.iframeRef.el?.contentDocument.readyState === "complete")
@@ -232,7 +231,6 @@ export async function setupHTMLBuilder(
             </section>`,
                 }),
             ],
-            // TODO: maybe we should use the same structure as in the snippets?
             snippet_content: snippetContent || [
                 `<section class="s_test" data-snippet="s_test" data-name="Test">
             <div class="test_a"></div>
@@ -265,7 +263,6 @@ export async function setupHTMLBuilder(
     let lastUpdatePromise;
     const waitSidebarUpdated = async () => {
         await revertPreview(attachedEditor);
-        // The tick ensures that lastUpdatePromise has correctly been assigned
         await tick();
         await lastUpdatePromise;
         await animationFrame();
@@ -291,7 +288,6 @@ export async function setupHTMLBuilder(
     });
 
     let editableContent;
-    // hack to get a promise that resolves when editor is ready
     patchWithCleanup(SetupEditorPlugin.prototype, {
         setup() {
             super.setup();
@@ -406,24 +402,14 @@ export function addBuilderAction(actions = {}) {
     addBuilderPlugin(P);
 }
 
-/**
- * Returns the dragged helper when drag and dropping snippets.
- */
 export function getDragHelper() {
     return document.body.querySelector(".o_draggable_dragging .o_snippet_thumbnail");
 }
 
-/**
- * Returns the dragged helper when drag and dropping elements from the page.
- */
 export function getDragMoveHelper() {
     return document.body.querySelector(".o_drag_move_helper");
 }
 
-/**
- * Waits for the loading element added by the mutex to be removed, indicating
- * that the operation is over.
- */
 export async function waitForEndOfOperation() {
     await advanceTime(500);
     await waitForNone(":iframe .o_loading_screen");
@@ -442,11 +428,6 @@ export function addDropZoneSelector(selector) {
 
     registry.category("builder-plugins").add(pluginId, P);
     after(() => {
-        // Remove by the key it was added under. `Registry.remove` starts with
-        // `if (!(key in this.content)) return`, so passing the plugin *object*
-        // stringifies to "[object Object]", matches nothing and silently does
-        // nothing -- leaving the plugin registered for every later test in the
-        // browser session (`addBuilderPlugin` above gets this right).
         registry.category("builder-plugins").remove(pluginId);
     });
 }
@@ -469,8 +450,6 @@ export async function modifyText(editor, editableContent) {
     editor.shared.history.addStep();
     await insertText(editor, "1");
 }
-
-// Snippet Testing Helpers
 
 /**
  * Creates a basic HTML section structure for test snippets

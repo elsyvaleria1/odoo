@@ -54,7 +54,6 @@ export class BackgroundVideo extends Interaction {
     }
 
     start() {
-        // Render independently of an optional provider API download.
         this.waitFor().then(this.bindDeferred(this.appendBgVideo));
         this.__adjustIframe = this.throttled(this.adjustIframe);
         const resizeObserver = new ResizeObserver(this.__adjustIframe.bind(this));

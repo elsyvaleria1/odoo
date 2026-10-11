@@ -76,8 +76,6 @@ describe("_dropRejectionReason", () => {
     });
 
     test("trash judges what may be trashed, not what may be moved", () => {
-        // an editor's document on the company root: the server refuses its
-        // move (user_can_move) and accepts its trashing
         const ctx = makeCtx({ movable: [], nonMovable: [1], trashable: [1] });
         expect(reject({ id: "TRASH" }, { ctx })).toBe("");
     });

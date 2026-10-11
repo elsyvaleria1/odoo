@@ -7,12 +7,12 @@ export function escapeTextNodes(el) {
                 (node.hasAttribute("data-oe-model") &&
                     node.getAttribute("data-oe-model") !== "ir.ui.view"))
         ) {
-            return NodeFilter.FILTER_REJECT; // Skip this node and its descendants
+            return NodeFilter.FILTER_REJECT;
         }
         if (node.nodeType === Node.TEXT_NODE) {
             return NodeFilter.FILTER_ACCEPT;
         }
-        return NodeFilter.FILTER_SKIP; // Skip other nodes, but visit their children
+        return NodeFilter.FILTER_SKIP;
     };
     if (nodeFilter(el) === NodeFilter.FILTER_REJECT) {
         return;

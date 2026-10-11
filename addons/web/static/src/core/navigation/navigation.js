@@ -133,7 +133,6 @@ class NavigationItem {
         }
     }
 
-    /** Internal to Navigation: clears the item's presentation when activation changes. */
     _setInactive() {
         this.target.classList.remove(this._options.activeClass ?? ACTIVE_ELEMENT_CLASS);
         this._setAriaSelected("false");

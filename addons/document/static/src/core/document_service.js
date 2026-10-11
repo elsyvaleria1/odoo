@@ -19,27 +19,14 @@ import { ConfirmationDialog } from "@web/ui/dialog";
 
 const log = makeLogger("document.service");
 
-/**
- * Form field marking an upload as a document one. The upload bus is global:
- * a documents view reacts only to what it or this service sent. Not read by
- * the server.
- */
 export const DOCUMENT_UPLOAD_MARKER = "documents_upload";
 
-/**
- * What the service's bus carries to the mounted documents views, one name per
- * fact; a view's own bus (`documents-open-preview`, ...) speaks within it.
- */
 export const DocumentsBusEvent = Object.freeze({
-    /** something changed the documents: reload the tree and the records */
     RELOAD: "documents-reload",
-    /** the selection emptied: the details panel goes back to the folder */
     FOCUS_FOLDER: "documents-focus-folder",
-    /** an activity was scheduled or done in the chatter: `{ recordId }` */
     ACTIVITY_CHANGED: "documents-activity-changed",
 });
 
-/** Context key asking the server to refuse a move that changes access (tools.py). */
 export const MOVE_ACCESS_CHECK = "documents_move_access_check";
 const MOVE_CHANGES_ACCESS = "odoo.addons.document.tools.MoveChangesAccess";
 
@@ -51,10 +38,7 @@ export class DocumentService {
         this.notification = services["notification"];
         this.dialog = services["dialog"];
         this.fileUpload = services["file_upload"];
-        // unused here: ai_document's patch of start() subscribes through it
         this.busService = services["bus_service"];
-        // visits are flushed together: every folder opened meanwhile, but only
-        // the document the focus stopped on, and a token once
         this._pendingVisits = { folders: new Set(), document: undefined };
         this._flushVisits = debounce(() => this._sendVisits(), 1000, false);
         this.currentFolderAccessToken = null;
@@ -81,9 +65,6 @@ export class DocumentService {
         if (userFolderId) {
             browser.localStorage.setItem(FOLDER_STORAGE_KEY, userFolderId);
         }
-        // The mounted view controller publishes how to build the selection's
-        // actions; reactive so the control panel re-renders when the view
-        // switches rather than reading a stale or empty slot.
         this.selectionActions = proxy({ provider: null });
     }
 
@@ -146,9 +127,7 @@ export class DocumentService {
                     "get_any_editor_destination",
                 );
                 this.hasFolderEditorAccess = destinations.length > 0;
-            } catch {
-                // No operation wizard: nothing to move or duplicate into anyway.
-            }
+            } catch {}
         }
         this.rightPanelReactive = observe(
             {
@@ -228,7 +207,6 @@ export class DocumentService {
     async downloadDocuments(documents, resIds) {
         if (!resIds) {
             documents = documents.filter((rec) => !rec.isRequest());
-            // links have nothing to zip: a lone link opens, a lone file downloads
             const files = documents.filter((rec) => rec.data.type !== "url");
             const single =
                 documents.length === 1 ? documents[0] : files.length === 1 && files[0];
@@ -238,8 +216,6 @@ export class DocumentService {
             }
             resIds = files.map((rec) => rec.data.id);
         }
-        // a selection of links and requests has nothing to zip; an empty
-        // list would reach the server as file_ids="" and be refused
         if (!resIds.length) {
             return;
         }
@@ -286,8 +262,6 @@ export class DocumentService {
                 },
                 {
                     props: {
-                        // replaces the dialog form's default onSave
-                        // (action_info_builders), whose close it repeats
                         onSave: (record, params) => {
                             renamed = true;
                             if (params?.closable) {
@@ -385,7 +359,6 @@ export class DocumentService {
     _fetchOnce(key, factory) {
         this._onceCache ??= {};
         if (!this._onceCache[key]) {
-            // a failure is not an answer: the next caller asks again
             this._onceCache[key] = factory().catch((error) => {
                 delete this._onceCache[key];
                 throw error;
@@ -649,9 +622,6 @@ export class DocumentService {
         } else if (!inspectedDocuments || inspectedDocuments.length === 0) {
             accessToken = this.currentFolderAccessToken;
         }
-        // the folder is remembered all the same: the view mounting next
-        // writes it (updateDocumentURLRefresh). A portal user keeps the last
-        // token: a bare /odoo/documents is the backend, which they may not enter
         if (this._urlOwners && (accessToken || this.userIsInternal)) {
             router.pushState({ access_token: accessToken || undefined });
         }
@@ -706,9 +676,7 @@ export class DocumentService {
         log.logic("touch", () => ({ accessToken }));
         try {
             await rpc(`/documents/touch/${encodeURIComponent(accessToken)}`);
-        } catch {
-            // a visit that could not be recorded changes nothing on screen
-        }
+        } catch {}
     }
 
     async getActions(folderId) {
@@ -732,7 +700,6 @@ export class DocumentService {
     }
 
     focusRecord(record, forceSelected) {
-        // the panel state is reactive: it hands back a proxy of the record
         log.logic("focusRecord", () => ({
             id: record?.id,
             changed: toRaw(this.focusedRecord) !== toRaw(record),
@@ -783,7 +750,6 @@ export class DocumentService {
         const fileArray = [...files];
         const maxUploadSize = await this.getMaxUploadSize();
         const cloudFiles = fileArray.filter((file) => this.isCloudUpload(file));
-        // no cap is null: get_document_max_upload_limit answers None for 0
         const validFiles = fileArray.filter(
             (file) =>
                 !cloudFiles.includes(file) &&
@@ -810,7 +776,6 @@ export class DocumentService {
                     buildFormData: (formData) => {
                         this._buildUploadFormData(formData, context);
                         formData.append("cloud_storage", "1");
-                        // the server stores an empty stand-in, sized from this
                         formData.append("file_size", file.size);
                     },
                 }),
@@ -858,7 +823,6 @@ export class DocumentService {
                 JSON.stringify(context.allowed_company_ids),
             );
         }
-        // not read by the server: the progress bars match their record by it
         if (context.document_id) {
             formData.append("document_id", context.document_id);
         }

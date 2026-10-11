@@ -36,7 +36,6 @@ patch(TicketScreen.prototype, {
             return floorAndTable;
         }
     },
-    //@override
     _getSearchFields() {
         const res = super._getSearchFields(...arguments);
         if (this.pos.config.module_pos_restaurant) {

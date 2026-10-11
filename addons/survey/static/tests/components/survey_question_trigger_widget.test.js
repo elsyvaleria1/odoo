@@ -51,7 +51,7 @@ class SurveyQuestion extends models.Model {
         },
     ];
     _views = {
-        form: /* xml */ `
+        form: `
             <form>
                 <group>
                     <field name="title"/>
@@ -112,7 +112,6 @@ test("dynamic rendering of surveyQuestionTriggerError rows", async () => {
 
     expect(secondDataRow).toHaveText("Question 2");
     expect(`${q2TriggerDiv} button`).toHaveCount(1);
-    // Question 2 is correctly placed after Question 1
     expect(`${q2TriggerDiv} button i`).not.toHaveClass("text-warning");
     expect(`${q2TriggerDiv} button i`).toHaveAttribute(
         "data-tooltip",
@@ -123,7 +122,6 @@ test("dynamic rendering of surveyQuestionTriggerError rows", async () => {
         },
     );
 
-    // drag and drop Question 2 (triggered) before Question 1 (trigger)
     await contains("tbody tr:nth-child(2) .o_handle_cell").dragAndDrop(
         "tbody tr:nth-child(1)",
     );
@@ -141,7 +139,6 @@ test("dynamic rendering of surveyQuestionTriggerError rows", async () => {
         },
     );
 
-    // drag and drop Question 1 (trigger) back before Question 2 (triggered)
     await contains("tbody tr:nth-child(2) .o_handle_cell").dragAndDrop(
         "tbody tr:nth-child(1)",
     );
@@ -180,18 +177,12 @@ test("deleting the trigger question does not flip the icon to normal before save
     });
 
     const firstDataRow = ".o_data_row:eq(0)";
-    // Question 1 is the trigger of Question 2; delete it without saving.
     await contains(`${firstDataRow} .o_list_record_remove`).click();
 
-    // Only Question 2 remains, now re-indexed to row 0.
     const q2TriggerDiv =
         ".o_data_row:eq(0) td.o_data_cell div.o_widget_survey_question_trigger";
 
     expect(".o_data_row").toHaveCount(1);
-    // The trigger reference on Question 2 now points to a deleted, unsaved
-    // record: this is the MISSING_TRIGGER_ERROR case, which must leave the
-    // icon in its previous ("normal") state rather than flipping it, to
-    // avoid a flicker before the ORM removes the trigger on save.
     expect(`${q2TriggerDiv} button i`).not.toHaveClass("text-warning");
     expect(`${q2TriggerDiv} button i`).toHaveAttribute(
         "data-tooltip",

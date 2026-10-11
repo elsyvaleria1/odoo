@@ -13,7 +13,6 @@ export class OnlineSyncPortal extends Interaction {
     };
 
     async OdooFinConnector(action) {
-        // Ensure that the proxyMode is valid
         const modeRegexp = /^[a-z0-9-_]+$/i;
         if (!modeRegexp.test(action.params.proxyMode)) {
             return;
@@ -23,7 +22,6 @@ export class OnlineSyncPortal extends Interaction {
             `https://${action.params.proxyMode}.odoofin.com/proxy/v1/odoofin_link`,
         );
 
-        // Create and open the iframe
         const params = {
             data: action.params,
             proxyMode: action.params.proxyMode,

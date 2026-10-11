@@ -19,7 +19,6 @@ registry.category("web_tour.tours").add("AutofillTour", {
             PaymentScreen.validateButtonIsHighlighted(true),
             PaymentScreen.clickValidate(),
             ReceiptScreen.receiptIsThere(),
-            // Check pre-filled partner phone
             Sms.CheckNumber("9876543210"),
         ].flat(),
 });

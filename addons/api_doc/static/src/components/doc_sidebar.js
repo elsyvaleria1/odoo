@@ -71,8 +71,6 @@ export class DocSidebar extends Component {
     get filteredAddons() {
         const queryStr = simplifyString(this.state.searchValue);
 
-        // `queryStr <= 0` compared a string to a number and worked only because
-        // "" coerces to 0.
         if (!queryStr) {
             return [...this.modelStore.addons];
         } else {

@@ -19,8 +19,6 @@ export class BuilderFontPlugin extends Plugin {
     static dependencies = ["toolbar"];
     /** @type {import("plugins").BuilderResources} */
     resources = {
-        // Lists CSS variables that will be reset when a font is deleted if
-        // they refer to that font.
         fontCssVariables: [
             "font",
             "headings-font",
@@ -84,13 +82,11 @@ export class BuilderFontPlugin extends Plugin {
     async _fetchFonts() {
         const style = getHtmlStyle(this.document);
         const nbFonts = parseInt(getCSSVariableValue("number-of-fonts", style));
-        // User fonts served by google server.
         const googleFontsProperty = getCSSVariableValue("google-fonts", style);
         let googleFonts = googleFontsProperty
             ? googleFontsProperty.split(/\s*,\s*/g)
             : [];
-        googleFonts = googleFonts.map((font) => font.substring(1, font.length - 1)); // Unquote
-        // Local user fonts.
+        googleFonts = googleFonts.map((font) => font.substring(1, font.length - 1));
         const googleLocalFontsProperty = getCSSVariableValue(
             "google-local-fonts",
             style,
@@ -105,9 +101,6 @@ export class BuilderFontPlugin extends Plugin {
         const uploadedLocalFonts = uploadedLocalFontsProperty
             ? uploadedLocalFontsProperty.slice(1, -1).split(/\s*,\s*/g)
             : [];
-        // If a same font exists both remotely and locally, we remove the remote
-        // font to prioritize the local font. The remote one will never be
-        // displayed or loaded as long as the local one exists.
         googleFonts = googleFonts.filter((font) => {
             const localFonts = googleLocalFonts.map(
                 (localFont) => localFont.split(":")[0],
@@ -142,7 +135,7 @@ export class BuilderFontPlugin extends Plugin {
             const realFontNb = fontNb + 1;
             const fontKey = getCSSVariableValue(`font-number-${realFontNb}`, style);
             allFonts.push(fontKey);
-            let fontName = fontKey.slice(1, -1); // Unquote
+            let fontName = fontKey.slice(1, -1);
             const fontFamilyValue = `'${fontName}'`;
             let styleFontFamily = fontName;
             const isSystemFonts = fontName === "SYSTEM_FONTS";

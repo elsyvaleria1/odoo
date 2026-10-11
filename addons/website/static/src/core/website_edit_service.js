@@ -228,7 +228,6 @@ export const websiteEditService = {
                     isImpactedBy(el) {
                         return false;
                     },
-                    // insert() and renderAt() both attach through _attach()
                     _attach(el, ...args) {
                         super._attach(el, ...args);
                         el.setAttribute("contenteditable", "false");
@@ -311,8 +310,6 @@ export const websiteEditService = {
                 ...window[EDIT_HOOKS_KEY],
                 ignoreDOMMutations: shared.history.ignoreDOMMutations,
             };
-            // the plugin refreshes synchronously on transfer when it owes one,
-            // which runs interactions through the history hooks set above
             ev.currentTarget.dispatchEvent(
                 new CustomEvent("transfer_website_edit_service", {
                     detail: {

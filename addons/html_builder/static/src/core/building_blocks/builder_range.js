@@ -44,7 +44,6 @@ export class BuilderRange extends Component {
 
     formatRawValue(value) {
         if (this.props.unit) {
-            // Remove the unit
             value = value.slice(0, -this.props.unit.length);
         }
         return value;
@@ -52,7 +51,6 @@ export class BuilderRange extends Component {
 
     parseDisplayValue(value) {
         if (this.props.unit) {
-            // Add the unit
             value = `${value}${this.props.unit}`;
         }
         return value;

@@ -22,8 +22,6 @@ export class TranslateLinkInlinePlugin extends Plugin {
             log.pipeline("on_snippet_dropped: mark links inline", () => ({
                 snippet: snippetEl.dataset.snippet,
             }));
-            // a link inside .o_not_editable (s_table_of_content's navbar) is
-            // not editable in translation mode either
             for (const linkEl of selectElements(snippetEl, "a")) {
                 if (!linkEl.closest(".o_not_editable")) {
                     linkEl.classList.add("o_translate_inline");

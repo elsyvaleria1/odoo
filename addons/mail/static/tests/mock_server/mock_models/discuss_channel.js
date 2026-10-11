@@ -79,7 +79,6 @@ export class DiscussChannel extends models.ServerModel {
         if (!channelMember) {
             return true;
         }
-        // Preserve the relation's id before unlink removes the mock row.
         const removedMembers = mailDataHelpers.Store.many(
             DiscussChannelMember.browse(channelMember.id),
             makeKwArgs({ only_id: true, mode: "DELETE" }),

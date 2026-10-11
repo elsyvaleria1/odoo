@@ -163,8 +163,8 @@ test("x2many commands with field sync position bigger than formula", async () =>
     SaleOrderLine._records = [{ id: 42 }, { id: 43 }];
     const { model } = await createSaleOrderSpreadsheetModel();
     addFieldSync(model, "A1", "product_uom_qty", 0);
-    addFieldSync(model, "A2", "product_uom_qty", 1); // has a matching record but not loaded
-    addFieldSync(model, "A3", "product_uom_qty", 2); // doesn't have a matching record
+    addFieldSync(model, "A2", "product_uom_qty", 1);
+    addFieldSync(model, "A3", "product_uom_qty", 2);
     setCellContent(model, "A1", "111");
     setCellContent(model, "A2", "112");
     setCellContent(model, "B1", '=ODOO.LIST(1, 1, "order_id")');
@@ -199,7 +199,6 @@ test("load order lines list only once", async () => {
     await model.getters.getFieldSyncX2ManyCommands();
     expect.verifySteps([]);
 
-    // add a field sync beyond the loaded records
     addFieldSync(model, "A3", "product_uom_qty", 2);
     await model.getters.getFieldSyncX2ManyCommands();
     expect.verifySteps(["web_search_read"]);
@@ -259,13 +258,11 @@ test("x2many commands numeric value on a text field", async () => {
 });
 
 test("x2many commands with not enough records in the list", async () => {
-    // only one record
     SaleOrderLine._records = [{ id: 42 }];
     const { model } = await createSaleOrderSpreadsheetModel();
     addFieldSync(model, "A1", "product_uom_qty", 0);
     setCellContent(model, "A1", "111");
 
-    // doesn't match any record in the list
     addFieldSync(model, "A2", "product_uom_qty", 1);
     setCellContent(model, "A2", "222");
 

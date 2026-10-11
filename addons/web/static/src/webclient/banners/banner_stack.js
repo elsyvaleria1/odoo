@@ -138,10 +138,7 @@ export class BannerStack extends Component {
             this.dismissed.session[id] = true;
             try {
                 browser.sessionStorage.setItem(SESSION_PREFIX + id, "1");
-            } catch {
-                // private windows may refuse storage; the dismissal still
-                // holds for this page
-            }
+            } catch {}
             return;
         }
         const key = /** @type {{ key: Function }} */ (dismiss).key(this.services);

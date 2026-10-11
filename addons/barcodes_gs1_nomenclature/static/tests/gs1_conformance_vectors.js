@@ -1,19 +1,4 @@
 /** @odoo-module native */
-/**
- * Golden vectors for GS1 decomposition, the one source of truth for both
- * runtimes: barcodes_gs1_nomenclature/models/barcode_nomenclature.py and
- * static/src/js/barcode_parser.js decompose the same barcodes, and nothing
- * held them to the same answer.
- *
- * Read by:
- *   JS     -> static/tests/gs1_conformance.test.js
- *   Python -> tests/test_gs1_conformance.py, which slices the raw template
- *             literal below and json.loads it.
- *
- * `expected` is the list of decomposed parts in order, or null when the
- * barcode does not decompose. A date is its ISO day. Dates stay within fifty
- * years of today, where GS1's century rule reads them as written.
- */
 
 export const GS1_VECTORS = JSON.parse(String.raw`
 {

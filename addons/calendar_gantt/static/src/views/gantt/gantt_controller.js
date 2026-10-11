@@ -7,7 +7,6 @@ import {
 import { now as getNow } from "@web/core/l10n/dates";
 import { GanttController } from "@web_gantt/gantt_controller";
 
-// add fields to be carried over when clicking "options" button on quick-edit form dialog
 Object.assign(QUICK_CREATE_CALENDAR_EVENT_FIELDS, {
     appointment_status: { type: "string" },
     resource_ids: { type: "many2many" },

@@ -394,9 +394,6 @@ export function useThreadScroll(options) {
             options.getOrder(),
         ];
     });
-    // observed from mount: the callback runs after layout, so the measurements
-    // `onResize` takes there are free, and a scrollable that outgrows the window
-    // while its messages are still loading is seen the frame it happens
     const resizeObserver = new ResizeObserver(() => options.onResize());
     useLayoutEffect(
         /** @param {HTMLElement|null} el */
@@ -408,8 +405,6 @@ export function useThreadScroll(options) {
         },
         () => [options.scrollableRef.el],
     );
-    // observed once loaded: the first callback after `observe()` applies the saved
-    // scroll position after layout, and every later resize keeps it
     const scrollObserver = new ResizeObserver(() => scroll.applyScroll());
     useLayoutEffect(
         /**

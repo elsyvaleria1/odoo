@@ -14,9 +14,6 @@ registry.category("web_tour.tours").add("time_off_request_calendar_view", {
             content: "Click on the first Thursday of the year",
             trigger: ".fc-daygrid-day.fc-day-thu",
             async run(helpers) {
-                // The first `.fc-day-thu` cell is a disabled December cell in
-                // any year whose January 1st falls on Friday through Sunday,
-                // so aim at the first Thursday of the displayed year by date.
                 const year = new Date().getFullYear();
                 const first = new Date(Date.UTC(year, 0, 1));
                 first.setUTCDate(

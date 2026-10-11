@@ -196,9 +196,6 @@ export class ClipboardPlugin extends Plugin {
                 this.handlePasteOdooEditorHtml(ev.clipboardData) ||
                 this.handlePasteHtml(selection, ev.clipboardData) ||
                 this.handlePasteText(selection, ev.clipboardData);
-            // Only the image-paste branch of `handlePasteHtml` returns a
-            // promise; awaiting only then keeps every other (synchronous)
-            // paste path resolved within the same tick, as callers expect.
             if (result instanceof Promise) {
                 await result;
             }

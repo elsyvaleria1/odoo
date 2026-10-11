@@ -3,10 +3,8 @@ import { beforeEach, expect } from "@odoo/hoot";
 import { animationFrame, mockFetch } from "@odoo/hoot-mock";
 import { mountWithCleanup, patchWithCleanup } from "@web/../tests/web_test_helpers";
 
-/** What the doubles released during the current test. */
 export const pdfTracker = { destroyedPdfs: [], revokedUrls: [] };
 
-/** Resets the doubles before each test of the calling file. */
 export function usePdfManagerDoubles() {
     beforeEach(() => {
         pdfTracker.destroyedPdfs = [];
@@ -27,7 +25,6 @@ export function usePdfManagerDoubles() {
     });
 }
 
-/** Shaped like pdf.js 6's PDFDocumentProxy: no destroy() of its own. */
 export function makeFakePdf(url) {
     const pdf = {
         url,
@@ -102,7 +99,6 @@ export async function mountPdfManager(props = {}, ManagerClass = PdfManagerForTe
             ...props,
         },
     });
-    // the documents' pages are added from the mount effect, a frame later
     await animationFrame();
     return manager;
 }

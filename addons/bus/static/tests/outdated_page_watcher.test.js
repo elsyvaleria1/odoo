@@ -29,8 +29,6 @@ defineBusModels();
 describe.current.tags("desktop");
 
 test("disconnect during vacuum should ask for reload", async () => {
-    // Auto-removed (`after`) so this listener on the shared `browser.location`
-    // mock does not leak a stray "reload" step into later suites.
     after(on(browser.location, "reload", () => asyncStep("reload")));
     addBusServiceListeners(
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
@@ -83,20 +81,9 @@ test("reconnect after going offline after bus gc should ask for reload", async (
 });
 
 test("J10: a DISCONNECTED first worker state is not treated as a prior connection", async () => {
-    // A tab restored while the server is down/restarting joins a worker whose
-    // REPLAYED state is DISCONNECTED (a failed attempt or `_stop()`), not
-    // CONNECTING. That must not count as "already connected": probing on the
-    // subsequent first BUS:CONNECT would compare a stale (GC'd) watermark
-    // against the server and raise a sticky false "out of date" spread to every
-    // tab. Driven at the unit level: the multi-tab replay path (a late-joining
-    // client seeing DISCONNECTED first) is not reproducible in the
-    // single-environment browser harness, which always shows a tab the worker's
-    // own IDLE→CONNECTING→CONNECTED lifecycle.
     const busService = new EventBus();
     const services = {
         bus_service: busService,
-        // Spy: `checkHasMissedNotifications` consults `isOnMainTab` — a call
-        // here means a probe was (wrongly) attempted.
         multi_tab: {
             isOnMainTab: () => {
                 asyncStep("probe-attempted");
@@ -105,25 +92,19 @@ test("J10: a DISCONNECTED first worker state is not treated as a prior connectio
         },
         shared_storage: {
             bus: new EventBus(),
-            getSharedValue: () => 1, // non-empty watermark: probe not short-circuited
+            getSharedValue: () => 1,
             setSharedValue: () => {},
         },
         notification: { add: () => () => {} },
     };
     new OutdatedPageWatcherService({}, services);
-    // First observed worker state is the replayed DISCONNECTED, then a genuine
-    // first connect follows.
     busService.trigger("BUS:WORKER_STATE_UPDATED", CONNECTION_STATE.DISCONNECTED);
     busService.trigger("BUS:CONNECT");
     await runAllTimers();
-    // The first connect after joining a disconnected worker must NOT probe.
     await waitForSteps([]);
 });
 
 test("J9: joining while connecting does not probe missed notifications on the first connect", async () => {
-    // On a browser session restore every tab joins a worker connecting for the
-    // first time; treating that as "already connected" would compare a stale
-    // watermark against a GC'd server bus and show a sticky false "out of date".
     onRpc("/bus/has_missed_notifications", () => {
         asyncStep("probe");
         return false;
@@ -134,6 +115,5 @@ test("J9: joining while connecting does not probe missed notifications on the fi
     startBusService();
     expect(await getService("multi_tab").isOnMainTab()).toBe(true);
     await runAllTimers();
-    // The first connect must NOT trigger the missed-notification probe.
     await waitForSteps(["BUS:CONNECT"]);
 });

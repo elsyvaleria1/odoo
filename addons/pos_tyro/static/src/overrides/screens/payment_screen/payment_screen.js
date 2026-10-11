@@ -29,10 +29,6 @@ patch(PaymentScreen.prototype, {
                 (line) => line.payment_method_id.use_payment_terminal === "tyro",
             )
         ) {
-            // This 'refund by payment line' functionality is only needed to meet Tyro's
-            // certification criteria regarding split payments/refunds. So for now, we
-            // will only show it when refunding a transaction that used Tyro and has
-            // multiple payments.
             return [];
         }
         const refundIds = this.paymentLines

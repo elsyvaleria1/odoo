@@ -24,7 +24,6 @@ export class ModifiersProperties extends Component {
         return this.props.availableOptions?.includes(name);
     }
 
-    // <tag invisible="EXPRESSION"  />
     onChangeModifier(name, value) {
         const isTypeBoolean = typeof value === "boolean";
         const encodesBoolean = isTypeBoolean || this.isBooleanExpression(value);
@@ -95,7 +94,7 @@ export class ModifiersProperties extends Component {
 
     onConditionalButtonClicked(name, value) {
         if (typeof value !== "string" || value === "") {
-            value = "False"; // See py.js:evaluateBooleanExpr default value is False
+            value = "False";
         }
         const { fields, resModel } = this.viewEditorModel;
         this.addDialog(ExpressionEditorDialog, {

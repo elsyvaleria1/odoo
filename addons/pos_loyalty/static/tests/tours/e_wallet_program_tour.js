@@ -17,23 +17,19 @@ registry.category("web_tour.tours").add("EWalletProgramTour1", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Topup 50$ for partner_aaa
             ProductScreen.clickDisplayedProduct("Top-up eWallet"),
             PosLoyalty.orderTotalIs("50.00"),
             ProductScreen.clickPayButton(false),
-            // If there's no partner, we asked to redirect to the partner list screen.
             Dialog.confirm(),
             PartnerList.clickPartner("AAAAAAA"),
             PosLoyalty.finalizeOrder("Cash", "50"),
 
-            // Topup 10$ for partner_bbb
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("BBBBBBB"),
             ProductScreen.addOrderline("Top-up eWallet", "1", "10"),
             PosLoyalty.orderTotalIs("10.00"),
             PosLoyalty.finalizeOrder("Cash", "10"),
 
-            // Check numpad visibility when clicking on eWallet orderline
             ProductScreen.addOrderline("Whiteboard Pen"),
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("AAAAAAA"),
@@ -44,7 +40,6 @@ registry.category("web_tour.tours").add("EWalletProgramTour1", {
             }),
             PosLoyalty.orderTotalIs("0.00"),
             ...ProductScreen.clickLine("eWallet"),
-            // Added a small wait because the clickLine function uses a 300ms timeout
             {
                 content: "Wait 300ms after clicking orderline",
                 trigger: "body",
@@ -93,7 +88,6 @@ registry.category("web_tour.tours").add("EWalletProgramTour2", {
             PosLoyalty.orderTotalIs("0.00"),
             PosLoyalty.finalizeOrder("Cash", "0"),
 
-            // Consume partner_bbb's full eWallet.
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("BBBBBBB"),
             PosLoyalty.eWalletButtonState({ highlighted: false }),
@@ -107,7 +101,6 @@ registry.category("web_tour.tours").add("EWalletProgramTour2", {
             PosLoyalty.orderTotalIs("26.00"),
             PosLoyalty.finalizeOrder("Cash", "26"),
 
-            // Switching partners should work.
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("BBBBBBB"),
             ProductScreen.addOrderline("Desk Pad", "2", "19", "38.00"),
@@ -134,14 +127,11 @@ registry.category("web_tour.tours").add("EWalletProgramTour2", {
             PosLoyalty.orderTotalIs("0.00"),
             PosLoyalty.finalizeOrder("Cash", "0"),
 
-            // Refund with eWallet.
-            // - Make an order to refund.
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("BBBBBBB"),
             ProductScreen.addOrderline("Whiteboard Pen", "1", "20", "20.00"),
             PosLoyalty.orderTotalIs("20.00"),
             PosLoyalty.finalizeOrder("Cash", "20"),
-            // - Refund order.
             ...ProductScreen.clickRefund(),
             TicketScreen.filterIs("Paid"),
             TicketScreen.selectOrder("2004"),

@@ -4,7 +4,6 @@ import { omit } from "@web/core/utils/collections/objects";
 import { isNumeric } from "@web/core/utils/format/strings";
 import { objectToUrlEncodedString } from "@web/core/utils/urls";
 
-// Prefixes should be sorted by desc. length.
 export const PREFIXES = ["/knowledge/article", "/knowledge/home"];
 
 /**

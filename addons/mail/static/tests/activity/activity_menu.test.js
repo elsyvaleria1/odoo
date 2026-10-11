@@ -46,7 +46,6 @@ test("activity counter: a systray answer older than an applied notification does
         count_diff: 1,
     });
     await contains(".o-mail-ActivityMenu-counter", { text: String(baseCounter + 1) });
-    // a systray answer computed before that notification was sent
     store.insert({
         Store: { activityCounter: baseCounter, activityCounter_bus_id: snapshotBusId },
     });

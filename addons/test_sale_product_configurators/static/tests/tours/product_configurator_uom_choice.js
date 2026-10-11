@@ -12,7 +12,6 @@ registry.category("web_tour.tours").add("sale_product_configurator_uom_tour", {
         {
             content: "search the pricelist",
             trigger: 'input[id="pricelist_id_0"]',
-            // Wait for onchange to come back
             run: "edit Test",
         },
         {

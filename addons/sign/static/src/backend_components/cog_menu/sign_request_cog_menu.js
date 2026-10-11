@@ -24,10 +24,6 @@ export class SignRequestCogMenu extends Component {
     }
 
     signRequest() {
-        /*
-         * Fetch resModel from the controller props as it is static until the view changes.
-         * Fetch resId from the current state since the state is mutable with newly created records.
-         */
         const resModel = this.action.currentController.props.resModel;
         const resId = this.action.currentController.currentState?.resId;
         const referenceDoc = resId && resModel ? `${resModel},${resId}` : false;

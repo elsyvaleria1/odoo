@@ -4,7 +4,6 @@ import { fromJSDate, serializeDateTime } from "@web/core/l10n/dates";
 import { patch } from "@web/core/utils/patch";
 
 function getFormattedDate(value) {
-    // convert to noon to avoid most timezone issues
     const date = fromJSDate(value).with({ hour: 12, minute: 0, second: 0 });
     return serializeDateTime(date);
 }

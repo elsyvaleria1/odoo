@@ -12,22 +12,18 @@ registry.category("web_tour.tours").add("knowledge_properties_tour", {
     steps: () => [
         stepUtils.showAppsMenuItem(),
         {
-            // open Knowledge App
             trigger: '.o_app[data-menu-xmlid="knowledge.knowledge_menu_root"]',
             run: "click",
         },
         unfoldArticleFromSidebar("ParentArticle"),
         {
-            // go to ChildArticle
             trigger: '.o_article .o_article_name:contains("ChildArticle")',
             run: "click",
         },
         {
-            // wait ChildArticle loading
             trigger: '.o_hierarchy_article_name input:value("ChildArticle")',
         },
         {
-            // click on add properties button in dropdown
             trigger: ".o_knowledge_header .dropdown-toggle",
             run: "click",
         },
@@ -40,7 +36,6 @@ registry.category("web_tour.tours").add("knowledge_properties_tour", {
             run: "click",
         },
         {
-            // modify property name
             trigger: ".o_field_property_definition_header",
             run: "edit myproperty && click body",
         },
@@ -48,17 +43,14 @@ registry.category("web_tour.tours").add("knowledge_properties_tour", {
             trigger: '.o_field_property_label:contains("myproperty")',
         },
         {
-            // verify property and finish property edition
             trigger: ".o_knowledge_editor .odoo-editor-editable",
             run: "click",
         },
         {
-            // go to InheritPropertiesArticle
             trigger: '.o_article .o_article_name:contains("InheritPropertiesArticle")',
             run: "click",
         },
         {
-            // wait InheritPropertiesArticle loading and move InheritPropertiesArticle under ParentArticle
             trigger:
                 '.o_hierarchy_article_name input:value("InheritPropertiesArticle")',
             run: ({ queryOne }) => {
@@ -69,7 +61,6 @@ registry.category("web_tour.tours").add("knowledge_properties_tour", {
             },
         },
         {
-            // verify property
             trigger:
                 '.o_widget_knowledge_properties_panel .o_field_property_label:contains("myproperty")',
         },

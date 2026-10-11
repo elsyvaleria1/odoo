@@ -124,7 +124,6 @@ async function executeImport(data, shouldWait = false) {
     }
 
     if (shouldWait) {
-        // make sure the progress bar is shown
         await animationFrame();
     }
 
@@ -141,8 +140,6 @@ function getFieldsTree() {
 }
 
 function getMatches(headers) {
-    // basic implementation for testing purposes which matches if the first line is the
-    // name of a field, or corresponds to the string value of a field from Partner
     const matches = [];
     for (const header of headers) {
         if (Partner._fields[header]) {
@@ -205,15 +202,7 @@ async function parsePreview(opts, overrides = {}) {
     };
 }
 
-// since executing a real import would be difficult, this method simply returns
-// some error messages to help testing the UI
 function executeFailingImport(field, isMultiline, field_path = "") {
-    // Lowercase key: matches the production field read at
-    // import_data_column_error.js's `moreInfo` getter (`error.moreinfo`). This
-    // mock used the camelCase `moreInfo` instead, so every existing test
-    // exercised a `this.moreInfo` getter that always saw `undefined` — the
-    // entire "See possible values" affordance had zero real coverage
-    // (t24068 tests-finding #1).
     let moreinfo = [];
     if (Partner._fields[field].type === "selection") {
         moreinfo = Partner._fields[field].selection;
@@ -329,7 +318,7 @@ describe("Import view", () => {
         onRpc("base_import.import", "create", ({ route }) => expect.step(route));
         await mountWebClient();
         await getService("action").doAction(1);
-        await animationFrame(); // pushState is debounced
+        await animationFrame();
         expect.verifySteps([
             "/web/dataset/call_kw/partner/get_import_templates",
             "/web/dataset/call_kw/base_import.import/create",
@@ -365,7 +354,7 @@ describe("Import view", () => {
         });
         onRpc("base_import.import", "create", ({ route }) => expect.step(route));
         await mountWebClient();
-        await animationFrame(); // pushState is debounced
+        await animationFrame();
         expect.verifySteps([
             "/web/dataset/call_kw/partner/get_import_templates",
             "/web/dataset/call_kw/base_import.import/create",
@@ -396,7 +385,6 @@ describe("Import view", () => {
             "/web/dataset/call_kw/partner/get_import_templates",
             "/web/dataset/call_kw/base_import.import/create",
         ]);
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -442,7 +430,6 @@ describe("Import view", () => {
             0,
         );
 
-        // Select a field already selected for another column
         await contains(".o_import_data_content .o_select_menu").selectDropdownItem(
             "Display name",
         );
@@ -453,7 +440,6 @@ describe("Import view", () => {
             "This column will be concatenated in field Display name",
         );
 
-        // Preview the second sheet
         await contains(".o_import_data_sidepanel [name=o_import_sheet]").select(
             "Template 2",
         );
@@ -475,12 +461,11 @@ describe("Import view", () => {
             },
         });
 
-        let currentSheet = "Template"; // Track the current sheet being parsed-
+        let currentSheet = "Template";
         onRpc("partner", "get_import_templates", ({ route }) => expect.step(route));
         onRpc("base_import.import", "parse_preview", ({ route, args }) => {
             expect.step(route);
 
-            // Determine preview data based on the selected sheet
             const fakePreviewData = [...FAKE_PREVIEW_DATA];
             if (currentSheet !== "Template") {
                 fakePreviewData[2] = ["Display name", "#N/A"];
@@ -499,7 +484,6 @@ describe("Import view", () => {
             "/web/dataset/call_kw/base_import.import/create",
         ]);
 
-        // Simulate uploading a file
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -509,18 +493,15 @@ describe("Import view", () => {
             "/web/dataset/call_kw/base_import.import/parse_preview",
         ]);
 
-        // Check the initial state after parsing the first sheet
         expect(".o_import_action .o_import_data_sidepanel").toHaveCount(1);
         expect(".o_import_action .o_import_data_content").toHaveCount(1);
 
-        // Change to the second sheet
-        currentSheet = "Template 2"; // Update the current sheet
+        currentSheet = "Template 2";
         await contains(".o_import_data_sidepanel [name=o_import_sheet]").select(
             currentSheet,
         );
         expect.verifySteps(["/web/dataset/call_kw/base_import.import/parse_preview"]);
 
-        // Verify the error for second sheet preview
         expect(".o_import_data_content p:first").toHaveText(
             'Import preview failed due to: " Invalid cell value: #N/A ".',
         );
@@ -555,7 +536,6 @@ describe("Import view", () => {
         await mountWebClient();
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -577,7 +557,6 @@ describe("Import view", () => {
         await getService("action").doAction(1);
         await animationFrame();
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.csv", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -625,7 +604,6 @@ describe("Import view", () => {
         await getService("action").doAction(2);
 
         await waitFor(".o_list_view");
-        // Open the import action to import records
         await toggleActionMenu();
         await waitFor(".o-dropdown--menu");
         expect(`.o_import_menu`).toHaveCount(1);
@@ -636,7 +614,6 @@ describe("Import view", () => {
         expect(".o_control_panel button").toHaveCount(2);
         expect(".o_view_nocontent").toHaveCount(1);
 
-        // Upload a file
         const file = new File(["fake_file"], "fake_file.csv", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -645,7 +622,6 @@ describe("Import view", () => {
             "/web/dataset/call_kw/base_import.import/parse_preview",
         ]);
 
-        // Click on 'Cancel' to go back to the previous view.
         await waitFor(".o_import_data_content");
         expect(".o_control_panel_main_buttons button").toHaveCount(4);
         expect(".o_control_panel_main_buttons button:nth-of-type(3)").toHaveText(
@@ -674,9 +650,6 @@ describe("Import view", () => {
         mockService("action", {
             doAction(action) {
                 expect.step("action");
-                // Only the generated act_window is asserted: the ids dispatched
-                // by the harness (action 1 here, and action 2 from the
-                // `redirect` below) are not the subject of this test.
                 if (typeof action === "object") {
                     expect(action).toEqual(
                         {
@@ -709,8 +682,6 @@ describe("Import view", () => {
         redirect("/odoo/action-2");
         await mountWebClient();
         await getService("action").doAction(1);
-        // `redirect("/odoo/action-2")` makes the web client dispatch action 2
-        // before this one, so two actions are seen here.
         expect.verifySteps(["action", "action"]);
         queryOne(".o_nocontent_help").draggable = true;
         const file = new File(["fake_file"], "fake_file.csv", {
@@ -755,7 +726,6 @@ describe("Import view", () => {
         await setInputFiles([file]);
         await animationFrame();
         expect.verifySteps(["/base_import/set_file"]);
-        // Check formatting options appear
         expect(".o_import_data_sidepanel .o_import_formatting").toHaveCount(1);
     });
 
@@ -769,7 +739,6 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.csv", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -799,7 +768,6 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -881,12 +849,10 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
         await animationFrame();
-        // For this test, we force the display of an error message if this field is set
         await contains(".o_import_data_content .o_select_menu").selectDropdownItem(
             "Selection",
         );
@@ -905,9 +871,6 @@ describe("Import view", () => {
         expect(".o_import_report p").toHaveText("Incorrect value", {
             message: "the message is displayed in the view",
         });
-        // t24068 tests-finding #1: exercise the "See possible values" affordance
-        // for real (it used to have zero coverage — the mock's camelCase
-        // `moreInfo` key never matched production's `error.moreinfo` read).
         expect(".o_import_moreinfo .o_import_see_all").toHaveCount(1, {
             message: "a selection field's error offers to see its possible values",
         });
@@ -964,12 +927,10 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
         await animationFrame();
-        // For this test, we force the display of an error message if this field is set
         await contains(".o_import_data_content .o_select_menu").selectDropdownItem(
             "Bar",
         );
@@ -1030,12 +991,10 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
         await animationFrame();
-        // For this test, we force the display of an error message if this field is set
         await contains(".o_import_data_content .o_select_menu").selectDropdownItem(
             "Many2Many",
         );
@@ -1101,7 +1060,6 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -1111,7 +1069,6 @@ describe("Import view", () => {
             "The file contains blocking errors (see below)",
             { message: "a message is shown if the import was blocked" },
         );
-        // Check that errors have been sorted and grouped
         expect(".o_import_report p").toHaveText(
             "Multiple errors occurred in field Foo:",
         );
@@ -1138,7 +1095,6 @@ describe("Import view", () => {
 
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
-                // make sure the UI displays the batched import options
                 return true;
             },
         });
@@ -1161,7 +1117,6 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -1185,7 +1140,6 @@ describe("Import view", () => {
     test("execute and pause import in batches", async () => {
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
-                // make sure the UI displays the batched import options
                 return true;
             },
         });
@@ -1205,7 +1159,6 @@ describe("Import view", () => {
                 useLayoutEffect(
                     () => {
                         if (this.props.importProgress.step === 1) {
-                            // Trigger a pause at this step to resume later from the view
                             expect.step("pause triggered during step 2");
                             this.interrupt();
                         }
@@ -1232,7 +1185,6 @@ describe("Import view", () => {
         );
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -1246,7 +1198,6 @@ describe("Import view", () => {
         } else {
             await contains(".o_control_panel_main_buttons button:nth-child(2)").click();
         }
-        // Since a animationFrame is added to each batch, we must wait twice before the end of the second batch
         await animationFrame();
         await animationFrame();
         expect.verifySteps([
@@ -1281,7 +1232,6 @@ describe("Import view", () => {
     test("test and pause import in batches", async () => {
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
-                // make sure the UI displays the batched import options
                 return true;
             },
         });
@@ -1301,7 +1251,6 @@ describe("Import view", () => {
                 useLayoutEffect(
                     () => {
                         if (this.props.importProgress.step === 1) {
-                            // Trigger a pause at this step to resume later from the view
                             expect.step("pause triggered during step 2");
                             this.interrupt();
                         }
@@ -1328,14 +1277,12 @@ describe("Import view", () => {
         );
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
         await animationFrame();
         await contains("input#o_import_batch_limit").edit(1);
         await contains(".o_control_panel_main_buttons button:first").click();
-        // Since an animationFrame is added to each batch, we must wait twice before the end of the second batch
         await animationFrame();
         await animationFrame();
         expect.verifySteps([
@@ -1354,7 +1301,6 @@ describe("Import view", () => {
     test("test in batches then reset starting row", async () => {
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
-                // make sure the UI displays the batched import options
                 return true;
             },
         });
@@ -1365,7 +1311,6 @@ describe("Import view", () => {
         );
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -1390,7 +1335,6 @@ describe("Import view", () => {
     test("execute import in batches until completion", async () => {
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
-                // make sure the UI displays the batched import options
                 return true;
             },
         });
@@ -1423,13 +1367,11 @@ describe("Import view", () => {
         );
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
         await animationFrame();
 
-        // Set batch limit to 1. Total rows is 3. This will trigger 3 batches.
         await contains("input#o_import_batch_limit").edit(1);
 
         if (getMockEnv().isSmall) {
@@ -1443,7 +1385,6 @@ describe("Import view", () => {
             ).click();
         }
 
-        // Wait for the 3 batches to complete. Each batch waits for 1 animation frame in the mock.
         for (let i = 0; i < 3; i++) {
             await animationFrame();
         }
@@ -1513,7 +1454,6 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -1542,14 +1482,12 @@ describe("Import view", () => {
 
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
-                // Make sure the UI displays the batched import options
                 return true;
             },
         });
 
         await mountWebClient();
         onRpc("base_import.import", "parse_preview", ({ args }) =>
-            // Parse a file where all rows besides the first are used for relational data
             parsePreview(args[1], {
                 fields: [
                     {
@@ -1595,8 +1533,6 @@ describe("Import view", () => {
         onRpc("base_import.import", "execute_import", async ({ args }) => {
             ++executeImportCount;
             const res = await executeImport(args);
-            // Import batch limit doesn't apply to relational fields, so set `nextrow`
-            // to 0 to indicate all rows were imported on first call
             res.nextrow = 0;
             return res;
         });
@@ -1607,7 +1543,6 @@ describe("Import view", () => {
         await setInputFiles([file]);
         await animationFrame();
 
-        // Set batch limit to 1
         await contains("input#o_import_batch_limit").edit(1);
 
         await contains(".o_control_panel_main_buttons button:first-child").click();
@@ -1676,12 +1611,10 @@ describe("Import view", () => {
         );
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
         await animationFrame();
-        // For this test, we force the display of an error message if this field is set
         await contains(".o_import_data_content .o_select_menu").selectDropdownItem(
             "Many2Many",
         );
@@ -1748,15 +1681,12 @@ describe("Import view", () => {
         });
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.csv", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
         await animationFrame();
         await contains(".o_import_date_format#date_format-3").edit("YYYYMMDD");
 
-        // Parse the file again with the updated date format to check that
-        // the format is correctly formatted in the UI
         await contains(".o_import_formatting button").click();
         if (getMockEnv().isSmall) {
             await contains(
@@ -1810,7 +1740,7 @@ describe("Import view", () => {
             "/web/dataset/call_kw/base_import.import/create",
         ]);
 
-        await runAllTimers(); // wait for router pushState
+        await runAllTimers();
         expect(browser.location.href).toBe(
             "https://www.hoot.test/odoo/import?active_model=team",
         );
@@ -1854,7 +1784,7 @@ describe("Import view", () => {
             "/web/dataset/call_kw/base_import.import/create",
         ]);
 
-        await runAllTimers(); // wait for router pushState
+        await runAllTimers();
         expect(browser.location.href).toBe(
             "https://www.hoot.test/odoo/import?active_model=team",
         );
@@ -1877,7 +1807,6 @@ describe("Import view", () => {
         };
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
-                // make sure the UI displays the batched import options
                 return true;
             },
         });
@@ -1930,7 +1859,6 @@ test("field selection has a clear button", async () => {
     await mountWebClient();
     await getService("action").doAction(1);
 
-    // Set and trigger the change of a file for the input
     const file = new File(["fake_file"], "fake_file.xlsx", { type: "text/plain" });
     await contains(".o_control_panel_main_buttons .o_import_file").click();
     await setInputFiles([file]);
@@ -1956,7 +1884,6 @@ describe("Import a CSV", () => {
         await mountWebClient();
         await getService("action").doAction(1);
 
-        // Set and trigger the change of a file for the input
         const file = new File(["fake_file"], "fake_file.csv", { type: "text/plain" });
         await contains(".o_control_panel_main_buttons .o_import_file").click();
         await setInputFiles([file]);
@@ -1980,13 +1907,6 @@ describe("Import a CSV", () => {
     });
     test.tags("desktop");
     test("date and number formatting options are offered for a spreadsheet too", async () => {
-        // The panel used to be shown only for `.csv`. Only the three
-        // CSV-parsing options are format-specific; `date_format`,
-        // `datetime_format` and the two number separators are applied by
-        // `_parse_date_from_data` / `_parse_float_from_data` whatever the
-        // reader was. A spreadsheet holding the text "03/04/2024" is guessed
-        // as `%m/%d/%Y` by the server, so a European file imports 3 April as
-        // 4 March -- and the one control that would correct it was off screen.
         await mountWebClient();
         await getService("action").doAction(1);
         await animationFrame();
@@ -2001,12 +1921,9 @@ describe("Import a CSV", () => {
         expect(".o_import_datetime_format").toHaveCount(1);
         expect(".o_import_float_thousand_separator").toHaveCount(1);
         expect(".o_import_float_decimal_separator").toHaveCount(1);
-        // ...but nothing that only a CSV reader consumes.
         expect(".o_import_encoding").toHaveCount(0);
         expect(".o_import_separator").toHaveCount(0);
         expect(".o_import_quoting").toHaveCount(0);
-        // The ids the datalists hang off are built from the index in the full
-        // option list, so filtering must not renumber them.
         expect(".o_import_date_format").toHaveAttribute("list", "list-3");
     });
 
@@ -2029,10 +1946,6 @@ describe("Import a CSV", () => {
 
     test.tags("desktop");
     test("'Start at line' 0 does not turn into a negative skip", async () => {
-        // "Start at line" sends `value - 1`, and the string "0" is truthy in
-        // JavaScript, so this used to send `skip = -1`. `data[-1:]` is a legal
-        // Python slice, so the server imported the LAST row of the file and
-        // reported success -- no error anywhere, just the wrong records.
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
                 return true;
@@ -2052,7 +1965,6 @@ describe("Import a CSV", () => {
         await animationFrame();
 
         await contains("input#o_import_row_start").edit(0);
-        // Displayed value is `skip + 1`, so 1 means skip 0 and 0 meant skip -1.
         expect("input#o_import_row_start").toHaveValue("1");
 
         await contains(".o_control_panel_main_buttons button:first").click();
@@ -2062,9 +1974,6 @@ describe("Import a CSV", () => {
 
     test.tags("desktop");
     test("a non-numeric batch limit falls back to one row", async () => {
-        // The input is free text, so "abc" reached the server verbatim:
-        // `num_rows > "abc"` raised TypeError, and `execute_import` catches
-        // only ImportValidationError, so it left as an HTTP 500.
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
                 return true;
@@ -2087,11 +1996,6 @@ describe("Import a CSV", () => {
 
     test.tags("desktop");
     test("the batch inputs keep showing the value that was accepted", async () => {
-        // The write-back has to survive a valid edit too. `t-att-value` sets
-        // the attribute while the handler sets the property, and after the
-        // first keystroke those diverge permanently -- so a clamp that only
-        // worked from the initial render would go quiet the moment the user
-        // typed anything at all.
         patchWithCleanup(ImportAction.prototype, {
             get isBatched() {
                 return true;

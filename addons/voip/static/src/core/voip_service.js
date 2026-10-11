@@ -172,12 +172,9 @@ export class Voip {
                 return;
             }
             if (error.message?.toLowerCase().includes("abort")) {
-                // Unreliable, message content varies between browsers.
                 return;
             }
             this._contactRpc = null;
-            // Don't throw, it could still be an abort error that wasn't caught
-            // by the conditions above.
             console.error(error);
         }
     }
@@ -206,12 +203,9 @@ export class Voip {
                 return;
             }
             if (error.message?.toLowerCase().includes("abort")) {
-                // Unreliable, message content varies between browsers.
                 return;
             }
             this._recentCallsRpc = null;
-            // Don't throw, it could still be an abort error that wasn't caught
-            // by the conditions above.
             console.error(error);
         }
     }
@@ -285,7 +279,6 @@ export class Voip {
         ));
     }
 
-    // TODO: remove
     fakeIncoming() {
         const fakeInvitation = {
             remoteIdentity: {

@@ -149,10 +149,6 @@ export class PaymentQFpay extends PaymentInterface {
                 ),
             );
         }
-        // when starting to wait for the payment response we create a promise
-        // that will be resolved when the payment response is received.
-        // In case this resolver is lost ( for example on a refresh )
-        // we use the handlePaymentResponse method on the payment line
         const resolver = this.paymentLineResolvers?.[line.uuid];
         if (resolver) {
             resolver(isPaymentSuccessful);

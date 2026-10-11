@@ -76,8 +76,6 @@ export class WysiwygArticleHelper extends Component {
                     },
                 );
                 this.replaceCurrentArticleBodyWith(body);
-                // TODO: apply_template could return all modified values on the current
-                // article and record.update would reload related components
                 await this.actionService.doAction(
                     "knowledge.ir_actions_server_knowledge_home_page",
                     {

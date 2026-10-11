@@ -61,7 +61,7 @@ test("basic many2many: find tag, select tag, unselect tag", async () => {
     await contains(".btn.o-dropdown").click();
     expect("input").toHaveCount(1);
     await contains("input").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect("span.o-dropdown-item").toHaveCount(3);
     await contains("span.o-dropdown-item").click();
@@ -69,7 +69,7 @@ test("basic many2many: find tag, select tag, unselect tag", async () => {
     expect("table tr").toHaveCount(1);
 
     await contains(".btn.o-dropdown").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect("span.o-dropdown-item").toHaveCount(2);
     await contains("span.o-dropdown-item").click();
@@ -115,33 +115,29 @@ test("basic many2many: toggle dropdown without changing search term or selection
     expect("table tr").toHaveCount(0);
     expect(selection).toEqual([]);
 
-    // Click to open, 1st search should be done
     await contains(".btn.o-dropdown").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect(selection).toEqual([]);
     expect(executeCount).toBe(1);
     await contains(".btn.o-dropdown").click();
 
-    // Toggle dropdown, no new search should be done
     await contains(".btn.o-dropdown").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect(selection).toEqual([]);
-    // Still same as no item is selected
     expect(executeCount).toBe(1);
     await contains(".btn.o-dropdown").click();
     await contains(".btn.o-dropdown").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect(selection).toEqual([]);
     expect("span.o-dropdown-item").toHaveCount(1);
     await contains("span.o-dropdown-item").click();
     expect("table tr").toHaveCount(1);
 
-    // Open again, now a second search should be done because selection changed
     await contains(".btn.o-dropdown").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect("span.o-dropdown-item").toHaveCount(1);
     expect(selection).toEqual([{ id: 1, name: "First", display_name: "First" }]);
@@ -165,21 +161,17 @@ test("basic many2many: search with uncreated records", async () => {
                 { id: "new-3", name: "Third" },
             ];
         }
-        setSelection() {
-            // Not used but necessary for the component
-        }
+        setSelection() {}
     }
     addBuilderOption(TestComponent);
     await setupHTMLBuilder(`<div class="test-options-target">b</div>`);
 
     await contains(":iframe .test-options-target").click();
     expect(".options-container").toBeDisplayed();
-    // Number of items in selection
     expect("table tr").toHaveCount(3);
 
-    // Click to open, 1st search should be done
     await contains(".btn.o-dropdown").click();
-    await advanceTime(300); // debounce
+    await advanceTime(300);
     await animationFrame();
 
     expect.verifySteps(["name_search"]);

@@ -158,9 +158,6 @@ test("create favorite filter", async () => {
     expect(".o_mass_mailing_save_filter_container").toBeVisible();
 
     await contains(".o_field_mailing_filter input").click();
-    // 1 favorite filter and no "Search more..." row: it is only offered when
-    // the search overflows the dropdown (see @web many2x_autocomplete,
-    // "no Search more... when all matching records fit in the dropdown").
     expect(".o_field_mailing_filter .dropdown li.ui-menu-item").toHaveCount(1);
 
     await contains(".o_mass_mailing_add_filter").click();

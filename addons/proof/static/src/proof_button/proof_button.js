@@ -6,11 +6,6 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { standardWidgetProps } from "@web/views/widgets/standard_widget_props";
 
-/**
- * A button that asks for a proof: the record's ``issue`` method returns the
- * challenge's client parameters, the dialog collects the proof, and the
- * record's ``submit`` method receives it.
- */
 export class ProofButton extends Component {
     static template = "proof.ProofButton";
     static props = {

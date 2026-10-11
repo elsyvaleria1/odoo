@@ -54,8 +54,6 @@ export class SetupEditorPlugin extends Plugin {
             return;
         }
 
-        // Add automatic editor message on the editables where we can drag and
-        // drop elements.
         editableEls = this.getEditableElements(
             '.oe_structure.oe_empty, [data-oe-type="html"]',
         );
@@ -82,10 +80,6 @@ export class SetupEditorPlugin extends Plugin {
         root.querySelectorAll(".o_editable").forEach((el) => {
             el.classList.remove("o_editable");
         });
-        // `setup` stamps the drag-and-drop placeholder on empty structures and
-        // marks those with `data-editor-message-default`. Only the marked ones
-        // may be stripped: a template is free to author its own
-        // `data-editor-message`, which is content and must survive the save.
         const els = [...root.querySelectorAll("[data-editor-message-default]")];
         if (root.hasAttribute("data-editor-message-default")) {
             els.push(root);
@@ -112,10 +106,6 @@ export class SetupEditorPlugin extends Plugin {
         return editablesAreaEls;
     }
 
-    /**
-     * Cleans up whitespace-only text nodes in empty structures.
-     * Ensures `.oe_empty` elements are truly empty after snippet removal.
-     */
     cleanupEmptyStructures() {
         if (!this.editable) {
             return;

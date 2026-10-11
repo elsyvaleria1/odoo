@@ -72,7 +72,6 @@ export class RemoteDebugDialog extends Component {
                     auth_token: this.state.ngrokToken,
                 },
             });
-            // Wait 2 seconds to let odoo-ngrok service start
             await new Promise((resolve) => setTimeout(resolve, 2000));
             await this.isNgrokEnabled();
         } catch {
@@ -88,7 +87,6 @@ export class RemoteDebugDialog extends Component {
                 url: "/iot_drivers/disable_ngrok",
                 method: "POST",
             });
-            // Wait 2 seconds to let odoo-ngrok service stop
             await new Promise((resolve) => setTimeout(resolve, 2000));
             await this.isNgrokEnabled();
         } catch {

@@ -1,8 +1,4 @@
 /** @odoo-module native */
-// Scrolling util functions needed by the frontend apps and sub-modules. These
-// functions indeed take into account all frontend-specific concepts (like the
-// header at the top of the page, the wrapwrap,...) which are not considered in
-// the `@web/core/utils/scrolling` utils.
 
 import { getScrollingElement } from "@web/core/utils/dom/scrolling";
 
@@ -153,8 +149,6 @@ export function scrollTo(el, options = {}) {
                 progress < 0.5
                     ? 2 * progress * progress
                     : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-            // Recompute the scroll destination every time, to adapt to any
-            // occurring change that would modify the scroll offset.
             const change = _computeScrollTop() - start;
             const newScrollTop = start + change * easeInOutQuad;
 

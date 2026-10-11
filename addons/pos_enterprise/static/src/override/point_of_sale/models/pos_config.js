@@ -12,10 +12,6 @@ patch(PosConfig.prototype, {
     },
 
     get preparationDisplayCategories() {
-        // pos.prep.display is only part of the loaded data when a preparation
-        // display is in play. When it is absent (e.g. the shared POS unit-test
-        // bundle, which pulls in this patch without loading prep-display data)
-        // there are simply no preparation-display categories.
         const prepDisplays = this.models["pos.prep.display"];
         if (!prepDisplays) {
             return new Set();

@@ -49,7 +49,7 @@ defineSpreadsheetActions();
 
 test("List export", async () => {
     const { model } = await createSpreadsheetWithList();
-    const total = 4 + 10 * 4; // 4 Headers + 10 lines
+    const total = 4 + 10 * 4;
     expect(Object.values(getCells(model)).length).toBe(total);
     expect(getCellFormula(model, "A1")).toBe(`=ODOO.LIST.HEADER(1,"foo")`);
     expect(getCellFormula(model, "B1")).toBe(`=ODOO.LIST.HEADER(1,"bar")`);
@@ -246,7 +246,6 @@ test("a list column can be a single property of a properties field", async () =>
     });
     await waitForDataLoaded(model);
 
-    // The header is the property's own label, not the properties field's.
     expect(getEvaluatedGrid(model, "A1:L1").flat()).toEqual([
         "Text",
         "Date",
@@ -275,7 +274,6 @@ test("a list column can be a single property of a properties field", async () =>
         "USD, EUR",
         99.99,
     ]);
-    // Dates and monetaries also get the format their property type implies.
     expect(getCellFormattedValue(model, "B2")).toBe("1/2/2024");
     expect(getCellFormattedValue(model, "C2")).toBe("2/3/2026 12:00:00 PM");
     expect(getCellFormattedValue(model, "L2")).toBe("99.99\u20ac");
@@ -285,7 +283,7 @@ test("Can display a field which is not in the columns", async function () {
     const { model } = await createSpreadsheetWithList();
     setCellContent(model, "A1", `=ODOO.LIST(1,1,"active")`);
     expect(getCellValue(model, "A1")).toBe("Loading...");
-    await waitForDataLoaded(model); // Await for batching collection of missing fields
+    await waitForDataLoaded(model);
     await animationFrame();
     expect(getCellValue(model, "A1")).toBe(true);
 });
@@ -438,7 +436,6 @@ test("Referencing non-existing fields does not crash", async function () {
                 args.model === "partner" &&
                 args.kwargs.specification[forbiddenFieldName]
             ) {
-                // We should not go through this condition if the forbidden fields is properly filtered
                 expect(false).toBe(true, {
                     message: `${forbiddenFieldName} should have been ignored`,
                 });
@@ -489,9 +486,6 @@ test("don't fetch list data if no formula use it", async function () {
     expect.verifySteps([]);
 
     setCellContent(model, "A1", `=ODOO.LIST("1", "1", "foo")`);
-    /*
-     * Ask a first time the value => It will trigger a loading of the data source.
-     */
     expect(getCellValue(model, "A1")).toBe("Loading...");
     await animationFrame();
     expect(getCellValue(model, "A1")).toBe(12);
@@ -978,8 +972,8 @@ test("fetch all and only required fields", async function () {
             {
                 id: "sheet1",
                 cells: {
-                    A1: '=ODOO.LIST(1, 1, "foo")', // in the definition
-                    A2: '=ODOO.LIST(1, 1, "product_id")', // not in the definition
+                    A1: '=ODOO.LIST(1, 1, "foo")',
+                    A2: '=ODOO.LIST(1, 1, "product_id")',
                     A3: '=ODOO.LIST(1, 1, "invalid_field")',
                 },
             },

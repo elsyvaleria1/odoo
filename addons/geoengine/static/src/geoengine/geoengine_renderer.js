@@ -622,12 +622,6 @@ export class GeoengineRenderer extends Component {
         });
     }
 
-    /**
-     * Fits the view to the data once, on the first paint with features, and
-     * leaves it alone afterwards: a search or a save must not throw away the
-     * viewport the user has arranged. A zoom stored by a previous visit of
-     * this view is applied on top of the fit.
-     */
     updateZoom() {
         if (this.isFit) {
             return;

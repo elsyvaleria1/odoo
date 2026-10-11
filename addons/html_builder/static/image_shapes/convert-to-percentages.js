@@ -1,8 +1,3 @@
-// The goal of this script is to have a shape ready for use with the
-// "Shape on Image" feature of Odoo.
-// Therefor we need to rearrange the file a little.
-// Marks which axis each parameter of a command belongs to, as well as whether
-// It's a positional measurement (x/y), a distance (dx/dy) or none (angles, flags)
 const commandAxes = {
     M: ["x", "y"],
     m: ["dx", "dy"],
@@ -53,17 +48,11 @@ submitButton.addEventListener("click", async (ev) => {
         const svg = parser.parseFromString(svgString, "image/svg+xml");
         const path = svg.getElementById("filterPath");
         const svgDocumentElement = svg.documentElement;
-        // Some SVGs come without xlink
         svgDocumentElement.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
-        // We add the SVG to the body so we can take measurements of its
-        // original size
         document.body.appendChild(svg.documentElement);
         const { x, y, width, height } = svgDocumentElement.getBBox();
         const scalers = toUserSpace(x, y, width, height);
 
-        // Converts the clipPath in values between 0 and 1 so we can use
-        // object bounding box as clip path units. It will make the clip path
-        // always adapt to the size of the picture.
         const commands = path
             .getAttribute("d")
             .match(/[a-z][^a-z]*/gi)
@@ -99,14 +88,10 @@ submitButton.addEventListener("click", async (ev) => {
 
         clipPathEl.setAttribute("clipPathUnits", "objectBoundingBox");
         const backgroundEls = svgDocumentElement.getElementsByClassName("background");
-        // We set the BG elements into their own svg so that when the total
-        // space gets stretched out, so does the backgrounds elements
         Array.from(backgroundEls).forEach((el) => {
             const bgBbox = el.getBBox();
             const svgBackground = document.createElement("svg");
             const strokeWidth = el.getAttribute("stroke-width");
-            // If the background has a strokeWidth, the viewBox need to take it
-            // into account
             if (strokeWidth) {
                 const adj = parseFloat(strokeWidth) / 2;
                 svgBackground.setAttributeNS(
@@ -133,7 +118,6 @@ submitButton.addEventListener("click", async (ev) => {
         });
 
         defsEl.appendChild(path);
-        // Setting the clip path for use and for preview
         const useClipPathEl = document.createElementNS(
             "http://www.w3.org/2000/svg",
             "use",
@@ -165,7 +149,6 @@ submitButton.addEventListener("click", async (ev) => {
         imageEl.setAttribute("xlink:href", "");
         imageEl.setAttribute("clip-path", "url(#clip-path)");
         svgDocumentElement.appendChild(imageEl);
-        // Give a default size to the SVGs for an easier preview on disk
         svgDocumentElement.setAttribute("width", "600");
         svgDocumentElement.setAttribute("height", "600");
 

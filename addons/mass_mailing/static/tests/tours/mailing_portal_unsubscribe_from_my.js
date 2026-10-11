@@ -1,9 +1,5 @@
 import { registry } from "@web/core/registry";
 
-/*
- * Tour: use 'my' portal page of mailing to manage mailing lists subscription
- * as well as manage blocklist (add / remove my own email from block list).
- */
 registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_my", {
     steps: () => [
         {

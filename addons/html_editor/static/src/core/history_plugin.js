@@ -1502,10 +1502,6 @@ export class HistoryPlugin extends Plugin {
         let lastRevertedStep = this.currentStep;
 
         if (stepIndex === -1) {
-            // The step this savepoint was taken from no longer exists in
-            // `this.steps` (e.g. `resetFromSteps` replaced the whole array
-            // while the savepoint was still open) — there is nothing valid
-            // left to revert to.
             return;
         }
         if (stepIndex === this.steps.length - 1) {

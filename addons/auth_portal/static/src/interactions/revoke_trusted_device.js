@@ -4,9 +4,6 @@ import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 
 export class RevokeTrustedDevice extends Interaction {
-    // Selects on the template's own hook class, not on the icon set's: this
-    // read `.fa.fa-trash.text-danger` until the FontAwesome 4 -> 7 upgrade
-    // renamed those classes in the template and left the button inert.
     static selector = ".o_totp_portal_revoke_device";
     dynamicContent = {
         _root: { "t-on-click.prevent": this.onClick },

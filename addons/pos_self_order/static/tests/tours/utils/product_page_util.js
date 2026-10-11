@@ -135,12 +135,10 @@ export function verifyIsCheckedAttribute(attribute, values = []) {
             }
 
             const selectedButtons = rowDiv.querySelectorAll(".border-primary");
-            // Extract text content of selected buttons
             const selectedValues = Array.from(selectedButtons).map((btn) =>
                 btn.querySelector("span")?.textContent.trim(),
             );
 
-            // Check if all expected values are selected
             for (const val of values) {
                 if (!selectedValues.includes(val)) {
                     throw new Error(
@@ -149,7 +147,6 @@ export function verifyIsCheckedAttribute(attribute, values = []) {
                 }
             }
 
-            // Optionally, verify that no unexpected values are selected
             if (selectedValues.length !== values.length) {
                 throw new Error(
                     `Mismatch in selected values for attribute "${attribute}". Expected: ${values.join(

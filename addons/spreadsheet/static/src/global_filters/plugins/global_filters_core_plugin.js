@@ -142,10 +142,6 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Getters
-    // ---------------------------------------------------------------------
-
     /**
      * Retrieve the global filter with the given id
      *
@@ -213,10 +209,6 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
         return {};
     }
 
-    // ---------------------------------------------------------------------
-    // Handlers
-    // ---------------------------------------------------------------------
-
     /**
      * Edit a global filter
      *
@@ -247,10 +239,6 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Import/Export
-    // ---------------------------------------------------------------------
-
     /**
      * Import the filters
      *
@@ -264,14 +252,7 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
             ) {
                 globalFilter.rangesOfAllowedValues =
                     globalFilter.rangesOfAllowedValues.map((xc) =>
-                        this.getters.getRangeFromSheetXC(
-                            // The default sheet id doesn't matter here, the exported range string
-                            // is fully qualified and contains the sheet name.
-                            // The getter expects a valid sheet id though, let's give it the
-                            // first sheet id.
-                            data.sheets[0].id,
-                            xc,
-                        ),
+                        this.getters.getRangeFromSheetXC(data.sheets[0].id, xc),
                     );
             }
             this.globalFilters.push(globalFilter);
@@ -288,20 +269,12 @@ export class GlobalFiltersCorePlugin extends OdooCorePlugin {
             const filterData = { ...filter };
             if (filter.type === "text" && filter.rangesOfAllowedValues?.length) {
                 filterData.rangesOfAllowedValues = filter.rangesOfAllowedValues.map(
-                    (range) =>
-                        this.getters.getRangeString(
-                            range,
-                            "", // force the range string to be fully qualified (with the sheet name)
-                        ),
+                    (range) => this.getters.getRangeString(range, ""),
                 );
             }
             return filterData;
         });
     }
-
-    // ---------------------------------------------------------------------
-    // Global filters
-    // ---------------------------------------------------------------------
 
     /**
      * Update all ODOO.FILTER.VALUE formulas to reference a filter

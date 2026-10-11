@@ -198,7 +198,6 @@ const validateBomCreationSteps = [
             helper.assertLineQty(componentLine2, "0/3");
         },
     },
-    // Scans again the finished product, it should increase its quantity and its components' quantity aswell.
     { trigger: ".o_barcode_client_action", run: "scan final" },
     {
         trigger: ".o_barcode_line.o_header.o_header_completed",
@@ -214,7 +213,6 @@ const validateBomCreationSteps = [
             helper.assertLineQty(componentLine2, "3/3");
         },
     },
-    // Scans two more times the final product and validate the production.
     { trigger: ".o_barcode_client_action", run: "scan final" },
     { trigger: ".o_barcode_client_action", run: "scan final" },
     {
@@ -239,7 +237,6 @@ const validateBomCreationSteps = [
 
 registry.category("web_tour.tours").add("test_barcode_production_create_bom", {
     steps: () => [
-        // Creates a new production from the Barcode App.
         {
             trigger: "article.o_barcode_picking_type:contains('Manufacturing')",
             run: "click",
@@ -256,13 +253,10 @@ registry.category("web_tour.tours").add("test_barcode_production_create_bom", {
             run: "scan final",
         },
         ...validateBomCreationSteps,
-        // Close the previous notification to ensure that the next
-        // validateBomCreationSteps does not finish prematurely because of it.
         {
             trigger: ".o_notification_close.btn-close",
             run: "click",
         },
-        // Creates a new production from the "Add product" form from Barcode App.
         {
             trigger: ".o-kanban-button-new",
             run: "click",
@@ -321,7 +315,6 @@ registry.category("web_tour.tours").add("test_scrap_done_mo", {
 registry.category("web_tour.tours").add("test_barcode_production_create", {
     steps: () => [
         { trigger: ".o_stock_barcode_main_menu", run: "scan WHMANUF" },
-        // Scans final product, it should create the header line for this product.
         { trigger: ".o_scan_message.o_scan_product" },
         {
             trigger: '.o_title:contains("New")',
@@ -340,7 +333,6 @@ registry.category("web_tour.tours").add("test_barcode_production_create", {
                 helper.assertLineQty(headerLine, "0/1");
             },
         },
-        // Scans components, it should create a line for the component, then increases its quantity.
         { trigger: ".o_scan_message.o_scan_component", run: "scan compo01" },
         {
             trigger: ".o_barcode_line.o_selected",
@@ -363,7 +355,6 @@ registry.category("web_tour.tours").add("test_barcode_production_create", {
                 helper.assertLineQty(componentLine, "2");
             },
         },
-        // Scans the final product again, it should increase the header line's quantity.
         { trigger: ".o_barcode_client_action", run: "scan final" },
         {
             trigger: ".o_header_completed .qty-done:contains('1')",
@@ -510,8 +501,6 @@ registry.category("web_tour.tours").add("test_barcode_production_create_tracked_
         {
             trigger: 'div[name="qty_done"] .o_input',
             run() {
-                //input type number not supported by tour helpers.
-                // It would work if the clipboard was mocked in tours the same way it is in unit tests.
                 this.anchor.value = 2;
                 this.anchor.dispatchEvent(new InputEvent("input", { bubbles: true }));
             },
@@ -562,7 +551,6 @@ registry
     .category("web_tour.tours")
     .add("test_barcode_production_generate_serial_numbers", {
         steps: () => [
-            // First MO: produce 1 product.
             { trigger: ".o_stock_barcode_main_menu", run: "scan MO/TEST/1" },
             { trigger: ".o_add_lot", run: "click" },
             {
@@ -572,7 +560,6 @@ registry
                 },
             },
             ...stepUtils.validateBarcodeOperation(),
-            // Second MO: produce 5 products.
             { trigger: ".o_stock_barcode_main_menu", run: "scan MO/TEST/2" },
             { trigger: ".o_add_lot", run: "click" },
             {
@@ -590,10 +577,8 @@ registry
                 },
             },
             ...stepUtils.validateBarcodeOperation(),
-            // Third MO: produce 10 products.
             { trigger: ".o_stock_barcode_main_menu", run: "scan MO/TEST/3" },
             { trigger: ".o_add_lot.btn-primary", run: "click" },
-            // Produce only 5 serial numbers first (they should be all visible on the barcode line.)
             {
                 trigger: ".modal-content .o_field_widget[name='lot_quantity'] input",
                 run: "edit 5",
@@ -619,7 +604,6 @@ registry
                     );
                 },
             },
-            // Then produce the 5 remaining (only the three firsts and the last one should be visible.)
             { trigger: ".o_add_lot.btn-secondary", run: "click" },
             {
                 trigger: ".modal-content button[name='action_generate_serial_numbers']",
@@ -646,7 +630,6 @@ registry
             {
                 trigger: ".o_barcode_client_action",
                 run: function () {
-                    // Check all lines are here (header + 4 compos)
                     const lines = helper.getLines();
                     helper.assert(
                         lines.length,
@@ -670,7 +653,6 @@ registry
                     helper.assertLineSourceLocation(line4, "WH/Stock/Section 4");
                 },
             },
-            // Scans Shelf 1, Comp 01, Shelf 2 and Comp 01 again.
             {
                 trigger: ".o_scan_message.o_scan_src",
                 run: "scan LOC-01-01-00",
@@ -691,7 +673,6 @@ registry
                     ".o_barcode_location_line[data-location='WH/Stock/Section 2'].text-bg-400",
                 run: "scan compo01",
             },
-            // Scans the final product a first time.
             {
                 trigger:
                     ".o_barcode_location_line[data-location='WH/Stock/Section 2'] + .o_barcode_line.o_selected",
@@ -701,7 +682,6 @@ registry
                 trigger:
                     ".o_barcode_location_line[data-location='WH/Stock/Section 2'] + .o_barcode_line:not(.o_selected)",
                 run: function () {
-                    // Check all lines are here (header + 4 compos)
                     const lines = helper.getLines();
                     helper.assert(
                         lines.length,
@@ -726,7 +706,6 @@ registry
                 },
             },
 
-            // Scans each locations and their remaining components.
             { trigger: ".o_barcode_client_action", run: "scan LOC-01-02-00" },
             {
                 trigger:
@@ -756,7 +735,6 @@ registry
                 run: "scan compo01",
             },
 
-            // Scans 2 more times the final product to complete the production, then validates it.
             {
                 trigger: ".o_barcode_line.o_selected.o_line_completed",
                 run: "scan final",
@@ -765,7 +743,6 @@ registry
             {
                 trigger: ".o_scan_message.o_scan_validate",
                 run: function () {
-                    // Check all lines are here (header + 4 compos)
                     const lines = helper.getLines();
                     helper.assert(
                         lines.length,
@@ -801,7 +778,6 @@ registry
             {
                 trigger: ".o_barcode_client_action",
                 run: function () {
-                    // Check all lines are here (header + 2 compos)
                     const lines = helper.getLines();
                     helper.assert(
                         lines.length,
@@ -819,7 +795,6 @@ registry
                     helper.assertLineSourceLocation(line2, "WH/Stock");
                 },
             },
-            // scan the tracked comp and the non-reserved lot in the same loc as reserved ones
             {
                 trigger: ".o_scan_message.o_scan_src",
                 run: "scan LOC-01-00-00",
@@ -843,7 +818,6 @@ registry
                     helper.assertLinesCount(3);
                 },
             },
-            // scan the not tracked component from a different location (shelf1) than the reserved
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan LOC-01-01-00",
@@ -856,7 +830,6 @@ registry
                 trigger: ".o_barcode_client_action",
                 run: "scan compo01",
             },
-            // scan the final product + its lot name
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan final_lot",
@@ -875,7 +848,6 @@ registry
 
 registry.category("web_tour.tours").add("test_barcode_production_component_no_stock", {
     steps: () => [
-        // Creates a new production from the Barcode App.
         {
             trigger: "div[name='o_kanban_record_title']:contains('Manufacturing')",
             run: "click",
@@ -884,7 +856,6 @@ registry.category("web_tour.tours").add("test_barcode_production_component_no_st
             trigger: ".o-kanban-button-new",
             run: "click",
         },
-        // Scans a product with BoM, it should add it as the final product and add a line for the component.
         {
             trigger: ".o_scan_message.o_scan_product",
         },
@@ -892,10 +863,6 @@ registry.category("web_tour.tours").add("test_barcode_production_component_no_st
             trigger: ".o_title:contains('New')",
             run: "scan final",
         },
-        /**
-         * Scans the final product again, it should increment the final product qty done, but leaves component line
-         * as it is, since its manual consumption (nothing reserved)
-         */
         {
             trigger: ".o_scan_message.o_scan_component",
             run: "scan final",
@@ -924,7 +891,6 @@ registry.category("web_tour.tours").add("test_barcode_production_component_no_st
             trigger: ".o_validate_page",
             run: "click",
         },
-        // Confirm consumption warning
         {
             trigger: "button[name='action_confirm']",
             run: "click",
@@ -991,7 +957,6 @@ registry
 
 registry.category("web_tour.tours").add("test_barcode_production_add_scrap", {
     steps: () => [
-        // Creates a new production from the Barcode App.
         {
             trigger: "div[name='o_kanban_record_title']:contains('Manufacturing')",
             run: "click",
@@ -1000,7 +965,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_scrap", {
             trigger: ".o-kanban-button-new",
             run: "click",
         },
-        // Scans a product with BoM, it should add it as the final product and add a line for each components.
         {
             trigger: ".o_scan_message.o_scan_product",
         },
@@ -1022,7 +986,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_scrap", {
                 helper.assertLineQty(componentLine2, "0/1");
             },
         },
-        // Add a Scrap product
         {
             trigger: ".o_barcode_client_action",
             run: "scan OBTSCRA",
@@ -1038,10 +1001,7 @@ registry.category("web_tour.tours").add("test_barcode_production_add_scrap", {
         {
             trigger: 'button[name="action_validate"]',
             run: "click",
-            // Alternatively, we may have triggered this by scanning OBTVALI (once focus is not on an editable input tag !)
-            // However, there's still a bug such that OBTVALI will also validate the MO in addition to the scrap form...
         },
-        // Ensure adding Compo 01 as a scrap product didn't add it as an used component
         {
             trigger: ".o_barcode_line.o_header",
             run: function () {
@@ -1052,13 +1012,11 @@ registry.category("web_tour.tours").add("test_barcode_production_add_scrap", {
                 helper.assertLineQty(componentLine1, "0/1");
             },
         },
-        // Further assertions are done server-side as scrapped products aren't shown in barcode interface
     ],
 });
 
 registry.category("web_tour.tours").add("test_barcode_production_add_byproduct", {
     steps: () => [
-        // Creates a new production from the Barcode App.
         {
             trigger: "div[name='o_kanban_record_title']:contains('Manufacturing')",
             run: "click",
@@ -1070,7 +1028,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_byproduct",
             trigger: ".o-kanban-button-new",
             run: "click",
         },
-        //Add Bom Product
         {
             trigger: ".o_scan_message.o_scan_product",
         },
@@ -1079,7 +1036,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_byproduct",
             run: "scan final",
         },
 
-        // Add a By-Product
         {
             trigger: "button.o_by_products",
             run: "click",
@@ -1094,7 +1050,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_byproduct",
                 helper.assertLinesCount(1);
             },
         },
-        // Check `trace_id` field is not displayed for untracked by-product.
         { trigger: ".o_barcode_line .o_edit", run: "click" },
         {
             trigger: ".o_form_view_container",
@@ -1111,7 +1066,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_byproduct",
         },
         { trigger: ".o_discard", run: "click" },
         { trigger: ".o_add_byproduct" },
-        // Try (unsuccesfully) to add the final product as a byproduct through scan
         {
             trigger: ".o_barcode_client_action",
             run: "scan final",
@@ -1136,7 +1090,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_byproduct",
                 helper.assertLineQty(byProductLine, "1");
             },
         },
-        // Add tracked product (Compo Lot) as a by-product.
         { trigger: ".o_barcode_client_action", run: "scan compo_lot" },
         { trigger: ".o_barcode_line.o_selected div[name='lot'] .o_next_expected" },
         { trigger: ".o_barcode_line.o_selected .o_edit", run: "click" },
@@ -1156,13 +1109,11 @@ registry.category("web_tour.tours").add("test_barcode_production_add_byproduct",
         },
         { trigger: ".o_field_widget[name=qty_done] input", run: "clear" },
         { trigger: ".o_field_widget[name=qty_done] input", run: "edit 2" },
-        // Check we can create a new lot for by-product.
         { trigger: ".o_field_widget[name=trace_id] input", run: "clear" },
         { trigger: ".o_field_widget[name=trace_id] input", run: "edit byprod_lot_001" },
         { trigger: ".dropdown-item:contains('byprod_lot_001')", run: "click" },
         { trigger: ".o-autocomplete input:last-child" },
         { trigger: ".o_save", run: "click" },
-        // Validate by-products and then validate the manufacturing operation.
         {
             trigger: ".o_save_byproduct",
             run: "click",
@@ -1176,7 +1127,6 @@ registry.category("web_tour.tours").add("test_barcode_production_add_byproduct",
 
 registry.category("web_tour.tours").add("test_split_line_on_exit_for_production", {
     steps: () => [
-        // Opens the manufacturing order and check its lines.
         {
             trigger: ".o_stock_barcode_main_menu",
             run: "scan production_split_line_on_exit",
@@ -1193,7 +1143,6 @@ registry.category("web_tour.tours").add("test_split_line_on_exit_for_production"
                 helper.assertLineQty(2, "0/2");
             },
         },
-        // Scans 1x product2 then goes back to the main menu.
         { trigger: ".o_barcode_client_action", run: "scan product2" },
         {
             trigger: ".o_barcode_line.o_selected",
@@ -1202,7 +1151,6 @@ registry.category("web_tour.tours").add("test_split_line_on_exit_for_production"
             trigger: "button.o_exit",
             run: "click",
         },
-        // Reopens the production => product2 line should be split in two.
         {
             trigger: ".o_stock_barcode_main_menu",
             run: "scan production_split_line_on_exit",
@@ -1221,7 +1169,6 @@ registry.category("web_tour.tours").add("test_split_line_on_exit_for_production"
                 helper.assertLineQty(3, "1/1");
             },
         },
-        // Scans 3x product1 then goes back again on the main menu.
         { trigger: ".o_barcode_client_action", run: "scan product1" },
         { trigger: ".o_barcode_client_action", run: "scan product1" },
         { trigger: ".o_barcode_client_action", run: "scan product1" },
@@ -1232,7 +1179,6 @@ registry.category("web_tour.tours").add("test_split_line_on_exit_for_production"
             trigger: "button.o_exit",
             run: "click",
         },
-        // Re-opens the MO and checks lines.
         {
             trigger: ".o_stock_barcode_main_menu",
             run: "scan production_split_line_on_exit",
@@ -1260,7 +1206,6 @@ registry
     .category("web_tour.tours")
     .add("test_barcode_production_component_different_uom", {
         steps: () => [
-            // Creates a new production from the Barcode App.
             {
                 trigger: "div[name='o_kanban_record_title']:contains('Manufacturing')",
                 run: "click",
@@ -1269,7 +1214,6 @@ registry
                 trigger: ".o-kanban-button-new",
                 run: "click",
             },
-            // Scans a product with BoM, it should add it as the final product and add a line for the component.
             {
                 trigger: ".o_barcode_client_action",
                 run: "scan final",
@@ -1297,7 +1241,6 @@ registry.category("web_tour.tours").add("test_delivery_kit_with_tracked_compo", 
             trigger: ".o_stock_barcode_main_menu",
             run: "scan WH/OUT/DKWTC",
         },
-        // scan the unreserved LOT003
         {
             trigger: ".o_barcode_client_action",
             run: "scan LOT003",
@@ -1345,7 +1288,6 @@ registry
     .category("web_tour.tours")
     .add("test_multi_company_manufacture_creation_in_barcode", {
         steps: () => [
-            // test scan
             {
                 trigger: ".o_stock_barcode_main_menu",
                 run: "scan company2_mrp_operation",
@@ -1353,7 +1295,6 @@ registry
             { trigger: ".o_barcode_client_action", run: "scan final" },
             { trigger: ".o_add_quantity", run: "click" },
             { trigger: ".btn.o_validate_page", run: "click" },
-            // test form
             {
                 trigger: ".o_stock_barcode_main_menu",
                 run: "scan company2_mrp_operation",
@@ -1407,8 +1348,6 @@ registry
 
 registry.category("web_tour.tours").add("test_kit_bom_decomposition_keeps_location", {
     steps: () => [
-        /* Test 1: two move lines
-            same final product, same bom, different location */
         {
             trigger: ".o_stock_barcode_main_menu",
             run: "scan test_kit_bom_decomposition_keeps_location_picking1",
@@ -1442,8 +1381,6 @@ registry.category("web_tour.tours").add("test_kit_bom_decomposition_keeps_locati
                 ".o_barcode_lines:has(.o_barcode_line:eq(3)):not(:has(.o_barcode_line:eq(4))",
         },
         { trigger: ".btn.o_validate_page", run: "click" },
-        /* Test 2: two move lines
-            different final product, different bom, different location */
         {
             trigger: ".o_stock_barcode_main_menu",
             run: "scan test_kit_bom_decomposition_keeps_location_picking2",
@@ -1571,7 +1508,6 @@ registry.category("web_tour.tours").add("test_barcode_mo_creation_in_mo2", {
         { trigger: ".o_notification_bar.bg-success" },
         { trigger: ".o_notification .o_notification_close", run: "click" },
         { trigger: "a[href='/odoo/barcode']", run: "click" },
-        // Create a new MO by scanning the operation's barcode.
         { trigger: ".o_stock_barcode_main_menu", run: "scan MO2_BARCODE" },
         {
             content: "Click on the button to add a product",
@@ -1606,7 +1542,6 @@ registry
                     helper.assertLinesCount(2);
                 },
             },
-            // Scans product2; It shouldn't be added as the allow_extra_product config is disabled.
             { trigger: ".o_barcode_client_action", run: "scan product2" },
             {
                 trigger:
@@ -1831,7 +1766,6 @@ registry.category("web_tour.tours").add("test_not_allowing_component_lot_creatio
         {
             trigger: ".o_barcode_line .qty-done:contains(1)",
         },
-        // exit the barcode app to save the barcode data's
         {
             trigger: "button.o_exit",
             run: "click",
@@ -1854,19 +1788,16 @@ registry
                 trigger: ".o_by_products",
                 run: "click",
             },
-            // Check that lines are grouped by destination location.
             {
                 trigger: '.o_barcode_location_line[data-location="WH/Stock/Section 1"]',
             },
             {
                 trigger: '.o_barcode_location_line[data-location="WH/Stock/Section 2"]',
             },
-            // Check that we can still select/edit the by-product line even if source location scan is mandatory.
             {
                 trigger: '.o_barcode_line:contains("By Product")',
                 run: "click",
             },
-            // Check that destination location is shown on the by-product line.
             {
                 trigger:
                     '.o_barcode_line:contains("By Product").o_selected .o_line_destination_location:contains("../Section 1")',
@@ -1883,7 +1814,6 @@ registry
                 trigger: '.o_barcode_line:contains("Compo 01") .o_line_button.o_edit',
                 run: "click",
             },
-            // Check that no 'location_id' field is shown in the by-product edit form.
             {
                 trigger: ".o_form_view_container",
                 run: function () {
@@ -1973,12 +1903,6 @@ registry.category("web_tour.tours").add("test_quant_selection_mrp", {
                 helper.assertKanbanRecordsCount(2);
             },
         },
-        /**
-         * Select the quant having,
-         * Location: WH/Stock
-         * Quantity: 10
-         * Package: 'package001'
-         */
         {
             trigger:
                 ".o_field_stock_barcode_quant_one2many .o_kanban_record:nth-child(2)",
@@ -1999,7 +1923,6 @@ registry.category("web_tour.tours").add("test_quant_selection_mrp", {
         { trigger: ".o_save", run: "click" },
         { trigger: "button.o_add_remaining_quantity", run: "click" },
 
-        // Add Component
         { trigger: ".btn.o_add_line", run: "click" },
         { trigger: "div[name='product_id']", run: "click" },
         { trigger: "div[name='product_id'] .o_input", run: "edit Compo Lot" },
@@ -2023,11 +1946,6 @@ registry.category("web_tour.tours").add("test_quant_selection_mrp", {
                 helper.assertKanbanRecordsCount(2);
             },
         },
-        /**
-         * Select the quant having,
-         * Location: WH/Stock/Section 1
-         * Quantity: 10
-         */
         {
             trigger:
                 ".o_field_stock_barcode_quant_one2many .o_kanban_record:nth-child(2)",
@@ -2050,7 +1968,6 @@ registry.category("web_tour.tours").add("test_quant_selection_mrp", {
             },
         },
         { trigger: ".o_save", run: "click" },
-        // Scans the final product
         {
             trigger: ".o_header .o_barcode_line_title:contains('Final Product')",
             run: "scan final",

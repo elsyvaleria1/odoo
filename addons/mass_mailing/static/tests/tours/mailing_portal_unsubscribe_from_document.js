@@ -1,9 +1,5 @@
 import { registry } from "@web/core/registry";
 
-/*
- * Tour: unsubscribe from a mailing done on documents (aka not on contacts or
- * mailing lists). We assume email is not member of any mailing list in this test.
- */
 registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_document", {
     steps: () => [
         {
@@ -85,10 +81,6 @@ registry.category("web_tour.tours").add("mailing_portal_unsubscribe_from_documen
     ],
 });
 
-/*
- * Tour: unsubscribe from a mailing done on documents (aka not on contacts or
- * mailing lists). We assume email is member of mailing lists in this test.
- */
 registry
     .category("web_tour.tours")
     .add("mailing_portal_unsubscribe_from_document_with_lists", {

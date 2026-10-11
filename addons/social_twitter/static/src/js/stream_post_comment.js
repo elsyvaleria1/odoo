@@ -6,10 +6,6 @@ import { url } from "@web/core/utils/urls";
 import { StreamPostCommentsReplyTwitter } from "./stream_post_comments_reply.js";
 
 export class StreamPostCommentTwitter extends StreamPostComment {
-    //--------
-    // Getters
-    //--------
-
     get authorPictureSrc() {
         return this.comment.from.profile_image_url;
     }

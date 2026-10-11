@@ -34,10 +34,6 @@ export class BuilderSelectItem extends Component {
         const item = (this.item = elementRef());
         let label = "";
         const getLabel = () => {
-            // todo: it's not clear why the item.el?.innerHTML is not set at in
-            // some cases. We fallback on a previously set value to circumvent
-            // the problem, but it should be investigated.
-
             label =
                 this.props.label ||
                 (item.el ? markup(item.el.innerHTML) : "") ||

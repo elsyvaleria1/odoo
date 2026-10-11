@@ -133,9 +133,6 @@ registerTemplate(
 
 test.tags("desktop");
 test("a row handler forwards every argument, so a renderer may widen its signature", async () => {
-    // the shape account_online_synchronization's duplicate-transaction list
-    // takes: the renderer's toggleRecordSelection(selected, record) is called
-    // from its row template with both arguments
     /** @type {any[]} */
     const calls = [];
     const listView = registry.category("views").get("list");

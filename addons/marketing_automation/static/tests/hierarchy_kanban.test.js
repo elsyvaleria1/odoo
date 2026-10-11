@@ -100,7 +100,6 @@ test("render basic hierarchy kanban", async () => {
             </form>`,
     });
 
-    // Checking number of child and their positions
     const parentRecords = queryAll(
         ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body",
     );
@@ -114,7 +113,6 @@ test("render basic hierarchy kanban", async () => {
     expect(childrenRecords).toHaveCount(3);
     expect(grandChildrenRecords).toHaveCount(1);
 
-    // Checking titles of kanban to verify proper values
     expect(queryFirst(`.o_title`, { root: parentRecords[0] })).toHaveText("Parent 1");
     expect(queryFirst(`.o_title`, { root: parentRecords[1] })).toHaveText("Parent 2");
     expect(queryFirst(`.o_title`, { root: childrenRecords[0] })).toHaveText(

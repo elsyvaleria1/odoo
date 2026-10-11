@@ -203,15 +203,4 @@ export class ProductPage extends Component {
             .getElementById(missingAttribute?.attribute_id?.id)
             ?.scrollIntoView({ behavior: "smooth" });
     }
-
-    /*
-    // TODO
-    get editableProductLine() {
-        const order = this.selfOrder.currentOrder;
-        return !(
-            this.selfOrder.editedLine &&
-            this.selfOrder.editedLine.uuid &&
-            order.lastChangesSent[this.selfOrder.editedLine.uuid]
-        );
-    }*/
 }

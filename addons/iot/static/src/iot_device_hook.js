@@ -21,7 +21,6 @@ export const useIotDevice = ({
     onStartListening,
     onStopListening,
 }) => {
-    // set default values for the device
     getIotIp = getIotIp || (() => {});
     getIdentifier = getIdentifier || (() => {});
     getLongpollingHasFallback = getLongpollingHasFallback || (() => false);

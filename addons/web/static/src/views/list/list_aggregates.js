@@ -71,9 +71,6 @@ function getFormatOptions(attrs, fieldDigits, fieldName) {
 const aggregateFormatByColumn = new WeakMap();
 
 function resolveAggregateFormat(column, field) {
-    // a column object is stable for the life of its arch, and this runs once
-    // per group cell per render; the options are copied because callers set
-    // a currency on them
     let resolved = aggregateFormatByColumn.get(column);
     if (!resolved) {
         const { attrs = {}, widget } = column;
@@ -453,9 +450,6 @@ export class ListAggregates {
                     aggregateValue,
                     isConvertedSum,
                 }));
-                // a mixed-currency group carries the server's sum_currency (the
-                // total converted to the company currency) in place of its own
-                // aggregator's value: only a sum can be shown from it
                 if (!isConvertedSum) {
                     return blockedAggregate(
                         _t("No total: a group mixes several currencies"),

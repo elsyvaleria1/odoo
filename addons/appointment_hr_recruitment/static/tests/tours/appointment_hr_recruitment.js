@@ -30,8 +30,6 @@ registry.category("web_tour.tours").add("appointment_hr_recruitment_tour", {
             trigger:
                 '.o_appointment_button_link:contains("Test AppointmentHrRecruitment")',
             async run(helpers) {
-                // Patch the clipboard write to navigate to the copied url, so the booking
-                // continues from there. No cleanup needed: the navigation unloads the page.
                 navigator.clipboard.writeText = (text) => {
                     window.location.href = text;
                 };

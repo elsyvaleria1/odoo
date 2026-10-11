@@ -45,23 +45,18 @@ test(`Pricelist Client Action`, async () => {
         },
     });
 
-    // checking default pricelist
     expect(`select#pricelists > option:eq(0)`).toHaveText("Public Pricelist", {
         message: "should have default pricelist",
     });
 
-    // changing pricelist
     await contains(`select#pricelists`).select("2");
 
-    // check whether pricelist value has been updated or not
     expect(`select#pricelists > option:eq(0)`).toHaveText("Test", {
         message: "After pricelist change, the pricelist_id field should be updated",
     });
 
-    // check default quantities should be there
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1", "5", "10"]);
 
-    // existing quantity can not be added.
     await contains(`.o_add_qty`).click();
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1", "5", "10"]);
     expect(`.o_notification`).toHaveCount(1);
@@ -73,7 +68,6 @@ test(`Pricelist Client Action`, async () => {
     await contains(`.o_notification_close`).click();
     expect(`.o_notification`).toHaveCount(0);
 
-    // adding few more quantities to check.
     await contains(`.add-quantity-input`).edit("2", { confirm: false });
     await contains(`.o_add_qty`).click();
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1", "2", "5", "10"]);
@@ -84,7 +78,6 @@ test(`Pricelist Client Action`, async () => {
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1", "2", "3", "5", "10"]);
     expect(`.o_notification`).toHaveCount(0);
 
-    // no more than 5 quantities can be used at a time
     await contains(`.add-quantity-input`).edit("4", { confirm: false });
     await contains(`.o_add_qty`).click();
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1", "2", "3", "5", "10"]);
@@ -110,15 +103,12 @@ test(`Pricelist Report quantity removal`, async () => {
 
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1", "5", "10"]);
 
-    // The badge passes its own quantity to the handler, rather than the handler
-    // reading it back out of the DOM node it was clicked on.
     await contains(`.o_badges_list .badge:eq(1) .oi-close`).click();
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1", "10"]);
 
     await contains(`.o_badges_list .badge:eq(1) .oi-close`).click();
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1"]);
 
-    // The report always needs one quantity to render.
     await contains(`.o_badges_list .badge:eq(0) .oi-close`).click();
     expect(queryAllTexts(`.o_badges_list .badge`)).toEqual(["1"]);
     expect(`.o_notification_content`).toHaveText(

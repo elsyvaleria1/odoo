@@ -22,7 +22,6 @@ test("changeQuantity and isProductAvailable", async () => {
     expect(comp.state.qty).toBe(2);
     comp.changeQuantity(false);
     expect(comp.state.qty).toBe(1);
-    // Quantity should not decrease below 1
     comp.changeQuantity(false);
     expect(comp.state.qty).toBe(1);
 });
@@ -58,11 +57,9 @@ describe("getProductPrice with variants", () => {
 
         expect(comp.getProductPrice()).toBe(10);
 
-        // select the second variant.
         await click(".self_order_attribute_selection div:nth-child(2) button");
         expect(comp.getProductPrice()).toBe(15);
 
-        // that variant price changes with a different pricelist.
         comp.selfOrder.currentOrder.pricelist_id = models["product.pricelist"].get(4);
         expect(comp.getProductPrice()).toBe(20);
     });
@@ -78,11 +75,9 @@ describe("getProductPrice with variants", () => {
 
         expect(comp.getProductPrice()).toBe(200);
 
-        // select the normal variant, no extra price
         await click(".self_order_attribute_selection div:nth-child(1) button");
         expect(comp.getProductPrice()).toBe(200);
 
-        // select the second variant, with price extra of 10
         await click(".self_order_attribute_selection div:nth-child(2) button");
         expect(comp.getProductPrice()).toBe(210);
     });
@@ -98,23 +93,19 @@ describe("getProductPrice with variants", () => {
 
         expect(comp.getProductPrice()).toBe(100);
 
-        // select Size S
         await click(
             "h2:contains(Size) + .self_order_attribute_selection div:nth-child(1) button",
         );
         expect(comp.getProductPrice()).toBe(100);
-        // select Size M (price_extra 5)
         await click(
             "h2:contains(Size) + .self_order_attribute_selection div:nth-child(2) button",
         );
         expect(comp.getProductPrice()).toBe(105);
 
-        // select Packaging Standard
         await click(
             "h2:contains(Packaging) + .self_order_attribute_selection div:nth-child(1) button",
         );
         expect(comp.getProductPrice()).toBe(105);
-        // select Packaging Gift (price_extra 10)
         await click(
             "h2:contains(Packaging) + .self_order_attribute_selection div:nth-child(2) button",
         );
@@ -130,7 +121,6 @@ test("isAddToCartEnabled", async () => {
         props: { productTemplate: product },
     });
 
-    // Product unavailability
     product.self_order_available = false;
     expect(comp.isAddToCartEnabled()).toBe(false);
 });

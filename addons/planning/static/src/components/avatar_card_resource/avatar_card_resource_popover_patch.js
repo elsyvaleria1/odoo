@@ -15,12 +15,6 @@ export const patchAvatarCardResourcePopover = {
         );
     },
     get roleTags() {
-        // The star marks the default role, and only when there is more than one
-        // role to distinguish. `icon` must be OMITTED for the others rather than
-        // set falsy: `TagsList`'s shape declares it `{ type: String, optional:
-        // true }`, and `optional` means the key may be absent, not that it may
-        // be `false`. `A && B && "fa-star"` yielded `icon: false` for every
-        // non-default role and failed prop validation for the whole list.
         const marksDefaultRole = this.roles.length > 1;
         const defaultRoleId = this.record.default_role_id?.[0];
         return this.roles.map(({ id, color, name }) => ({

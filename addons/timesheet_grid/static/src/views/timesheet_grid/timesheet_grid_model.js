@@ -250,18 +250,6 @@ export class TimesheetGridModel extends GridModel {
             return additionalGroups;
         }
 
-        /*
-         * The goal of this code is to add records in the grid in order to ease encoding.
-         * We will add entries if 'task_id' or 'project_id' has been explicitly added to the domain from
-         * the search view.
-         */
-
-        /*
-         * First go through the domain in order to:
-         * - Check that 'task_id' and 'project_id' are present in the domain (except for "('project_id', '!=', false)")
-         * - Build the list of fields, other than 'task_id' and 'project_id' that are used in the domain, in order to
-         *   later be able to neutralise de leaf part of the domain that are applied on those fields.
-         */
         const domainFieldsToNeutralize = [];
         let isProjectIdInDomainFields = false;
         let isTaskIdInDomainFields = false;
@@ -283,10 +271,6 @@ export class TimesheetGridModel extends GridModel {
         }
         searchParamsDomain = new Domain(searchParamsDomain);
 
-        /*
-         * If none of 'project_id' and 'task_id' are used as the section field or if none of 'project_id' and 'task_id'
-         * are used in the search domain, return and don't perform the extra search.
-         */
         const fieldsToConsider = ["project_id", "task_id"];
         const isProjectOrTaskAsSectionField =
             sectionField && fieldsToConsider.includes(sectionField.name);
@@ -303,19 +287,11 @@ export class TimesheetGridModel extends GridModel {
             return additionalGroups;
         }
 
-        // Neutralize other fields than 'project_id' and 'task_id' on the domain.
         const neutralizedDomain = Domain.removeDomainLeaves(
             searchParamsDomain,
             domainFieldsToNeutralize,
         );
 
-        /*
-         * Go over the domain and create separated 'project_id' and 'task_id' domains. Replace 'project_id' and
-         * 'task_id' by 'id' whenever applicable.
-         * Don't add ('project_id', '!=', false) to the domain that will be executed on 'project.project', which is
-         * there from the action in order to only select timesheets from the `account.account_move_line`. This domain
-         * is however being preserved for task in order not to fetch private ones.
-         */
         let taskDomain = [];
         let projectDomain = [];
         const getIdOrName = (fieldName, operator, value) => {
@@ -374,10 +350,6 @@ export class TimesheetGridModel extends GridModel {
         projectDomain = new Domain(projectDomain);
 
         const domainIds = [];
-        /*
-         * If 'project_id' and 'task_id' is used as a section, populate an array of ids that will be used in the
-         * queries in order to limit the queried data.
-         */
         if (sectionField && fieldsToConsider.includes(sectionField.name)) {
             for (const sectionInfo of Object.values(data.sections)) {
                 if (!sectionInfo.isFake) {
@@ -386,10 +358,6 @@ export class TimesheetGridModel extends GridModel {
             }
         }
 
-        /*
-         * Convert timesheet info returned from 'project.project' and 'project.task' queries into the right data
-         * formatting.
-         */
         const prepareAdditionalData = (records, fieldName) => {
             const additionalData = {};
             for (const record of records) {

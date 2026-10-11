@@ -43,7 +43,7 @@ registry.category("web_tour.tours").add("sign_tour", {
         {
             content: "Wait for page to be loaded",
             trigger: ":iframe .page[data-page-number='1'] .textLayer",
-            timeout: 30000, // In view mode, pdf loading can take a long time
+            timeout: 30000,
         },
         dragAndDropSignature("manual"),
         dragAndDropSignature("auto"),
@@ -119,9 +119,6 @@ registry.category("web_tour.tours").add("sign_tour", {
             run: "click",
         },
         {
-            // Click Sign All button of the Signature Dialog.
-            // if auto_value is set, the dialog does not show.
-            // In such case, we need to skip this step.
             isActive: [
                 "body:not(:has(input[data-item_type='signature'][data-auto_value]))",
             ],
@@ -140,7 +137,7 @@ registry.category("web_tour.tours").add("sign_tour", {
             run: "click",
         },
         {
-            isActive: ["manual"], // Previous step takes long time, resulting in time out in auto mode
+            isActive: ["manual"],
             trigger: '.modal-dialog button:contains("' + _t("Close") + '")',
             content: markup(
                 _t(

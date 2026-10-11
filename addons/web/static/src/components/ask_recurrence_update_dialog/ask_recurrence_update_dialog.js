@@ -4,14 +4,6 @@ import { Component, proxy, t, useProps } from "@odoo/owl";
 import { uniqueId } from "@web/core/utils/functions";
 import { Dialog } from "@web/ui/dialog";
 
-/**
- * Which occurrences of a recurrence an edit applies to.
- *
- * `calendar` and `planning` each carried their own copy of this component and
- * of its template, identical but for the dialog title and the three labels --
- * the vocabulary, which is the only part that is genuinely per-model. That part
- * is a prop here; the mechanism is not duplicated.
- */
 export class AskRecurrenceUpdateDialog extends Component {
     static template = "web.AskRecurrenceUpdateDialog";
     static components = { Dialog };

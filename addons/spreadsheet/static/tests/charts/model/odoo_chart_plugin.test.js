@@ -155,7 +155,6 @@ test("Odoo bar chart runtime loads the data", async () => {
     });
     const sheetId = model.getters.getActiveSheetId();
     const chartId = model.getters.getChartIds(sheetId)[0];
-    // it should not be loaded eagerly
     expect.verifySteps([]);
     expect(model.getters.getChartRuntime(chartId).chartJsConfig.data).toEqual({
         datasets: [],
@@ -177,7 +176,6 @@ test("Odoo bar chart runtime loads the data", async () => {
         ],
         labels: ["false", "true"],
     });
-    // it should have loaded the data
     expect.verifySteps(["formatted_read_group"]);
 });
 
@@ -192,7 +190,6 @@ test("Odoo pie chart runtime loads the data", async () => {
     });
     const sheetId = model.getters.getActiveSheetId();
     const chartId = model.getters.getChartIds(sheetId)[0];
-    // it should not be loaded eagerly
     expect.verifySteps([]);
     expect(model.getters.getChartRuntime(chartId).chartJsConfig.data).toEqual({
         datasets: [],
@@ -211,7 +208,6 @@ test("Odoo pie chart runtime loads the data", async () => {
         ],
         labels: ["false", "true"],
     });
-    // it should have loaded the data
     expect.verifySteps(["formatted_read_group"]);
 });
 
@@ -226,7 +222,6 @@ test("Odoo line chart runtime loads the data", async () => {
     });
     const sheetId = model.getters.getActiveSheetId();
     const chartId = model.getters.getChartIds(sheetId)[0];
-    // it should not be loaded eagerly
     expect.verifySteps([]);
     expect(model.getters.getChartRuntime(chartId).chartJsConfig.data).toEqual({
         datasets: [],
@@ -250,7 +245,6 @@ test("Odoo line chart runtime loads the data", async () => {
         ],
         labels: ["false", "true"],
     });
-    // it should have loaded the data
     expect.verifySteps(["formatted_read_group"]);
 });
 
@@ -295,10 +289,8 @@ test("Data reloaded strictly upon domain update", async () => {
     const chartId = model.getters.getChartIds(sheetId)[0];
     const definition = model.getters.getChartDefinition(chartId);
 
-    // force runtime computation
     model.getters.getChartRuntime(chartId);
     await animationFrame();
-    // it should have loaded the data
     expect.verifySteps(["formatted_read_group"]);
 
     model.dispatch("UPDATE_CHART", {
@@ -310,10 +302,8 @@ test("Data reloaded strictly upon domain update", async () => {
         chartId,
         sheetId,
     });
-    // force runtime computation
     model.getters.getChartRuntime(chartId);
     await animationFrame();
-    // it should have loaded the data with a new domain
     expect.verifySteps(["formatted_read_group"]);
 
     const newDefinition = model.getters.getChartDefinition(chartId);
@@ -326,10 +316,8 @@ test("Data reloaded strictly upon domain update", async () => {
         figureId: model.getters.getFigureIdFromChartId(chartId),
         sheetId,
     });
-    // force runtime computation
     model.getters.getChartRuntime(chartId);
     await animationFrame();
-    // it should have not have loaded the data since the domain was unchanged
     expect.verifySteps([]);
 });
 
@@ -346,18 +334,18 @@ test("Data reloaded upon domain update for charts other than pie/bar/line", asyn
     const chartId = model.getters.getChartIds(sheetId)[0];
 
     await waitForDataLoaded(model);
-    expect.verifySteps(["formatted_read_group"]); // Data loaded
+    expect.verifySteps(["formatted_read_group"]);
 
     updateChart(model, chartId, { type: "odoo_pie" });
     await waitForDataLoaded(model);
-    expect.verifySteps([]); // Chart type changed
+    expect.verifySteps([]);
 
     const newDefinition = model.getters.getChartDefinition(chartId);
     updateChart(model, chartId, {
         searchParams: { ...newDefinition.searchParams, domain: [["1", "=", "1"]] },
     });
     await waitForDataLoaded(model);
-    expect.verifySteps(["formatted_read_group"]); // Data re-loaded on domain update
+    expect.verifySteps(["formatted_read_group"]);
 });
 
 test("Updating the domain keeps the global filters domain", async () => {
@@ -385,7 +373,7 @@ test("Updating the domain keeps the global filters domain", async () => {
         chart: { [chartId]: { chain: "product", type: "many2one" } },
     });
 
-    model.getters.getChartRuntime(chartId); // force runtime computation
+    model.getters.getChartRuntime(chartId);
     await waitForDataLoaded(model);
     expect.verifySteps(["formatted_read_group"]);
     expect(lastReadGroupDomain).toEqual([["product", "in", [41]]]);
@@ -401,7 +389,7 @@ test("Updating the domain keeps the global filters domain", async () => {
         sheetId,
     });
 
-    model.getters.getChartRuntime(chartId); // force runtime computation
+    model.getters.getChartRuntime(chartId);
     await waitForDataLoaded(model);
     expect.verifySteps(["formatted_read_group"]);
     expect(lastReadGroupDomain).toEqual([
@@ -472,7 +460,7 @@ test("can import (export) contextual domain", async function () {
             }
         },
     });
-    model.getters.getChartRuntime(chartId).chartJsConfig.data; // force loading the chart data
+    model.getters.getChartRuntime(chartId).chartJsConfig.data;
     await animationFrame();
     expect(model.exportData().sheets[0].figures[0].data.searchParams.domain).toBe(
         '[("foo", "=", uid)]',
@@ -789,10 +777,6 @@ test("cumulative line chart with past data before domain period with cumulated s
     const sheetId = model.getters.getActiveSheetId();
     const chartId = model.getters.getChartIds(sheetId)[0];
     await waitForDataLoaded(model);
-    // `probability` is declared `aggregator: "avg"`, so the group of records
-    // before the domain -- 10 and 2 -- starts the cumulation at their average, 6,
-    // and 6/+3/+4/+5 gives 9, 13, 18. This read 15, 19, 24 while the mock server
-    // aliased `avg` to `sum` and started it at 12, which no real server returns.
     expect(
         model.getters.getChartRuntime(chartId).chartJsConfig.data.datasets[0].data,
     ).toEqual([9, 13, 18]);
@@ -831,10 +815,6 @@ test("update existing chart to cumulate past data", async () => {
         sheetId,
     });
     await waitForDataLoaded(model);
-    // `probability` is declared `aggregator: "avg"`, so the group of records
-    // before the domain -- 10 and 2 -- starts the cumulation at their average, 6,
-    // and 6/+3/+4/+5 gives 9, 13, 18. This read 15, 19, 24 while the mock server
-    // aliased `avg` to `sum` and started it at 12, which no real server returns.
     expect(
         model.getters.getChartRuntime(chartId).chartJsConfig.data.datasets[0].data,
     ).toEqual([9, 13, 18]);
@@ -947,7 +927,7 @@ test("See records in new tab on middle click of chart element", async () => {
     const runtime = model.getters.getChartRuntime(chartId);
     expect.verifySteps([]);
 
-    const event = { type: "mouseup", native: new MouseEvent("mouseup", { button: 1 }) }; // Middle mouse button
+    const event = { type: "mouseup", native: new MouseEvent("mouseup", { button: 1 }) };
     await runtime.chartJsConfig.options.onClick(event, [{ datasetIndex: 0, index: 0 }]);
     expect.verifySteps(["do-action-new-window"]);
 });
@@ -1078,7 +1058,6 @@ test("See records when clicking on a waterfall chart bar", async () => {
     await waitForDataLoaded(model);
     const runtime = model.getters.getChartRuntime(chartId);
 
-    // First dataset
     const event = { type: "click", native: new Event("click") };
     await runtime.chartJsConfig.options.onClick(event, [{ datasetIndex: 0, index: 0 }]);
     await animationFrame();
@@ -1090,7 +1069,6 @@ test("See records when clicking on a waterfall chart bar", async () => {
         ["bar", "=", false],
     ]);
 
-    // First dataset subtotal
     await runtime.chartJsConfig.options.onClick(event, [{ datasetIndex: 0, index: 2 }]);
     await animationFrame();
     expect(lastActionCalled?.domain).toEqual([
@@ -1101,7 +1079,6 @@ test("See records when clicking on a waterfall chart bar", async () => {
         [1, "=", 1],
     ]);
 
-    // Second dataset
     await runtime.chartJsConfig.options.onClick(event, [{ datasetIndex: 0, index: 3 }]);
     await animationFrame();
     expect(lastActionCalled?.domain).toEqual([
@@ -1202,7 +1179,6 @@ test("See records when clicking on a sunburst chart slice", async () => {
     await waitForDataLoaded(model);
     const runtime = model.getters.getChartRuntime(chartId);
 
-    // Leaf value
     let mockChart = {
         data: { datasets: [{ data: [{ groups: ["January 2020", "false"] }] }] },
     };
@@ -1220,7 +1196,6 @@ test("See records when clicking on a sunburst chart slice", async () => {
         ["bar", "=", false],
     ]);
 
-    // Non-leaf value
     mockChart = { data: { datasets: [{ data: [{ groups: ["February 2020"] }] }] } };
     await runtime.chartJsConfig.options.onClick(
         event,
@@ -1278,7 +1253,6 @@ test("See records when clicking on a treemap chart item", async () => {
         return { data: { datasets: [{ data: [{ l: depth, _data: data }] }] } };
     }
 
-    // Leaf value
     let mockChart = buildMockTreemapChart(["January 2020", "false"]);
     const event = { type: "click", native: new Event("click") };
     await runtime.chartJsConfig.options.onClick(
@@ -1294,7 +1268,6 @@ test("See records when clicking on a treemap chart item", async () => {
         ["bar", "=", false],
     ]);
 
-    // Non-leaf value
     mockChart = buildMockTreemapChart(["February 2020"]);
     await runtime.chartJsConfig.options.onClick(
         event,
@@ -1446,7 +1419,6 @@ test("Can configure the chart datasets", async () => {
     model.dispatch("REFRESH_ALL_DATA_SOURCES");
     await waitForDataLoaded(model);
     definition = model.getters.getChartDefinition(chartId);
-    // the second dataset was dropped from the definition since there is now only a single dataset in the data source
     expect(definition.dataSets).toEqual([{ label: "My dataset" }]);
 });
 
@@ -1581,14 +1553,14 @@ test("changing chart granularity reloads data source once with global filter", a
             chart: { [chartId]: { chain: "date", type: "date" } },
         },
     );
-    model.getters.getChartRuntime(chartId); // load the data
+    model.getters.getChartRuntime(chartId);
     await animationFrame();
     expect.verifySteps(["date:month"]);
     model.dispatch("UPDATE_CHART_GRANULARITY", {
         chartId,
         granularity: "year",
     });
-    model.getters.getChartRuntime(chartId); // load the data
+    model.getters.getChartRuntime(chartId);
     await animationFrame();
     expect.verifySteps(["date:year"]);
 });
@@ -1777,7 +1749,7 @@ test("filtering doesn't change its granularity if not the horizontal axis", asyn
         model,
         { id: filterId, type: "date", label: "Date" },
         {
-            chart: { [chartId]: { chain: "date", type: "date" } }, // the horizontal axis is create_date, not date
+            chart: { [chartId]: { chain: "date", type: "date" } },
         },
     );
     model.updateMode("dashboard");
@@ -1823,10 +1795,9 @@ test("filtering preserves manually changed granularity", async () => {
     ]);
     model.dispatch("UPDATE_CHART_GRANULARITY", {
         chartId,
-        granularity: "week", // Manually change granularity to from day to week
+        granularity: "week",
     });
 
-    // filtering on an equivalent range should not change the granularity
     await setGlobalFilterValue(model, {
         id: filterId,
         value: {
@@ -1839,7 +1810,6 @@ test("filtering preserves manually changed granularity", async () => {
         "create_date:week",
     ]);
 
-    // changing to a non-compatible range should change the granularity
     await setGlobalFilterValue(model, {
         id: filterId,
         value: { type: "relative", period: "today" },

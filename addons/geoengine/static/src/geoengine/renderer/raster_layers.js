@@ -5,12 +5,6 @@ import { parseExtent } from "../geoengine_model.js";
 
 const debugLog = makeGeoLogger("RasterLayers");
 
-/**
- * Builds the background (base map and overlay) layers of a map from the
- * raster configurations get_layers() serves: OSM, XYZ, WMTS, tiled and
- * single-image WMS, vector tiles. A configuration the builder cannot honour
- * falls back to OpenStreetMap rather than to nothing.
- */
 export class RasterLayerBuilder {
     /**
      * @param {GeoengineRenderer} renderer
@@ -264,8 +258,6 @@ export class RasterLayerBuilder {
                         source: new ol.source.XYZ(sourceOptions),
                     });
                 }
-                // An xyz/google layer with no URL cannot be built. Falling into
-                // `default` did the right thing, but implicitly.
                 debugLog(
                     `Raster type '${background.raster_type}' for layer '${background.name}' has no URL. Falling back to OSM.`,
                 );

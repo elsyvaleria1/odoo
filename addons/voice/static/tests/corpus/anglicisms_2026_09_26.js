@@ -1,8 +1,5 @@
 // @ts-check
 
-// Recording kit 3 (agromarin-knowledge workspace-LMMG/2026-09-26-voice-anglicisms),
-// as written: English words in Spanish sentences, the way they are said at AgroMarin.
-// Each line keeps the reading it has with the company's terms.
 export const ANGLICISMS_2026_09_26 = [
     {
         file: "a001.wav",

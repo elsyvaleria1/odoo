@@ -20,7 +20,7 @@ patch(PosStore.prototype, {
             }
 
             const percentage = order.globalDiscountPc;
-            this.debouncedDiscount(percentage, order); // Wait an animation frame before applying the discount
+            this.debouncedDiscount(percentage, order);
         };
 
         this.models["pos.order.line"].addEventListener("update", (data) => {
@@ -44,7 +44,6 @@ patch(PosStore.prototype, {
     },
     selectOrderLine(order, line) {
         super.selectOrderLine(order, line);
-        // Ensure the numpadMode should be `price` when the discount line is selected
         if (line?.isDiscountLine) {
             this.numpadMode = "price";
         }

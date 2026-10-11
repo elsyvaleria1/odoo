@@ -11,10 +11,6 @@ import { useSearchModel } from "@web/search/search_model";
 import { session } from "@web/session";
 import { PivotRenderer } from "@web/views/pivot";
 
-/**
- * This const is defined in o-spreadsheet library, but has to be redefined here
- * because o-spreadsheet is lazy loaded in another bundle than this file is.
- */
 const ALL_PERIODS = {
     quarter: _t("Quarter & Year"),
     month: _t("Month & Year"),
@@ -95,13 +91,11 @@ patch(PivotRenderer.prototype, {
     hasDuplicatedGroupbys() {
         const fullColGroupBys = this.model.metaData.fullColGroupBys;
         const fullRowGroupBys = this.model.metaData.fullRowGroupBys;
-        // without aggregator
         const colGroupBys = fullColGroupBys.map((el) => el.split(":")[0]);
         const rowGroupBys = fullRowGroupBys.map((el) => el.split(":")[0]);
         return (
             unique([...fullColGroupBys, ...fullRowGroupBys]).length <
                 fullColGroupBys.length + fullRowGroupBys.length ||
-            // can group by the same field with different aggregator in the same dimension
             intersection(colGroupBys, rowGroupBys).length
         );
     },

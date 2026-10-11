@@ -123,7 +123,6 @@ test("ungrouped gantt rendering", async () => {
         message: "row height is 85px (25 * 3 pills + 10px of default empty space)",
     });
 
-    // test popover and local timezone
     expect(`.o_popover`).toHaveCount(0);
     const task2Pill = queryAll(SELECTORS.pill)[2];
     expect(task2Pill).toHaveText("Task 2");
@@ -1110,7 +1109,6 @@ test("current hour is highlighted'", async () => {
 });
 
 test("Day scale with 12-hours format", async () => {
-    // Relies on the file's beforeEach, which already sets a 12-hours time_format.
     await mountGanttView({
         type: "gantt",
         resModel: "tasks",
@@ -1606,7 +1604,6 @@ test("a range whose fetch fails is neither remembered nor used by the next fetch
     expect.verifySteps([":2016-12-31 23:00:00"]);
     expect(stored).toEqual(["month"]);
 
-    // the failed fetch is reported in a dialog, dismissed before the search is used
     await contains(".o_dialog .btn-close").click();
     await toggleSearchBarMenu();
     await toggleMenuItem("Project");
@@ -1639,7 +1636,6 @@ test("a mutator awaiting a reload that gets superseded still settles", async () 
     await animationFrame();
     expect(settled).toBe(false);
     await model.fetchData();
-    // The superseded reload settles on its own; nothing waits for its RPC.
     await slow;
     expect(settled).toBe(true);
     expect(calls).toBe(3);
@@ -1679,7 +1675,6 @@ test("the toolbar follows a range the model commits on its own, and keeps a clic
     expect.verifySteps(["2018-10-31 23:00:00"]);
     expect(SELECTORS.scaleSelectorToggler).toHaveText("Month");
 
-    // A range change made on the model, not through the toolbar.
     await model.fetchData(model.rangeAround("year", model.metaData.focusDate));
     await animationFrame();
     expect.verifySteps(["2016-12-31 23:00:00"]);
@@ -1687,8 +1682,6 @@ test("the toolbar follows a range the model commits on its own, and keeps a clic
     const yearOf = () => model.metaData.startDate.year;
     expect(yearOf()).toBe(2017);
 
-    // Two quick clicks are one debounced request; a model notify in between
-    // must not reset the toolbar to the range the model still holds.
     await contains(SELECTORS.nextButton).click();
     await contains(SELECTORS.nextButton).click();
     model.notify();

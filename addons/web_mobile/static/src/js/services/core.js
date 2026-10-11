@@ -61,9 +61,6 @@ plugins.forEach((plugin) => {
     };
 });
 
-/**
- * Use to notify an uri hash change on native devices (ios / android)
- */
 if (methods.hashChange) {
     let currentSearch;
     browser.addEventListener("popstate", function () {
@@ -75,23 +72,13 @@ if (methods.hashChange) {
     });
 }
 
-/**
- * Error related to the registration of a listener to the backbutton event
- */
 class BackButtonListenerError extends Error {}
 
-/**
- * By using the back button feature the default back button behavior from the
- * app is actually overridden so it is important to keep count to restore the
- * default when no custom listener are remaining.
- */
 class BackButtonManager {
     constructor() {
         this._listeners = new Map();
         this._onGlobalBackButton = this._onGlobalBackButton.bind(this);
     }
-
-    // Public
 
     /**
      * Enables the func listener, overriding default back button behavior.
@@ -135,8 +122,6 @@ class BackButtonManager {
             methods.overrideBackButton({ enabled: false });
         }
     }
-
-    // Private
 
     /** @param {Event} ev */
     _onGlobalBackButton(ev) {

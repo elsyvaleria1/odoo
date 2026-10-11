@@ -314,9 +314,6 @@ test("scales attribute tolerates whitespace between entries", async () => {
 });
 
 test("scales attribute naming a single range that is not also a scale", async () => {
-    // "quarter" is a range whose scale is "month". The custom-range resolver
-    // searched the range-keyed map with a scale id, found nothing, and took the
-    // whole view down on the first render.
     await mountGanttView({
         resModel: "tasks",
         arch: `<gantt date_start="start" date_stop="stop" scales="quarter"/>`,
@@ -351,13 +348,11 @@ test("precision attribute ('day': 'hour:quarter')", async () => {
         domain: [["id", "=", 7]],
     });
 
-    // resize of a quarter
     const dropHandle = await resizePill(getPillWrapper("Task 7"), "end", 0.25, false);
     await animationFrame();
     expect(SELECTORS.startBadge).toHaveText("1:30 PM");
     expect(SELECTORS.stopBadge).toHaveText("7:44 PM (+15 minutes)");
 
-    // manually trigger the drop to trigger a write
     await dropHandle();
     await animationFrame();
     expect(SELECTORS.startBadge).toHaveCount(0);
@@ -390,13 +385,11 @@ test("precision attribute ('month': 'day:full')", async () => {
         domain: [["id", "=", 7]],
     });
 
-    // resize of a quarter
     const dropHandle = await resizePill(getPillWrapper("Task 7"), "end", 2, false);
     await animationFrame();
     expect(SELECTORS.startBadge).toHaveText("12/20/2018");
     expect(SELECTORS.stopBadge).toHaveText("12/22/2018 (+48 hours)");
 
-    // manually trigger the drop to trigger a write
     await dropHandle();
     await animationFrame();
     expect(SELECTORS.startBadge).toHaveCount(0);
@@ -447,9 +440,7 @@ test("form_view_id attribute", async () => {
     onRpc("get_views", ({ kwargs }) => expect.step(["get_views", kwargs.views]));
     await contains(queryFirst(SELECTORS.addButton + ":visible")).click();
     expect(".modal .o_form_view").toHaveCount(1);
-    expect.verifySteps([
-        ["get_views", [[42, "form"]]], // get_views when form view dialog opens
-    ]);
+    expect.verifySteps([["get_views", [[42, "form"]]]]);
 });
 
 test("decoration attribute", async () => {
@@ -500,14 +491,11 @@ test("consolidation feature", async () => {
     expect(rows.filter((r) => r.isGroup)).toHaveLength(12);
     expect(".o_gantt_row_headers").toHaveCount(1);
 
-    // Check grouped rows
     expect(rows[0].isGroup).toBe(true);
     expect(rows[0].title).toBe("User 1");
     expect(rows[9].isGroup).toBe(true);
     expect(rows[9].title).toBe("User 2");
 
-    // Consolidation
-    // 0 over the size of Task 5 (Task 5 is 100 but is excluded!) then 0 over the rest of Task 1, cut by Task 4 which has progress 0
     expect(rows[0].pills).toEqual([
         { colSpan: "01 December 2018 -> 04 (1/2) December 2018", title: "0" },
         { colSpan: "04 (1/2) December 2018 -> 19 December 2018", title: "0" },
@@ -515,7 +503,6 @@ test("consolidation feature", async () => {
         { colSpan: "20 (1/2) December 2018 -> Out of bounds (63) ", title: "0" },
     ]);
 
-    // 30 over Task 2 until Task 7 then 110 (Task 2 (30) + Task 7 (80)) then 30 again until end of task 2 then 60 over Task 3
     expect(rows[9].pills).toEqual([
         { colSpan: "17 (1/2) December 2018 -> 20 (1/2) December 2018", title: "30" },
         { colSpan: "20 (1/2) December 2018 -> 20 December 2018", title: "110" },
@@ -701,18 +688,15 @@ test(`Today style with unavailabilities ("week": "day:half")`, async () => {
         arch: `<gantt date_start="start" date_stop="stop" display_unavailability="1" default_range="week" scales="week" precision="{'week': 'day:half'}"/>`,
     });
 
-    // Normal day / unavailability
     expect(getCellColorProperties("Tuesday 18", "Week 51, Dec 16 - Dec 22")).toEqual([
         "--Gantt__Day-background-color",
         "--Gantt__DayOff-background-color",
     ]);
 
-    // Full unavailability
     expect(getCellColorProperties("Wednesday 19", "Week 51, Dec 16 - Dec 22")).toEqual([
         "--Gantt__DayOff-background-color",
     ]);
 
-    // Unavailability / today
     expect(getCell("Thursday 20", "Week 51, Dec 16 - Dec 22")).toHaveClass(
         "o_gantt_today",
     );
@@ -729,7 +713,7 @@ test("Today style of group rows", async () => {
             stop: "2018-12-20 14:00:00",
         },
     ];
-    Tasks._records = [Tasks._records[3]]; // id: 4
+    Tasks._records = [Tasks._records[3]];
 
     onRpc("get_gantt_data", ({ parent }) => {
         expect.step("get_gantt_data");
@@ -745,7 +729,6 @@ test("Today style of group rows", async () => {
     expect.verifySteps(["get_gantt_data"]);
     await contains(".o_gantt_header_folded").click();
 
-    // Normal group cell: open
     let cell4 = getCell("Wednesday 19", "Week 51, Dec 16 - Dec 22");
     expect(cell4).not.toHaveClass("o_gantt_today");
     expect(cell4).toHaveClass("o_group_open");
@@ -756,7 +739,6 @@ test("Today style of group rows", async () => {
         ),
     });
 
-    // Today group cell: open
     let cell5 = getCell("Thursday 20", "Week 51, Dec 16 - Dec 22");
     expect(cell5).toHaveClass("o_gantt_today");
     expect(cell5).toHaveClass("o_group_open");
@@ -766,9 +748,8 @@ test("Today style of group rows", async () => {
             "var(--Gantt__GroupOpen-background)",
         ),
     });
-    await contains(SELECTORS.group).click(); // fold group
+    await contains(SELECTORS.group).click();
     await leave();
-    // Normal group cell: closed
     cell4 = getCell("Wednesday 19", "Week 51, Dec 16 - Dec 22");
     expect(cell4).not.toHaveClass("o_gantt_today");
     expect(cell4).not.toHaveClass("o_group_open");
@@ -779,7 +760,6 @@ test("Today style of group rows", async () => {
         ),
     });
 
-    // Today group cell: closed
     cell5 = getCell("Thursday 20", "Week 51, Dec 16 - Dec 22");
     expect(cell5).toHaveClass("o_gantt_today");
     expect(cell5).not.toHaveClass("o_group_open");
@@ -870,7 +850,6 @@ test(`Unavailabilities ("month": "day:half")`, async () => {
 test(`Unavailabilities ("day": "hours:quarter")`, async () => {
     Tasks._records = [];
     const unavailabilities = [
-        // in utc
         {
             start: "2018-12-19 08:15:00",
             stop: "2018-12-19 08:30:00",
@@ -933,9 +912,8 @@ test(`Unavailabilities ("day": "hours:quarter")`, async () => {
 });
 
 test(`Fold unavailabilities ("day": "hours:quarter")`, async () => {
-    Tasks._records = [Tasks._records[3]]; // id: 4
+    Tasks._records = [Tasks._records[3]];
     const unavailabilities = [
-        // in utc
         {
             start: "2018-12-18 16:00:00",
             stop: "2018-12-19 07:00:00",
@@ -1125,9 +1103,8 @@ test(`Fold unavailabilities ("day": "hours:quarter")`, async () => {
 });
 
 test(`Fold unavailabilities ("week": "day:half")`, async () => {
-    Tasks._records = [Tasks._records[3]]; // id: 4
+    Tasks._records = [Tasks._records[3]];
     const unavailabilities = [
-        // in utc
         {
             start: "2018-12-14 16:00:00",
             stop: "2018-12-17 07:00:00",
@@ -1177,7 +1154,7 @@ test(`Fold unavailabilities ("week": "day:half")`, async () => {
             title: "Tuesday 18",
             titleAttr: "Tuesday, December 18, 2018",
         },
-        { range: [21, 23], title: "", titleAttr: "" }, // Single unavailability columns are folded in week scale
+        { range: [21, 23], title: "", titleAttr: "" },
         {
             range: [23, 25],
             title: "Thursday 20",
@@ -1201,9 +1178,8 @@ test(`Fold unavailabilities ("week": "day:half")`, async () => {
 });
 
 test(`Fold unavailabilities ("month": "day:half")`, async () => {
-    Tasks._records = [Tasks._records[3]]; // id: 4
+    Tasks._records = [Tasks._records[3]];
     const unavailabilities = [
-        // in utc
         {
             start: "2018-11-13 16:00:00",
             stop: "2018-11-16 07:00:00",
@@ -1283,14 +1259,12 @@ test(`Fold unavailabilities ("month": "day:half")`, async () => {
 
 test(`Fold unavailabilities with multiple rows`, async () => {
     const unavailabilities1 = [
-        // in utc
         { start: "2018-12-18 16:00:00", stop: "2018-12-19 07:00:00" },
         { start: "2018-12-19 11:00:00", stop: "2018-12-19 12:25:00" },
         { start: "2018-12-19 16:15:00", stop: "2018-12-20 08:00:00" },
         { start: "2018-12-20 16:15:00", stop: "2018-12-22 08:00:00" },
     ];
     const unavailabilities2 = [
-        // in utc
         { start: "2018-12-18 16:00:00", stop: "2018-12-19 09:00:00" },
         { start: "2018-12-19 13:15:00", stop: "2018-12-20 08:00:00" },
         { start: "2018-12-20 20:15:00", stop: "2018-12-22 08:00:00" },
@@ -1352,9 +1326,8 @@ test(`Fold unavailabilities with multiple rows`, async () => {
 });
 
 test(`Partial fold/unfold in gantt`, async () => {
-    Tasks._records = [Tasks._records[3]]; // id: 4
+    Tasks._records = [Tasks._records[3]];
     const unavailabilities = [
-        // in utc
         {
             start: "2018-12-18 16:00:00",
             stop: "2018-12-19 07:00:00",
@@ -1440,7 +1413,7 @@ test(`Partial fold/unfold in gantt`, async () => {
         colSpan: "5pm (3/4) December 19, 2018 -> 9pm (3/4) December 19, 2018",
         level: 0,
     });
-    await resizePill(getPillWrapper("Task 4"), "end", +1); // wrong but we don't want to rewrite helpers for this
+    await resizePill(getPillWrapper("Task 4"), "end", +1);
     ({ columnHeaders, rows } = getGridContent());
     expect(columnHeaders).toHaveLength(39);
     expect(columnHeaders[22]).toEqual({
@@ -1455,9 +1428,8 @@ test(`Partial fold/unfold in gantt`, async () => {
 });
 
 test(`Full unavailabilities period`, async () => {
-    Tasks._records = []; // no pill
+    Tasks._records = [];
     const unavailabilities = [
-        // in utc
         {
             start: "2018-12-18 16:00:00",
             stop: "2018-12-23 07:00:00",
@@ -1473,7 +1445,6 @@ test(`Full unavailabilities period`, async () => {
         resModel: "tasks",
         arch: `<gantt date_start="start" date_stop="stop" display_unavailability="1" default_range="day" scales="day" precision="{'day': 'hours:quarter'}"/>`,
     });
-    // Only one folded cell appears which takes the full screen width instead of 36px
     expect(SELECTORS.cell).toHaveCount(1);
     expect(SELECTORS.cell).toHaveClass("o_gantt_cell_folded");
     expect(SELECTORS.cell).toHaveRect({ width: 1366 });
@@ -1582,7 +1553,6 @@ test("default_group_by attribute", async () => {
 });
 
 test("default_group_by attribute with groupBy", async () => {
-    // The default_group_by attribute should be ignored if a groupBy is given.
     await mountGanttView({
         resModel: "tasks",
         arch: `<gantt date_start="start" date_stop="stop" default_group_by="user_id"/>`,
@@ -1788,18 +1758,15 @@ test("consolidation and unavailabilities", async () => {
         groupBy: ["user_id"],
     });
     expect.verifySteps(["get_gantt_data"]);
-    // Normal day / unavailability
     expect(getCellColorProperties("18", "December 2018", "", { num: 2 })).toEqual([
         "--Gantt__Day-background-color",
         "--Gantt__DayOff-background-color",
     ]);
 
-    // Full unavailability
     expect(getCellColorProperties("19", "December 2018", "", { num: 2 })).toEqual([
         "--Gantt__DayOff-background-color",
     ]);
 
-    // Unavailability / today
     expect(getCell("20", "December 2018")).toHaveClass("o_gantt_today");
     expect(getCellColorProperties("20", "December 2018", "", { num: 2 })).toEqual([
         "--Gantt__DayOff-background-color",

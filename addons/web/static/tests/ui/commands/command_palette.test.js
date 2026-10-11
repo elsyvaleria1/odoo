@@ -1941,7 +1941,6 @@ test("a failing initial search is reported and leaves the palette usable", async
     expect(".o_command_palette").toHaveCount(1);
     expect(".fa-circle-notch").toHaveCount(0);
 
-    // the failure is reported in a dialog over the palette, which is dismissed first
     expect(".o_dialog:not(.o_inactive_modal) .o_command_palette").toHaveCount(0);
     await click(".o_dialog:not(.o_inactive_modal) .btn-close");
     await animationFrame();

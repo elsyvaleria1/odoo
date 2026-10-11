@@ -324,7 +324,6 @@ test("formviewdialog is not closed when button handlers return a rejected promis
     expect.verifyErrors(["rejected"]);
 
     await click(waitFor(".o_error_dialog .btn:contains(Close)"));
-    // the form dialog is usable again once the closed report leaves the render
     await animationFrame();
 
     reject = false;

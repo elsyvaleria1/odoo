@@ -7,10 +7,6 @@ const fieldRegistry = registry.category("fields");
 
 class FloatWithoutTrailingZeros extends FloatField {
     get formattedValue() {
-        // `formatFloat` joins the two halves with the active language's
-        // decimal separator, not a literal dot, so the patterns have to be
-        // built from it: hardcoding "." made this a silent no-op in every
-        // comma-decimal locale.
         const decimalPoint = RegExp.escape(localization.decimalPoint);
         return super.formattedValue
             .replace(new RegExp(`(${decimalPoint}\\d*?[1-9])0+$`), "$1")

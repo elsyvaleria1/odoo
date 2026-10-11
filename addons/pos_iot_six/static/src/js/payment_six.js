@@ -37,7 +37,6 @@ export class PaymentSix extends PaymentInterfaceIot {
     onTerminalMessageReceived(data, line) {
         this._setCardAndReceipt(data, line);
         if (data.Stage === "Cancel") {
-            // Result of a cancel request
             if (data.Error) {
                 this._resolveCancellation?.(false);
                 this.env.services.dialog.add(AlertDialog, {
@@ -49,7 +48,6 @@ export class PaymentSix extends PaymentInterfaceIot {
                 this._resolvePayment?.(false);
             }
         } else if (data.Disconnected) {
-            // Terminal disconnected
             line.setPaymentStatus("force_done");
             this.env.services.dialog.add(AlertDialog, {
                 title: _t("Terminal Disconnected"),
@@ -58,7 +56,6 @@ export class PaymentSix extends PaymentInterfaceIot {
                 ),
             });
         } else if (line.payment_status !== "retry") {
-            // Result of a transaction
             if (data.Error) {
                 this.env.services.dialog.add(AlertDialog, {
                     title: _t("Payment terminal error"),

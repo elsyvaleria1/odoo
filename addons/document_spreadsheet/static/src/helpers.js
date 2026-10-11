@@ -18,11 +18,6 @@ export async function createXlsxAttachment(env, orm, attachmentRecords) {
     );
 
     const processed = [...regularAttachments];
-    // Nothing to convert: return before pulling in the spreadsheet machinery.
-    // The bundle load and the dynamic import used to run unconditionally, so
-    // attaching a plain file through "Add from Documents" paid for the whole
-    // o_spreadsheet bundle -- and in tests, where that bundle is not served,
-    // the await never settled and the caller hung with no error.
     if (!spreadsheetAttachments.length) {
         log.logic("createXlsxAttachment:nothingToConvert", () => ({
             attachments: attachmentRecords.length,
@@ -73,7 +68,6 @@ export async function createXlsxAttachment(env, orm, attachmentRecords) {
         [spreadsheetPayload],
     );
 
-    // Unlink old .o-spreadsheet attachments that we copied
     const idsToUnlink = spreadsheetAttachments.map((att) => att.id);
     if (idsToUnlink.length) {
         await orm.unlink("ir.attachment", idsToUnlink);

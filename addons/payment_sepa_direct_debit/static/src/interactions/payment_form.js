@@ -5,8 +5,6 @@ import { _t } from "@web/core/translation";
 import { patch } from "@web/core/utils/patch";
 
 patch(PaymentForm.prototype, {
-    // #=== DOM MANIPULATION ===#
-
     /**
      * Prepare the inline form of SEPA for direct payment.
      *
@@ -32,12 +30,10 @@ patch(PaymentForm.prototype, {
             await super._prepareInlineForm(...arguments);
             return;
         } else if (flow === "token") {
-            return; // Don't show the form for tokens.
+            return;
         }
         this._setPaymentFlow("direct");
     },
-
-    // #=== PAYMENT FLOW ===#
 
     /**
      * Verify the validity of the IBAN input before trying to process a payment.
@@ -54,7 +50,6 @@ patch(PaymentForm.prototype, {
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
         if (providerCode !== "sepa_direct_debit" || flow === "token") {
-            // Tokens are handled by the generic flow.
             await super._initiatePaymentFlow(...arguments);
             return;
         }
@@ -63,7 +58,7 @@ patch(PaymentForm.prototype, {
 
         if (!ibanInput.reportValidity()) {
             this._enableButton();
-            return; // Let the browser request to fill out required fields
+            return;
         }
 
         await super._initiatePaymentFlow(...arguments);
@@ -91,7 +86,6 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Assign the SDD mandate corresponding to the IBAN to the transaction.
         const ibanInput = this._getIbanInput();
         try {
             await this.waitFor(
@@ -114,8 +108,6 @@ patch(PaymentForm.prototype, {
             }
         }
     },
-
-    // #=== GETTERS ===#
 
     /**
      * Return the IBAN input.

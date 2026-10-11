@@ -18,7 +18,6 @@ export class PassKeyIdentityCheckFormController extends FormController {
             const auth = await passkeyLib
                 .startAuthentication(serverOptions)
                 .catch((e) => console.error(e));
-            // In case the user cancelled the passkey browser check, just interrupt.
             if (!auth) {
                 return false;
             }

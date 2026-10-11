@@ -941,7 +941,6 @@ test(`width computation: widths are re-computed on parent resize`, async () => {
     expect(getColumnWidths()).toEqual([40, 109, 651]);
 
     queryOne(".o_list_renderer").style.width = "600px";
-    // a ResizeObserver reports at the next rendering step
     await animationFrame();
     await runAllTimers();
     expect(getColumnWidths()).toEqual([40, 109, 451]);

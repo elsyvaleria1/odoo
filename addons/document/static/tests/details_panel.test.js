@@ -601,7 +601,6 @@ for (const isAdmin of [true, false]) {
 
 for (const isSystem of [true, false]) {
     test(`an activity type is created from the panel by a Settings user only (system: ${isSystem})`, async () => {
-        // an Access Rights administrator creates alias domains, not activity types
         patchWithCleanup(user, { isAdmin: true, isSystem });
         const serverData = getDocumentsTestServerModelsData([
             makeDocumentRecordData(3, "Folder with alias", {

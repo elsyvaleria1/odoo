@@ -99,9 +99,6 @@ export class DialogService {
         }));
         const close = (/** @type {any} */ params) => {
             subEnv.isClosing = true;
-            // a closing dialog no longer blocks the page: what its closing
-            // does there (restoring the editor's selection, focusing a field)
-            // runs before the next render unmounts it
             subEnv.releasePage?.();
             return remove(params);
         };
@@ -130,8 +127,6 @@ export class DialogService {
             },
             {
                 pluginManager: options.pluginManager,
-                // synchronous unless onClose is not, as the presenter's: the
-                // dialog then leaves in the render that closes it
                 onRemove: (/** @type {any} */ closeParams) => {
                     const finish = () => {
                         const idx = this.stack.findIndex((d) => d.id === id);
@@ -167,7 +162,6 @@ export class DialogService {
             },
         );
 
-        // Commit service state only after the overlay and its props were created.
         if (!activeServices.size) {
             scrollOrigin = { top: browser.scrollY, left: browser.scrollX };
         }

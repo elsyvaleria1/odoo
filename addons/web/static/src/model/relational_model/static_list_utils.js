@@ -28,16 +28,12 @@ function getSortValue(value, fieldType) {
     if (fieldType === "integer" || fieldType === "float" || fieldType === "monetary") {
         return value ?? 0;
     }
-    // Temporal values refuse `<`; their server forms sort as they do
     if (fieldType === "date") {
         return value ? serializeDate(value) : "";
     }
     if (fieldType === "datetime") {
         return value ? serializeDateTime(value) : "";
     }
-    // An unset selection is false, unlike char values deserialized to "".
-    // Comparing false with nonnumeric strings makes both directions false,
-    // incorrectly tying the unset value with every option.
     if (fieldType === "selection" && value === false) {
         return "";
     }
@@ -169,8 +165,6 @@ export function pairCreatedRows(createVirtualIds, newResIds, positions) {
                 return pairs;
             }
         }
-        // Missing positions are not evidence of identity, even when both
-        // memberships omit the row. Every proposed pair must be witnessed.
         return null;
     }
     return pairs;

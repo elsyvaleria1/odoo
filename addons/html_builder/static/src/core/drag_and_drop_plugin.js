@@ -203,9 +203,9 @@ export class DragAndDropPlugin extends Plugin {
             elements: elementsSelector,
             scrollingElement,
             handle: handleSelector,
-            allowDisconnected: true, // To be challenged in master
+            allowDisconnected: true,
             enable: () =>
-                !!document.querySelector(".o_move_handle") || this.dragStarted, // Still needed ?
+                !!document.querySelector(".o_move_handle") || this.dragStarted,
             dropzones: () => dropzoneEls,
             helper: ({ helperOffset }) => {
                 const draggedEl = document.createElement("div");
@@ -232,7 +232,6 @@ export class DragAndDropPlugin extends Plugin {
                 const restoreDragSavePoint = this.dependencies.history.makeSavePoint();
                 this.cancelDragAndDrop = () => {
                     this.dependencies.dropzone.removeDropzones();
-                    // Undo the changes needed to ease the drag and drop.
                     this.dragState.restoreCallbacks?.forEach((restore) => restore());
                     restoreDragSavePoint();
                     dragAndDropResolve();
@@ -246,22 +245,18 @@ export class DragAndDropPlugin extends Plugin {
                 this.dragState = {};
                 dropzoneEls = [];
 
-                // Bound the mouse for the case where we drag from an image.
-                // Bound the Y mouse position to not escape the grid too easily.
                 let targetRect = this.overlayTarget.getBoundingClientRect();
                 const gridRowSize = rowSize;
                 const boundedYMousePosition = clamp(
                     y,
-                    targetRect.top + 12, // helper offset
-                    targetRect.bottom - gridRowSize, // height minus one grid row
+                    targetRect.top + 12,
+                    targetRect.bottom - gridRowSize,
                 );
                 this.dragState.mousePositionYOnElement =
                     boundedYMousePosition - targetRect.y;
                 this.dragState.mousePositionXOnElement =
                     (x - targetRect.x) * (this.isRtl ? -1 : 1);
 
-                // Stop marking the elements with mutations as dirty and make
-                // some changes on the page to ease the drag and drop.
                 const restoreCallbacks = [];
                 for (const prepareDrag of this.getResource(
                     "on_prepare_drag_handlers",
@@ -276,24 +271,20 @@ export class DragAndDropPlugin extends Plugin {
                     dragState: this.dragState,
                 });
 
-                // Storing the element starting top and middle position.
                 targetRect = this.overlayTarget.getBoundingClientRect();
                 this.dragState.startTop = targetRect.top;
                 this.dragState.startMiddle = targetRect.left + targetRect.width / 2;
                 this.dragState.overFirstDropzone = true;
 
-                // Check if the element is inline.
                 const targetStyle = window.getComputedStyle(this.overlayTarget);
                 const toInsertInline = targetStyle.display.includes("inline");
 
-                // Store the parent and siblings.
                 const parentEl = this.overlayTarget.parentElement;
                 this.dragState.startParentEl = parentEl;
                 this.dragState.startPreviousEl =
                     this.overlayTarget.previousElementSibling;
                 this.dragState.startNextEl = this.overlayTarget.nextElementSibling;
 
-                // Add a clone, to allow to drop where it started.
                 const visibleSiblingEl = [...parentEl.children].find(
                     (el) => el !== this.overlayTarget && isVisible(el),
                 );
@@ -307,7 +298,6 @@ export class DragAndDropPlugin extends Plugin {
                     this.dragState.dropCloneEl = dropCloneEl;
                 }
 
-                // Get the dropzone selectors.
                 const isColumn = parentEl.classList.contains("row");
                 const withGrids = isColumn || "filterOnly";
                 const selectors = this.dependencies.dropzone.getSelectors(
@@ -316,11 +306,9 @@ export class DragAndDropPlugin extends Plugin {
                     withGrids,
                 );
 
-                // Remove the dragged element and deactivate the options.
                 this.overlayTarget.remove();
                 this.dependencies.builderOptions.deactivateContainers();
 
-                // Add the dropzones.
                 dropzoneEls = this.dependencies.dropzone.activateDropzones(selectors, {
                     toInsertInline,
                 });
@@ -328,14 +316,9 @@ export class DragAndDropPlugin extends Plugin {
             dropzoneOver: ({ dropzone }) => {
                 const dropzoneEl = dropzone.el;
 
-                // Prevent the element to be trapped in an upper dropzone at the
-                // start of the drag.
                 if (this.dragState.overFirstDropzone) {
                     this.dragState.overFirstDropzone = false;
                     const { startTop, startMiddle } = this.dragState;
-                    // The element is considered as glued to the dropzone if the
-                    // dropzone is above and if it is touching the initial
-                    // helper position.
                     const helperRect = {
                         x: startMiddle - 12,
                         y: startTop - 24,
@@ -393,8 +376,6 @@ export class DragAndDropPlugin extends Plugin {
                 let currentDropzoneEl = this.dragState.currentDropzoneEl;
                 const isDroppedOver = !!currentDropzoneEl;
 
-                // If the snippet was dropped outside of a dropzone, find the
-                // dropzone that is the nearest to the dropping point.
                 if (!currentDropzoneEl) {
                     const closestDropzoneEl = closest(dropzoneEls, { x, y });
                     if (!closestDropzoneEl) {
@@ -418,9 +399,6 @@ export class DragAndDropPlugin extends Plugin {
                     });
                 }
 
-                // In order to mark only the concerned elements as dirty, place
-                // the element back where it started. The move will then be
-                // replayed after re-allowing to mark dirty.
                 const { startPreviousEl, startNextEl, startParentEl } = this.dragState;
                 if (startPreviousEl) {
                     startPreviousEl.after(this.overlayTarget);
@@ -430,18 +408,14 @@ export class DragAndDropPlugin extends Plugin {
                     startParentEl.prepend(this.overlayTarget);
                 }
 
-                // Undo the changes needed to ease the drag and drop and
-                // re-allow to mark dirty.
                 this.dragState.restoreCallbacks.forEach((restore) => restore());
                 this.dragState.restoreCallbacks = null;
 
-                // Replay the move.
                 currentDropzoneEl.after(this.overlayTarget);
 
                 this.dependencies.dropzone.removeDropzones();
                 this.dragState.dropCloneEl?.remove();
 
-                // Process the dropped element.
                 for (const onElementDropped of this.getResource(
                     "on_element_dropped_handlers",
                 )) {
@@ -449,15 +423,12 @@ export class DragAndDropPlugin extends Plugin {
                         droppedEl: this.overlayTarget,
                         dragState: this.dragState,
                     });
-                    // Cancel everything if the resource asked to.
                     if (cancel) {
                         this.cancelDragAndDrop();
                         return;
                     }
                 }
 
-                // Add a history step only if the element was not dropped where
-                // it was before, otherwise cancel everything.
                 let hasSamePositionAsStart;
                 if ("hasSamePositionAsStart" in this.dragState) {
                     hasSamePositionAsStart = this.dragState.hasSamePositionAsStart();

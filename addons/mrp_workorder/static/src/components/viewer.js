@@ -36,7 +36,6 @@ class DocumentViewer extends Component {
         if (this.pdfIFrame.el) {
             const iframe = this.pdfIFrame.el.firstElementChild;
             iframe.removeAttribute("style");
-            // Once the PDF viewer is loaded, hides everything except the page.
             iframe.addEventListener(
                 "load",
                 () => {

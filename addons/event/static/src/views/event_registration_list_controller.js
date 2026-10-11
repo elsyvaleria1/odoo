@@ -26,8 +26,6 @@ export class EventRegistrationListController extends ListController {
                 },
             );
 
-            // reload on every way the dialog closes, Escape and click-away
-            // included, not only through the buttons the dialog itself handles
             this.dialog.add(
                 EventRegistrationSummaryDialog,
                 { registration: result },

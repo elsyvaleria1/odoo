@@ -22,7 +22,6 @@ function forwardTo(name) {
         }
         return lib;
     };
-    // a plain function target, so the proxy can also be called and constructed
     return new Proxy(function () {}, {
         get: (_target, key) => Reflect.get(current(), key),
         has: (_target, key) => Reflect.has(current(), key),

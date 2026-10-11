@@ -31,7 +31,6 @@ class Links extends Component {
 
 test("a documents token link still reaches its ancestors' click handlers", async () => {
     redirect("/odoo");
-    // whatever else runs, this click must not navigate the test page away
     const guard = (ev) => ev.preventDefault();
     browser.addEventListener("click", guard, { capture: true });
     after(() => browser.removeEventListener("click", guard, { capture: true }));

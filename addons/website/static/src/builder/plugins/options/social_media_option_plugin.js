@@ -365,10 +365,6 @@ class SocialMediaOptionPlugin extends Plugin {
     removeIconClasses(el) {
         const iconEl = el.querySelector(ICON_SELECTOR);
         if (iconEl) {
-            // a copy, not the live list: removing while iterating skips the
-            // class that slides into the removed slot. The face class
-            // (fa-solid, fa-brands, ...) stays: it is what ICON_SELECTOR
-            // matches, and setIconClass replaces it with the right one.
             const glyphs = [...iconEl.classList].filter(
                 (c) => /^fa-[^0-9]/.test(c) && !iconClasses.includes(c),
             );

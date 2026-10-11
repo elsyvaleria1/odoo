@@ -2,9 +2,7 @@
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { patch } from "@web/core/utils/patch";
 patch(PosOrder.prototype, {
-    //@override
     serializeForORM(opts) {
-        // Avoid serializing online payments, as their creation is not allowed in the backend without "online_account_payment_id"
         const onlinePaymentUUIDs = this.payment_ids
             .filter(
                 (payment) =>

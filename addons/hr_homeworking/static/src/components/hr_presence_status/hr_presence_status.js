@@ -79,8 +79,6 @@ const LOCATION_FIELD_DEPENDENCIES = [
     { name: "work_location_name", type: "char" },
 ];
 
-// Each descriptor is a spread copy of hrPresenceStatus, so the four share one
-// fieldDependencies array until a fresh one is assigned here.
 for (const widget of [
     hrPresenceStatus,
     hrPresenceStatusPrivate,

@@ -106,7 +106,7 @@ export class CohortArchParser extends ViewArchParser {
     parseFieldNode(node, archInfo) {
         /** @type {CohortFieldAttrs} */
         const attrs = node.attrs || {};
-        const fieldName = /** @type {string} */ (attrs.name); // exists (rng validation)
+        const fieldName = /** @type {string} */ (attrs.name);
 
         archInfo.fieldAttrs[fieldName] = {};
         if (attrs.string !== undefined) {

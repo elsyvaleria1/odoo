@@ -32,7 +32,6 @@ class BankConfigureWidget extends Component {
             let containerWidth = this.container.el
                 ? this.container.el.offsetWidth - 32
                 : 0;
-            // when the container width can't be computed, use the screen size and number of journals.
             if (!containerWidth) {
                 if (this.ui.size >= SIZES.XXL) {
                     containerWidth =

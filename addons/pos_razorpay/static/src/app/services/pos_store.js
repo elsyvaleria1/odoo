@@ -11,7 +11,6 @@ patch(PosStore.prototype, {
         await super.pay();
         if (razorpayPaymentMethod && refundedOrder) {
             const paymentIds = refundedOrder.payment_ids || [];
-            // Add all the available payment lines in the refunded order if the current order amount is the same as the refunded order
             if (Math.abs(currentOrder.totalDue) === refundedOrder.amount_total) {
                 paymentIds.forEach((pi) => {
                     if (pi.payment_method_id) {
@@ -27,8 +26,6 @@ patch(PosStore.prototype, {
                     }
                 });
             } else {
-                // Add available payment lines of refunded order based on conditions.
-                // Settle current order terminal based payment lines with refunded order terminal based payment lines
                 const razorpayPaymentlines = paymentIds.filter(
                     (pi) => pi.payment_method_id.use_payment_terminal === "razorpay",
                 );

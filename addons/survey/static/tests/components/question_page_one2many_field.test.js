@@ -51,7 +51,7 @@ class SurveyQuestion extends models.Model {
         },
     ];
     _views = {
-        form: /* xml */ `
+        form: `
             <form>
                 <field name="title" />
             </form>
@@ -162,7 +162,6 @@ test("click on real line saves form and opens a dialog", async () => {
     });
     await contains("[name='favorite_color'] input").edit("Yellow");
     await contains(".o_data_row:nth-child(2) .o_data_cell").click();
-    // Edit content to trigger the expected actual save at row opening
     expect.verifySteps(["save parent form"]);
     expect(".o_selected_row").toHaveCount(1);
     expect(".modal .o_form_view").toHaveCount(1);

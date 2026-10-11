@@ -4,9 +4,6 @@ import { patch } from "@web/core/utils/patch";
 patch(DataServiceOptions.prototype, {
     get databaseTable() {
         const tables = super.databaseTable;
-        // Built lazily from the first record seen and cached for the rest of
-        // this sync pass, so both conditions below are an O(1) Set lookup
-        // instead of an O(n) scan of pos.order.line per record.
         let linkedSaleOrderIds = null;
         let linkedSaleOrderLineIds = null;
         const ensureLinkedIdsIndexed = (record) => {

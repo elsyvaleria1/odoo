@@ -864,7 +864,6 @@ test(`editable readonly list with open_form_view`, async () => {
 });
 
 test(`export feature in list for users not in base.group_allow_export`, async () => {
-    // the session seeds the group like the server does; this user is not in it
     patchWithCleanup(user, {
         hasGroup: async (group) => group !== "base.group_allow_export",
     });
@@ -12674,8 +12673,6 @@ test(`multi edit list view: mousedown on "Discard" with invalid field`, async ()
 
     await pointerUp(".o_control_panel");
     await animationFrame();
-    // the deferred invalid-field check and multi save notify once (OWL 2 showed
-    // the same "Missing required fields" twice)
     expect(`.o_notification`).toHaveCount(1);
     expect(`.o_data_row:eq(0) .o_data_cell`).toHaveText("10");
 });
@@ -18692,8 +18689,6 @@ test(`x2many onchange, check result`, async () => {
     expect.verifySteps(["onchange"]);
 
     if (getMockEnv()?.isSmall) {
-        // the picker is a full-screen dialog over the save button, and it
-        // stays until the onchange has returned
         expect(`.o_select_create_dialog_content`).toHaveCount(1);
         deferred.resolve();
         await waitForNone(`.o_select_create_dialog_content`);
@@ -18702,7 +18697,6 @@ test(`x2many onchange, check result`, async () => {
         await contains(`.o_list_button_save`).click();
         deferred.resolve();
     }
-    // the save goes on once the onchange returns: wait for the row it renders
     await waitFor(`.o_data_cell.o_list_many2one:eq(0):contains(Value 3)`);
     expect(`.o_data_cell.o_many2many_tags_cell:eq(0)`).toHaveText(
         "Value 1\nValue 2\nValue 3",

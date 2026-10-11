@@ -48,7 +48,6 @@
     });
   };
 
-  /*  */
   function assert (condition, message) {
     if (!condition) {
       throw new Error(("[imin-printer] " + message))
@@ -90,7 +89,6 @@
       TCPConnectPrefix["HTTP"] = "/upload";
   })(TCPConnectPrefix || (TCPConnectPrefix = {}));
 
-  /*  */
   var stringify = function (value) {
     return JSON.stringify(value)
   };
@@ -142,10 +140,8 @@
     }
   };
 
-  /*  */
   var inBrowser = typeof window !== 'undefined';
 
-  /*  */
   var PrinterWebSocket = function PrinterWebSocket(address) {
     this.address = address || '127.0.0.1';
     this.port = 8081;
@@ -258,7 +254,6 @@
 
   var PrinterWebSocket$1 = PrinterWebSocket;
 
-  /*  */
   var IminPrinter = /*@__PURE__*/(function (PrinterWebSocket) {
     function IminPrinter(url) {
       {
@@ -308,9 +303,6 @@
         };
       })
     };
-    /**
-     * Print and feed paper
-     */
     IminPrinter.prototype.printAndLineFeed = function printAndLineFeed () {
       this.send(this.sendParameter('', 3));
     };
@@ -323,15 +315,9 @@
         this.sendParameter('', 4, height <= 0 ? 0 : height >= 255 ? 255 : height)
       );
     };
-    /**
-     * Cutter (paper cutting) correlation
-     */
     IminPrinter.prototype.partialCut = function partialCut () {
       this.send(this.sendParameter('', 5));
     };
-      /**
-     * Cutter (paper cutting) correlation
-     */
       IminPrinter.prototype.partialCutPaper = function partialCutPaper () {
         this.send(this.sendParameter('', 5));
       };
@@ -551,9 +537,6 @@
         this.sendParameter('', 25, style >= 1 ? 1 : 0)
       );
     };
-    /**
-     *  Open cash box
-     */
     IminPrinter.prototype.openCashBox = function openCashBox () {
       this.send(this.sendParameter('', 100));
     };

@@ -64,7 +64,6 @@ export class AttendeeCalendarCommonRenderer extends CalendarCommonRenderer {
                 parseInt(event.id) &&
             !defaultEventPopoverOpened.has(toRaw(this.props.model))
         ) {
-            // the prop is a reactive proxy that differs per renderer instance
             defaultEventPopoverOpened.add(toRaw(this.props.model));
             this.openPopover(el, record);
         }

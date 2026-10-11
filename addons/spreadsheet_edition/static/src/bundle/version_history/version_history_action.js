@@ -61,9 +61,9 @@ export class VersionHistoryAction extends Component {
         this.dialog = useService("dialog");
         this.actionService = useService("action");
         this.resId =
-            this.params.spreadsheet_id || (this.props.state && this.props.state.resId); // used when going back to a spreadsheet via breadcrumb
+            this.params.spreadsheet_id || (this.props.state && this.props.state.resId);
         this.resModel =
-            this.params.res_model || (this.props.state && this.props.state.resModel); // used when going back to a spreadsheet via breadcrumb
+            this.params.res_model || (this.props.state && this.props.state.resModel);
         this.fromSnapshot =
             this.params.from_snapshot ||
             (this.props.state && this.props.state.fromSnapshot);
@@ -103,8 +103,6 @@ export class VersionHistoryAction extends Component {
         });
         onPatched(() => {
             if (this.state.shouldReloadPosition) {
-                // we need a frame for the spreadsheet component to compute its own size and adjust its dimensions
-
                 setTimeout(() => {
                     const { col, row } = this.state.oldPosition;
                     const zone = { top: row, bottom: row, left: col, right: col };
@@ -355,8 +353,6 @@ export class VersionHistoryAction extends Component {
      * @param {string} tag the client action that edits this spreadsheet
      */
     _editorBeneath(tag) {
-        // currentState, not params: an editor loaded from the url, or rebuilt
-        // from it as a crumb, has no spreadsheet_id param, only its resId
         const beneath = this.actionService.controllerStack.at(-2);
         const isEditor =
             beneath?.action.tag === tag && beneath.currentState?.resId === this.resId;
@@ -397,7 +393,6 @@ export class VersionHistoryAction extends Component {
         );
         const revisions = this.revisions.slice(0, revisionIndex + 1);
         this.setDataProvider();
-        // deepCopy: the migration mutates the data in place
         const data = deepCopy(this.spreadsheetData);
         this.model = new Model(
             data,
@@ -447,7 +442,6 @@ Would you like to load the more recent modifications?",
         if (this.debug) {
             const debugObj = spreadsheet.__DEBUG__ || {};
             debugObj.model = this.model;
-            // Cannot assign to namespace import in ESM, so expose via globalThis
             globalThis.__SPREADSHEET_DEBUG__ = debugObj;
         }
     }

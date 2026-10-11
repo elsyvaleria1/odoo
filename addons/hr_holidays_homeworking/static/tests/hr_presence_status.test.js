@@ -39,8 +39,6 @@ test("Show Time Off before Work Location", async () => {
 });
 
 test("Without a leave, the work location still decides the icon", async () => {
-    // The location branches used to be copied into this module's patch. They are
-    // delegated now, so this asserts hr_homeworking's answer survives the chain.
     HrEmployee._records = [
         {
             id: 1,

@@ -3,15 +3,6 @@
 
 import { normalize } from "@web/core/l10n/utils";
 
-/**
- * English words as a Mexican speaker says them, written the way a Spanish
- * recogniser spells what it hears: "status" -> "estatus", "dashboard" ->
- * "dashbor", "delivery" -> "deliveri", "update" -> "apdeit", "Walmart" ->
- * "gualmar"; and acronyms by their Spanish letter names: "PDF" -> "pe de efe".
- * A rendering is only another way to say a term the screen or the company
- * already has: it widens what matches, never what exists.
- */
-
 const LETTER_NAMES = {
     a: "a",
     b: "be",

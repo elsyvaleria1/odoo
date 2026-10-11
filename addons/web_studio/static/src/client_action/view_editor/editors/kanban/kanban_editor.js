@@ -26,7 +26,6 @@ class EditorArchParser extends kanbanView.ArchParser {
         return parsed;
     }
 
-    // the kanban parser walks the view IR; `this.parents` is its tree
     processButton(node) {
         const parsed = super.processButton(node);
         parsed.studioXpath = computeIRXpath(node, this.parents, ["kanban"]);
@@ -78,8 +77,6 @@ class OneRecordModel extends kanbanView.Model {
                     ],
                 };
 
-                // the model keys a group's config by getGroupKey(value)
-                // (e56e1adb1ace), not by the raw value
                 list.config.groups[getGroupKey(data.value)] = commonConfig;
 
                 const group = list._createGroupDatapoint(data);
@@ -231,7 +228,6 @@ const kanbanEditor = {
     },
 };
 
-// The object itself, not a copy: the hooks assigned below register on it.
 Object.assign(kanbanEditor, {
     label: _t("Kanban"),
     icon: "oi oi-view-kanban",

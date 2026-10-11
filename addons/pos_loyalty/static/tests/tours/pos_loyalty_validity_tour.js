@@ -7,12 +7,9 @@ import { registry } from "@web/core/registry";
 registry.category("web_tour.tours").add("PosLoyaltyValidity1", {
     steps: () =>
         [
-            // First tour should not get any automatic rewards
-
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Not valid -> date
             ProductScreen.addOrderline("Whiteboard Pen", "5"),
             PosLoyalty.isRewardButtonHighlighted(false, true),
             PosLoyalty.orderTotalIs("16.00"),
@@ -23,14 +20,11 @@ registry.category("web_tour.tours").add("PosLoyaltyValidity1", {
 registry.category("web_tour.tours").add("PosLoyaltyValidity2", {
     steps: () =>
         [
-            // Second tour
-            // Valid
             Chrome.startPoS(),
             ProductScreen.addOrderline("Whiteboard Pen", "5"),
             PosLoyalty.hasRewardLine("90% on the cheapest product", "-2.88"),
             PosLoyalty.finalizeOrder("Cash", "20"),
 
-            // Not valid -> usage
             ProductScreen.addOrderline("Whiteboard Pen", "5"),
             PosLoyalty.isRewardButtonHighlighted(false, true),
             PosLoyalty.orderTotalIs("16.00"),

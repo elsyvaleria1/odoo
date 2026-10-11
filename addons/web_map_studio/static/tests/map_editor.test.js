@@ -199,7 +199,6 @@ test("many2many, one2many and binary fields cannot be selected in SortBy dropdow
 
     await contains(".o_web_studio_navbar_item").click();
     await contains("input.o_select_menu_toggler:eq(1)").click();
-    // There are 3 hidden fields that are not defined above in the class (id, create_date, write_date)
     expect(".o_select_menu_item").toHaveCount(8);
 });
 

@@ -198,7 +198,6 @@ test("Default value correctly set and updates", async () => {
 test("Mode props update sets the mode", async () => {
     const fakeAceEditor = getFakeAceEditor();
     fakeAceEditor.session.setMode = (mode) => {
-        // a mode object, keyed by the id ace gives it
         expect.step(mode.$id);
     };
 
@@ -230,7 +229,6 @@ test("Mode props update sets the mode", async () => {
 test("Theme props updates set the theme", async () => {
     const fakeAceEditor = getFakeAceEditor();
     fakeAceEditor.setTheme = (theme) => {
-        // a theme module, named by its CSS class
         expect.step(theme ? theme.cssClass : "default");
     };
 
@@ -427,6 +425,5 @@ test("the qweb mode reports itself as qweb", async () => {
     }
     await mountWithCleanup(Parent);
     await animationFrame();
-    // the website editor waits on this attribute when it switches to QWeb
     expect(".ace_editor").toHaveAttribute("data-mode", "qweb");
 });

@@ -72,8 +72,6 @@ export class ProductCatalogSearchPanel extends SearchPanel {
     onDrop(targetSecId, ev) {
         ev.preventDefault();
         const moveSecId = parseInt(ev.dataTransfer.getData("section_id"));
-        // "No Section" is the head of the list, not a section to move or to
-        // drop onto: the server finds no line for it and appends at the end.
         if (targetSecId && moveSecId && moveSecId !== targetSecId) {
             this.reorderSections(moveSecId, targetSecId);
         }

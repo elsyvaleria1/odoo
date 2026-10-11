@@ -109,9 +109,6 @@ export class FontSizeSelector extends Component {
             () => {
                 if (this.fontSizeInput) {
                     if (this.dropdown.isOpen) {
-                        // on a small screen, opening from the button must not
-                        // pull up the virtual keyboard: only a tapped input
-                        // gets its content selected
                         const tapped =
                             this.fontSizeInput.ownerDocument.activeElement ===
                             this.fontSizeInput;

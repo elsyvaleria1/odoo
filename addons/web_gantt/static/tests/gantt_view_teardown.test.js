@@ -17,10 +17,6 @@ describe.current.tags("desktop");
 defineGanttModels();
 
 test("leaving the view before a range change's debounce elapses", async () => {
-    // The range change schedules a fetch 500ms out. Built with plain
-    // `debounce` nothing cancelled it, and it ran against a torn-down
-    // component: not a stray RPC but an uncaught `Error: Component is
-    // destroyed`, which HOOT reports here as an unverified error.
     mockDate("2018-12-20T08:00:00", +1);
     Tasks._views = {
         gantt: `<gantt date_start="start" date_stop="stop"/>`,

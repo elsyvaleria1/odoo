@@ -53,5 +53,4 @@ class AppointmentPlugin extends Plugin {
     }
 }
 
-// add appointment plugin for all standard use cases
 MAIN_PLUGINS.push(AppointmentPlugin);

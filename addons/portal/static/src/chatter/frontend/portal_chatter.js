@@ -50,8 +50,6 @@ export class PortalChatter extends Component {
                 id: this.props.resId,
                 model: this.props.resModel,
             });
-            // fetchMessages inserts into the store before returning: concurrent
-            // requests cannot be made safe by only guarding the final assignment.
             while (this.reloadRequested && !this.destroyed) {
                 this.reloadRequested = false;
                 log.logic("reload messages");

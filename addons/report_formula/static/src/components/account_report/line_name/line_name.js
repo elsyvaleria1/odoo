@@ -29,9 +29,6 @@ export class AccountReportLineName extends Component {
         return parseLineId(this.props.line.id).at(-1)[1];
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Caret options
-    //------------------------------------------------------------------------------------------------------------------
     get caretOptions() {
         return this.controller.caretOptions[this.props.line.caret_options];
     }
@@ -61,9 +58,6 @@ export class AccountReportLineName extends Component {
         return this.action.doAction(res);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Classes
-    // -----------------------------------------------------------------------------------------------------------------
     get lineNameClasses() {
         let classes = "text";
 
@@ -82,9 +76,6 @@ export class AccountReportLineName extends Component {
         return classes;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Action
-    // -----------------------------------------------------------------------------------------------------------------
     async triggerAction() {
         const res = await this.orm.call(
             "report.formula",
@@ -105,9 +96,6 @@ export class AccountReportLineName extends Component {
         return this.action.doAction(res);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Load more
-    // -----------------------------------------------------------------------------------------------------------------
     async loadMore() {
         const newLines = await this.orm.call("report.formula", "get_expanded_lines", [
             this.controller.options.report_id,
@@ -131,9 +119,6 @@ export class AccountReportLineName extends Component {
         await this.controller.replaceLineWith(this.props.lineIndex, newLines);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Fold / Unfold
-    // -----------------------------------------------------------------------------------------------------------------
     toggleFoldable() {
         if (this.props.line.unfoldable) {
             if (this.props.line.unfolded) {

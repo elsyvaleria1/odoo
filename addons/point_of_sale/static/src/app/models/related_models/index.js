@@ -622,7 +622,6 @@ export function createRelatedModels(modelDefs, modelClasses = {}, opts = {}) {
         }
 
         _dropCommandsOf(parentId) {
-            // a deleted parent is never serialized again, so nothing would consume these
             const modelCommands = commands[this.name];
             for (const map of [modelCommands.unlink, modelCommands.delete]) {
                 for (const [fieldName, list] of map) {

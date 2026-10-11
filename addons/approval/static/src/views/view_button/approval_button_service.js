@@ -4,16 +4,6 @@ import { registry } from "@web/core/registry";
 
 import { trace } from "../../common/approval_trace.js";
 
-/**
- * Collects the specs asked in one tick and answers them with one call, so a form
- * with several gated buttons costs one round trip.
- *
- * It also owns the refresh of those buttons when their record reloads. A model
- * gets one lifecycle listener, not one per button: the model awaits its
- * listeners one after the other, so a listener per button turned a pager step
- * into as many sequential round trips as the form has gated buttons, and held
- * the pager disabled until the last one answered.
- */
 export const approvalButtonService = {
     dependencies: ["orm"],
     start(env, { orm }) {
@@ -42,8 +32,6 @@ export const approvalButtonService = {
                         batch.forEach(({ resolve }, index) => resolve(results[index]));
                     },
                     (error) => {
-                        // Every queued button fails open on this, so it is the one
-                        // place that knows the gates were never actually consulted.
                         trace.note("service", "flush_rejected", {
                             specs: batch.length,
                             ms: browser.performance.now() - started,

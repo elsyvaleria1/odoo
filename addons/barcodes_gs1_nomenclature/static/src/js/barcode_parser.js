@@ -5,13 +5,11 @@ import { patch } from "@web/core/utils/patch";
 export class GS1BarcodeError extends Error {}
 
 export const FNC1_CHAR = String.fromCharCode(29);
-// Mirrors `barcode_nomenclature.SYMBOLOGY_IDENTIFIERS`.
 const SYMBOLOGY_IDENTIFIERS = ["]C1", "]e0", "]d2", "]Q3", "]J1"];
 const ASCII_DIGITS = /^[0-9]+$/;
 
 const elementRegexes = new Map();
 
-/** Mirrors `barcode_nomenclature._gs1_element_regex`, memoized the same way. */
 function gs1ElementRegex(pattern) {
     let regex = elementRegexes.get(pattern);
     if (!regex) {
@@ -38,7 +36,6 @@ patch(BarcodeParser, {
 patch(BarcodeParser.prototype, {
     setup() {
         super.setup(...arguments);
-        // Use the nomenclature's separaor regex, else use an impossible one.
         const nomenclatureSeparator =
             this.nomenclature && this.nomenclature.gs1_separator_fnc1;
         this.gs1SeparatorRegex = new RegExp(nomenclatureSeparator || ".^", "g");
@@ -51,8 +48,6 @@ patch(BarcodeParser.prototype, {
      * @returns {Date|null} null when the digits name no calendar day
      */
     gs1DateToDate(gs1Date) {
-        // See 7.12 Determination of century in dates:
-        // https://www.gs1.org/sites/default/files/docs/barcodes/GS1_General_Specifications.pdf
         const now = new Date();
         const twoDigitYear = parseInt(gs1Date.slice(0, 2), 10);
         const month = parseInt(gs1Date.slice(2, 4), 10);
@@ -65,13 +60,10 @@ patch(BarcodeParser.prototype, {
             century++;
         }
         const year = century * 100 + twoDigitYear;
-        // `new Date` rolls month 13 into January and the 31st of February into
-        // March; the server refuses both, so they are no date here either.
         const lastDay = new Date(year, month, 0).getDate();
         if (month < 1 || month > 12 || day > lastDay) {
             return null;
         }
-        // Day 00 is not mandatory: it stands for the last day of the month.
         return new Date(year, month - 1, day || lastDay);
     },
 
@@ -172,7 +164,6 @@ patch(BarcodeParser.prototype, {
 
     _nextGs1Element(barcode, regexes) {
         for (const [rule, regex] of regexes) {
-            // At least two groups: the AI, then the value.
             const match = barcode.match(regex);
             if (match && match.length >= 3) {
                 const element = this.parseGs1RulePattern(match, rule);
@@ -201,7 +192,6 @@ patch(BarcodeParser.prototype, {
      * @returns {string}
      */
     cleanBarcode(barcode) {
-        // Leading separators are not data.
         let start = 0;
         while (barcode[start] === FNC1_CHAR) {
             start++;

@@ -75,9 +75,6 @@ export function useDialogConfirmation({ confirm, cancel, before, close }) {
     return { confirm: _confirm, cancel: _cancel };
 }
 
-// A custom memoize function that doesn't store all results
-// First the core/function/memoize tool may yield incorrect result in our case.
-// Second, the keys we use usually involve archs themselves that could be heavy in the long run.
 export function memoizeOnce(callback) {
     let key, value;
     return function (...args) {
@@ -112,7 +109,6 @@ function topologicalSort(elems, getDependencies) {
         if (!elems.includes(n)) {
             return;
         }
-        // first visit all dependencies of n, then append n to result
         for (const dep of getDependencies(n)) {
             visit(dep);
         }

@@ -134,9 +134,6 @@ export class PaymentTyro extends PaymentInterface {
     }
 
     onQuestionReceived(question, answerCallback) {
-        // Tyro re-sends the question every so often, so
-        // we do nothing if we are already displaying the
-        // question.
         if (this.currentQuestion === question.text) {
             return;
         }
@@ -188,9 +185,6 @@ export class PaymentTyro extends PaymentInterface {
     }
 
     async sendPaymentRequest(uuid) {
-        /**
-         * Override
-         */
         await super.sendPaymentRequest(...arguments);
         const line = this.paymentLine;
         try {
@@ -238,9 +232,6 @@ export class PaymentTyro extends PaymentInterface {
     }
 
     async sendPaymentCancel(order, uuid) {
-        /**
-         * Override
-         */
         await super.sendPaymentCancel(...arguments);
 
         try {

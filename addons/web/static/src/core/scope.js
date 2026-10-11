@@ -22,7 +22,6 @@ function findPlugin(PluginClass, pluginManager = useScope().pluginManager) {
     return pluginManager.getPlugin(PluginClass);
 }
 
-// a scope nobody provides reads the application context, as an OWL 2 sub-env read the root env
 function appContextOrEmpty(/** @type {any} */ pluginManager) {
     return findPlugin(AppContextPlugin, pluginManager)?.context ?? EMPTY;
 }
@@ -47,7 +46,6 @@ export function defineScope(id, { root = appContextOrEmpty } = {}) {
      * @returns {T}
      */
     function provide(values) {
-        // a child scope sees every key of its parent, as OWL 2's sub-env did
         const value = Object.defineProperties(
             Object.create(use()),
             Object.getOwnPropertyDescriptors(values),

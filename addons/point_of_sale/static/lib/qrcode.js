@@ -1,13 +1,3 @@
-/**
- * @fileoverview
- * - Using the 'QRCode for Javascript library'
- * - Fixed dataset of 'QRCode for Javascript library' for support full-spec.
- * - this library has no dependencies.
- *
- * @author davidshimjs
- * @see <a href="http://www.d-project.com/" target="_blank">http://www.d-project.com/</a>
- * @see <a href="http://jeromeetienne.github.com/jquery-qrcode/" target="_blank">http://jeromeetienne.github.com/jquery-qrcode/</a>
- */
 let QRCode;
 
 (() => {
@@ -49,7 +39,6 @@ let QRCode;
             this.data = data;
             this.parsedData = [];
 
-            // Added to support UTF-8 Characters
             for (let i = 0, l = this.data.length; i < l; i++) {
                 const byteArray = [];
                 const code = this.data.charCodeAt(i);
@@ -1019,13 +1008,11 @@ let QRCode;
         [2953, 2331, 1663, 1273],
     ];
 
-    // android 2.x doesn't support Data-URI spec
     function _getAndroid() {
         let android = false;
         const sAgent = navigator.userAgent;
 
         if (/android/i.test(sAgent)) {
-            // android
             android = true;
             const aMat = sAgent.toString().match(/android ([0-9]\.[0-9])/i);
 
@@ -1101,19 +1088,15 @@ let QRCode;
 
     const useSVG = document.documentElement.tagName.toLowerCase() === "svg";
 
-    // Drawing in DOM by using Table tag
     let Drawing = useSVG
         ? svgDrawer
         : (function () {
-              // Drawing in Canvas
               function _onMakeImage() {
                   this._elImage.src = this._elCanvas.toDataURL("image/png");
                   this._elImage.style.display = "block";
                   this._elCanvas.style.display = "none";
               }
 
-              // Android 2.1 bug workaround
-              // http://code.google.com/p/android/issues/detail?id=5141
               if (this._android && this._android <= 2.1) {
                   const factor = 1 / window.devicePixelRatio;
                   const drawImage = CanvasRenderingContext2D.prototype.drawImage;
@@ -1155,7 +1138,6 @@ let QRCode;
                   self._fFail = fFail;
                   self._fSuccess = fSuccess;
 
-                  // Check it just once
                   if (self._bSupportDataURI === null) {
                       const el = document.createElement("img");
                       const fOnError = () => {
@@ -1177,7 +1159,7 @@ let QRCode;
                       el.onerror = fOnError;
                       el.onload = fOnSuccess;
                       el.src =
-                          "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="; // the Image contains 1px data.
+                          "data:image/gif;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg==";
                       return;
                   } else if (self._bSupportDataURI === true && self._fSuccess) {
                       self._fSuccess.call(self);
@@ -1246,7 +1228,6 @@ let QRCode;
                                   : _htOption.colorLight;
                               _oContext.fillRect(nLeft, nTop, nWidth, nHeight);
 
-                              // 안티 앨리어싱 방지 처리
                               _oContext.strokeRect(
                                   Math.floor(nLeft) + 0.5,
                                   Math.floor(nTop) + 0.5,
@@ -1266,9 +1247,6 @@ let QRCode;
                       this._bIsPainted = true;
                   }
 
-                  /**
-                   * Make the image from Canvas if the browser supports Data URI.
-                   */
                   makeImage() {
                       if (this._bIsPainted) {
                           _safeSetDataURI.call(this, _onMakeImage);
@@ -1284,9 +1262,6 @@ let QRCode;
                       return this._bIsPainted;
                   }
 
-                  /**
-                   * Clear the QRCode
-                   */
                   clear() {
                       this._oContext.clearRect(0, 0, this._elCanvas.width, this._elCanvas.height);
                       this._bIsPainted = false;
@@ -1400,7 +1375,6 @@ let QRCode;
             };
         }
 
-        // Overwrites options
         if (vOption) {
             for (const i in vOption) {
                 this._htOption[i] = vOption[i];
@@ -1458,15 +1432,9 @@ let QRCode;
         }
     };
 
-    /**
-     * Clear the QRCode
-     */
     QRCode.prototype.clear = function () {
         this._oDrawing.clear();
     };
 
-    /**
-     * @name QRCode.CorrectLevel
-     */
     QRCode.CorrectLevel = QRErrorCorrectLevel;
 })();

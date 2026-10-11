@@ -46,8 +46,6 @@ import { useKanbanSortable } from "./kanban_sortable_hook.js";
 
 const DRAGGABLE_GROUP_TYPES = ["many2one"];
 
-// below the height of any card, so that the cards counted for a screen always
-// overflow it: what is built later lands under the fold and moves nothing
 const SMALLEST_CARD_PITCH = 48;
 const NARROWEST_CARD_WIDTH = 200;
 
@@ -197,9 +195,6 @@ export class KanbanRenderer extends Component {
         }
         this.rootRef = elementRef();
 
-        // only a kanban that scrolls a view is told what its controller
-        // scrolls back to: an embedded one cannot know what is on screen
-        // around it
         this.screenfulFirst =
             this.props.restoredScrollTop === undefined
                 ? null

@@ -10,13 +10,11 @@ setupVoipTests();
 
 test("Do not disturb selector show all options", async () => {
     const pyEnv = await startServer();
-    // DND Selector only shows up in production mode 💡
     const providerId = pyEnv["voip.provider"].create({ mode: "prod" });
     pyEnv["res.users"].write([serverState.userId], { voip_provider_id: providerId });
     await start();
     await click(".o_menu_systray button[title='Show Softphone']");
 
-    // don't click on the dropdown too early: handler may not be registered yet
     await contains(".o-voip-DndSelector-badge[title='Available']");
     await click(".o-voip-DndSelector-badge[title='Available']");
     await click("p", { text: "Do Not Disturb" });
@@ -31,19 +29,16 @@ test("Do not disturb selector show all options", async () => {
 test("Do not disturb selector changes state correctly with limited time", async () => {
     mockDate("2025-01-01 01:00:00", +0);
     const pyEnv = await startServer();
-    // DND Selector only shows up in production mode 💡
     const providerId = pyEnv["voip.provider"].create({ mode: "prod" });
     pyEnv["res.users"].write([serverState.userId], { voip_provider_id: providerId });
     await start();
     await click(".o_menu_systray button[title='Show Softphone']");
 
-    // don't click on the dropdown too early: handler may not be registered yet
     await contains(".o-voip-DndSelector-badge[title='Available']");
     await click(".o-voip-DndSelector-badge[title='Available']");
     await click("p", { text: "Do Not Disturb" });
     await click("button", { text: "For 15 minutes" });
     await waitNotifications(["res.users.settings"]);
-    // don't click on the dropdown too early: handler may not be registered yet
     await contains(".o-voip-DndSelector-badge i.text-danger");
     await click(".o-voip-DndSelector-badge i.text-danger");
     await contains("p:contains(Until Jan 1, 2025, 1:15)");
@@ -55,24 +50,20 @@ test("Do not disturb selector changes state correctly with limited time", async 
 
 test("Do not disturb selector change state correctly with infinite time", async () => {
     const pyEnv = await startServer();
-    // DND Selector only shows up in production mode 💡
     const providerId = pyEnv["voip.provider"].create({ mode: "prod" });
     pyEnv["res.users"].write([serverState.userId], { voip_provider_id: providerId });
     await start();
     await click(".o_menu_systray button[title='Show Softphone']");
 
-    // don't click on the dropdown too early: handler may not be registered yet
     await contains(".o-voip-DndSelector-badge[title='Available']");
     await click(".o-voip-DndSelector-badge[title='Available']");
     await click("p", { text: "Do Not Disturb" });
     await click("button", { text: "Until I turn it back on" });
     await waitNotifications(["res.users.settings"]);
-    // don't click on the dropdown too early: handler may not be registered yet
     await contains(".o-voip-DndSelector-badge i.text-danger");
     await click(".o-voip-DndSelector-badge i.text-danger");
     await contains("p", { text: "Until I turn it back on" });
     await advanceTime(24 * 60 * 60 * 1000, { blockTimers: true });
-    // don't click on the dropdown too early: handler may not be registered yet
     await contains(".o-voip-DndSelector-badge i.text-danger");
     await click(".o-voip-DndSelector-badge i.text-danger");
     await click(".o-dropdown-item i.text-success");

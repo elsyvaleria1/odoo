@@ -7,10 +7,6 @@ import { registry } from "@web/core/registry";
 import { Interaction } from "@web/public/interaction";
 
 export class SurveySessionLeaderboard extends Interaction {
-    // Note: the class `o_survey_session_leaderboard` is present in two
-    // templates: `user_input_session_manage_content` and `survey_page_statistics`.
-    // This interaction is not needed in the second case. The descendant
-    // combinator in the selector is used to select only the first case.
     static selector = ".o_survey_session_manage .o_survey_session_leaderboard";
     dynamicContent = {
         _root: {
@@ -27,7 +23,6 @@ export class SurveySessionLeaderboard extends Interaction {
 
     getBarStyle(barEl) {
         if (this.leaderboardAnimationPhase === "prepareScores") {
-            // See also this.prepareScores
             const currentScore = parseInt(
                 barEl.closest(".o_survey_session_leaderboard_item").dataset
                     .currentScore,
@@ -39,7 +34,6 @@ export class SurveySessionLeaderboard extends Interaction {
                 };
             }
         } else if (this.leaderboardAnimationPhase === "sumScores") {
-            // See also this.sumScores
             const { baseRatio, questionRatio } = this.getBarRatios(barEl);
             const updatedScoreRatio = 1 - questionRatio;
             const updatedScoreWidth = `calc(calc(100% - ${this.BAR_WIDTH}) * ${
@@ -56,16 +50,12 @@ export class SurveySessionLeaderboard extends Interaction {
 
     getBarQuestionStyle(barEl) {
         if (this.leaderboardAnimationPhase === "showQuestionScores") {
-            // See also this.showQuestionScores
             return {
                 transition: "width 1s ease-out",
                 width: `calc(calc(100% - ${this.BAR_WIDTH}) * ${barEl.dataset.widthRatio} + ${this.BAR_MIN_WIDTH})`,
             };
         } else if (this.leaderboardAnimationPhase === "sumScores") {
-            // See also this.sumScores
             const { baseRatio, questionRatio } = this.getBarRatios(barEl);
-            // we keep a min fixed width of 3rem to be able to display "+ 5 p"
-            // even if the user already has 1,000,000 points
             const questionWidth = `calc(calc(calc(100% - ${this.BAR_WIDTH}) * ${
                 questionRatio * baseRatio
             }) + ${this.BAR_MIN_WIDTH})`;
@@ -165,9 +155,6 @@ export class SurveySessionLeaderboard extends Interaction {
         );
     }
 
-    /**
-     * Inverse the process, fading out our template to fade in sessionResults.
-     */
     hideLeaderboard() {
         fadeOut(this.el, this.fadeInOutTime, () => {
             this.removeChildren(

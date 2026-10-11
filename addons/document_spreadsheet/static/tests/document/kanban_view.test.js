@@ -56,9 +56,6 @@ function getTestServerData(spreadsheetData = {}) {
 }
 
 beforeEach(() => {
-    // Due to the search panel allowing double clicking on elements, the base
-    // methods have a debounce time in order to not do anything on dblclick.
-    // This patch removes those features
     patchWithCleanup(DocumentsSearchPanel.prototype, {
         toggleCategory() {
             return SearchPanel.prototype.toggleCategory.call(this, ...arguments);
@@ -76,7 +73,6 @@ onRpc("/documents/touch/<access_token>", () => ({}));
 
 test("download frozen spreadsheet", async () => {
     const serverData = getTestServerData();
-    // Only frozen spreadsheet can be downloaded in document.
     serverData.models["ir.attachment"] = { records: [{ id: 1 }] };
     serverData.models["document.document"].records[1].handler = "frozen_spreadsheet";
     serverData.models["document.document"].records[1].attachment_id = 1;
@@ -226,7 +222,7 @@ test("open xlsx converts to o-spreadsheet, clone it and opens the spreadsheet", 
         mimetype: XLSX_MIME_TYPES[0],
         thumbnail_status: "present",
         type: "binary",
-        attachment_id: 1, // Necessary to not be considered as a request
+        attachment_id: 1,
     });
     await makeDocumentsSpreadsheetMockEnv({
         serverData,
@@ -253,7 +249,6 @@ test("open xlsx converts to o-spreadsheet, clone it and opens the spreadsheet", 
         ".o_kanban_record:contains('My excel file') .o_kanban_image_wrapper",
     ).click();
 
-    // confirm conversion to o-spreadsheet
     await contains(".modal-content .btn.btn-primary").click();
     expect.verifySteps(["spreadsheet_cloned", "action_view_spreadsheet"]);
 });
@@ -270,7 +265,7 @@ test("open WPS-marked xlsx converts to o-spreadsheet, clone it and opens the spr
         mimetype: XLSX_MIME_TYPES[1],
         thumbnail_status: "present",
         type: "binary",
-        attachment_id: 1, // Necessary to not be considered as a request
+        attachment_id: 1,
     });
     await makeDocumentsSpreadsheetMockEnv({
         serverData,
@@ -297,7 +292,6 @@ test("open WPS-marked xlsx converts to o-spreadsheet, clone it and opens the spr
         ".o_kanban_record:contains('My excel file') .oe_kanban_previewer",
     ).click();
 
-    // confirm conversion to o-spreadsheet
     await contains(".modal-content .btn.btn-primary").click();
     expect.verifySteps(["spreadsheet_cloned", "action_view_spreadsheet"]);
 });
@@ -313,7 +307,7 @@ test("open csv converts to o-spreadsheet, clone it and opens the spreadsheet", a
             name: "My CSV file",
             mimetype: "text/csv",
             thumbnail_status: "present",
-            attachment_id: 1, // Necessary to not be considered as a request
+            attachment_id: 1,
         },
     ];
     await makeDocumentsSpreadsheetMockEnv({
@@ -339,7 +333,6 @@ test("open csv converts to o-spreadsheet, clone it and opens the spreadsheet", a
     });
     await contains(".o_kanban_image_wrapper").click();
 
-    // confirm conversion to o-spreadsheet
     await contains(".modal-content .btn.btn-primary").click();
     expect.verifySteps(["spreadsheet_cloned", "action_view_spreadsheet"]);
 });
@@ -356,7 +349,7 @@ test("download a frozen spreadsheet document while selecting requested document"
             handler: "frozen_spreadsheet",
             type: "binary",
             access_token: "accessTokenMyspreadsheet",
-            attachment_id: 1, // Necessary to not be considered as a request
+            attachment_id: 1,
         },
         {
             name: "Request",
@@ -388,7 +381,6 @@ test("download a frozen spreadsheet document while selecting requested document"
         ctrlKey: true,
     });
     await contains("button:contains(Download)").click();
-    // The request is ignored and only the spreadsheet is downloaded.
     expect.verifySteps(["/documents/content/accessTokenMyspreadsheet"]);
 });
 
@@ -551,26 +543,19 @@ test("Cannot download spreadsheets", async () => {
     await contains(`.o_kanban_record:contains(${folder1Name})`).click({
         ctrlKey: true,
     });
-    // Folder should be downloadable
     await waitFor(".o_control_panel_actions:contains('Download')");
     await contains(`.o_kanban_record:contains('Request')`).click();
-    // Request should not be downloadable
     await waitForNone(".o_control_panel_actions:contains('Download')");
-    // Binary should be downloadable
     await contains(".o_kanban_record:contains('Binary')").click();
     await waitFor(".o_control_panel_actions:contains('Download')");
-    // Spreadsheet should not be downloadable
     await contains(`.o_kanban_record:contains('Spreadsheet')`).click();
     await waitForNone(".o_control_panel_actions:contains('Download')");
-    // deselect spreadsheet
     await contains(`.o_kanban_record:contains('Spreadsheet')`).click({ ctrlKey: true });
 
-    // Multiple documents can be downloaded
     await contains(`.o_kanban_record:contains(${folder1Name})`).click({
         ctrlKey: true,
     });
     await waitFor(".o_control_panel_actions:contains('Download')");
-    // Button should remain even if some records are not downloadable
     await contains(`.o_kanban_record:contains('Spreadsheet')`).click({ ctrlKey: true });
     await waitFor(".o_control_panel_actions:contains('Download')");
 });

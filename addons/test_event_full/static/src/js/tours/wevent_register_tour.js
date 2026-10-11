@@ -2,9 +2,6 @@
 import { registry } from "@web/core/registry";
 import { session } from "@web/session";
 
-/**
- * TALKS STEPS
- */
 const reminderToggleSteps = function (talkName, reminderOn, toggleReminder) {
     let steps = [];
     if (reminderOn) {
@@ -94,10 +91,6 @@ const discoverTalkSteps = function (
     return steps;
 };
 
-/**
- * REGISTER STEPS
- */
-
 const registerSteps = [
     {
         content: "Open ticket modal",
@@ -174,10 +167,6 @@ const registerSteps = [
         trigger: "h5:contains(Book your talks)",
     },
 ];
-
-/**
- * MAIN STEPS
- */
 
 const initTourSteps = function (eventName) {
     return [

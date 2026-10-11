@@ -48,8 +48,6 @@ export class ViewBusy extends Component {
                 if (!isReloading) {
                     return;
                 }
-                // what is on screen stays there: a reload that outlasts the
-                // threshold marks it stale, it is never swapped for a placeholder
                 const timer = browser.setTimeout(() => {
                     log.lifecycle("stale", () => ({ viewType: this.viewType }));
                     region.classList.add(STALE_CLASS);

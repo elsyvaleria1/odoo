@@ -512,8 +512,6 @@ export class RelationalModel extends Model {
         if (config.isMonoRecord) {
             return new this.Class.Record(this, config, data);
         }
-        // sample rows carry made-up ids that a real load's ids collide with,
-        // so a root built on either side of the sample ORM donates nothing
         const isSample = Boolean(this.orm.isSample);
         const donor =
             isSample || previousRoot?._loadedFromSample ? undefined : previousRoot;

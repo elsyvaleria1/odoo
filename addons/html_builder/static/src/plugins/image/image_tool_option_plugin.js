@@ -203,8 +203,6 @@ export class SetLinkAction extends BuilderAction {
             const wrapperEl = document.createElement("a");
             editingElement.after(wrapperEl);
             wrapperEl.appendChild(editingElement);
-            // Copy alignment classes so the new link behaves like the image in
-            // flex layouts.
             const alignClasses = IMAGE_LINK_ALIGN_CLASSES.filter((cls) =>
                 editingElement.classList.contains(cls),
             );
@@ -236,12 +234,10 @@ export class ImageAlignClassAction extends ClassAction {
             linkEl.tagName !== "A" ||
             linkEl.firstElementChild !== editingElement ||
             linkEl.childElementCount !== 1 ||
-            linkEl.textContent.replace(/\u200B/g, "").trim() // ignore ZWSP
+            linkEl.textContent.replace(/\u200B/g, "").trim()
         ) {
             return;
         }
-        // Mirror image alignment classes on the wrapping <a> (only when it
-        // wraps just this image) so flex layouts stay consistent.
         const alignClasses = IMAGE_LINK_ALIGN_CLASSES.filter((cls) =>
             editingElement.classList.contains(cls),
         );
@@ -260,7 +256,6 @@ export class SetUrlAction extends BuilderAction {
         const linkEl = searchSupportedParentLinkEl(editingElement);
         let url = value;
         if (!url) {
-            // As long as there is no URL, the image is not considered a link.
             linkEl.removeAttribute("href");
             return;
         }
@@ -269,8 +264,6 @@ export class SetUrlAction extends BuilderAction {
             !url.startsWith("#") &&
             !/^([a-zA-Z]*.):.+$/gm.test(url)
         ) {
-            // We permit every protocol (http:, https:, ftp:, mailto:,...).
-            // If none is explicitly specified, we assume it is a http.
             url = "http://" + url;
         }
         linkEl.setAttribute("href", url);

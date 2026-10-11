@@ -90,10 +90,6 @@ export class Call extends Record {
         switch (this.state) {
             case "calling":
             case "ongoing":
-                // In case the power goes out in the middle of a call (for
-                // example), the call may be stuck in the “calling” or “ongoing”
-                // state, meaning we can't rely on the state alone, hence the
-                // need to also check for the session.
                 return Boolean(
                     this.store.env.services["voip.user_agent"].activeSession?.call.eq(
                         this,

@@ -31,7 +31,6 @@ export const HighlightProjectTaskSearchModelMixin = (T) =>
         }
 
         _notify(options) {
-            // a blocked notification is replayed through _notify once unblocked
             const fetching = this.blockNotification ? null : this._syncHighlightIds();
             return fetching
                 ? fetching.then(() => super._notify(options))
@@ -40,7 +39,6 @@ export const HighlightProjectTaskSearchModelMixin = (T) =>
 
         /** @returns {Promise<void> | null} */
         _syncHighlightIds() {
-            // the query may have changed since the context was last memoized
             this._reset();
             if (!this.context.highlight_conflicting_task) {
                 this.highlightIds = null;

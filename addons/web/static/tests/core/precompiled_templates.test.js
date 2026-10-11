@@ -46,10 +46,6 @@ function registerBundle(registry) {
     );
 }
 
-/**
- * What the server ships: every template of the bundle, resolved and signed
- * by a registry that saw exactly the bundle.
- */
 function precompileBundle({ dev = false } = {}) {
     const server = new TemplateRegistry();
     registerBundle(server);
@@ -117,8 +113,6 @@ test("an extension registered after the bundle sends its target back to the brow
     const parent = page.getCompiledTemplate("pc.Parent");
     expect(parent).toBeInstanceOf(Element);
     expect(/** @type {Element} */ (parent).outerHTML).toInclude(">Late</em>");
-    // a primary child resolves its parent as of its own block, which the late
-    // extension follows: the browser would compile exactly what was shipped
     expect(page.getCompiledTemplate("pc.Child")).toBe(
         page.compiled.prod.named["pc.Child"].fn,
     );
@@ -129,7 +123,6 @@ test("an extension registered after the bundle sends its target back to the brow
 
 test("a bundle loaded into the page keeps its resolution of a shared template, whichever artifact lands last", () => {
     const late = `<t t-inherit="pc.Parent" t-inherit-mode="extension"><xpath expr="//span" position="before"><em>Late</em></xpath></t>`;
-    // the lazy bundle's server compiled pc.Parent after the page's bundle
     const server = new TemplateRegistry();
     registerBundle(server);
     server.registerTemplateExtension("pc.Parent", URL_C, late);
@@ -431,7 +424,6 @@ test("a page that compiles in the browser has OWL's compiler before the service 
 });
 
 test("a page of another site reads the compiled templates from the server's origin", async () => {
-    // a live chat embedded on a customer's site: session.origin is the server
     /** @type {string[]} */
     const requested = [];
     patchWithCleanup(assets, {

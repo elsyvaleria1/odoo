@@ -176,10 +176,6 @@ export class Session {
         });
     }
 
-    /**
-     * Starts recording the audio of the session.
-     * Once the recording stops, the file is automatically uploaded.
-     */
     record() {
         if (this.recorder) {
             console.warn(
@@ -188,7 +184,7 @@ export class Session {
             return;
         }
         if (!this.sipSession) {
-            return; // no session in demo mode
+            return;
         }
         const recorder = new SessionRecorder(this.sipSession);
         this.recorder = recorder;
@@ -213,10 +209,6 @@ export class Session {
         sessionDescriptionHandler.enableSenderTracks(!this.isOnHold && !this.isMuted);
     }
 
-    /**
-     * Explicitly resets the source and stops playback of the remote audio to
-     * ensure that it can be garbage-collected.
-     */
     _cleanUpRemoteAudio() {
         if (!this.remoteAudio) {
             return;
@@ -239,7 +231,7 @@ export class Session {
             this.ringtones.stopPlaying();
             this.voip.softphone.activeTab = "recent";
         }
-        this.sipSession.reject({ statusCode: 487 /* Request Terminated */ });
+        this.sipSession.reject({ statusCode: 487 });
         this.callService.miss(this.call);
     }
 
@@ -265,10 +257,7 @@ export class Session {
      */
     _onOutgoingInviteProgress(response) {
         const { statusCode } = response.message;
-        if (
-            statusCode === 183 /* Session Progress */ ||
-            statusCode === 180 /* Ringing */
-        ) {
+        if (statusCode === 183 || statusCode === 180) {
             if (this.isActiveSession) {
                 this.ringtones.ringback.play();
             }
@@ -283,20 +272,20 @@ export class Session {
         if (this.isActiveSession) {
             this.ringtones.stopPlaying();
         }
-        if (response.message.statusCode === 487 /* Request Terminated */) {
+        if (response.message.statusCode === 487) {
             return;
         }
         const errorMessage = (() => {
             switch (response.message.statusCode) {
-                case 404: // Not Found
-                case 488: // Not Acceptable Here
-                case 603: // Decline
+                case 404:
+                case 488:
+                case 603:
                     return _t(
                         "The number is incorrect, the user credentials could be wrong or the connection cannot be made. Please check your configuration.\n(Reason received: %(reasonPhrase)s)",
                         { reasonPhrase: response.message.reasonPhrase },
                     );
-                case 486: // Busy Here
-                case 600: // Busy Everywhere
+                case 486:
+                case 600:
                     return _t(
                         "The person you try to contact is currently unavailable.",
                     );
@@ -310,10 +299,6 @@ export class Session {
         this.callService.reject(this.call);
     }
 
-    /**
-     * Triggered when the state of the SIP.js session changes to Established.
-     * Only triggered by actual RTC sessions (production mode).
-     */
     _onSessionEstablished() {
         this._setUpRemoteAudio();
         this.sipSession.sessionDescriptionHandler.remoteMediaStream.onaddtrack = (
@@ -345,10 +330,6 @@ export class Session {
         }
     }
 
-    /**
-     * Triggered when the state of the SIP.js session changes to Terminated.
-     * Only triggered by actual RTC sessions (production mode).
-     */
     _onSessionTerminated() {
         this._cleanUpRemoteAudio();
     }

@@ -14,7 +14,6 @@ function toUnixInteger(value) {
     return value ? Math.floor(value.epochMilliseconds / 1000) : NaN;
 }
 
-// To avoid indeterminism in tests, we use a tolerance
 function isExpectedDateTime({
     dateString,
     expectedDateTime = now(),
@@ -223,7 +222,6 @@ test("edit a date with the datetime picker should correctly apply the mutation",
     expect(".we-bg-options-container input").toHaveValue("04/09/2019 16:36:40");
     expect(":iframe .test-options-target").toHaveAttribute("data-date", "1554824200");
 
-    // refresh the Edit tab
     await contains(":iframe .another-target").click();
     await contains(":iframe .test-options-target").click();
     expect(".we-bg-options-container input").toHaveValue("04/09/2019 16:36:40");

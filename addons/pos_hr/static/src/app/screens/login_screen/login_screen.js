@@ -44,12 +44,6 @@ patch(LoginScreen.prototype, {
             super.openRegister();
         }
     },
-    /**
-     * closePos() lands on the backend session of the logged-in user, so by
-     * default leaving re-identifies the cashier and only lets that user
-     * through. Deployments that accept any employee leaving override this
-     * getter rather than reimplementing clickBack.
-     */
     get requiresCashierIdentityToExit() {
         return true;
     },

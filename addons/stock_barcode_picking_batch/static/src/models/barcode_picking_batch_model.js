@@ -16,7 +16,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         super.setData(...arguments);
         this.groupingLinesEnabled =
             this.groupingLinesEnabled || this.config.group_lines_by_product;
-        // In case it's a new batch, we must display the pickings selector first.
         if (this.record.state === "draft" && this.record.picking_ids.length === 0) {
             this.selectedPickings = [];
             this._allowedPickings = data.data.allowed_pickings;
@@ -47,10 +46,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         }
     }
 
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
     get allowedPickings() {
         const pickingTypeId = this.record.picking_type_id.id;
         if (!pickingTypeId || !this._allowedPickings) {
@@ -78,7 +73,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
             (this.needPickings || this.needPickingType) &&
             !this._allowedPickings.length
         ) {
-            // Special case: the batch need to be configured but there is no pickings available.
             barcodeInfo.class = "picking_batch_not_possible";
             barcodeInfo.message = _t("No ready transfers found");
             barcodeInfo.warning = true;
@@ -132,20 +126,14 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         return false;
     }
 
-    /**
-     * Depending of the batch's state, will confirm the picking type selection or the pickings
-     * selection. In the latter, it will confirm the batch transfer and reload its data.
-     */
     async confirmSelection() {
         if (this.needPickingType && this.selectedPickingTypeId) {
-            // Applies the selected picking type to the batch.
             this.record.picking_type_id = this.cache.getRecord(
                 "stock.picking.type",
                 this.selectedPickingTypeId,
             );
             this.trigger("update");
         } else if (this.needPickings && this.selectedPickings.length) {
-            // Adds the selected pickings to the batch, created now if it is still a draft.
             const vals = {
                 picking_type_id: this.record.picking_type_id.id,
                 picking_ids: this.selectedPickings,
@@ -171,13 +159,12 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
                 this.name = this._getName();
             }
             this.selectedPickings = [];
-            this.config = { ...this.config, ...data.config }; // Get the picking type's scan restrictions configuration.
+            this.config = { ...this.config, ...data.config };
             this.trigger("update");
         }
     }
 
     async processBarcode(barcode) {
-        // scans should be ignored until the batch has been created
         if (this.record.state === "draft") {
             this.notification(
                 _t(
@@ -222,7 +209,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         if (!this.config.group_lines_by_product) {
             return groupedLines;
         }
-        // Make a second grouping by product.
         this._groupedLines = this._groupLines(
             [...this.pageLines],
             "batchParentLine",
@@ -265,13 +251,10 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
 
     selectOption(id) {
         if (this.needPickingType) {
-            // Selects a picking type.
             this.selectedPickingTypeId = this.selectedPickingTypeId === id ? false : id;
             this.trigger("update");
         } else if (this.needPickings) {
-            // Selects a picking.
             if (this.selectedPickings.indexOf(id) !== -1) {
-                // If picking already selected, removes it from the selected ones.
                 this.selectedPickings.splice(this.selectedPickings.indexOf(id), 1);
             } else {
                 this.selectedPickings.push(id);
@@ -284,16 +267,10 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         return this.picking.use_existing_lots;
     }
 
-    // -------------------------------------------------------------------------
-    // Private
-    // -------------------------------------------------------------------------
-
     _getLinesToMove() {
         const configScanProd = this.config.restrict_scan_product;
         const configScanDest = this.config.restrict_scan_dest_location;
         const lines = super._getLinesToMove();
-        // We may have multiple pickings in a batch which move the same product,
-        // then we should just update them all together.
         if (configScanDest === "mandatory" && configScanProd) {
             lines.push(...this.previousScannedLines);
         }
@@ -325,8 +302,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
 
         for (const line of lines) {
             if (!this.config.group_lines_by_product) {
-                // Don't color lines if they are grouped by product/locations (lines from different
-                // pickings can be grouped together so it makes no sense.)
                 line.colorLine = this.colorByPickingId.get(line.picking_id);
             }
             line.picking_id =
@@ -342,7 +317,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         if (this.record.picking_ids.length < 1) {
             return new Error("No picking related");
         }
-        // Get the first picking as a reference for some fields the batch hasn't.
         this.picking = this.cache.getRecord(
             "stock.picking",
             this.record.picking_ids[0],
@@ -364,10 +338,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
     }
 
     _findLine(barcodeData) {
-        // With batch pickings, we can have multiple grouped lines for the same tracked product if
-        // different pickings use the same tracked product. This override ensures once the user
-        // started to scan lot/serial numbers for a grouped line, we complete it before looking for
-        // another grouped line, even if the scanned LN/SN is reserved in another picking.
         const { lot, lotName, product } = barcodeData;
         const dataLotName = lotName || (lot && lot.name) || false;
         if (
@@ -395,7 +365,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
                     ) {
                         foundLine = line;
                         if (sameLotName) {
-                            // Prioritize this line if it has the scanned lot.
                             break;
                         }
                     }
@@ -407,7 +376,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
     }
 
     _getNewLineDefaultValues(fieldsParams) {
-        // Adds the default picking id and its corresponding color on the line.
         const defaultValues = super._getNewLineDefaultValues(...arguments);
         let line = this.selectedLine;
         if (!line) {
@@ -423,13 +391,11 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
                 line = this.pageLines[0];
             }
         }
-        // Get the line's picking as the default one, or take the batch's first one.
         const defaultPicking =
             (fieldsParams && fieldsParams.picking_id) ||
             (line && line.picking_id) ||
             this.picking;
         if (!this.config.group_lines_by_product) {
-            // Don't add the color if lines are grouped by product.
             defaultValues.colorLine = this.colorByPickingId.get(defaultPicking.id);
         }
         defaultValues.picking_id = defaultPicking;
@@ -455,7 +421,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
     }
 
     _lineCannotBeTaken(line) {
-        // Don't take another line if the selected one is not complete and are from different pickings.
         let selectedLine = this.selectedLine;
         if (selectedLine && selectedLine.product_id?.tracking !== "none") {
             selectedLine = this._getParentLine(selectedLine) || selectedLine;
@@ -477,7 +442,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         if (res) {
             return res;
         }
-        // Sort by picking's name.
         const picking1 = (l1.picking_id && l1.picking_id.name) || "";
         const picking2 = (l2.picking_id && l2.picking_id.name) || "";
         if (picking1 < picking2) {
@@ -490,7 +454,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
 
     _suggestPackages() {
         const suggestedPackagesByPicking = {};
-        // Checks if a line has a result package, and if so, links it to the according picking.
         for (const line of this.currentState.lines) {
             if (
                 line.result_package_id &&
@@ -500,7 +463,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
                     line.result_package_id.name;
             }
         }
-        // Suggests a package to scan for each picking's line if its picking is linked to a package.
         for (const line of this.currentState.lines) {
             if (
                 !line.result_package_id &&
@@ -511,9 +473,6 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
         }
     }
 
-    /**
-     * Set the batch's responsible if the batch or one of its picking is unassigned.
-     */
     async _setUser() {
         if (this._shouldAssignUser()) {
             this.record.user_id = user.userId;
@@ -531,11 +490,9 @@ export default class BarcodePickingBatchModel extends BarcodePickingModel {
     }
 
     _shouldAssignUser() {
-        // First checks if user should be assigned to batch...
         if (this.record.user_id !== user.userId) {
             return true;
         }
-        // ... then checks if user should be assigned to atleast one picking.
         for (const pickingId of this.record.picking_ids) {
             const picking = this.cache.getRecord("stock.picking", pickingId);
             if (picking.user_id !== user.userId) {

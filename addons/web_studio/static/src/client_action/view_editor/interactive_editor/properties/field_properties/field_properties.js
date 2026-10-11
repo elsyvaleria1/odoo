@@ -116,8 +116,6 @@ export class FieldProperties extends Component {
                     this.viewEditorModel.activeNodeXpath,
                 ),
             };
-            // FIXME: the python API is messy: we need to send node, which is the same as target since
-            // we are editing the target's attributes, to be able to modify the python field's string
             operation.node = operation.target;
             return this.viewEditorModel.doOperation(operation);
         }
@@ -142,7 +140,7 @@ export class FieldProperties extends Component {
         return (
             classList.contains("fw-bold") ||
             classList.contains("fw-bolder") ||
-            this.props.node.attrs.bold // legacy kanban
+            this.props.node.attrs.bold
         );
     }
 

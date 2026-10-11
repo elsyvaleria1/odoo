@@ -7,8 +7,6 @@ export function buildLineId(current) {
         if (value === null || value === undefined || value === false) {
             return "";
         } else if (typeof value === "object") {
-            // We're using the replaceAll to follow the python
-            // behavior where we're stringify a dict.
             return JSON.stringify(value).replaceAll('":', '": ');
         }
         return value;

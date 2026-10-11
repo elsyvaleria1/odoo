@@ -19,9 +19,8 @@ export function computeTotalComboPrice(selfOrder, productTemplate, comboValues, 
     );
     const order = baseLineValues.order_id;
 
-    // Generate temporary order lines to compute the price
     const transientLines = baseLineValues.combo_line_ids.map((cline) => {
-        const comboLine = cline[1]; //cline[O] is "create"
+        const comboLine = cline[1];
         return createTransientLine(order, {
             ...comboLine,
             combo_item_id: comboLine.combo_item_id.id,
@@ -56,7 +55,7 @@ export function getAttributeValues(selectedValues, models) {
     return Object.entries(selectedValues).reduce((acc, [, options]) => {
         const optionEntries = Object.entries(
             typeof options === "object" ? options : { [options]: true },
-        ).filter(([, isSelected]) => isSelected); // Only true values
+        ).filter(([, isSelected]) => isSelected);
 
         optionEntries.forEach(([optionId]) => {
             const attrVal = models["product.template.attribute.value"].get(
@@ -137,7 +136,6 @@ export function getOrderLineValues(
         const extraItems = [];
         const order = values.order_id;
 
-        // Group comboValues by combo_id
         const groupedByCombo = new Map();
         for (const item of comboValues) {
             const comboId = item.combo_item_id.combo_id;
@@ -149,7 +147,6 @@ export function getOrderLineValues(
 
         for (const [combo, items] of groupedByCombo) {
             const maxFree = combo.qty_free;
-            // Split items between free items and extra items.
             let freeCount = 0;
             for (const item of items) {
                 const availableFreeQty = Math.max(0, maxFree - freeCount);
@@ -216,7 +213,6 @@ export function getOrderLineValues(
 }
 
 function createTransientLine(order, raw) {
-    // TODO hack we need to find a better solution
     raw.order_id = order.id;
     const line = new PosOrderline({
         model: {

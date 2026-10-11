@@ -138,7 +138,6 @@ export class DashboardSearchBar extends Component {
 
     onSearchInputPointerDown(ev) {
         if (this.ui.isTouch) {
-            // Prevent the input from being focused on mobile, as it opens the keyboard
             ev.preventDefault();
         }
     }
@@ -468,7 +467,7 @@ export class DashboardSearchBar extends Component {
     }
 
     getTranslatedFilterLabel(filter) {
-        return _t(filter.label); // Label is extracted from the spreadsheet json file
+        return _t(filter.label);
     }
 
     selectItem(item) {

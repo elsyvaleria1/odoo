@@ -126,7 +126,6 @@ test("Allow SeenIndicators in WhatsApp Channels", async () => {
     await contains(".o-mail-MessageSeenIndicator .fa-check", { count: 1 });
 
     const [channel] = pyEnv["discuss.channel"].search_read([["id", "=", channelId]]);
-    // Simulate received channel seen notification
     pyEnv["bus.bus"]._sendone(
         channel,
         "mail.record/insert",

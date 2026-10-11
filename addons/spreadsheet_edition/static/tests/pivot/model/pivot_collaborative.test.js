@@ -46,12 +46,12 @@ test("Add a pivot", async () => {
         1,
     );
     const cellFormulas = {
-        B1: `=PIVOT.HEADER(1,"foo",1)`, // header col
-        A3: `=PIVOT.HEADER(1,"bar",FALSE)`, // header row
-        B2: `=PIVOT.HEADER(1,"foo",1,"measure","probability:sum")`, // measure
-        B3: `=PIVOT.VALUE(1,"probability:sum","bar",FALSE,"foo",1)`, // value
-        F1: `=PIVOT.HEADER(1)`, // total header rows
-        A5: `=PIVOT.HEADER(1)`, // total header cols
+        B1: `=PIVOT.HEADER(1,"foo",1)`,
+        A3: `=PIVOT.HEADER(1,"bar",FALSE)`,
+        B2: `=PIVOT.HEADER(1,"foo",1,"measure","probability:sum")`,
+        B3: `=PIVOT.VALUE(1,"probability:sum","bar",FALSE,"foo",1)`,
+        F1: `=PIVOT.HEADER(1)`,
+        A5: `=PIVOT.HEADER(1)`,
     };
     for (const [cellXc, formula] of Object.entries(cellFormulas)) {
         spExpect([alice, bob, charlie]).toHaveSynchronizedValue(
@@ -75,8 +75,6 @@ test("Add a pivot in another sheet", async () => {
         (user) => user.getters.getPivotIds(),
         ["PIVOT#1"],
     );
-    // Let the evaluation and the data sources do what they need to do
-    // before Bob and Charlie activate the second sheet to see the new pivot.
     await animationFrame();
     bob.dispatch("ACTIVATE_SHEET", {
         sheetIdFrom: alice.getters.getActiveSheetId(),

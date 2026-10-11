@@ -20,7 +20,6 @@ let target;
 let serverData;
 const chartId = "uuid1";
 
-/** Open the chart side panel of the first chart found in the page*/
 async function openChartSidePanel() {
     await contains(".o-chart-container").click({ button: 2 });
     await contains(".o-menu-item[title='Edit']").click();
@@ -190,7 +189,6 @@ test("can remove link between an odoo menu and a chart in the side panel", async
     await animationFrame();
     const irMenuField = target.querySelector(".o-ir-menu-selector input");
 
-    // edit() helper is not working on Many2XAutocomplete for whatever reason
     irMenuField.value = "";
     await manuallyDispatchProgrammaticEvent(irMenuField, "change");
 

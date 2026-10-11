@@ -150,10 +150,6 @@ export class SyntaxHighlightingPlugin extends Plugin {
                     () => {
                         if (preserveFocus && isPreInSelection) {
                             const textarea = codeBlock.querySelector("textarea");
-                            // Not `ownerDocument.activeElement`: that is the
-                            // shadow HOST for a code block inside one, so the
-                            // comparison never matched and focus was taken
-                            // again on every render.
                             if (textarea !== getActiveElement(codeBlock)) {
                                 textarea.focus();
                                 this.dependencies.history.stageFocus();

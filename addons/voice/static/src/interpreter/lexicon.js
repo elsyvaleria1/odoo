@@ -47,8 +47,6 @@ export const BUTTON_VERBS = wordSet(`
     press push hit run button
 `);
 
-// what a view offers besides its buttons: its print reports, its export,
-// the send button of its record
 export const PRINT_VERBS = wordSet(`
     imprime imprimir imprimelo imprimela imprimeme
     print

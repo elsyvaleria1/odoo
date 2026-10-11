@@ -17,10 +17,6 @@ export class DocumentsDatetimeBtnField extends Component {
     props = useProps(this.constructor.props);
 
     setup() {
-        // The record already holds a Temporal.ZonedDateTime (or false): it used to be
-        // pushed through deserializeDateTime, which parses strings, and the
-        // picker opened on an invalid date. Read once on purpose: re-reading
-        // per render makes the picker service re-apply a cleared value.
         const pickerProps = {
             minDate: now(),
             type: "datetime",

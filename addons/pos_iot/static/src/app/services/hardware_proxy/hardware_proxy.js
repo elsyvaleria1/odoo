@@ -26,10 +26,6 @@ patch(HardwareProxy.prototype, {
             iot_http: this.iotHttp,
         });
     },
-    /**
-     * Ping all of the IoT Boxes of the devices set on POS config and update the
-     * status icon
-     */
     pingBoxes() {
         this.setConnectionInfo({ status: "connecting" });
         for (const { ip } of this.iotBoxes) {

@@ -84,7 +84,6 @@ export class KnowledgeCommentsPlugin extends Plugin {
             },
         ],
 
-        /** Handlers */
         layout_geometry_change_handlers: () => {
             this.commentBeaconManager?.drawThreadOverlays();
             this.config.onLayoutGeometryChange();
@@ -118,7 +117,6 @@ export class KnowledgeCommentsPlugin extends Plugin {
         clean_for_save_handlers: this.cleanForSave.bind(this),
         normalize_handlers: this.normalize.bind(this),
 
-        /** Overrides */
         delete_forward_overrides: withSequence(1, this.handleDeleteForward.bind(this)),
         delete_backward_overrides: withSequence(
             1,
@@ -133,11 +131,9 @@ export class KnowledgeCommentsPlugin extends Plugin {
     };
 
     setup() {
-        // ensure that this plugin is not dependent on the collaboration plugin
         this.peerId = this.config.collaboration?.peerId ?? "";
         this.commentsService = this.services["knowledge.comments"];
         this.commentsState = this.commentsService.getCommentsState();
-        // reset pending beacons
         let previousActiveThreadId;
         this.alive = true;
         effect(
@@ -294,8 +290,6 @@ export class KnowledgeCommentsPlugin extends Plugin {
             endContainer.previousSibling?.nodeType === Node.TEXT_NODE &&
             isZwnbsp(endContainer.previousSibling)
         ) {
-            // This part of the condition may not be necessary since
-            // it seems that endOffset is never set at 0
             container = endContainer.previousSibling;
         }
         if (container) {
@@ -320,10 +314,7 @@ export class KnowledgeCommentsPlugin extends Plugin {
         );
     }
 
-    // TODO ABD: -> CTRL + DELETE needs some custo too (currently deletes too much)
     handleDeleteForward(range) {
-        // allow deleteForward to go past a beacon instead of being blocked.
-        // TODO ABD: add tests for both cases
         const target = this.identifyNextBeacon(range);
         if (target) {
             const [anchorNode, anchorOffset] = rightPos(target);
@@ -337,7 +328,6 @@ export class KnowledgeCommentsPlugin extends Plugin {
     }
 
     handleDeleteBackward(range) {
-        // allow deleteBackward to go past a beacon instead of being blocked.
         const target = this.identifyPreviousBeacon(range);
         if (target) {
             const [anchorNode, anchorOffset] = leftPos(target);
@@ -423,8 +413,6 @@ export class KnowledgeCommentsPlugin extends Plugin {
 
     normalize(elem) {
         this.commentBeaconManager.sortThreads();
-        // TODO ABD: think about the fact that a beacon can be normalized in different steps
-        // for different users, is this an issue ?
         this.commentBeaconManager.removeBogusBeacons();
         for (const beacon of elem.querySelectorAll(".oe_thread_beacon")) {
             if (
@@ -499,7 +487,6 @@ export class KnowledgeCommentsPlugin extends Plugin {
             if (bogusIds.has(beacon.dataset.id)) {
                 beacon.remove();
             } else {
-                // remove zwnbsp
                 beacon.replaceChildren();
                 delete beacon.dataset.peerId;
             }

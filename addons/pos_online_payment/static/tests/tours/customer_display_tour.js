@@ -32,7 +32,6 @@ registry.category("web_tour.tours").add("CustomerDisplayTourOnlinePayment", {
             Order.doesNotHaveLine({}),
             CustomerDisplay.amountIs("Total", "0.00"),
 
-            // Make a new order
             CustomerDisplay.postMessage(
                 CustomerDisplay.ADD_PRODUCT_SELECTED,
                 "add product",

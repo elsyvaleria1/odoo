@@ -140,7 +140,7 @@ class SocialStreamPost extends models.ServerModel {
         },
     ];
     _views = {
-        kanban: /*xml*/ `
+        kanban: `
             <kanban class="o_social_stream_post_kanban"
                 create="0"
                 edit="0"
@@ -260,8 +260,6 @@ test("Check accounts statistics", async () => {
     expect(".o_social_stream_stat_box").toHaveCount(2, {
         message: "Kanban View should contain exactly 2 lines of account statistics.",
     });
-    // 2 because '50%' and `60%` counts as a match
-    // so if we want to check that there are no actual 0%, it means we want only 2 times "contains 0%"
     expect(".o_social_stream_stat_box small:contains('0%')").toHaveCount(2, {
         message: "Accounts with has_trends = false should not display trends.",
     });
@@ -347,7 +345,6 @@ test("Check comments behavior", async () => {
     });
     await contains(".o_social_stream_post_facebook_stats .fa-comments").click();
 
-    // 1. Root comment is displayed with 3 likes and 2 replies options.
     expect(
         ".o_social_comments_messages .o_social_comment_text:contains('Root Comment')",
     ).toHaveCount(1, { message: "Root comment should be displayed." });
@@ -363,7 +360,6 @@ test("Check comments behavior", async () => {
         },
     );
 
-    // 2. Load replies and check display.
     await contains(
         ".o_social_comment_wrapper span.o_social_comment_load_replies",
     ).click();
@@ -376,9 +372,6 @@ test("Check comments behavior", async () => {
         ".o_social_comment_wrapper .o_social_comment_message div.o_social_comment_text:contains('Sub Comment 2')",
     ).toHaveCount(1, { message: "Second sub comment should be loaded" });
 
-    // 3. Check like/dislike behavior
-
-    // 3a. Check like status and count
     expect(
         ".o_social_comment .o_social_comment:contains('Sub Comment 1') .o_social_comment_user_likes",
     ).toHaveCount(1, { message: "First comment is liked" });
@@ -395,14 +388,12 @@ test("Check comments behavior", async () => {
         ".o_social_comment .o_social_comment:contains('Sub Comment 2') .o_social_likes_count:contains('10')",
     ).toHaveCount(1, { message: "Sub comment 2 should have 10 likes" });
 
-    // 3b. Dislike first and like second sub-comments
     const subComments = queryAll(".o_social_comment .o_social_comment");
     await contains(".o_social_comment_like", { root: subComments[0] }).click();
     expect.verifySteps(["like_comment"]);
     await contains(".o_social_comment_like", { root: subComments[1] }).click();
     expect.verifySteps(["like_comment"]);
 
-    // 3a. Check like status and count now that it's reversed
     expect(
         ".o_social_comment .o_social_comment:contains('Sub Comment 1'):not(.o_social_comment_user_likes)",
     ).toHaveCount(1, { message: "First comment is NOT liked" });
@@ -419,10 +410,6 @@ test("Check comments behavior", async () => {
         ".o_social_comment .o_social_comment:contains('Sub Comment 2') .o_social_likes_count:contains('11')",
     ).toHaveCount(1, { message: "Sub comment 2 should have 11 likes" });
 
-    // 4. Add comment
-
-    // Patch "addComment" to return new comment
-    // Sadly 'XMLHttpRequest' cannot be mocked easily (would have been better)
     patchWithCleanup(StreamPostCommentsReply.prototype, {
         async _addComment(textarea) {
             const formData = new FormData(
@@ -446,7 +433,6 @@ test("Check comments behavior", async () => {
         ".o_social_comment_wrapper .o_social_comment_message div.o_social_comment_text:contains('New Comment')",
     ).toHaveCount(1, { message: "New Comment should be displayed." });
 
-    // 5. Add reply to comment
     await contains(
         ".o_social_comment_wrapper span.o_social_comment_load_replies",
     ).click();

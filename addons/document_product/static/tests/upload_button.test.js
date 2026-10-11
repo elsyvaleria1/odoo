@@ -1,10 +1,6 @@
 import { UploadButton } from "@document_product/js/product_document_kanban/upload_button/upload_button";
 import { expect, test } from "@odoo/hoot";
 
-// ---------------------------------------------------------------------------
-// UploadButton.validFileType
-// ---------------------------------------------------------------------------
-
 /** @param {string} allowed @param {string} type */
 function accepts(allowed, type) {
     return UploadButton.prototype.validFileType.call(
@@ -18,8 +14,6 @@ test("a type absent from the whitelist is rejected", () => {
 });
 
 test("a file the browser could not type is rejected", () => {
-    // "" is what a browser reports for an extension it does not recognise --
-    // the exact case a MIME whitelist exists to catch.
     expect(accepts("image/png,image/jpeg", "")).toBe(false);
 });
 

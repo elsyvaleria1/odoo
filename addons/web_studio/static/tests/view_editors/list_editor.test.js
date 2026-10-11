@@ -143,9 +143,6 @@ test("every column carries the xpath of its arch node, header and buttons includ
             <field name="float_field"/>
         </list>`,
     });
-    // the parser walks the view IR: an xpath is computed from the IR's
-    // parent map, so a node under <header> resolves like a column does;
-    // siblings are counted by kind, so the two buttons do not shift field[3]
     expect(
         queryAllAttributes("thead [data-studio-xpath]", "data-studio-xpath"),
     ).toEqual(["/list[1]/field[1]", "/list[1]/field[2]", "/list[1]/field[3]"]);
@@ -413,7 +410,6 @@ test("invisible toggle field in list editor", async () => {
 test("field widgets correctly displayed and whitelisted in the sidebar (debug=false)", async () => {
     const wowlFieldRegistry = registry.category("fields");
     const charField = wowlFieldRegistry.get("char");
-    // Clean registry to avoid having noise from all the other widgets
     wowlFieldRegistry.getEntries().forEach(([key]) => {
         wowlFieldRegistry.remove(key);
     });
@@ -460,7 +456,6 @@ test("field widgets correctly displayed and whitelisted in the sidebar (debug=tr
 
     const wowlFieldRegistry = registry.category("fields");
     const charField = wowlFieldRegistry.get("char");
-    // Clean registry to avoid having noise from all the other widgets
     wowlFieldRegistry.getEntries().forEach(([key]) => {
         wowlFieldRegistry.remove(key);
     });
@@ -1299,7 +1294,6 @@ test("move a field in list", async () => {
         return editView(params, "list", arch);
     });
 
-    // list headers are styled text-transform: uppercase, which innerText reflects
     expect(queryAllTexts(".o_web_studio_list_view_editor th[data-name]")).toEqual([
         "ID",
         "DISPLAY NAME",
@@ -1489,13 +1483,6 @@ test("error in view edition: undo", async () => {
     ]);
     expect.verifyErrors(["Boom"]);
 
-    // The rejected `edit_view` is caught by Studio (hence the notification
-    // above) AND rethrown, so the global error service opens its dialog on top
-    // of the editor -- real behaviour that this suite could not see while its
-    // helper stripped the `error` service out of the registry. Dismiss it here:
-    // the generic `.modal-dialog .btn-primary` selector used below would
-    // otherwise match the error dialog's "Close" button instead of the removal
-    // confirmation, and the second `edit_view` would never be sent.
     await contains(".o_error_dialog .btn-primary").click();
 
     expect(".o_web_studio_list_view_editor [data-studio-xpath]").toHaveCount(1);

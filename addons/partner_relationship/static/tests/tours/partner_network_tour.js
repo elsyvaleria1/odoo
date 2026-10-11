@@ -19,11 +19,6 @@ function relatedShown() {
     );
 }
 
-// Every contact on screen is counted once, by the tie that reached it, so the
-// filter counts must always add up to the figure beside them. Checked after
-// every toggle and not only at load: an earlier version was right on arrival
-// and then froze, so hiding a kind moved the header from 20 to 16 while every
-// count stood still.
 function assertCountsAddUp(where) {
     const counts = [...document.querySelectorAll(".o_partner_network_count")].reduce(
         (sum, node) => sum + Number(node.textContent.trim()),
@@ -35,11 +30,6 @@ function assertCountsAddUp(where) {
     }
 }
 
-// The widget only ever renders inside a form view, and every defect it has had
-// so far -- a paper that drew nothing, a palette that resolved to black, a
-// canvas that collapsed to zero height -- was invisible to a unit test of the
-// layout and obvious the moment something drew it. So this walks the real
-// thing: what it draws, the size it draws at, and the filters over it.
 registry.category("web_tour.tours").add("partner_network_tour", {
     url: "/odoo/action-partner_relationship.action_res_partner_network",
     steps: () => [
@@ -104,11 +94,6 @@ registry.category("web_tour.tours").add("partner_network_tour", {
             trigger: ".o_partner_network_toolbar .fa-crosshairs",
         },
         {
-            // Presence is not enough. JointJS writes its size inline on the
-            // element it is handed, so a box that collapses to zero height
-            // still holds every node in the DOM and every selector above still
-            // matches -- the diagram is simply invisible, and the fit clamps to
-            // the minimum scale. Measure the box and the drawn extent instead.
             content: "the diagram has real size on screen",
             trigger: ".o_partner_network_canvas",
             run() {
@@ -128,18 +113,7 @@ registry.category("web_tour.tours").add("partner_network_tour", {
                 if (zoom === "20%") {
                     throw new Error("fit clamped to the minimum scale");
                 }
-                // The full-page action must use the room it has and no more.
-                // A JointJS paper reports scrollWidth === clientWidth, so a box
-                // taller than the window is not scrolled to -- it is cut off,
-                // silently. This ran 147px past the fold before the box was
-                // sized from its own offset rather than from a guess at the
-                // chrome above it.
                 if (this.anchor.closest(".o_partner_network_full")) {
-                    // Across, too. A form sheet caps at 1400px so prose stays
-                    // readable, and on a record with a chatter the rest is the
-                    // chatter's -- this form has none, so past that width the
-                    // remainder was simply blank: 520px of it at 1920, with the
-                    // diagram squeezed into the left two thirds.
                     const content = document
                         .querySelector(".o_content")
                         .getBoundingClientRect();
@@ -164,11 +138,6 @@ registry.category("web_tour.tours").add("partner_network_tour", {
             },
         },
         {
-            // Measured on the RENDERED boxes, not on the layout's model of
-            // them. The model reported zero collisions while four labels were
-            // visibly sitting on nodes: it placed them along the centre-to-
-            // centre line while JointJS draws the link boundary to boundary,
-            // and nothing but the DOM could tell the two apart.
             content: "no edge label sits on a contact",
             trigger: ".o_partner_network_canvas svg",
             run() {
@@ -245,10 +214,6 @@ registry.category("web_tour.tours").add("partner_network_tour", {
             run: "click",
         },
         {
-            // Trigger-only on purpose: a step carrying a run() waits for its
-            // trigger to become actionable, and a disabled button never does,
-            // so asserting the disabled state AND reading the DOM in one step
-            // hangs until the tour times out. Assert here, measure below.
             content: "clearing disables None",
             trigger: ".o_partner_network_legend .btn:contains(None)[disabled]",
         },

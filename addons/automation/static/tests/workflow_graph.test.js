@@ -419,9 +419,6 @@ describe("workflow canvas payload translation", () => {
     });
 
     test("a payload that says nothing about deletion withholds it", () => {
-        // A step a recorded run reached cannot be unlinked at all, so silence
-        // has to read as "no": guessing yes offers a button that only ever
-        // produces a foreign-key error.
         for (const node of toFlowGraph(PAYLOAD).nodes) {
             expect(node.deletable).toBe(false);
         }

@@ -81,8 +81,6 @@ export class BackgroundPositionOverlayAction extends BuilderAction {
     async load({ editingElement }) {
         const imgEl = await loadImage(getBgImageURLFromEl(editingElement));
         return new Promise((resolve) => {
-            // Hide the builder overlay buttons when the user changes
-            // the background position.
             this.dependencies.overlayButtons.hideOverlayButtonsUi();
             let appliedBgPosition = "";
             const onRemove = () => {

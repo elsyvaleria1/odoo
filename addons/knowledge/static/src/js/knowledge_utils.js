@@ -1,7 +1,6 @@
 /** @odoo-module native */
 import { loadEmoji } from "@web/components/emoji_picker";
 
-// List of icons that should be avoided when adding a random icon
 const iconsBlocklist = ["💩", "💀", "☠️", "🤮", "🖕", "🤢", "😒"];
 
 /**

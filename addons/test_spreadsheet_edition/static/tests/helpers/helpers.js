@@ -116,7 +116,6 @@ export async function setupWithThreads(workbookdata = {}) {
         },
     ];
 
-    // When sending messages, the user needs to exist and be correctly configured in the server data so he can edit his messages.
     const { env: pyEnv } = await makeMockServer();
     if ("res.users" in pyEnv) {
         /** @type {import("mock_models").ResUsers} */

@@ -14,9 +14,6 @@ import { useService } from "@web/core/utils/hooks";
 import { usePopover } from "@web/ui/popover";
 const { PivotLayoutConfigurator } = components;
 
-/**
- * This override prevents following relations for many2many fields.
- */
 export class PivotModelFieldSelectorPopover extends ModelFieldSelectorPopover {
     static template = "spreadsheet_edition.PivotModelFieldSelectorPopover";
 
@@ -59,7 +56,6 @@ export class PivotModelFieldSelector extends ModelFieldSelector {
 
     setup() {
         super.setup();
-        // Patch popover to add o_spreadsheet_pivot_field_selector class to override dark mode style
         this.popover = usePopover(this.constructor.components.Popover, {
             class: "o_popover_field_selector o_spreadsheet_pivot_field_selector",
             onClose: async () => {

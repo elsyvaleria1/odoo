@@ -66,8 +66,6 @@ export class NewButtonBoxDialog extends Component {
                 string: this.text || _t("New button"),
                 attrs: {
                     class: "oe_stat_button",
-                    // full "fa-<family> fa-<name>" string: iconFromString
-                    // resolves it as-is when rendering the button
                     icon: this.state.icon,
                 },
             },

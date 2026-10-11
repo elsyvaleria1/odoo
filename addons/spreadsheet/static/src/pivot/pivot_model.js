@@ -31,119 +31,6 @@ const { DEFAULT_LOCALE } = constants;
 
 export const NO_RECORD_AT_THIS_POSITION = "__NO_RECORD_AT_THIS_POSITION__";
 
-/**
- * # On custom groups:
- *
- * In spreadsheet, we have a feature allowing for the user to define custom groups in pivots, ie. they can select two
- * values of a groupBy and decide to group them together. This will create a new custom field that will contains the
- * custom groups.
- *
- * The server is unaware of these custom fields, so we have to do the aggregation client side. This section will detail
- * how it is achieved. Let's take this pivot as an example:
- *
- *  _______________________________________________________________________________________________________
- * |                                |                                                                       |
- * |                                |                     Pipeline Analysis by Stage                        |
- * |                                |_______________________________________________________________________|
- * |                                |                Start               |               End                |
- * |                                |____________________________________|__________________________________|________________
- * |                                |   New            |  Qualified      |  Proposition    |  Won           |  Total         |
- * |________________________________|__________________|_________________|_________________|________________|________________|
- * |                                |    Exp. Rev.     |    Exp. Rev.    |    Exp. Rev.    |   Exp. Rev.    |   Exp. Rev.    |
- * |________________________________|__________________|_________________|_________________|________________|________________|
- * | Total                          |  $104,000.00     |  $87,300.00     |  $105,100.00    |  $23,800.00    |  $320,200.00   |
- * |________________________________|__________________|_________________|_________________|________________|________________|
- *
- * Here we have two levels of groupBy:
- * - the first one is stage_id (New, Qualified, Proposition, Won)
- * - the second one is a custom field that groups the stages into two groups: Start (New, Qualified) and
- *      End (Proposition, Won). We'll call this custom field custom_stage.
- *
- *
- * ############### RPC
- *
- * The groupBys of the pivot are then ["stage_id", "custom_stage"]. But since the server is unaware of custom_stage, we'll
- * first need to change the RPC to something the server can give us results for.
- *
- * This is done in `_getGroupsSubdivision`. The rest of the pivot model is also unaware of the custom groups, so it will
- * give the RPC parameters as if the custom group was a standard group.
- *
- * In our pivot, the `groupingSets` of the RPC will be:
- *          `[[], ["custom_stage"], ["custom_stage", "stage_id"]]`
- *
- * Simply replacing the custom_stage with it's parent groupBy, will give us:
- *          `[[], ["stage_id"], ["stage_id", "stage_id"]]`
- *
- * The server doesn't support duplicate groupBys (and they are useless), so we need a bit of processing to remove the
- * duplicates and get the grouping sets that will be used in the RPC:
- *          `[[], ["stage_id"]]`
- *
- * The server result will look something like this:
- * [
- *   {
- *     rowGroupBy: [],
- *     colGroupBy: [],
- *     subGroups: [{ "expected_revenue:sum": 320200 }],
- *   },
- *   {
- *     rowGroupBy: [],
- *     colGroupBy: ["stage_id"],
- *     subGroups: [
- *       { stage_id: [1, "New"],         "expected_revenue:sum": 104000 },
- *       { stage_id: [2, "Qualified"],   "expected_revenue:sum": 87300 },
- *       { stage_id: [3, "Proposition"], "expected_revenue:sum": 105100 },
- *       { stage_id: [4, "Won"],         "expected_revenue:sum": 23800 },
- *     ],
- *   },
- * ]
- *
- * Note that this is not included for brevity sake, but the subGroups also contain the domains and _count for each group.
- *
- *
- * ############### Aggregating subGroups
- *
- * Now that we have the subgroups, we need to aggregate them to have the value of the custom groups. This'll be done in
- * `_addCustomGroupsToGroup`, for each groupBys of our original grouping sets. Let's focus on our original grouping
- *  set of `["custom_stage"]`.
- *
- * The first step is to add the value of the custom field to all the subgroups. We'll have something like this:
- *    subGroups: [
- *       { stage_id: [1, "New"],         custom_stage: "start", "expected_revenue:sum": 104000 },
- *       { stage_id: [2, "Qualified"],   custom_stage: "start", "expected_revenue:sum": 87300 },
- *       { stage_id: [3, "Proposition"], custom_stage: "end",   "expected_revenue:sum": 105100 },
- *       { stage_id: [4, "Won"],         custom_stage: "end",   "expected_revenue:sum": 23800 },
- *     ]
- *
- *  We can now use `Object.groupBy` to group the subGroups with the same groupBy values. We'll end up with something like this:
- *  Object.groupBy result: {
- *    '["Start"]': [
- *        { stage_id: [1, "New"], "expected_revenue:sum": 104000, Stage2: "Start" },
- *        { stage_id: [2, "Qualified"], "expected_revenue:sum": 87300, Stage2: "Start" },
- *    ],
- *    '["End"]': [
- *        { stage_id: [3, "Proposition"], "expected_revenue:sum": 105100, Stage2: "End" },
- *        { stage_id: [4, "Won"], "expected_revenue:sum": 23800, Stage2: "End" },
- *    ],
- * }
- *
- * It is now simple to aggregate this (`_aggregateSubGroups`) to get our final subgroups. In our example, we just need to sum the
- * "expected_revenue:sum" for each group. The domains of each subGroups will also be aggregated with `OR` operators.
- * final subgroups: [
- *    { stage_id: [1, "New"], "expected_revenue:sum": 191300, Stage2: "Start" },
- *    { stage_id: [3, "Proposition"], "expected_revenue:sum": 128900, Stage2: "End" },
- * ]
- *
- * Note: Client side aggregation works with every aggregator but `count_distinct` where it's impossible to aggregate client-side.
- * This is why custom groups are disabled when a measure with `count_distinct` is used.
- *
- * The last step is to sort the subGroups if needed (`_sortCustomFieldsInSubGroups`), and voilà ! We have done the client-side
- * grouping of the custom fields.
- */
-
-/**
- * This class is an extension of PivotModel with some additional information
- * that we need in spreadsheet (display_name, isUsedInSheet, ...)
- */
 /** @extends {PivotModel<{_t: typeof import("@web/core/translation")._t}>} */
 export class OdooPivotModel extends PivotModel {
     /**
@@ -239,10 +126,6 @@ export class OdooPivotModel extends PivotModel {
         await super.load(searchParams);
     }
 
-    //--------------------------------------------------------------------------
-    // Evaluation
-    //--------------------------------------------------------------------------
-
     /**
      * Get the value of the given domain for the given measure
      * @param {PivotMeasure} measure
@@ -330,10 +213,6 @@ export class OdooPivotModel extends PivotModel {
         return lastNode.value;
     }
 
-    //--------------------------------------------------------------------------
-    // Misc
-    //--------------------------------------------------------------------------
-
     /**
      * Get the Odoo domain corresponding to the given domain
      * @param {PivotDomain} domain
@@ -354,7 +233,6 @@ export class OdooPivotModel extends PivotModel {
 
     getCollapsedTableStructure() {
         if (this._collapsedTableStructure === undefined) {
-            // lazy build the structure
             this._collapsedTableStructure = this._buildTableStructure("collapsed");
         }
         return this._collapsedTableStructure;
@@ -362,7 +240,6 @@ export class OdooPivotModel extends PivotModel {
 
     getExpandedTableStructure() {
         if (this._expandedTableStructure === undefined) {
-            // lazy build the structure
             this._expandedTableStructure = this._buildTableStructure("expanded");
         }
         return this._expandedTableStructure;
@@ -407,7 +284,7 @@ export class OdooPivotModel extends PivotModel {
     _buildTableStructure(mode) {
         const cols = this._getSpreadsheetCols();
         const rows = this._getSpreadsheetRows(this.data.rowGroupTree);
-        rows.push(rows.shift()); //Put the Total row at the end.
+        rows.push(rows.shift());
         const measures = this.getDefinition()
             .measures.filter((measure) => !measure.isHidden)
             .map((measure) => measure.id);
@@ -430,20 +307,12 @@ export class OdooPivotModel extends PivotModel {
         );
     }
 
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
-
     /**
      * @override
      */
     async _loadData(config) {
         /** @type {(groupFieldString: string) => ReturnType<typeof parseGroupField>} */
         this.parseGroupField = parseGroupField.bind(null, this.metaData.fields);
-        /*
-         * prune is manually set to false in order to expand all the groups
-         * automatically
-         */
         const prune = false;
         const loaded = await super._loadData(config, prune);
         if (!loaded) {
@@ -557,16 +426,10 @@ export class OdooPivotModel extends PivotModel {
         return super._sanitizeLabel(value, groupBy, config);
     }
 
-    /**
-     * Check if the given field is used as col group by
-     */
     _isCol(nameWithGranularity) {
         return this.metaData.fullColGroupBys.includes(nameWithGranularity);
     }
 
-    /**
-     * Check if the given field is used as row group by
-     */
     _isRow(nameWithGranularity) {
         return this.metaData.fullRowGroupBys.includes(nameWithGranularity);
     }
@@ -712,7 +575,6 @@ export class OdooPivotModel extends PivotModel {
         generateTreeHeaders(this.data.colGroupTree);
         const hasColGroupBys = this.metaData.colGroupBys.length;
 
-        // 2) generate measures row
         const measureRow = [];
 
         if (hasColGroupBys) {
@@ -736,9 +598,8 @@ export class OdooPivotModel extends PivotModel {
             measureRow.push(measureCell);
         });
         headers.push(measureRow);
-        // 3) Add the total cell
         if (headers.length === 1) {
-            headers.unshift([]); // Will add the total there
+            headers.unshift([]);
         }
         headers[headers.length - 2].push({
             fields: [],
@@ -749,11 +610,6 @@ export class OdooPivotModel extends PivotModel {
         return headers;
     }
 
-    /**
-     * This method is used to compute the aggregate spec of a measurement in the
-     * data of the web model. It's needed since we support to define an
-     * aggregator for a field.
-     */
     _getAggregateSpec(measure) {
         if (measure.fieldName === "__count") {
             return "__count";
@@ -914,7 +770,6 @@ export class OdooPivotModel extends PivotModel {
                 childrenMap.get(key).push(item);
             }
 
-            // Sort group keys
             const customField = this.definition.customFields?.[groupBy];
             const keys = Array.from(childrenMap.keys());
             const order = this.definition.getDimension(groupBy)?.order;
@@ -937,12 +792,6 @@ export class OdooPivotModel extends PivotModel {
         return sortSubGroups(groupBys, subGroups);
     }
 
-    /**
-     * If the measures can be aggregated client side (not `count_distinct`), we can do a single RPC to get all the
-     * subgroups, then do a Object.groupBy() client side to aggregate the subgroups.
-     *
-     * See comment at the start of the file for more details.
-     */
     async _doCustomGroupSubdivision(params, groupInfo) {
         const customFields = this.definition.customFields || {};
 
@@ -956,8 +805,6 @@ export class OdooPivotModel extends PivotModel {
             ),
         }));
 
-        // Grouping sets need to be unique, but with custom groups some might be duplicated. It happens when we do
-        // something like groupBy=[grouped:user_id, user_id], we only want to fetch groupBy=[user_id]
         const groupInfoKeysSet = new Set();
         const uniqueGroupInfo = [];
         for (const info of mockGroupInfo) {
@@ -979,7 +826,6 @@ export class OdooPivotModel extends PivotModel {
             key.split(",").filter((gb) => gb !== ""),
         );
 
-        // Remove custom groups from order
         if (params.kwargs.order) {
             const fieldNameRegex = /(.*) (asc|desc)/;
             params.kwargs.order = params.kwargs.order
@@ -1047,9 +893,6 @@ export class OdooPivotModel extends PivotModel {
             }
         }
 
-        // Note: we need to preserve the order of the subGroups from the server. Object.groupBy() has no guarantee
-        // on the order of keys, but its implementation in major browsers does seem to preserve the order. We'll use
-        // Object.groupBy() until we find practical issues with it.
         const getKey = (subGroup) =>
             JSON.stringify(groupBys.map((groupBy) => subGroup[groupBy]));
         const groupedSubgroups = Object.groupBy(subGroups, getKey);
@@ -1077,7 +920,6 @@ export class OdooPivotModel extends PivotModel {
                 const measurementId = this._getAggregateSpec(measure);
                 let measurement = group[measurementId];
                 if (measurement instanceof Array) {
-                    // case field is many2one and used as measure and groupBy simultaneously
                     measurement = 1;
                 }
                 if (measure.type === "boolean" && typeof measurement === "boolean") {

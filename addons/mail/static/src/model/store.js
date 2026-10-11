@@ -39,7 +39,6 @@ export function observeKey(target, key, callback) {
         const val = /** @type {Object<string, unknown> | undefined} */ (
             subscription.proxy
         )?.[/** @type {string} */ (key)];
-        // a markup is a String object: its keys are its character indices, one per byte
         if (typeof val === "object" && val !== null && !(val instanceof String)) {
             void Object.keys(val);
         }
@@ -334,7 +333,6 @@ export class Store extends Record {
         this._drainIsolated(RD_QUEUE, () =>
             this._drainDeletes(RD_QUEUE, deletingRecordsByLocalId),
         );
-        // taken after the deletes so the hard deletes they queue drain in this iteration
         const RHD_QUEUE = this._takeQueue("RHD_QUEUE");
         this._drainIsolated(RHD_QUEUE, () =>
             this._drainHardDeletes(RHD_QUEUE, deletingRecordsByLocalId),
@@ -345,8 +343,6 @@ export class Store extends Record {
      * @param {() => void} drain
      */
     _drainIsolated(queue, drain) {
-        // each drain removes an item before running it: a throw loses that item
-        // only, not the rest of this queue nor the queues already taken after it
         while (queue.size > 0) {
             try {
                 drain();
@@ -423,7 +419,6 @@ export class Store extends Record {
             }
             this._throwFirstQueuedError();
         }
-        // A failed callback is rethrown above, after queued updates are flushed.
         return /** @type {T} */ (res);
     }
     /**
@@ -476,8 +471,6 @@ export class Store extends Record {
                     if (extraFields) {
                         vals = { ...vals, ...extraFields };
                     }
-                    // the identity only matters to pair a `_DELETE` row with an
-                    // insert of the same record in one payload: the later one wins
                     if (vals._DELETE) {
                         if (!extraFields) {
                             vals = { ...vals };
@@ -517,8 +510,6 @@ export class Store extends Record {
     onChange(record, name, cb) {
         /** @type {Set<() => void>} */
         const observes = new Set();
-        // one callback per subscription, so keys changed in the same update
-        // queue it once instead of once per key
         const fn = () => {
             const pending = [...observes];
             observes.clear();

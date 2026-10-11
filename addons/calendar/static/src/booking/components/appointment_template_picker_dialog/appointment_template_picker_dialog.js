@@ -3,12 +3,6 @@ import { Component, onWillStart, t, useProps } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { Dialog } from "@web/ui/dialog";
 
-/**
- * This component will display an appointment template picker.
- * When using the create button in form / kanban / list views,
- * The dialog will open and on selection an appointment type
- * will be created with the template values, and its form view opened.
- */
 export class AppointmentTemplatePickerDialog extends Component {
     static template = "calendar.booking.AppointmentTemplatePickerDialog";
     static components = { Dialog };

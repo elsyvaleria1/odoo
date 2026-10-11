@@ -3,7 +3,6 @@ import { registry } from "@web/core/registry";
 registry.category("web_tour.tours").add("test_error_website", {
     url: "/test_error_view",
     steps: () => [
-        // RPC ERROR
         {
             content: "trigger rpc user error",
             trigger: 'a[href="/test_user_error_json"]',
@@ -82,7 +81,6 @@ registry.category("web_tour.tours").add("test_error_website", {
             trigger: ".modal-footer button.btn.btn-primary",
             run: "click",
         },
-        // HTTP ERROR
         {
             content: "trigger http user error",
             trigger: "body",
@@ -234,7 +232,6 @@ registry.category("web_tour.tours").add("test_error_website", {
         },
         {
             content: "http error 403 page has title but no message",
-            // See http.py _transactionning, the exception is replaced so there is no message !
             trigger: 'div#wrap:not(:has(pre:contains("Traceback"))',
             run: function () {
                 window.location.href =

@@ -61,13 +61,9 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         "createShapeContainer",
     ];
     setup() {
-        // TODO: update shapeBackgroundImagePerClass if a stylesheet value
-        // changes.
         this.shapeBackgroundImagePerClass = {};
         for (const styleSheet of this.document.styleSheets) {
             if (styleSheet.href && new URL(styleSheet.href).host !== location.host) {
-                // In some browsers, if a stylesheet is loaded from a different
-                // domain accessing cssRules results in a SecurityError.
                 continue;
             }
             for (const rule of [...styleSheet.cssRules]) {
@@ -77,8 +73,6 @@ export class BackgroundShapeOptionPlugin extends Plugin {
                 }
             }
         }
-        // Flip classes should no longer be used but are still present in some
-        // theme snippets.
         const flipEls = [
             ...this.editable.querySelectorAll(".o_we_flip_x, .o_we_flip_y"),
         ];
@@ -100,8 +94,6 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         const changedShape = !!newShapeData.shape;
         this.markShape(editingElement, newShapeData);
 
-        // Updates/removes the shape container as needed and gives it the
-        // correct background shape
         const json = editingElement.dataset.oeShapeData;
         const {
             shape,
@@ -119,12 +111,9 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         }
 
         if (changedShape) {
-            // Reset shape container when shape changes (e.g., for transparent
-            // color)
             shapeContainerEl = this.createShapeContainer(editingElement, shape);
         }
 
-        // Remove old flip classes (flipping is now done via SVG)
         shapeContainerEl.classList.remove("o_we_flip_x", "o_we_flip_y");
 
         shapeContainerEl.classList.toggle("o_we_animated", animated === "true");
@@ -133,7 +122,6 @@ export class BackgroundShapeOptionPlugin extends Plugin {
             Boolean(colors) || flip.length > 0 || parseFloat(shapeAnimationSpeed) !== 0;
 
         if (shouldCustomize) {
-            // Apply custom image, flip, speed
             shapeContainerEl.style.setProperty(
                 "background-image",
                 `url("${this.getShapeSrc(editingElement)}")`,
@@ -151,7 +139,6 @@ export class BackgroundShapeOptionPlugin extends Plugin {
                 shapeContainerEl.style.backgroundPosition = `${xPos}% ${yPos}%`;
             }
         } else {
-            // Let CSS class define the shape
             shapeContainerEl.style.setProperty("background-image", "");
             shapeContainerEl.style.setProperty("background-position", "");
         }
@@ -230,7 +217,6 @@ export class BackgroundShapeOptionPlugin extends Plugin {
         const json = editingElement.dataset.oeShapeData;
         if (json) {
             Object.assign(defaultData, JSON.parse(json.replace(/'/g, '"')));
-            // Compatibility with old shapes.
             defaultData.shape = defaultData.shape.replace("web_editor", "html_builder");
         }
         return defaultData;
@@ -266,7 +252,6 @@ export class BackgroundShapeOptionPlugin extends Plugin {
      */
     getShapeStyleUrl(shapeId) {
         const shapeClassName = `o_${shapeId.replace(/\//g, "_")}`;
-        // Match current palette
         return this.shapeBackgroundImagePerClass[`.o_we_shape.${shapeClassName}`];
     }
     /**
@@ -418,15 +403,9 @@ class ToggleBgShapeAction extends BaseAnimationAction {
                 (shape, i) => allPossiblesShapesUrl[i - 1] === previousShape,
             );
         }
-        // If there is no previous sibling, if the previous sibling
-        // had the last shape selected or if the previous shape
-        // could not be found in the possible shapes, default to the
-        // first shape.
         if (!shapeToSelect) {
             shapeToSelect = allPossiblesShapesUrl[0];
         }
-        // Only show on mobile by default if toggled from mobile
-        // view.
         const showOnMobile = this.config.isMobileView(editingElement);
         this.createShapeContainer(editingElement, shapeToSelect);
         const applyShapeParams = {
@@ -477,8 +456,6 @@ class FlipShapeAction extends BaseAnimationAction {
         });
     }
     isApplied({ editingElement, params: { mainParam: axis } }) {
-        // Compat: flip classes are no longer used but may be
-        // present in client db.
         const selector = `.o_we_flip_${axis}`;
         const hasFlipClass = !!editingElement.querySelector(
             `:scope > .o_we_shape${selector}`,
@@ -500,8 +477,6 @@ class SetBgAnimationSpeedAction extends BaseAnimationAction {
 class BackgroundShapeColorAction extends BaseAnimationAction {
     static id = "backgroundShapeColor";
     getValue({ editingElement, params: { mainParam: colorName } }) {
-        // TODO check if it works when the colorpicker is
-        // implemented.
         const { shape, colors: customColors } = this.getShapeData(editingElement);
         const colors = Object.assign(getDefaultColors(editingElement), customColors);
         const color = shape && colors[colorName];

@@ -1,7 +1,6 @@
 // @ts-check
 import { registry } from "@web/core/registry";
 
-/** @see mail/tests/test_discuss_channel_expand.py */
 registry
     .category("web_tour.tours")
     .add("mail/static/tests/tours/discuss_channel_expand_test_tour.js", {

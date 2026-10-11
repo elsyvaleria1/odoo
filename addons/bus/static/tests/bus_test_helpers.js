@@ -35,20 +35,14 @@ import { getWebSocketWorker, onWebsocketEvent } from "./mock_websocket.js";
  * @typedef {import("@bus/workers/websocket_worker").WorkerAction} WorkerAction
  */
 
-//-----------------------------------------------------------------------------
-// Setup
-//-----------------------------------------------------------------------------
-
 patch(busService, {
     _onMessage(env, id, type, payload) {
-        // Generic handlers (namely: debug info)
         if (type in busMessageHandlers) {
             busMessageHandlers[type](env, id, payload);
         } else {
             registerDebugInfo("bus message", { id, type, payload });
         }
 
-        // Notifications
         if (!busNotifications.has(env)) {
             busNotifications.set(env, []);
             after(() => busNotifications.clear());
@@ -115,9 +109,6 @@ const assertReceived = (expected, found) => {
         const { payload } = expected;
         if (payload !== null && payload !== undefined) {
             if (typeof payload === "function") {
-                // Boolean(): findNotification matched this payload with truthy
-                // semantics; asserting strict `true` here would fail matchers
-                // that return the matched value (e.g. a record id).
                 expect(Boolean(payload(found.payload))).toBe(true, { message });
             } else {
                 expect(found.payload).toEqual(payload, { message });
@@ -167,20 +158,18 @@ const busNotifications = new Map();
 const viewsRegistry = registry.category("bus.view.archs");
 viewsRegistry.category("activity").add(
     "default",
-    /* xml */ `
+    `
         <activity><templates /></activity>
     `,
 );
-viewsRegistry.category("form").add("default", /* xml */ `<form />`);
-viewsRegistry
-    .category("kanban")
-    .add("default", /* xml */ `<kanban><templates /></kanban>`);
-viewsRegistry.category("list").add("default", /* xml */ `<list />`);
-viewsRegistry.category("search").add("default", /* xml */ `<search />`);
+viewsRegistry.category("form").add("default", `<form />`);
+viewsRegistry.category("kanban").add("default", `<kanban><templates /></kanban>`);
+viewsRegistry.category("list").add("default", `<list />`);
+viewsRegistry.category("search").add("default", `<search />`);
 
 viewsRegistry.category("form").add(
     "res.partner",
-    /* xml */ `
+    `
     <form>
         <sheet>
             <field name="name" />
@@ -189,18 +178,7 @@ viewsRegistry.category("form").add(
     </form>`,
 );
 
-// How long the wait helpers give the client before failing. Every use below is
-// a positive-path wait -- the timer is cleared the moment the condition holds
-// -- so a longer budget costs nothing on a green run and only delays the report
-// of a test that was going to fail. 2s was too tight for a loaded runbot, where
-// the first wait after a mount pays for the whole mount and its first fetches.
-// 10s, matching the tour-step budget, leaves room inside hoot's own 15s
-// per-test ceiling (`_run_hoot` builds the URL with `&timeout=15000`).
 const TIMEOUT = 10_000;
-
-//-----------------------------------------------------------------------------
-// Exports
-//-----------------------------------------------------------------------------
 
 /**
  * Useful to display debug information about bus events in tests.
@@ -330,9 +308,6 @@ export async function waitNotifications(...expectedNotifications) {
     const positives = normalized.filter((n) => n.shouldHaveReceived);
     const negatives = normalized.filter((n) => !n.shouldHaveReceived);
 
-    // Wait for every POSITIVE to be delivered (postMessage delivery is async).
-    // Consume matches as they arrive so a single notification cannot satisfy
-    // two distinct expectations.
     const found = new Map();
     const remaining = new Set(positives);
     await waitUntil(
@@ -353,12 +328,6 @@ export async function waitNotifications(...expectedNotifications) {
     for (const expected of positives) {
         assertReceived(expected, found.get(expected));
     }
-    // Negatives are asserted only AFTER a settling window: an erroneous
-    // delivery to a stopped/left tab is an async postMessage (preceded by the
-    // worker's debounced sends), so it would not yet be visible on the first
-    // waitUntil tick. Flush the mocked clock and microtasks first, then assert
-    // the notification genuinely never arrived — so a regression that keeps
-    // delivering to a stopped tab now fails instead of passing vacuously.
     if (negatives.length) {
         await runAllTimers();
         for (const expected of negatives) {
@@ -385,10 +354,6 @@ export function stepWorkerActions(targetActions) {
     });
 }
 
-/**
- * Lock the websocket connection until the returned function is called. Useful
- * to simulate server being unavailable.
- */
 export function lockWebsocketConnect() {
     return patchWithCleanup(window, { WebSocket: LockedWebSocket });
 }

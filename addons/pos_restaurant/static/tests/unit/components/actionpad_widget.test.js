@@ -17,29 +17,24 @@ test("highlightPay", async () => {
     });
 
     expect(comp.highlightPay).toBe(false);
-    // simulating order send
     order.updateLastOrderChange();
     expect(comp.highlightPay).toBe(true);
 
-    // orderline qty change
     order.lines[1].qty = 21;
     expect(comp.highlightPay).toBe(false);
     order.updateLastOrderChange();
     expect(comp.highlightPay).toBe(true);
 
-    // orderline note update
     order.lines[0].note = "Test Orderline Note";
     expect(comp.highlightPay).toBe(false);
     order.updateLastOrderChange();
     expect(comp.highlightPay).toBe(true);
 
-    // general customer note
     order.general_customer_note = "Test Order Customer Note";
     expect(comp.highlightPay).toBe(false);
     order.updateLastOrderChange();
     expect(comp.highlightPay).toBe(true);
 
-    // internal note
     order.internal_note = "Test Order Internal Note";
     expect(comp.highlightPay).toBe(false);
     order.updateLastOrderChange();

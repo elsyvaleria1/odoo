@@ -16,14 +16,9 @@ registry.category("web_tour.tours").add("PosLoyaltyFreeProductTour", {
 
             ProductScreen.addOrderline("Desk Organizer", "2"),
 
-            // At this point, the free_product program is triggered.
-            // The reward button should be highlighted.
             PosLoyalty.isRewardButtonHighlighted(true),
-            // Since the reward button is highlighted, clicking the reward product should be added as reward.
             ProductScreen.clickDisplayedProduct("Desk Organizer", "3"),
             PosLoyalty.hasRewardLine("Free Product - Desk Organizer", "-5.10", "1"),
-            // In the succeeding 2 clicks on the product, it is considered as a regular product.
-            // In the third click, the product will be added as reward.
             ProductScreen.clickDisplayedProduct("Desk Organizer"),
             ProductScreen.clickDisplayedProduct("Desk Organizer"),
             PosLoyalty.isRewardButtonHighlighted(true),
@@ -33,7 +28,6 @@ registry.category("web_tour.tours").add("PosLoyaltyFreeProductTour", {
             ProductScreen.clickDisplayedProduct("Desk Organizer"),
             PosLoyalty.isRewardButtonHighlighted(false),
             PosLoyalty.orderTotalIs("25.50"),
-            // Finalize order that consumed a reward.
             PosLoyalty.finalizeOrder("Cash", "30"),
 
             ProductScreen.clickDisplayedProduct("Desk Organizer", true, "1"),
@@ -48,8 +42,6 @@ registry.category("web_tour.tours").add("PosLoyaltyFreeProductTour", {
             ProductScreen.clickDisplayedProduct("Desk Organizer", true, "1"),
             ProductScreen.clickDisplayedProduct("Desk Organizer", true, "2"),
             PosLoyalty.isRewardButtonHighlighted(true),
-            // Finalize order but without the reward.
-            // This step is important. When syncing the order, no reward should be synced.
             PosLoyalty.orderTotalIs("10.20"),
             PosLoyalty.finalizeOrder("Cash", "20"),
 
@@ -68,7 +60,6 @@ registry.category("web_tour.tours").add("PosLoyaltyFreeProductTour", {
             PosLoyalty.claimReward("Free Product - Whiteboard Pen"),
             PosLoyalty.isRewardButtonHighlighted(false),
             PosLoyalty.hasRewardLine("Free Product - Whiteboard Pen", "-6.40", "2"),
-            // Finalize order that consumed a reward.
             PosLoyalty.orderTotalIs("11.88"),
             PosLoyalty.finalizeOrder("Cash", "20"),
 
@@ -79,7 +70,6 @@ registry.category("web_tour.tours").add("PosLoyaltyFreeProductTour", {
 
             ProductScreen.clickOrderline("Magnetic Board", "6"),
             ProductScreen.clickNumpad("⌫"),
-            // At this point, the reward should have been removed.
             PosLoyalty.isRewardButtonHighlighted(false),
             ProductScreen.selectedOrderlineHas("Magnetic Board", "0"),
             ProductScreen.clickDisplayedProduct("Magnetic Board"),
@@ -94,20 +84,15 @@ registry.category("web_tour.tours").add("PosLoyaltyFreeProductTour", {
             PosLoyalty.orderTotalIs("5.94"),
             PosLoyalty.finalizeOrder("Cash", "10"),
 
-            // Promotion: 2 items of shelves, get desk_pad/monitor_stand free
-            // This is the 5th order.
             ProductScreen.clickDisplayedProduct("Wall Shelf Unit"),
             ProductScreen.selectedOrderlineHas("Wall Shelf Unit", "1"),
             PosLoyalty.isRewardButtonHighlighted(false),
             ProductScreen.clickDisplayedProduct("Small Shelf"),
             ProductScreen.selectedOrderlineHas("Small Shelf", "1"),
             PosLoyalty.isRewardButtonHighlighted(true),
-            // Click reward product. Should be automatically added as reward.
             ProductScreen.clickDisplayedProduct("Desk Pad"),
             PosLoyalty.isRewardButtonHighlighted(false),
             PosLoyalty.hasRewardLine("Free Product", "-1.98", "1"),
-            // Remove the reward line. The next steps will check if cashier
-            // can select from the different reward products.
             ProductScreen.clickNumpad("⌫"),
             ProductScreen.clickNumpad("⌫"),
             PosLoyalty.isRewardButtonHighlighted(true),
@@ -214,7 +199,6 @@ registry
     .add("PosLoyaltySpecificDiscountWithRewardProductDomainTour", {
         steps: () =>
             [
-                // Steps to check if the alert dialog for invalid domain loyalty program is present, only then will the pos screen load correctly
                 Dialog.is("A reward could not be loaded"),
                 Dialog.confirm("Ok"),
 

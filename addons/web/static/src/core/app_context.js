@@ -18,8 +18,6 @@ function rootAppContext(pluginManager = useScope().pluginManager) {
     return plugin.context;
 }
 
-// services, bus and debug context a subtree overrides (provideServices, provideEventBus,
-// provideDebugContext) shadow the application's own, key by key
 export const appScope = defineScope("web.app", { root: rootAppContext });
 
 /** @returns {AppContext} */

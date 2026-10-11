@@ -1,11 +1,4 @@
 /** @odoo-module native */
-/**
- * A list of field widget keys of the wowl's field registry (`registry.category("fields")`)
- * that are safe for the user to swith to when editing a field's properties in the view editor's sidebar.
- *
- * Other widgets either don't make sense for that use because they are too specific, or they need
- * specific implementation details provided by some view to be usable.
- */
 export const SIDEBAR_SAFE_FIELDS = [
     "badge",
     "selection_badge",

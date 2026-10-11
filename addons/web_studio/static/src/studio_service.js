@@ -30,7 +30,6 @@ export function viewTypeToString(vType) {
 
 function isStudioEditable(action) {
     if (action.type === "ir.actions.client") {
-        // home_menu is somehow customizable (app creator)
         return action.tag === "menu" ? true : false;
     }
     if (action.type === "ir.actions.act_window") {
@@ -38,43 +37,31 @@ function isStudioEditable(action) {
             action.res_model.indexOf("settings") > -1 &&
             action.res_model.indexOf("x_") !== 0
         ) {
-            return false; // settings views aren't editable; but x_settings is
+            return false;
         }
         if (action.res_model === "board.board") {
-            return false; // dashboard isn't editable
+            return false;
         }
         if (action.view_mode === "qweb") {
-            // Apparently there is a QWebView that allows to
-            // implement ActWindow actions that are completely custom
-            // but not editable by studio
             return false;
         }
         if (action.res_model === "knowledge.article") {
-            // The knowledge form view is very specific and custom, it doesn't make sense
-            // to edit it. Editing the list and kanban is more debatable, but for simplicity's sake
-            // we set them to not editable too.
             return false;
         }
         if (
             action.view_id &&
             action.view_id[1] === "res.users.preferences.form.inherit"
         ) {
-            // The employee profile view is too complex to handle inside studio.
-            // @see SELF_READABLE_FIELDS.
             return false;
         }
         if (action.res_model === "account.bank.statement.line") {
-            return false; // bank reconciliation isn't editable
+            return false;
         }
         return action.res_model ? true : false;
     }
     return false;
 }
 
-/**
- * Whether the actionService will actually load this.
- * @see action_service.js:_getActionParams
- */
 function isActionStateValid(actionState) {
     return (
         actionState.action ||
@@ -244,7 +231,6 @@ export const studioService = {
             if (targetMode === MODES.EDITOR) {
                 let controllerState;
                 if (!action) {
-                    // systray open
                     const currentController = env.services.action.currentController;
                     if (currentController) {
                         actionStack = currentController.state.actionStack || [];
@@ -283,9 +269,6 @@ export const studioService = {
                     throw new NotEditableActionError();
                 }
                 state.editedAction = action;
-                // Which of these Studio can edit is decided by the container, once the
-                // lazy bundle holding the studio_editors registry has loaded: read here,
-                // on a first open, that registry is still empty.
                 state.editedViewType = viewType || action.views[0][1] || null;
                 state.editorTab = "views";
                 state.editedControllerState = controllerState || {};
@@ -334,8 +317,6 @@ export const studioService = {
             }
             rpcBus.trigger("CLEAR-CACHES");
             IrModelInfo.invalidate();
-            // The template cache key is composed with the name of the compiler,
-            // which in studio is *usually* different.
             resetViewCompilerCache();
             const actionStack = router.current.actionStack.slice(0, -1);
             let stateLoaded = false;
@@ -370,8 +351,6 @@ export const studioService = {
                 }
                 const currentRouterState = { ...router.current };
                 stateLoaded = await loadState({ actionStack });
-                // We tried our best to leave studio with the current action's light-side sibling
-                // but did not work. Revert the change in the url, and let the code fallback
                 if (!stateLoaded) {
                     router.replaceState(currentRouterState, {
                         replace: true,
@@ -386,10 +365,6 @@ export const studioService = {
                 actionId = actionId || "menu";
                 let options = { clearBreadcrumbs: true };
                 if (actionId === "menu" && lastValidActionIndex >= 0) {
-                    // Truncate the stack right after the last valid action:
-                    // the action service resolves `spliceAt` against the stack
-                    // actually being spliced (it replaced `options.index`,
-                    // which is silently ignored).
                     options = {
                         spliceAt: (stack) =>
                             Math.min(lastValidActionIndex + 1, stack.length),
@@ -397,7 +372,6 @@ export const studioService = {
                 }
                 await env.services.action.doAction(actionId, options);
             }
-            // force rendering of the main navbar to allow adaptation of the size
             env.bus.trigger("MENUS:APP-CHANGED");
             state.studioMode = null;
         }
@@ -511,11 +485,6 @@ export const studioService = {
             if (mode === "new") {
                 return;
             }
-            // _getCurrentAction() is null for a missing or virtual controller,
-            // and the home menu is virtual by design -- studio's own home-menu
-            // editor is that state. Absence says nothing about studio, so only
-            // a real action moves the flag; deriving from null turned entering
-            // studio from the app grid into "leave when not in studio".
             const action = _getCurrentAction();
             if (action) {
                 inStudio = action.tag === "studio";

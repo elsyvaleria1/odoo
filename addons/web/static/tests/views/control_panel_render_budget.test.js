@@ -108,12 +108,6 @@ describe("control-panel chain render budget", () => {
         await mountView({ resModel: "foo", type: "list", arch: ARCH });
         await animationFrame();
 
-        // The first pass used to abort before reaching SearchBarMenu: the
-        // controller's onWillStart awaited a has_group round trip for
-        // base.group_allow_export and the records landed mid-render. The mock
-        // session now seeds that group as session_info does, the lookup is a
-        // cache hit, and the first pass completes before it is superseded —
-        // the same one-render-per-pass budget SearchBar and ControlPanel have.
         expect(sequence.filter((s) => s === "SearchBarMenu").length).toBe(2);
         expect(sequence.filter((s) => s === "SearchBar").length).toBe(2);
     });
@@ -150,7 +144,6 @@ test("a SLOW load mounts the shell first — the payoff lazy: true exists for", 
 describe("with a frame on screen to hold", () => {
     beforeEach(() => freezeTime());
 
-    // what the action service hands a view it navigates to from another one
     const holdingConfig = () => ({ feedbackAt: browser.performance.now() + 250 });
 
     test("a load that beats the deadline renders the chain once, with its records", async () => {

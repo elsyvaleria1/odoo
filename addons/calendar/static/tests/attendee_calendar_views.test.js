@@ -25,7 +25,7 @@ preloadFullCalendar();
 
 const serverData = {};
 
-const arch = /*xml*/ `
+const arch = `
     <calendar js_class="attendee_calendar"
         event_open_popup="1"
         date_start="start"
@@ -45,13 +45,6 @@ const arch = /*xml*/ `
             options="{'icon': 'fa-solid fa-link', 'shouldOpenRecord': true}"/>
     </calendar>
 `;
-
-// `selectTimeStart` used to live here: a local copy of what
-// `clickTimeSlot` does, clicking the time *row* at absolute viewport
-// coordinates rather than the day column at coordinates relative to the lane.
-// It stopped selecting anything when the calendar's layout changed, so no quick
-// create opened and this test looked for a dialog that was never there. Use the
-// maintained helper.
 
 beforeEach(async () => {
     mockDate("2016-12-12 08:00:00", 0);
@@ -126,9 +119,6 @@ test("Linked record rendering", async () => {
 });
 
 test("Default duration rendering", async () => {
-    // The mock answers the server's fallback (1 h); the test is about a
-    // CONFIGURED duration reaching the quick-created event, so it sets one
-    // the fallback cannot be mistaken for.
     onRpc("calendar.event", "get_default_duration", () => 3.25);
     await mountView({ type: "calendar", resModel: "calendar.event", arch });
     expandCalendarView();
@@ -138,7 +128,6 @@ test("Default duration rendering", async () => {
         confirm: false,
     });
     await contains(".o-calendar-quick-create--create-btn").click();
-    // This new event is the third
     await clickEvent(3);
     expect("div[name='start'] div").toHaveText("Dec 15, 3:00 PM");
     expect("div[name='stop'] div").toHaveText("Dec 15, 6:15 PM", {
@@ -168,8 +157,6 @@ test("the default event's popover opens once per arrival, and never again by its
     expect(".o_cw_popover").toHaveCount(1);
     expect(opened).toBe(1);
 
-    // FullCalendar mounts the dragged event and its mirror again on every
-    // drag frame, and every event again on a reload
     const el = findEvent(2);
     const event = renderer.fc.api.getEventById("2");
     expect(event).not.toBe(null);
@@ -178,8 +165,6 @@ test("the default event's popover opens once per arrival, and never again by its
     expect(opened).toBe(1);
     expect(".o_cw_popover").toHaveCount(1);
 
-    // dismissed by the user, then re-rendered (next week and back, a scale
-    // switch): the popover stays dismissed
     renderer.popover.close();
     await animationFrame();
     expect(".o_cw_popover").toHaveCount(0);

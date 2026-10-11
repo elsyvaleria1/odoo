@@ -1,11 +1,6 @@
 // @ts-check
 /** @odoo-module native */
 
-/**
- * What every date is read, shown and parsed in: the user's time zone, the
- * page's locale and its numbering system. Set once at boot, by
- * applyUserTimezone and applyDateLocale.
- */
 export const dateSettings = {
     /** @type {string | null} */
     timeZone: null,

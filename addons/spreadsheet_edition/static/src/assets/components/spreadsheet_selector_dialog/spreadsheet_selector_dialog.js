@@ -99,7 +99,6 @@ export class SpreadsheetSelectorDialog extends Component {
         const threshold = this.state.threshold ? parseInt(this.state.threshold, 10) : 0;
         const name = this.state.name.toString();
 
-        // the action can be preceded by a notification
         const actionOpen = action;
         actionOpen.params = this._addToPreprocessingAction(
             actionOpen.params,

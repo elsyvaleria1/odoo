@@ -46,7 +46,6 @@ registry.category("web_tour.tours").add("StockBarcodeBarcodelookupFlow", {
                 trigger: 'div[name="barcode"] input',
                 run: "edit 610532977349",
             },
-            // Click outside the input to trigger the onchange event
             {
                 content: "Fill barcode value",
                 trigger: ".modal .modal-title",

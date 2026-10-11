@@ -47,11 +47,8 @@ export async function createModelWithDataSource(params = {}) {
         },
     });
     env.model = model;
-    // if (params.serverData) {
-    //     await addRecordsFromServerData(params.serverData);
-    // }
     setupDataSourceEvaluation(model);
-    await animationFrame(); // initial async formulas loading
+    await animationFrame();
     return { model, env };
 }
 
@@ -66,9 +63,7 @@ export async function createModelWithDataSource(params = {}) {
  */
 export async function makeSpreadsheetMockEnv(params = {}) {
     if (params.mockRPC) {
-        // Note: calling onRpc with only a callback only works for routes such as orm routes that have a default listener
-        // For arbitrary rpc request (eg. /web/domain/validate) we need to call onRpc("/my/route", callback)
-        onRpc((args) => params.mockRPC(args.route, args)); // separate route from args for legacy (& forward ports) compatibility
+        onRpc((args) => params.mockRPC(args.route, args));
     }
     if (params.serverData?.menus) {
         defineMenus(Object.values(params.serverData.menus));

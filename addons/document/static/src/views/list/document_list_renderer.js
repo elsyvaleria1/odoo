@@ -66,7 +66,6 @@ export class DocumentsListRenderer extends DocumentsRendererMixin(
         }
         ev.stopPropagation();
         ev.preventDefault();
-        // Enter opens what a click on the row's icon opens; Space selects
         if (ev.key === "Enter" && record.data.type === "folder") {
             record.openFolder();
             return;
@@ -102,7 +101,6 @@ export class DocumentsListRenderer extends DocumentsRendererMixin(
         return ["name", "tag_ids", "partner_id", "owner_id", "company_id", "folder_id"];
     }
 
-    /** A click on the list's empty area focuses the folder and clears the selection. */
     onRendererClick(ev) {
         if (
             ev.target.closest(".o_data_row") ||

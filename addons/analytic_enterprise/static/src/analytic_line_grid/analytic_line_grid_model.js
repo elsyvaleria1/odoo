@@ -27,12 +27,6 @@ export class AnalyticLineGridNavigationInfo extends GridNavigationInfo {
         );
     }
 
-    /**
-     * The fiscal year the anchor falls in, asked of the server once per
-     * year rather than once per load: every reload -- a cell edit, a record
-     * created from the grid -- used to pay the round trip again for an
-     * anchor the last answer already covered.
-     */
     async prepare() {
         if (this.range.span !== "year" || this._fiscalYearOfAnchor) {
             return;

@@ -295,7 +295,6 @@ defineModels([Task, Users, Partner]);
 
 beforeEach(() => {
     patchWithCleanup(MapModel, {
-        // set delay to 0 as _fetchCoordinatesFromAddressOSM is mocked
         COORDINATE_FETCH_DELAY: 0,
     });
     patchWithCleanup(MapModel.prototype, {
@@ -348,11 +347,8 @@ beforeEach(() => {
             routes[0] = { legs };
             return { routes };
         },
-        _notifyFetchedCoordinate(metaData, data) {
-            // do not notify in tests as coords fetching is " synchronous "
-        },
+        _notifyFetchedCoordinate(metaData, data) {},
         _startGeocodingWithOpenStreetMap(metaData, data) {
-            // return promise to wait for it
             return this._geocodeWithOpenStreetMap(metaData, data);
         },
     });
@@ -360,16 +356,6 @@ beforeEach(() => {
 
 describe.tags("desktop");
 describe("map_view_desktop", () => {
-    //--------------------------------------------------------------------------
-    // Testing data fetching
-    //--------------------------------------------------------------------------
-
-    /**
-     * data: no record
-     * Should have no record
-     * Should have no marker
-     * Should have no route
-     */
     test("Create a view with no record", async () => {
         expect.assertions(7);
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
@@ -420,12 +406,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * data: one record that has no partner linked to it
-     * The record shouldn't be kept and displayed in the list of records
-     * should have no marker
-     * Should have no route
-     */
     test("Create a view with one record that has no partner", async () => {
         Task._records = TEST_RECORDS.task.recordWithouthPartner;
         Partner._records = [];
@@ -449,12 +429,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * data: one record that has a partner which has coordinates but no address
-     * One record
-     * One marker
-     * no route
-     */
     test("Create a view with one record and a partner located by coordinates", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -475,13 +449,6 @@ describe("map_view_desktop", () => {
         ).toHaveCount(1);
     });
 
-    /**
-     * data: one record linked to one partner with no address and wrong coordinates
-     * api: MapBox
-     * record shouldn't be kept and displayed in the list
-     * no route
-     * no marker
-     */
     test("Create view with one record linked to a partner with wrong coordinates with MB", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -507,13 +474,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * data: one record linked to one partner with no address and wrong coordinates
-     * api: OpenStreet Map
-     * record should be kept
-     * no route
-     * no marker
-     */
     test("Create view with one record linked to a partner with wrong coordinates with OSM", async () => {
         Task._records = TEST_RECORDS.task.oneRecord;
         Partner._records = TEST_RECORDS.partner.wrongCoordinatesNoAddress;
@@ -536,13 +496,6 @@ describe("map_view_desktop", () => {
             message: "and it is not offered as a pin to centre on",
         });
     });
-    /**
-     * data: one record linked to one partner with no coordinates and good address
-     * api: OpenStreet Map
-     * caching RPC called, assert good args
-     * one record
-     * no route
-     */
     test("Create View with one record linked to a partner with no coordinates and right address OSM", async () => {
         expect.assertions(5);
 
@@ -570,13 +523,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-overlay-pane path").toHaveCount(0);
     });
 
-    /**
-     * data: one record linked to one partner with no coordinates and good address
-     * api: MapBox
-     * caching RPC called, assert good args
-     * one record
-     * no route
-     */
     test("Create View with one record linked to a partner with no coordinates and right address MB", async () => {
         expect.assertions(5);
 
@@ -606,13 +552,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-overlay-pane path").toHaveCount(0);
     });
 
-    /**
-     * data: one record linked to a partner with no coordinates and no address
-     * api: MapBox
-     * 1 record
-     * no route
-     * no marker
-     */
     test("Create view with no located record", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -638,13 +577,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-overlay-pane path").toHaveCount(0);
     });
 
-    /**
-     * data: one record linked to a partner with no coordinates and no address
-     * api: OSM
-     * one record
-     * no route
-     * no marker
-     */
     test("Create view with no located record OSM", async () => {
         Task._records = TEST_RECORDS.task.oneRecord;
         Partner._records = TEST_RECORDS.partner.unlocatedRecords;
@@ -668,13 +600,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-overlay-pane path").toHaveCount(0);
     });
 
-    /**
-     * data: one record linked to a partner with no coordinates and wrong address
-     * api: OSM
-     * one record
-     * no route
-     * no marker
-     */
     test("Create view with no badly located record OSM", async () => {
         Task._records = TEST_RECORDS.task.oneRecord;
         Partner._records = TEST_RECORDS.partner.noCoordinatesWrongAddress;
@@ -697,14 +622,6 @@ describe("map_view_desktop", () => {
         });
         expect(".leaflet-overlay-pane path").toHaveCount(0);
     });
-
-    /**
-     * data: one record linked to a partner with no coordinates and wrong address
-     * api: mapbox
-     * one record
-     * no route
-     * no marker
-     */
 
     test("Create view with no badly located record MB", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
@@ -731,14 +648,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-overlay-pane path").toHaveCount(0);
     });
 
-    /**
-     * data: 2 records linked to the same partner
-     * 2 records
-     * 2 markers
-     * no route
-     * same partner object
-     * 1 caching request
-     */
     test("Create a view with two located records same partner", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -762,13 +671,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-overlay-pane path").toHaveCount(1);
     });
 
-    /**
-     * data: 2 records linked to differnet partners
-     * 2 records
-     * 1 route
-     * different partner object.
-     * 2 caching
-     */
     test("Create a view with two located records different partner", async () => {
         expect.assertions(5);
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
@@ -807,13 +709,6 @@ describe("map_view_desktop", () => {
         );
     });
 
-    /**
-     * data: 2 valid res.partner records
-     * test the case where the model is res.partner and the "res.partner" field is the id
-     * should have 2 records,
-     * 2 markers
-     * no route
-     */
     test("Create a view with res.partner", async () => {
         expect.assertions(4);
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
@@ -858,10 +753,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-overlay-pane path").toHaveCount(0);
     });
 
-    /**
-     * Data: 3 partner records with user_id used as groupBy
-     * Test if the map view displays the many2one field's name as the group name
-     */
     test("Create a view with many2one groupBy and res.partner model", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -894,10 +785,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * data: 3 records linked to one located partner and one unlocated
-     * test if only the 2 located records are displayed
-     */
     test("Create a view with 2 located records and 1 unlocated", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -936,10 +823,6 @@ describe("map_view_desktop", () => {
         expect(`.o_pager_counter .o_pager_value`).toHaveText("1-2");
         expect(`.o_pager_counter span.o_pager_limit`).toHaveText("3");
     });
-
-    //--------------------------------------------------------------------------
-    // Renderer testing
-    //--------------------------------------------------------------------------
 
     test("Google Maps redirection", async () => {
         Task._records = TEST_RECORDS.task.twoRecords;
@@ -1041,10 +924,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * data: two located records
-     * Create an empty map
-     */
     test("Create of a empty map", async () => {
         Task._records = TEST_RECORDS.task.twoRecords;
         Partner._records = TEST_RECORDS.partner.twoRecordsAddressNoCoordinates;
@@ -1066,8 +945,6 @@ describe("map_view_desktop", () => {
         expect(".leaflet-pane .leaflet-tile-pane > *").toHaveCount(1, {
             message: "The map tiles should have been happened to the DOM",
         });
-        // if element o-map-renderer--container has class leaflet-container then
-        // the map is mounted
         expect(".o-map-renderer--container").toHaveClass("leaflet-container", {
             message: "the map should be in the DOM",
         });
@@ -1076,13 +953,6 @@ describe("map_view_desktop", () => {
             message: "Should have no showing route",
         });
     });
-
-    /**
-     * two located records
-     * without routing or default_order
-     * normal marker icon
-     * test the click on them
-     */
 
     test("Create view with normal marker icons", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
@@ -1115,7 +985,6 @@ describe("map_view_desktop", () => {
         });
 
         await contains("div.leaflet-container").click();
-        // wait for the popup's destruction which takes a certain time...
         for (let i = 0; i < 15; i++) {
             await animationFrame();
         }
@@ -1124,14 +993,6 @@ describe("map_view_desktop", () => {
             message: "Should not have any showing popup",
         });
     });
-
-    /**
-     * two located records
-     * with default_order
-     * no numbered icon
-     * test click on them
-     * asserts that the rpc receive the right parameters
-     */
 
     test("Create a view with default_order", async () => {
         expect.assertions(7);
@@ -1175,13 +1036,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * two locted records
-     * with routing enabled
-     * numbered icon
-     * test click on route
-     */
-
     test("Create a view with routing", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -1219,7 +1073,6 @@ describe("map_view_desktop", () => {
         expect("path.leaflet-interactive").toHaveAttribute("stroke-opacity", "0.3", {
             message: "The opacity of the polyline should be 0.3",
         });
-        // the element isn't visible
         await contains("path.leaflet-interactive", { visible: false }).click();
         await animationFrame();
         expect("path.leaflet-interactive").toHaveAttribute("stroke", "darkblue", {
@@ -1271,7 +1124,6 @@ describe("map_view_desktop", () => {
         patchWithCleanup(MapModel.prototype, {
             async _fetchRoute(metaData, data) {
                 if (resequenceCalled) {
-                    // Verify that the API is called with the records correctly ordered
                     const ids = data.records.map((record) => record.id);
                     expect.step(`API called ${ids}`);
                 }
@@ -1375,7 +1227,6 @@ describe("map_view_desktop", () => {
         ).dragAndDrop(".o-map-renderer--pin-located:nth-child(2) .o_row_handle");
         await animationFrame();
 
-        // Model got notified before the backend resequence call
         expect(queryAllTexts(".o-map-renderer--pin-list-details li")).toEqual([
             "1. Project 2",
             "2. Project 1",
@@ -1429,7 +1280,6 @@ describe("map_view_desktop", () => {
         ).dragAndDrop(".o-map-renderer--pin-located:nth-child(2) .o_row_handle");
         await animationFrame();
 
-        // Model got notified before the backend resequence call
         expect(queryAllTexts(".o-map-renderer--pin-list-details li")).toEqual([
             "1. Project 2",
             "2. Project 1",
@@ -1467,10 +1317,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * routing with token and one located record
-     * No route
-     */
     test("create a view with routing and one located record", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -1491,10 +1337,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * no mapbox token
-     * assert that the view uses the right api and routes
-     */
     test("CreateView with empty mapbox token setting", async () => {
         Task._records = TEST_RECORDS.task.recordWithouthPartner;
         Partner._records = [];
@@ -1513,10 +1355,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * wrong mapbox token
-     * assert that the view uses the openstreetmap api
-     */
     test("Create a view with wrong map box setting", async () => {
         patchWithCleanup(session, { map_box_token: "vrve" });
 
@@ -1537,9 +1375,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * wrong mapbox token fails at catch at route computing
-     */
     test("create a view with wrong map box setting and located records", async () => {
         patchWithCleanup(session, { map_box_token: "frezfre" });
 
@@ -1560,10 +1395,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * create view with right map box token
-     * assert that the view uses the map box api
-     */
     test("Create a view with the right map box token", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -1583,10 +1414,6 @@ describe("map_view_desktop", () => {
             message: "model should not use mapbox",
         });
     });
-
-    /**
-     * data: two located records
-     */
 
     test("Click on pin shows popup, click on another shuts the first and open the other", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
@@ -1608,10 +1435,8 @@ describe("map_view_desktop", () => {
             message: "The popup div should contain one element",
         });
 
-        // the element isn't visible
         await contains(".leaflet-map-pane", { visible: false }).click();
         await animationFrame();
-        // wait for the popup's destruction which takes a certain time...
         for (let i = 0; i < 15; i++) {
             await animationFrame();
         }
@@ -1620,10 +1445,6 @@ describe("map_view_desktop", () => {
         });
     });
 
-    /**
-     * data: two located records
-     * asserts that all the records are shown on the map
-     */
     test("assert that all the records are shown on the map", async () => {
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
@@ -1654,11 +1475,6 @@ describe("map_view_desktop", () => {
             },
         );
     });
-
-    /**
-     * data: two located records
-     * asserts that the right fields are shown in the popup
-     */
 
     test("Content of the marker popup with one field", async () => {
         Task._records = TEST_RECORDS.task.oneRecord;
@@ -1698,7 +1514,7 @@ describe("map_view_desktop", () => {
     });
 
     test("Content of the marker popup with date time", async () => {
-        mockTimeZone(+2); // UTC+2
+        mockTimeZone(+2);
         patchWithCleanup(session, { map_box_token: MAP_BOX_TOKEN });
 
         Task._records = TEST_RECORDS.task.twoRecordsFieldDateTime;
@@ -1732,11 +1548,6 @@ describe("map_view_desktop", () => {
             },
         );
     });
-
-    /**
-     * data: two located records
-     * asserts that no field is shown in popup
-     */
 
     test("Content of the marker with no field", async () => {
         Task._records = TEST_RECORDS.task.twoRecords;
@@ -2105,7 +1916,6 @@ describe("map_view_desktop", () => {
 
         await toggleSearchBarMenu();
 
-        // don't throw an error when grouping a field with a false value
         await toggleMenuItem("scheduled_date");
         await toggleMenuItemOption("scheduled_date", "year");
     });
@@ -2174,12 +1984,10 @@ describe("map_view_desktop", () => {
 
         await toggleSearchBarMenu();
 
-        // don't throw an error when grouping on a property
         await toggleMenuItem("task_properties");
         await animationFrame();
         await contains(".o_accordion_values .o_menu_item").click();
 
-        // check that the property has been added in the facet without crashing
         expect(`.o_facet_value:contains("Reference Number")`).toHaveCount(1);
         expect(".o-map-renderer--pin-list-group-header").toHaveCount(0);
     });
@@ -2217,7 +2025,6 @@ describe("map_view_desktop", () => {
             "Bar",
             "Foo",
         ]);
-        // Groups should be loaded too
         expect(".o-map-renderer--pin-list-details li").toHaveCount(3);
         expect(queryAllTexts(".o-map-renderer--pin-list-details")).toEqual([
             "FooProject\nFooBarProject",
@@ -2256,10 +2063,6 @@ describe("map_view_desktop", () => {
         expect(".o-map-renderer--pin-list-details:eq(1) li").toHaveCount(1);
         expect(".o-map-renderer--pin-list-details:eq(2) li").toHaveCount(1);
     });
-
-    //--------------------------------------------------------------------------
-    // Controller testing
-    //--------------------------------------------------------------------------
 
     test("Click on open button switches to form view", async () => {
         mockService("action", {
@@ -2405,7 +2208,6 @@ describe("map_view_desktop", () => {
             },
         );
 
-        //apply domain and check that the Google Maps URL on the button reflects the changes
         await toggleSearchBarMenu();
         await toggleMenuItem("FooProject only");
         expect("a.btn.btn-primary").toHaveAttribute(

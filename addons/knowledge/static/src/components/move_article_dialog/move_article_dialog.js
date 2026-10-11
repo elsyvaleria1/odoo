@@ -26,7 +26,6 @@ class MoveArticleDialog extends Component {
 
         onWillStart(() => this.fetchValues());
 
-        //autofocus
         useLayoutEffect(
             (toggler) => {
                 toggler.click();
@@ -100,7 +99,6 @@ class MoveArticleDialog extends Component {
 
     async confirmArticleMove() {
         if (!this.state.selectedParentArticle) {
-            // return if no data selectedParentArticle in the SelectMenu
             return;
         }
         const selectedParentArticle =
@@ -117,7 +115,6 @@ class MoveArticleDialog extends Component {
             [this.props.knowledgeArticleRecord.resId],
             params,
         );
-        // Reload the current article to apply changes
         await this.props.knowledgeArticleRecord.model.load();
         this.props.close();
     }

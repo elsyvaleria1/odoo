@@ -1,7 +1,6 @@
 import { registry } from "@web/core/registry";
 
 const survey_steps = (checkPageTranslation) => [
-    // Page-1
     {
         content: "Click on Start",
         trigger: 'button.btn:contains("Start")',
@@ -35,7 +34,6 @@ const survey_steps = (checkPageTranslation) => [
         trigger: 'button[value="next"]',
         run: "click",
     },
-    // Page-2
     ...(checkPageTranslation ? checkPageTranslation : []),
     {
         content:
@@ -108,7 +106,6 @@ const survey_steps = (checkPageTranslation) => [
         trigger: ".modal-footer button.btn-primary",
         run: "click",
     },
-    // Final page
     {
         content: "Thank you",
         trigger: 'h1:contains("Thank you!")',

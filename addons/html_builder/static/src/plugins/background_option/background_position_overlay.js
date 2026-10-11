@@ -38,9 +38,6 @@ export class BackgroundPositionOverlay extends Component {
         this.builderOverlayContainerEl = document.querySelector(
             "[data-oe-local-overlay-id='builder-overlay-container']",
         );
-        // If there is a Scroll Effect, a span.s_parallax_bg inside the section
-        // contains the background. Otherwise it's the section itself.
-        // And targetContainerEl should always be the section.
         this.targetContainerEl = this.props.editingElement.classList.contains(
             "s_parallax_bg",
         )
@@ -49,7 +46,6 @@ export class BackgroundPositionOverlay extends Component {
 
         this._dimensionOverlay = this.dimensionOverlay.bind(this);
 
-        // Discard when clicking anywhere on the page
         const editableDocument = this.props.editable.ownerDocument;
         useListener(editableDocument, "pointerdown", this.discard.bind(this));
         useListener(document, "pointerdown", this.discard.bind(this));
@@ -63,16 +59,11 @@ export class BackgroundPositionOverlay extends Component {
                 .backgroundPosition.split(" ")
                 .map((v) => parseInt(v));
             const delta = this.getBackgroundDelta();
-            // originalPosition kept in % for when movement in one direction
-            // doesn't make sense.
             this.originalPosition = { left: position[0], top: position[1] };
-            // Convert % values to pixels for current position because
-            // mouse movement is in pixels.
             this.currentPosition = {
                 left: (position[0] / 100) * delta.x || 0,
                 top: (position[1] / 100) * delta.y || 0,
             };
-            // Make sure the editing element is visible
             const rect = this.targetContainerEl.getBoundingClientRect();
             const isEditingElEntirelyVisible =
                 rect.top >= 0 &&
@@ -90,9 +81,6 @@ export class BackgroundPositionOverlay extends Component {
         });
 
         useLayoutEffect(() => {
-            // The dragger lives in the edited document, so its Bootstrap must come from that
-            // realm (see `bootstrap_realm`). A realm that ships no edit bundle yields
-            // undefined: drop the hint rather than throw.
             const win = this.bgDraggerRef.el?.ownerDocument.defaultView;
             const Tooltip = getBootstrapComponent(win, "Tooltip");
             if (!Tooltip) {
@@ -144,10 +132,6 @@ export class BackgroundPositionOverlay extends Component {
         );
     }
 
-    /**
-     * Drags the overlay's background image.
-     *
-     */
     onDragBackgroundMove(ev) {
         ev.preventDefault();
 
@@ -165,9 +149,6 @@ export class BackgroundPositionOverlay extends Component {
             left: (this.currentPosition.left / delta.x) * 100,
             top: (this.currentPosition.top / delta.y) * 100,
         };
-        // In cover mode, one delta will be 0 and dividing by it will yield
-        // Infinity. Defaulting to originalPosition in that case (can't be
-        // dragged).
         percentPosition.left = isFinite(percentPosition.left)
             ? percentPosition.left
             : this.originalPosition.left;
@@ -178,9 +159,6 @@ export class BackgroundPositionOverlay extends Component {
         this.props.editingElement.style.backgroundPosition = `${percentPosition.left}% ${percentPosition.top}%`;
 
         function clamp(val, bounds) {
-            // We sort the bounds because when one dimension of the rendered
-            // background is larger than the container, delta is negative, and
-            // we want to use it as lower bound.
             bounds = bounds.sort();
             return Math.max(bounds[0], Math.min(val, bounds[1]));
         }
@@ -200,8 +178,6 @@ export class BackgroundPositionOverlay extends Component {
             scale * targetContainerRect.height,
         );
 
-        // Make a cut-out in the overlay mask to highlight the editing element.
-        // "polygon" is used because "rect" would do the inverse.
         const clipPath = `polygon(
             evenodd,
             0 0, 100% 0,100% 100%, 0 100%, 0 0,
@@ -214,7 +190,6 @@ export class BackgroundPositionOverlay extends Component {
         this.overlayMaskRef.el.style.clipPath = clipPath;
         this.builderOverlayContainerEl.style.clipPath = clipPath;
 
-        // The overlay covers the whole iframe excluding the scrollbar.
         Object.assign(this.backgroundOverlayRef.el.style, {
             left: `${iframeRect.left}px`,
             top: `${iframeRect.top}px`,
@@ -222,7 +197,6 @@ export class BackgroundPositionOverlay extends Component {
             width: `${this.props.editable.ownerDocument.body.clientWidth * scale}px`,
         });
 
-        // The overlay content covers the editing element.
         Object.assign(this.overlayContentRef.el.style, {
             left: `${scaledRect.left}px`,
             top: `${scaledRect.top}px`,
@@ -242,7 +216,6 @@ export class BackgroundPositionOverlay extends Component {
             "important",
         );
 
-        // Refresh tooltip position after overlay reposition
         if (this.tooltip) {
             this.tooltip.update();
         }
@@ -266,18 +239,10 @@ export class BackgroundPositionOverlay extends Component {
         return values[0];
     }
 
-    /**
-     * Returns the difference between the editing element's size and the
-     * background's rendered size. Background position values in % are a
-     * percentage of this.
-     *
-     */
     getBackgroundDelta() {
         const naturalWidth = this.props.mockEditingElOnImg.naturalWidth;
         const naturalHeight = this.props.mockEditingElOnImg.naturalHeight;
         const editingElStyle = getComputedStyle(this.props.editingElement);
-        // If background-attachment: fixed, the background is sized relative to
-        // the page viewport.
         const bgRect =
             editingElStyle.backgroundAttachment === "fixed"
                 ? this.iframe.getBoundingClientRect()
@@ -302,8 +267,6 @@ export class BackgroundPositionOverlay extends Component {
                 y: bgRect.height - naturalHeight,
             };
         }
-        // At least one of width or height is not auto, so we can use it to
-        // calculate the other if it's not set.
         [width, height] = [parseInt(width), parseInt(height)];
         return {
             x: bgRect.width - (width || (height * naturalWidth) / naturalHeight),

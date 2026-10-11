@@ -125,9 +125,6 @@ let timeOffset = 0;
  * @param {AdvanceTimeOptions} [options]
  */
 export function advanceFrame(frameCount, options) {
-    // advanceTime floors its argument and a frame is 16.67ms at 60fps, so
-    // `frameDelay * n` floored lands 1ms short of the n-th frame requested at
-    // this instant: advanceFrame(1) after freezeTime() ran no frame at all.
     return advanceTime($ceil(frameDelay * parseNat(frameCount)), options);
 }
 
@@ -187,9 +184,6 @@ export function animationFrame() {
     return new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
 }
 
-/**
- * Cancels all current timeouts, intervals and animations.
- */
 export function cancelAllTimers() {
     for (const id of timers.keys()) {
         if (id.startsWith(ID_PREFIX.animation)) {

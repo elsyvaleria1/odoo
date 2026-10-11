@@ -45,8 +45,6 @@ export function getFocusableInCell(cell) {
     if (cell.hasAttribute("tabindex")) {
         return /** @type {HTMLElement} */ (cell);
     }
-    // a cell that is no focus stop itself is reached through its own control,
-    // even one kept out of the Tab sequence (the optional-columns toggle)
     const control =
         /** @type {HTMLElement[]} */ ([
             ...cell.querySelectorAll(CONTROL_SELECTOR),

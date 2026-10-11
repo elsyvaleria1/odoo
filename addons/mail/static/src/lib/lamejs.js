@@ -11,7 +11,6 @@ const lib = makeLazyLib(() => import("lamejs"), { pick: (module) => module.defau
  */
 export const lamejs = lib.facade;
 
-/** How lamejs is fetched; patchable in tests. */
 export const lamejsLoader = {
     /** @returns {Promise<any>} */
     load: () => lib.load(),

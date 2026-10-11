@@ -190,7 +190,6 @@ test("no collapse, and the search row is on screen, when less that 10 companies"
     expect(".o_burger_menu_companies .fa-caret-right").toHaveCount(0);
     expect(".o_burger_menu_companies [role=searchbox]").toHaveCount(1);
     expect(".o_burger_menu_companies .visually-hidden").toHaveCount(0);
-    // `visually-hidden` collapses the row to 1x1: assert it really takes room
     expect(
         queryRect(".o_burger_menu_companies div:has(> [role=search])").height,
     ).toBeGreaterThan(1);

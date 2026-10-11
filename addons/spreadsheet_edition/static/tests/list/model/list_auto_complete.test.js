@@ -70,7 +70,6 @@ test("ODOO.LIST field name", async function () {
         allFields.map((field) => `"${field}"`),
         { message: "all fields are proposed, quoted" },
     );
-    // check completely only the first one
     expect(proposals[0]).toEqual({
         description: "Id",
         fuzzySearchKey: 'Id"id"',
@@ -96,7 +95,6 @@ test("ODOO.LIST related field name", async function () {
         allFields.map((field) => `"product_id.${field}"`).sort(String.localeCompare),
         { message: "all fields are proposed, quoted" },
     );
-    // check completely only the first one
     expect(proposals[0]).toEqual({
         description: "Id",
         fuzzySearchKey: 'Id"product_id.id"',

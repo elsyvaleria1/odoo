@@ -29,17 +29,9 @@ export class HomeMenuCustomizer extends Component {
             context: user.context,
         });
     }
-    /**
-     * Export all customizations done by Studio in a zip file containing Odoo
-     * modules.
-     */
     exportCusto() {
         this.actionManager.doAction("web_studio.action_studio_export_wizard");
     }
-    /**
-     * Open a dialog allowing to import new modules
-     * (e.g. exported customizations).
-     */
     importCusto() {
         const action = {
             name: "Import modules",

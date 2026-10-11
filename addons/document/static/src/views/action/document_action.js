@@ -25,11 +25,6 @@ export class DocumentsAction extends Component {
         this.selectionActions = proxy(this.documentService.selectionActions);
     }
 
-    /**
-     * Built at render, not kept in state: reading the records while building
-     * subscribes this component to them, so a lock or a rename made from a
-     * preview shows in its menu at once.
-     */
     get selection() {
         return this.selectionActions.provider?.();
     }
@@ -53,8 +48,6 @@ export class DocumentsAction extends Component {
         actionMenuProps.items.action = actionMenuProps.items.action.filter(
             this.isPreviewAction,
         );
-        // a server action run from a preview runs on the document shown,
-        // not on the selection (nor the domain) the preview was opened from
         const previewedIds = this.props.targetRecords
             .filter(Boolean)
             .map((record) => record.resId);

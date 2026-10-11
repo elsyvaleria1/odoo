@@ -11,8 +11,6 @@ export class NewLoanComponent extends Component {
         FileUploader,
     };
     static props = { ...standardWidgetProps, record: t.object().optional() };
-    // base_import reads these and nothing else; without it FileUploader falls
-    // back to accept="*" and hands unreadable files to the importer.
     static acceptedFileExtensions = ".csv,.ods,.xls,.xlsm,.xlsx";
     props = useProps(this.constructor.props);
 
@@ -22,15 +20,6 @@ export class NewLoanComponent extends Component {
         this.acceptedFileExtensions = NewLoanComponent.acceptedFileExtensions;
     }
 
-    /**
-     * Persist the loan being edited and return its id.
-     *
-     * Guarding the save on `data.name` made the outcome depend on whether the
-     * name field had been committed: type a name, upload without leaving the
-     * field, and the record was still unsaved, so `resId` was false and the
-     * server created a *second* loan named after the file. Saving
-     * unconditionally raises the ordinary required-field error instead.
-     */
     async saveLoan() {
         await this.props.record.model.root.save({ reload: false });
         return this.props.record.resId;

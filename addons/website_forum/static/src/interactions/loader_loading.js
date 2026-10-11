@@ -1,6 +1,5 @@
 /** @odoo-module native */
 
-// evaluated before DOMContentLoaded, as every module in the minimal bundle is
 document.addEventListener("DOMContentLoaded", () => {
     for (const textarea of document.querySelectorAll("textarea.o_wysiwyg_loader")) {
         const wrapper = document.createElement("div");

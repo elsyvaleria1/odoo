@@ -3,11 +3,6 @@ import { Component, t, useProps, xml } from "@odoo/owl";
 import { _t } from "@web/core/translation";
 import { viewTypeToString } from "@web_studio/studio_service";
 
-/*
- * Injected in the Field.js template
- * Allows to overlay the Field's Component widget to prompt
- * for editing a x2many subview
- */
 export class FieldContentOverlay extends Component {
     static template = xml`
     <div class="position-relative">

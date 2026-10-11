@@ -210,7 +210,6 @@ test("ODOO.FILTER.VALUE.V18 relation filter", async function () {
     await animationFrame();
     const [filter] = model.getters.getGlobalFilters();
     expect.verifySteps([]);
-    // One record; displayNames not defined => rpc
     await setGlobalFilterValue(model, {
         id: filter.id,
         value: { operator: "in", ids: [1] },
@@ -218,7 +217,6 @@ test("ODOO.FILTER.VALUE.V18 relation filter", async function () {
     await animationFrame();
     expect(getCellValue(model, "A10")).toBe("Jean-Jacques");
 
-    // Two records; displayNames defined => no rpc
     await setGlobalFilterValue(model, {
         id: filter.id,
         value: { operator: "in", ids: [1, 2] },
@@ -226,7 +224,6 @@ test("ODOO.FILTER.VALUE.V18 relation filter", async function () {
     await animationFrame();
     expect(getCellValue(model, "A10")).toBe("Jean-Jacques, Raoul Grosbedon");
 
-    // another record; displayNames not defined => rpc
     await setGlobalFilterValue(model, {
         id: filter.id,
         value: { operator: "in", ids: [2] },

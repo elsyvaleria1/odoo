@@ -40,12 +40,6 @@ export async function runInBundleTransaction(evaluate) {
                 await settle();
             }
         } else if (pending.size) {
-            // another bundle is still evaluating, so the reactions this one
-            // raised run at that bundle's end; this one resolves applied, not
-            // merely evaluated, or a component mounted on it asks for a
-            // service that is registered and not started. Two bundles that
-            // load concurrently is the case; a module awaiting a bundle at
-            // its top level (none does) would wait for itself here.
             drain ??= Promise.withResolvers();
             await drain.promise;
         }

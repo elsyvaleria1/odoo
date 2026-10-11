@@ -29,7 +29,6 @@ registerWebsitePreviewTour(
                 const iframeDocument = document.querySelector(
                     ".o_website_preview iframe",
                 ).contentDocument;
-                // grid option is selected by default in the switch
                 assertEqual(
                     iframeDocument.querySelector(
                         ".listing_layout_switcher #o_wstudio_apply_grid",
@@ -58,7 +57,6 @@ registerWebsitePreviewTour(
                 const iframeDocument = document.querySelector(
                     ".o_website_preview iframe",
                 ).contentDocument;
-                // list option is now selected in the switch
                 assertEqual(
                     iframeDocument.querySelector(
                         ".listing_layout_switcher #o_wstudio_apply_list",
@@ -84,7 +82,6 @@ registerWebsitePreviewTour(
                 const iframeDocument = document.querySelector(
                     ".o_website_preview iframe",
                 ).contentDocument;
-                // list option is selected by default in the switch
                 assertEqual(
                     iframeDocument.querySelector(
                         ".listing_layout_switcher #o_wstudio_apply_list",

@@ -9,11 +9,6 @@ export { getColor };
 
 const log = makeLogger("web.view.calendar");
 
-/**
- * How long a timed record that ends where it starts is drawn: one snap step,
- * so it is visible and grabbable. FullCalendar would otherwise drop its end and
- * draw its default hour, a length the record does not have.
- */
 export const ZERO_LENGTH_DRAWN_MINUTES = 15;
 
 /**

@@ -5,14 +5,10 @@ import { sortBy } from "@web/core/utils/collections/arrays";
 import { GanttModel } from "@web_gantt/gantt_model";
 
 export class TaskGanttModelCommon extends ProjectTaskModelMixin(GanttModel) {
-    // Public
-
     async unscheduleTask(id) {
         await this.orm.call("project.task", "action_unschedule_task", [id]);
         this.fetchData();
     }
-
-    // Protected
 
     /** @returns {Promise<number[] | null>} */
     async _fetchHighlightIds() {
@@ -90,19 +86,12 @@ export class TaskGanttModelCommon extends ProjectTaskModelMixin(GanttModel) {
         if (groupedBy.length) {
             const groupedByField = groupedBy[0];
             if (groupedByField === "user_ids") {
-                // Here we are generating some rows under a common "parent" (if any).
-                // We make sure that a row with resId = false for "user_ids"
-                // ('Unassigned Tasks') and same "parent" will be added by adding
-                // a suitable fake group to groups (a subset of the groups returned
-                // by formatted_read_group).
                 const fakeGroup = Object.assign({}, ...parentGroup);
                 groups.push(fakeGroup);
             }
         }
         const rows = super._generateRows(...arguments);
 
-        // keep empty row to the head and sort the other rows alphabetically
-        // except when grouping by stage or personal stage
         if (!["step_id", "triage_ids"].includes(groupedBy[0])) {
             rows.sort((a, b) => {
                 if (a.resId && !b.resId) {
@@ -122,7 +111,6 @@ export class TaskGanttModelCommon extends ProjectTaskModelMixin(GanttModel) {
      */
     _getFields() {
         const result = super._getFields(...arguments);
-        // Field data required for muted gantt dependencies
         result.push("is_closed");
         return result;
     }

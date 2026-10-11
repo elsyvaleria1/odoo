@@ -44,8 +44,6 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
                     this._setupListDataSource(listId, 0);
                 }
 
-                // make sure the domains are correctly set before
-                // any evaluation
                 this._addDomains();
                 break;
         }
@@ -133,10 +131,6 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Handlers
-    // -------------------------------------------------------------------------
-
     _setupListDataSource(listId, limit, definition) {
         const dataSourceId = this._getListDataSourceId(listId);
         definition = definition || this.getters.getListModelDefinition(listId);
@@ -187,9 +181,6 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
         this.getters.getListDataSource(listId).load({ reload: true });
     }
 
-    /**
-     * Refresh the cache of all the lists
-     */
     _refreshOdooLists() {
         for (const listId of this.getters.getListIds()) {
             this._refreshOdooList(listId);
@@ -252,10 +243,6 @@ export class ListCoreViewPlugin extends OdooCoreViewPlugin {
                 return undefined;
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
 
     /**
      * Get the computed domain of a list

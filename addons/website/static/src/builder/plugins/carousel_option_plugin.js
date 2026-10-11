@@ -257,8 +257,6 @@ export class CarouselOptionPlugin extends Plugin {
                 log.logic(
                     "slide fallback: no bootstrap Carousel, moving item directly",
                 );
-                // a page that publishes no edit bundle still gets the move,
-                // without the transition
                 this.moveActiveItem(editingElement, direction);
                 finalize();
                 return;

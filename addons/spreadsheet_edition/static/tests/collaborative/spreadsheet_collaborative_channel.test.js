@@ -34,7 +34,6 @@ async function setupEnvWithMockBus({ mockRPC } = {}) {
     const rpc =
         mockRPC ||
         function (route, params) {
-            // Mock the server behavior: new revisions are pushed in the bus
             if (params.method === "dispatch_spreadsheet_message") {
                 const [documentId, message] = params.args;
                 busService.notify({
@@ -63,7 +62,6 @@ test("sending a message forward it to the registered listener", async function (
     });
     await channel.sendMessage({ greeting: "hello" });
     expect(i).toBe(8);
-    // It should have received the message
     expect.verifySteps(["message", "message"]);
 });
 
@@ -92,7 +90,6 @@ test("previous messages are forwarded when registering a listener", async functi
             message: "It should have the correct message content",
         });
     });
-    // It should have received the pending message
     expect.verifySteps(["message", "message"]);
 });
 
@@ -102,7 +99,6 @@ test("the channel does not care about other bus messages", async function () {
     channel.onNewMessage("anId", () => expect.step("message"));
     env.services.bus_service.notify("a-random-channel", "a-random-message");
     await animationFrame();
-    // The message should not have been received
     expect.verifySteps([]);
 });
 
@@ -173,7 +169,6 @@ test("a released channel gives its bus claim back and hears nothing more", async
 test("Message accepted by the server is immediately handled", async function () {
     const env = await setupEnvWithMockBus({
         mockRPC: async function (route, params) {
-            // Mock the server to accept the revision
             if (params.method === "dispatch_spreadsheet_message") {
                 return true;
             }
@@ -192,7 +187,6 @@ test("Message accepted by the server is immediately handled", async function () 
 test("Message refused by the server is not immediately handled", async function () {
     const env = await setupEnvWithMockBus({
         mockRPC: async function (route, params) {
-            // Mock the server to refuse the revision
             if (params.method === "dispatch_spreadsheet_message") {
                 return false;
             }

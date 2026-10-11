@@ -48,10 +48,6 @@ class RefreshSpin extends Component {
         this.state.isHovered = false;
     }
 
-    /**
-     * Open the action stored on the database by the asynchronous process, so users
-     * trigger it when they want instead of when the process ends.
-     */
     async openAction() {
         const action = await this.orm.call(
             "account.journal",
@@ -62,11 +58,6 @@ class RefreshSpin extends Component {
         this.state.connectionStateDetails = null;
     }
 
-    /**
-     * Request a transaction fetch. Nothing follows in the usual case, as websockets
-     * update the status on their own; an action is only returned when the Odoo Fin
-     * iframe must be opened to refresh the connection.
-     */
     async fetchTransactions() {
         this.state.connectionStateDetails = { status: "fetching" };
         const action = await this.orm.call("account.journal", "manual_sync", [
@@ -78,9 +69,6 @@ class RefreshSpin extends Component {
         }
     }
 
-    /**
-     * Restore the last connection state, if any, from the kanban dashboard data.
-     */
     _initConnectionStateDetails() {
         const kanbanDashboardData = JSON.parse(this.props.record.data.kanban_dashboard);
         this.state.connectionStateDetails =

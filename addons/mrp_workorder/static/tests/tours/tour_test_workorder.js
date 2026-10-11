@@ -17,7 +17,6 @@ registry.category("web_tour.tours").add("test_serial_tracked_and_register", {
             run: "click",
         },
         {
-            // sn should have been updated to match move_line sn
             trigger: 'div.o_field_widget[name="trace_id"] input ',
             run: function () {
                 helper.assert(
@@ -57,7 +56,6 @@ registry.category("web_tour.tours").add("test_serial_tracked_and_register", {
             run: "click",
         },
         {
-            // comp sn shouldn't change when produced sn is changed
             trigger: 'div.o_field_widget[name="trace_id"] input',
             run: function () {
                 helper.assert(
@@ -84,7 +82,6 @@ registry.category("web_tour.tours").add("test_serial_tracked_and_register", {
             run: "click",
         },
         {
-            // produced sn shouldn't change when comp sn is changed
             trigger: 'div.o_field_widget[name="finished_trace_ids"] input ',
             run: function () {
                 helper.assert(

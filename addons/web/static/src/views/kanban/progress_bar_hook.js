@@ -682,8 +682,6 @@ class ProgressBarState {
             }
             this._pbCounts = res;
         } else {
-            // The root is about to become ungrouped: it will have no `groups` at
-            // all, so counts harvested for the previous group-by must not survive.
             this._pbCounts = null;
         }
     }

@@ -68,7 +68,6 @@ export const aiChatLauncherService = {
                 textSelection = null,
             }) {
                 let frontEndRecordInfo;
-                // if the component calling the AI has access to record info, we pass it straight to the AI
                 if (
                     [
                         "html_field_record",
@@ -81,7 +80,6 @@ export const aiChatLauncherService = {
                         originalRecordFields,
                     );
                 }
-                // make the insert button target the component that called the AI
                 services["mail.store"].aiInsertButtonTarget = aiChatSourceId;
 
                 const { ai_channel_id, data, prompts, model_has_thread } =
@@ -108,7 +106,6 @@ export const aiChatLauncherService = {
                     JSON.stringify(prompts),
                 );
 
-                // add sendMessage and logNote only if the model inherits from mixin.mail.thread
                 if (callerComponentName === "chatter_ai_button" && model_has_thread) {
                     aiSpecialActions = {
                         ...aiSpecialActions,
@@ -140,14 +137,12 @@ export const aiChatLauncherService = {
                     }
                     const fieldValue = recordData[fieldName];
                     const fieldInfo = fieldsInfo[fieldName] || {};
-                    // Skip binary fields entirely - there is no easy way of placing them in the context
                     if (fieldInfo.type === "binary") {
                         continue;
                     }
                     if (
                         ["many2one", "many2many", "one2many"].includes(fieldInfo.type)
                     ) {
-                        // Skip abnormally large relational fields which can flood the AI context
                         if (
                             fieldValue &&
                             fieldValue.records &&

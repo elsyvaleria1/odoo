@@ -21,7 +21,6 @@ export class WorkedDaysField extends Field {
             record.update = async (changes) => {
                 if ("amount" in changes || "quantity" in changes) {
                     await oldUpdate(changes);
-                    // save x2many from its parent for the relation to work
                     await record._parentRecord.save();
                     const wizardId = record.model.config.resId;
                     if (wizardId) {
@@ -88,9 +87,6 @@ export class PayslipLineField extends Field {
             record.update = async (changes) => {
                 if ("amount" in changes || "quantity" in changes || "rate" in changes) {
                     await oldUpdate(changes, { save: true });
-                    // update() saves only a record that can save on update, which a line of
-                    // this list is not: without this, recompute_following_lines reads the
-                    // line's old amount from the database.
                     await record.save();
                     const wizardId = record.model.config.resId;
                     if (wizardId) {

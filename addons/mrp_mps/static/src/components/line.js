@@ -31,7 +31,6 @@ export default class MpsLineComponent extends Component {
         this.replenishRow = elementRef();
 
         onPatched(() => {
-            // after a replenishment, switch to next column if possible
             const previousEl =
                 this.replenishRow.el.getElementsByClassName("o_mrp_mps_hover")[0];
             if (previousEl) {

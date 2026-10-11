@@ -15,16 +15,6 @@ const log = makeLogger("spreadsheet.data_source");
  * @typedef {import("./server_data").ServerData} ServerData
  */
 
-/**
- * DataSource is an abstract class that contains the logic of fetching and
- * maintaining access to data that have to be loaded.
- *
- * A class which extends this class have to implement the `_load` method
- * * which should load the data it needs
- *
- * Subclass can implement concrete methods to have access to a
- * particular data.
- */
 export class LoadableDataSource {
     /**
      * @param {Object} param0
@@ -34,15 +24,9 @@ export class LoadableDataSource {
         /** @protected */
         this.odooDataProvider = odooDataProvider;
 
-        /**
-         * Last time that this dataSource has been updated
-         */
         this._lastUpdate = undefined;
 
         this._concurrency = new KeepLast();
-        /**
-         * Promise to control the loading of data
-         */
         this._loadPromise = undefined;
         this._isFullyLoaded = false;
         this._isValid = true;

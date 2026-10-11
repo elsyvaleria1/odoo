@@ -53,8 +53,6 @@ export class GraphModel extends Model {
         this.contextParamsSeen = {};
         this.pendingContextSettings = {};
 
-        // a copy: the view's modelParams are its props, and a reactive model
-        // writing into them would re-render the view and reload
         this.metaData = { ...params };
         this.data = null;
         this.searchParams = null;

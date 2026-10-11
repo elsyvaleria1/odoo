@@ -13,9 +13,6 @@ import { useService } from "@web/core/utils/hooks";
 
 export const FOREVER = dateTime({ year: 9999, month: 12, day: 31 }, "UTC");
 
-/**
- * Do Not Disturb (DND) selector.
- */
 export class DndSelector extends Component {
     static components = { Dropdown, DropdownItem };
     static template = "voip.DndSelector";

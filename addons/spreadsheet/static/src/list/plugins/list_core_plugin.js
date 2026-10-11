@@ -143,10 +143,6 @@ export class ListCorePlugin extends OdooCorePlugin {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
     /**
      * @param {string} id
      * @returns {string}
@@ -213,10 +209,6 @@ export class ListCorePlugin extends OdooCorePlugin {
     isExistingList(id) {
         return id in this.lists;
     }
-
-    // ---------------------------------------------------------------------
-    // Private
-    // ---------------------------------------------------------------------
 
     _addList(id, definition) {
         const lists = { ...this.lists };
@@ -308,10 +300,6 @@ export class ListCorePlugin extends OdooCorePlugin {
             });
         }
     }
-
-    // ---------------------------------------------------------------------
-    // Import/Export
-    // ---------------------------------------------------------------------
 
     /**
      * Import the lists

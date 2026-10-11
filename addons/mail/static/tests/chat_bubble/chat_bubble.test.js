@@ -505,9 +505,6 @@ test("Show IM status", async () => {
 });
 
 test("A decorated offline status hides the dot, as a plain offline one does", async () => {
-    // hr_homeworking writes `home_offline` and hr_holidays `leave_offline` into
-    // im_status; a comparison against the literal "offline" reads either as
-    // reachable and shows the dot for someone who is not there.
     registerImStatusDecoration("testbubble_offline", "offline");
     const pyEnv = await startServer();
     const { channelId } = createChatWith(pyEnv, {

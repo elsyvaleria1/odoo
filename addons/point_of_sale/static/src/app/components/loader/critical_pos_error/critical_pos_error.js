@@ -16,8 +16,6 @@ export class CriticalPOSError extends Component {
             message: this.props.error?.message,
         }));
     }
-    // a reset cannot help a boot the network stopped, and would destroy what
-    // the device holds and the server has not seen
     get connectionLost() {
         for (let error = this.props.error; error; error = error.cause) {
             if (error instanceof ConnectionLostError) {

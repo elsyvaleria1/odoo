@@ -10,7 +10,6 @@ export class RoomDisplayTime extends Component {
 
     setup() {
         this.state = proxy({ currentTime: now() });
-        // Update the current time every second
         useInterval(() => (this.state.currentTime = now()), 1000);
     }
 

@@ -2,19 +2,6 @@
 /** @odoo-module native */
 /* eslint-disable no-console -- dedicated debug logging utility; console is its output */
 
-/**
- * Debug logger for the quality campaign: four channels (logic, perf, pipeline,
- * lifecycle), one namespace per subsystem, off by default and free when off.
- *
- *     const log = makeLogger("web.action");
- *     log.logic("doAction", { type: action.type });
- *     const end = log.perf("loadAction");  ...  end({ views: 3 });
- *
- * Enable from the console: `odooLog.enable("mail.*:perf,web.action")`, or with
- * `localStorage["odoo.log"]`, `?log=<spec>` in the URL, or `debug=log`.
- * `odooLog.help()` prints the spec grammar; `odooLog.table()` the perf stats.
- */
-
 /** @typedef {"logic" | "perf" | "pipeline" | "lifecycle"} LogKind */
 
 /**
@@ -301,8 +288,6 @@ function _measure(ns, label, startedAt, endedAt) {
     const name = `odoo:${ns}:${label}`;
     try {
         _globals.performance?.measure?.(name, { start: startedAt, end: endedAt });
-        // The profiler records the span as it is measured; the timeline buffer
-        // would only keep every one of them for the page's lifetime.
         _globals.performance?.clearMeasures?.(name);
     } catch {}
 }

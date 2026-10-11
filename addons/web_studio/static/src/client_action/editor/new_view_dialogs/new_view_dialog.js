@@ -65,26 +65,19 @@ export class NewViewDialog extends ConfirmationDialog {
         return this.props.viewType;
     }
 
-    /**
-     * Compute date, row and measure fields.
-     */
     computeSpecificFields(fields) {
         this.dateFields = [];
         this.rowFields = [];
         this.measureFields = [];
         fields.forEach((field) => {
             if (field.store) {
-                // date fields
                 if (field.type === "date" || field.type === "datetime") {
                     this.dateFields.push(field);
                 }
-                // row fields
                 if (this.constructor.GROUPABLE_TYPES.includes(field.type)) {
                     this.rowFields.push(field);
                 }
-                // measure fields
                 if (this.constructor.MEASURABLE_TYPES.includes(field.type)) {
-                    // id and sequence are not measurable
                     if (field.name !== "id" && field.name !== "sequence") {
                         this.measureFields.push(field);
                     }

@@ -8,7 +8,6 @@ export class InCallViewModel {
         state: new KeypadModel(),
     };
     transferView = {
-        /* possible values: contacts, keypad */
         activeView: "contacts",
         keypad: new KeypadModel(),
     };

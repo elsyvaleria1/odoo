@@ -20,14 +20,12 @@ export class HrAttendanceGanttController extends GanttController {
     setup() {
         super.setup();
         this.loadHelper = true;
-        // Will render noContentView only at the first loading
         onMounted(() => {
             this.loadHelper = false;
         });
     }
 
     get showNoContentHelp() {
-        // Show if first row is empty (means no records)
         return (
             this.model.data.rows.length < 2 &&
             this.model.data.rows[0].recordIds.length === 0

@@ -472,8 +472,6 @@ test("moving into a folder just made asks no confirmation when its access matche
     await contains(".o_input").edit("Same Access");
     await contains(".o_form_button_save").click();
     await animationFrame();
-    // one refresh: the reopened wizard adds none of its own, and the folder
-    // tree is not served stale from the cache first
     onRpc("search_panel_select_range", () => {
         expect.step("folders");
     });

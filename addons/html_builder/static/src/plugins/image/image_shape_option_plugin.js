@@ -54,14 +54,6 @@ import { applyFunDependOnSelectorAndExclude } from "../utils.js";
  * ) => Promise<void>)[]} post_compute_shape_listeners
  */
 
-// Regex definitions to apply speed modification in SVG files
-// Note : These regex patterns are duplicated on the server side for
-// background images that are part of a CSS rule "background-image: ...". The
-// client-side regex patterns are used for images that are part of an
-// "src" attribute with a base64 encoded svg in the <img> tag. Perhaps we should
-// consider finding a solution to define them only once? The issue is that the
-// regex patterns in Python are slightly different from those in JavaScript.
-// See : controllers/main.py
 const CSS_ANIMATION_RULE_REGEX =
     /(?<declaration>animation(?:-duration)?:\s*.*?)(?<value>(?:\d+(?:\.\d+)?)|(?:\.\d+))(?<unit>ms|s)(?<separator>\s|;|"|$)/gm;
 const SVG_DUR_TIMECOUNT_VAL_REGEX =
@@ -118,8 +110,6 @@ export class ImageShapeOptionPlugin extends Plugin {
                     exclude: "[data-oe-type='image'] > img",
                 },
             ),
-        // TODO: Remove in master. Kept for stable to add default shape colors
-        // when dropping snippets.
         on_snippet_dropped_handlers: ({ snippetEl }) => {
             this.addShapeColorAttribute(snippetEl);
         },
@@ -127,12 +117,10 @@ export class ImageShapeOptionPlugin extends Plugin {
     setup() {
         this.shapeSvgTextCache = {};
         this.imageShapes = this.makeImageShapes();
-        // Compatibility with old shapes.
         for (const shapeId of Object.keys(this.imageShapes)) {
             const oldShapeId = shapeId.replace("html_builder", "web_editor");
             this.imageShapes[oldShapeId] = this.imageShapes[shapeId];
         }
-        // TODO remove in master: kept for stable.
         this.addShapeColorAttribute(this.document);
     }
     /**
@@ -194,7 +182,6 @@ export class ImageShapeOptionPlugin extends Plugin {
         return shapeCategory === "devices";
     }
     isImageSupportedForShapes(img, dataset = img.dataset) {
-        // todo: The hover effect and shape code should probably be define somewhere else.
         if (!!dataset.hoverEffect || !!dataset.shape) {
             return true;
         }
@@ -203,8 +190,6 @@ export class ImageShapeOptionPlugin extends Plugin {
         }
         return isImageSupportedForProcessing(getMimetype(img, dataset));
     }
-    // TODO: this has been introduced for stable policy. In master, remove it
-    // and adapt 'isImageSupportedForShapes'.
     async asyncIsImageSupportedForShapes(img, dataset = img.dataset) {
         if (!!dataset.hoverEffect || !!dataset.shape) {
             return true;
@@ -215,7 +200,6 @@ export class ImageShapeOptionPlugin extends Plugin {
         return isImageSupportedForProcessing(await getFetchedMimetype(img, dataset));
     }
     async getShapeSvgText(shapeName) {
-        // Compatibility with old shapes.
         const shape = shapeName.replace("web_editor", "html_builder");
         let shapeSvgText = this.shapeSvgTextCache[shape];
         if (shapeSvgText) {
@@ -227,7 +211,6 @@ export class ImageShapeOptionPlugin extends Plugin {
         return shapeSvgText;
     }
     async loadShape(img, newData = {}) {
-        // todo: find a way to apply to carousel thumbnail after processImage
         return this.dependencies.imagePostProcess.processImage({
             img,
             newDataset: newData,
@@ -241,14 +224,12 @@ export class ImageShapeOptionPlugin extends Plugin {
             img.dataset.shape || this.getDefaultShapeId(img.dataset);
         const shapeId =
             combinedDataset.shape || this.getDefaultShapeId(combinedDataset);
-        // todo: should we reset some data if shapeName is not defined?
         if (!shapeId) {
             return;
         }
         const isNewShape = previousShapeId !== shapeId;
         const shapeSvgText = await this.getShapeSvgText(shapeId);
 
-        // Get colors.
         const defaultShapeColors = this.getThemedSvgColors(shapeSvgText).join(";");
         newDataset.shapeColors =
             newDataset.shapeColors ??
@@ -266,7 +247,6 @@ export class ImageShapeOptionPlugin extends Plugin {
         const svgWidth =
             getData("resizeWidth") || getData("width") || (await getNaturalWidth());
 
-        // Get the svg element.
         const svg = await this.computeShape(shapeSvgText, {
             ...img.dataset,
             ...newDataset,
@@ -284,7 +264,6 @@ export class ImageShapeOptionPlugin extends Plugin {
         if (isNewShape && !("aspectRatio" in newDataset)) {
             const data = getImageTransformationData({ ...img.dataset, ...newDataset });
 
-            // The togglable ratio is squared by default.
             const shouldBeSquared =
                 this.imageShapes[shapeId].togglableRatio && !img.dataset.aspectRatio;
             if (shouldBeSquared && !shouldPreventGifTransformation(data)) {
@@ -312,9 +291,6 @@ export class ImageShapeOptionPlugin extends Plugin {
                 ((canvas) => canvas.width / svgAspectRatio),
             perspective: svg.dataset.imgPerspective || null,
             newDataset,
-            // If imgAspectRatio is defined, the image is cropped a second time
-            // after the first crop to ensure that the ratio of the shape and the
-            // image are the same.
             postProcessCroppedCanvas: imgAspectRatio && postProcessCroppedCanvas,
 
             svg,
@@ -330,12 +306,7 @@ export class ImageShapeOptionPlugin extends Plugin {
         svg.querySelectorAll("image").forEach((image) => {
             image.setAttribute("xlink:href", b64url);
         });
-        // Force natural width & height (note: loading the original image is
-        // needed for Safari where natural width & height of SVG does not return
-        // the correct values).
         const loadedImage = await loadImage(b64url);
-        // If the svg forces the size of the shape we still want to have the resized
-        // width
         if (!svg.dataset.forcedSize) {
             svg.setAttribute("width", loadedImage.naturalWidth);
             svg.setAttribute("height", loadedImage.naturalHeight);
@@ -346,7 +317,6 @@ export class ImageShapeOptionPlugin extends Plugin {
             svg.setAttribute("height", newHeight);
         }
 
-        // Transform the current SVG in a base64 file to be saved by the server
         const blob = new Blob([svg.outerHTML], {
             type: "image/svg+xml",
         });
@@ -366,9 +336,7 @@ export class ImageShapeOptionPlugin extends Plugin {
     async computeShape(svgText, params) {
         const { shapeId, shapeFlip, shapeRotate, shapeAnimationSpeed, shapeColors } =
             params;
-        // Apply the colors to the shape.
         svgText = this.replaceSvgColors(svgText, shapeColors.split(";"));
-        // Apply the right animation speed if there is an animated shape.
         if (shapeAnimationSpeed) {
             svgText = this.replaceAnimationDuration(svgText, shapeAnimationSpeed);
         }
@@ -378,24 +346,17 @@ export class ImageShapeOptionPlugin extends Plugin {
             "image/svg+xml",
         ).documentElement;
 
-        // Modifies the SVG according to the "flip" or/and "rotate" options.
         if ((shapeFlip || shapeRotate) && this.isTransformableShape(shapeId)) {
             const shapeTransformValues = [];
             if (shapeFlip) {
-                // Possible values => "x", "y", "xy"
                 shapeTransformValues.push(
                     `scale${shapeFlip === "x" ? "X" : shapeFlip === "y" ? "Y" : ""}(-1)`,
                 );
             }
             if (shapeRotate) {
-                // Possible values => "90", "180", "270"
                 shapeTransformValues.push(`rotate(${shapeRotate}deg)`);
             }
-            // "transform-origin: center;" does not work on "#filterPath". But
-            // since its dimension is 1px * 1px the following solution works.
             const transformOrigin = "transform-origin: 0.5px 0.5px;";
-            // Applies the transformation values to the path used to create a
-            // mask over the SVG image.
             svg.querySelector("#filterPath").setAttribute(
                 "style",
                 `transform: ${shapeTransformValues.join(" ")}; ${transformOrigin}`,
@@ -422,36 +383,27 @@ export class ImageShapeOptionPlugin extends Plugin {
      */
     replaceAnimationDuration(svgText, speed) {
         const ratio = (speed >= 0.0 ? 1.0 + speed : 1.0 / (1.0 - speed)).toFixed(3);
-        // Callback for CSS 'animation' and 'animation-duration' declarations
         function callbackCssAnimationRule(match, declaration, value, unit, separator) {
             value = parseFloat(value) / (ratio ? ratio : 1);
             return `${declaration}${value}${unit}${separator}`;
         }
 
-        // Callback function for handling the 'dur' SVG attribute timecount
-        // value in accordance with the SMIL animation specification (e.g., 4s,
-        // 2ms). If no unit is provided, seconds are implied.
         function callbackSvgDurTimecountVal(match, attribute_name, value, unit) {
             value = parseFloat(value) / (ratio ? ratio : 1);
             return `${attribute_name}${value}${unit ? unit : "s"}"`;
         }
 
-        // Applying regex substitutions to modify animation speed in the 'svg'
-        // variable.
         svgText = svgText.replace(CSS_ANIMATION_RULE_REGEX, callbackCssAnimationRule);
         svgText = svgText.replace(
             SVG_DUR_TIMECOUNT_VAL_REGEX,
             callbackSvgDurTimecountVal,
         );
         if (CSS_ANIMATION_RATIO_REGEX.test(svgText)) {
-            // Replace the CSS --animation_ratio variable for future purpose.
             svgText = svgText.replace(
                 CSS_ANIMATION_RATIO_REGEX,
                 `--animation_ratio: ${ratio};`,
             );
         } else {
-            // Add the style tag with the root variable --animation ratio for
-            // future purpose.
             const regex = /<svg .*>/m;
             const subst = `$&\n\t<style>\n\t\t:root { \n\t\t\t--animation_ratio: ${ratio};\n\t\t}\n\t</style>`;
             svgText = svgText.replace(regex, subst);
@@ -473,9 +425,6 @@ export class ImageShapeOptionPlugin extends Plugin {
         return shapeSvgText;
     }
     getSvgColors(shapeSvgText) {
-        // Map the default palette colors to an array if the shape includes them
-        // If they do not map a NULL, this way we know if a default color is in
-        // the shape
         return Object.values(DEFAULT_PALETTE).map((color) =>
             shapeSvgText.includes(color) ? color : null,
         );
@@ -562,11 +511,8 @@ export class ImageShapeOptionPlugin extends Plugin {
 
     resetShapeDataset(imgEl, originalSrc) {
         const shapeId = imgEl.dataset.shape;
-        // If there's no shape, remove the shape related values.
         if (!shapeId) {
             const imgFilename = originalSrc?.split("/").pop().split(".")[0];
-            // If there's no originalSrc or the file name was set by 'setShape' action,
-            // we should remove it.
             if (
                 !originalSrc ||
                 (imgFilename && imgEl.dataset.fileName === `${imgFilename}.svg`)
@@ -601,11 +547,6 @@ export class SetImageShapeAction extends BuilderAction {
             shapeFlip: undefined,
             shapeRotate: undefined,
         };
-        // A crop is applied to the image at the same time as certain shapes,
-        // which is why we reset the crop here or when the shape is removed.
-        // However, we don’t reset it when the crop was applied intentionally.
-        // In that case, there are crop values; otherwise, there are none,
-        // only a 'data-aspect-ratio'.
         if (
             !shapeId &&
             img.dataset.aspectRatio &&
@@ -629,7 +570,6 @@ export class SetImageShapeAction extends BuilderAction {
         if (!datasetShape) {
             return false;
         }
-        // Compatibility with old shapes.
         const currentShape = datasetShape.replace("web_editor", "html_builder");
         return currentShape === value;
     }

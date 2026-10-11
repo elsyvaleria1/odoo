@@ -29,10 +29,6 @@ export class ListUIPlugin extends OdooUIPlugin {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Handlers
-    // -------------------------------------------------------------------------
-
     _addTable({ sheetId, col, row, linesNumber, columns }) {
         const zone = {
             left: col,

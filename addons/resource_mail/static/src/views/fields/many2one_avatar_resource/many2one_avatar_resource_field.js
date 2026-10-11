@@ -46,7 +46,6 @@ export const many2OneAvatarResourceField = {
     },
     fieldDependencies: [
         { name: "display_name", type: "char" },
-        // to add in model that will use this widget for m2o field related to resource.resource record (as related field is only supported for x2m)
         { name: "resource_type", type: "selection" },
     ],
 };

@@ -16,11 +16,9 @@ const getFirebaseConfig = () => {
     };
 };
 
-// Initialize the Firebase app in the service worker by passing the config in the URL.
 const app = initializeApp(getFirebaseConfig());
 const messaging = getMessaging(app);
 
-// Add an event listener to handle notification clicks
 self.addEventListener("notificationclick", function (event) {
     if (event.action === "close") {
         event.notification.close();
@@ -28,17 +26,9 @@ self.addEventListener("notificationclick", function (event) {
         event.notification.data.target_url &&
         "" !== event.notification.data.target_url.trim()
     ) {
-        // user clicked on the notification itself or on the 'open' action
-        // clients is a reserved variable in the service worker context.
-        // check https://developer.mozilla.org/en-US/docs/Web/API/Clients/openWindow
-
         clients.openWindow(event.notification.data.target_url);
     }
 });
-
-// Retrieve an instance of Firebase Messaging so that it can handle background messages
-// This line HAS to stay after the event listener or it will break it
-// https://stackoverflow.com/questions/50869015/firefox-not-opening-window-in-service-worker-for-push-message
 
 onBackgroundMessage(messaging, function (payload) {
     const options = {

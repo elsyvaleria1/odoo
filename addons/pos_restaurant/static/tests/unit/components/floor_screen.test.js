@@ -175,11 +175,11 @@ test("a second table click while one waits for the connection queues nothing mor
 
 test("_getNewTableNumber", async () => {
     const store = await setupPosEnv();
-    const floor = store.models["restaurant.floor"].getFirst(); // Main Floor (tables 1,2,4)
+    const floor = store.models["restaurant.floor"].getFirst();
     const screen = await mountWithCleanup(FloorScreen, {});
     screen.selectFloor(floor);
     const newNumber = screen._getNewTableNumber();
-    expect(newNumber).toBe(5); // max(1,2,4) + 1 = 5
+    expect(newNumber).toBe(5);
 });
 
 test("duplicateTable", async () => {

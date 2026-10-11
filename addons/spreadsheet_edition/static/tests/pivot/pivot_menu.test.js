@@ -26,7 +26,7 @@ const { toZone } = spreadsheet.helpers;
 
 test("Re-insert a pivot with a global filter should re-insert the full pivot", async function () {
     const { model, env } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="col"/>
                     <field name="name" type="row"/>
@@ -53,17 +53,17 @@ test("Re-insert a pivot with a global filter should re-insert the full pivot", a
 test("re-insert PIVOT day_of_week with order from the server", async function () {
     const serverData = getBasicServerData();
     serverData.models.partner.records = [
-        { probability: 1, date: "2025-02-17" }, // Monday
-        { probability: 2, date: "2025-02-18" }, // Tuesday
-        { probability: 3, date: "2025-02-19" }, // Wednesday
-        { probability: 4, date: "2025-02-20" }, // Thursday
-        { probability: 5, date: "2025-02-21" }, // Friday
-        { probability: 6, date: "2025-02-22" }, // Saturday
-        { probability: 7, date: "2025-02-23" }, // Sunday
+        { probability: 1, date: "2025-02-17" },
+        { probability: 2, date: "2025-02-18" },
+        { probability: 3, date: "2025-02-19" },
+        { probability: 4, date: "2025-02-20" },
+        { probability: 5, date: "2025-02-21" },
+        { probability: 6, date: "2025-02-22" },
+        { probability: 7, date: "2025-02-23" },
     ];
     const { model, env, pivotId } = await createSpreadsheetWithPivot({
         serverData,
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="date" interval="day" type="row"/>
                 <field name="probability" type="measure"/>
@@ -72,7 +72,7 @@ test("re-insert PIVOT day_of_week with order from the server", async function ()
     model.dispatch("UPDATE_LOCALE", {
         locale: {
             ...model.getters.getLocale(),
-            weekStart: 1, // Monday
+            weekStart: 1,
         },
     });
     updatePivot(model, pivotId, {
@@ -89,7 +89,6 @@ test("re-insert PIVOT day_of_week with order from the server", async function ()
     ];
     await doMenuAction(topbarMenuRegistry, reinsertPivotPath, env);
     await animationFrame();
-    // in an ideal world, it would be ordered according to the locale (starting at 1)
     expect(getEvaluatedGrid(model, "A1:A9")).toEqual([
         [null],
         [null],

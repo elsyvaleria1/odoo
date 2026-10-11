@@ -3,11 +3,6 @@ import { PosStore } from "@point_of_sale/app/services/pos_store";
 import { patch } from "@web/core/utils/patch";
 
 patch(PosStore.prototype, {
-    // Only notify a preparation display when one is actually configured.
-    // Mirrors the pos.prep.display guard in
-    // pos_config.preparationDisplayCategories (and pos_enterprise's own
-    // sendOrderInPreparation guard): notifying a non-existent display is a
-    // no-op, and pos.prep.order isn't loaded without one.
     _hasPreparationDisplay() {
         return Boolean(this.config.preparationDisplayCategories?.size);
     },

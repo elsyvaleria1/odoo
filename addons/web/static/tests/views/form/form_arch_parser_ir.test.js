@@ -67,7 +67,6 @@ test("the form parser consumes the IR and annotates its own copy", () => {
     expect(archInfo.xmlDoc.querySelector("widget")?.getAttribute("widget_id")).toBe(
         "widget_1",
     );
-    // the sub-view's own annotation stays inside the sub-view's parse
     expect(
         archInfo.xmlDoc
             .querySelector("field[name=child_ids] list field")
@@ -102,7 +101,6 @@ test("an element or a string still parses to the same archInfo, xmlDoc included"
     const fromIR = comparable(
         parser.parse(elementToIR(parseXML(ARCH)), MODELS, "partner"),
     );
-    // sub-view archInfos carry their own xmlDoc; compare those by markup too
     const flatten = (/** @type {any} */ c) => {
         for (const fieldInfo of Object.values(c.rest.fieldNodes)) {
             for (const view of Object.values(

@@ -127,7 +127,6 @@ class VoiceRecorder {
         try {
             await loadLamejs();
         } catch (error) {
-            // stopped while it loaded: nothing to report
             if (!this.state.recording || this.gone) {
                 this.cleanUp();
                 return;

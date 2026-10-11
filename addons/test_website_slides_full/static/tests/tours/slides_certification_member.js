@@ -1,26 +1,5 @@
 import { registry } from "@web/core/registry";
 
-/**
- * This tour validates the complete certification flow for a student (= portal user).
- *
- * The tour consists of two main scenarios:
- *
- * 1. **Failure Attempts**
- *    - The student is redirected to the "All Courses" page.
- *    - Navigates to the certification course.
- *    - Starts the certification process.
- *    - Fails the test 3 times, exhausting all attempts.
- *    - Is removed from the course members.
- *
- * 2. **Successful Attempt**
- *    - The student is redirected to the "All Courses" page.
- *    - Navigates to the certification course.
- *    - Starts the certification process.
- *    - Successfully completes the certification.
- *    - The course is marked as completed.
- *    - The certification is added to their user profile.
- */
-
 const startCertificationSurvey = [
     {
         content: "eLearning: go to certification course",
@@ -47,14 +26,12 @@ const failCertificationSteps = [
         run: "click",
     },
     {
-        // Question: What type of wood is the best for furniture?
         content: 'Survey: selecting answer "Fir"',
         trigger:
             'div.js_question-wrapper:contains("What type of wood is the best for furniture") label:contains("Fir")',
         run: "click",
     },
     {
-        // Question: Select all the furniture shown in the video
         content: 'Survey: ticking answer "Table"',
         trigger:
             'div.js_question-wrapper:contains("Select all the furniture shown in the video") label:contains("Table")',
@@ -94,14 +71,12 @@ const succeedCertificationSteps = [
         run: "click",
     },
     {
-        // Question: What type of wood is the best for furniture?
         content: 'Survey: selecting answer "Oak"',
         trigger:
             'div.js_question-wrapper:contains("What type of wood is the best for furniture") label:contains("Oak")',
         run: "click",
     },
     {
-        // Question: Select all the furniture shown in the video
         content: 'Survey: ticking answer "Chair"',
         trigger:
             'div.js_question-wrapper:contains("Select all the furniture shown in the video") label:contains("Chair")',
@@ -137,7 +112,6 @@ const certificationCompletionSteps = [
         trigger: 'div:contains("Congratulations, you have passed the test")',
     },
     {
-        // Sharing the certification
         trigger: 'a:contains("Share your certification")',
         run: "click",
     },
@@ -154,7 +128,7 @@ const certificationCompletionSteps = [
             '.o_wslides_js_share_email .alert:not(.d-none):contains("Sharing is caring")',
     },
     {
-        trigger: "button.btn-close", // close sharing modal,
+        trigger: "button.btn-close",
         run: "click",
     },
     {

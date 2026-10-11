@@ -47,7 +47,6 @@ test("a master whose record is not on the gantt draws nothing", () => {
 });
 
 test("records sharing rows connect within each shared row, not across", () => {
-    // Both grouped on a many2many, both on rows A and B: one connector per row.
     expect(
         pairs({
             1: { masterIds: [], rows: ["A", "B"] },
@@ -71,8 +70,6 @@ test("a shared row and a private row: the private row still gets its connector",
         2: { masterIds: [1], rows: ["A", "B"] },
     });
     expect(shouldConnectPills(byRow, byRecord, 1, "A", 2, "A")).toBe(true);
-    // 2@B: the master has no pill on B, and 2's other row (A) holds the master,
-    // so a connector from 1@A stands for it.
     expect(shouldConnectPills(byRow, byRecord, 1, "A", 2, "B")).toBe(true);
     expect(
         pairs({

@@ -22,10 +22,6 @@ const { toCartesian } = spreadsheet.helpers;
 describe.current.tags("headless");
 defineSpreadsheetModels();
 
-/**
- * Get the computed value that would be autofilled starting from the given xc.
- * The starting xc should contains a List formula
- */
 function getListAutofillValue(model, xc, { direction, steps }) {
     const content = getCellFormula(model, xc);
     const column = ["left", "right"].includes(direction);
@@ -35,7 +31,6 @@ function getListAutofillValue(model, xc, { direction, steps }) {
 
 test("Autofill list values", async function () {
     const { model } = await createSpreadsheetWithList();
-    // From value to value
     expect(getListAutofillValue(model, "C3", { direction: "bottom", steps: 1 })).toBe(
         getCellFormula(model, "C4"),
     );
@@ -57,7 +52,6 @@ test("Autofill list values", async function () {
     expect(getListAutofillValue(model, "C3", { direction: "right", steps: 4 })).toBe(
         "",
     );
-    // From value to header
     expect(getListAutofillValue(model, "B4", { direction: "left", steps: 1 })).toBe(
         getCellFormula(model, "A4"),
     );
@@ -70,7 +64,6 @@ test("Autofill list values", async function () {
     expect(getListAutofillValue(model, "B4", { direction: "top", steps: 3 })).toBe(
         getCellFormula(model, "B1"),
     );
-    // From header to header
     expect(getListAutofillValue(model, "B3", { direction: "right", steps: 1 })).toBe(
         getCellFormula(model, "C3"),
     );
@@ -96,7 +89,6 @@ test("Autofill list values", async function () {
         `=ODOO.LIST(1,5,"foo")`,
     );
     expect(getListAutofillValue(model, "A4", { direction: "top", steps: 4 })).toBe("");
-    // From header to value
     expect(getListAutofillValue(model, "B2", { direction: "bottom", steps: 1 })).toBe(
         getCellFormula(model, "B3"),
     );
@@ -118,7 +110,7 @@ test("Autofill list correctly update the cache", async function () {
     const { model } = await createSpreadsheetWithList({ linesNumber: 1 });
     autofill(model, "A2", "A3");
     expect(getCellValue(model, "A3")).toBe("Loading...");
-    await animationFrame(); // Await for the batch collection of missing ids
+    await animationFrame();
     await waitForDataLoaded(model);
     expect(getCellValue(model, "A3")).toBe(1);
 });
@@ -176,7 +168,6 @@ test("Autofill list formula with missing listId", async function () {
 
 test("Autofill list keeps format but neither style nor border", async function () {
     const { model } = await createSpreadsheetWithList();
-    // Change the format, style and borders of C2
     const sheetId = model.getters.getActiveSheetId();
     const { col, row } = toCartesian("C2");
     const border = {
@@ -187,10 +178,8 @@ test("Autofill list keeps format but neither style nor border", async function (
     setCellStyle(model, "C2", style);
     model.dispatch("SET_BORDER", { sheetId, col, row, border });
 
-    // Change the format of C3
     setCellFormat(model, "C3", "d/m/yyyy");
 
-    // Check that the format, style and border of C2 have been correctly applied
     autofill(model, "C2", "C3");
     const startingCell = getCell(model, "C2");
     expect(startingCell.style).toEqual(style);
@@ -199,7 +188,6 @@ test("Autofill list keeps format but neither style nor border", async function (
     );
     expect(startingCell.format).toBe("m/d/yyyy");
 
-    // Check that the format of C2 has been correctly applied to C3 but not the style nor the border
     const filledCell = getCell(model, "C3");
     expect(filledCell.style).toBe(undefined);
     expect(model.getters.getCellBorder({ sheetId, col, row: row + 1 })).toEqual({});

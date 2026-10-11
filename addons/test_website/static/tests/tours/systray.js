@@ -6,16 +6,6 @@ import {
     registerWebsitePreviewTour,
 } from "@website/js/tours/tour_utils";
 
-/**
- * The purpose of these tours is to check the systray visibility:
- *
- * - as an administrator
- * - as a restricted editor with "tester" right
- * - as a restricted editor without "tester" right
- * - as a "tester" who is not a restricted editor
- * - as an unrelated user (neither "tester" nor restricted editor)
- */
-
 const canPublish = () => [
     {
         content: "Publish",
@@ -68,8 +58,6 @@ const cannotToggleMobilePreview = () => [
     },
 ];
 
-// For non-website users, switching across website only works if the domains are
-// specified. Within the scope of test tours, this cannot be achieved.
 const canSwitchWebsiteNoCheck = () => [
     {
         content: "Open website switcher",

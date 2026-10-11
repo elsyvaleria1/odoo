@@ -4,8 +4,6 @@ import paymentDemoMixin from "@payment_demo/interactions/payment_demo_mixin";
 import { patch } from "@web/core/utils/patch";
 
 patch(PaymentForm.prototype, {
-    // #=== DOM MANIPULATION ===#
-
     /**
      * Prepare the inline form of Demo for direct payment.
      *
@@ -33,8 +31,6 @@ patch(PaymentForm.prototype, {
         }
         this._setPaymentFlow("direct");
     },
-
-    // #=== PAYMENT FLOW ===#
 
     /**
      * Simulate a feedback from a payment provider and redirect the customer to the status page.

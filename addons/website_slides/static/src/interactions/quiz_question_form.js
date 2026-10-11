@@ -168,8 +168,6 @@ export class QuestionFormBehavior {
                 ).textContent = response.data.error;
             } else {
                 errorContainer.classList.add("d-none");
-                // the edited question is answered in place, a new one where
-                // the placeholder stood
                 this.host.swapFragments(response);
                 this.onSaved(this);
             }

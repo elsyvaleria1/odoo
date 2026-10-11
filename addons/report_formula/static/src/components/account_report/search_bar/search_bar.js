@@ -21,15 +21,11 @@ export class AccountReportSearchBar extends Component {
         });
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Search
-    //------------------------------------------------------------------------------------------------------------------
     async search() {
         const inputText = this.searchText.el.value.trim();
         const query = inputText.toLowerCase();
         const linesIDsMatched = [];
 
-        // Since the search bar is loaded before the report data, we need to wait for it
         await this.controller.reportLoadingPromise;
 
         if (query.length) {

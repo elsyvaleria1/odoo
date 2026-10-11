@@ -30,7 +30,6 @@ registry.category("web_tour.tours").add("appointment_crm_meeting_tour", {
         {
             trigger: '.o_appointment_button_link:contains("Test AppointmentCRM")',
             async run(helpers) {
-                // Patch and ignore write on clipboard in tour as we don't have permissions
                 browser.navigator.clipboard.writeText = () => {
                     console.info("Copy in clipboard ignored!");
                 };
@@ -40,7 +39,6 @@ registry.category("web_tour.tours").add("appointment_crm_meeting_tour", {
         {
             trigger: ".o_appointment_discard_slots",
             async run(helpers) {
-                // Cleanup the patched clipboard method
                 browser.navigator.clipboard.writeText = oldWriteText;
 
                 await helpers.click();

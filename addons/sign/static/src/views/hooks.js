@@ -60,9 +60,6 @@ export function useSignViewButtons(component, fileInput) {
     };
 
     const upload = {
-        /**
-         * Handles the template file upload logic.
-         */
         onFileInputChange: async (ev) => {
             const files = ev?.type === "change" ? ev.target.files : ev.detail.files;
             if (!files || !files.length) {
@@ -120,8 +117,6 @@ export function useSignViewButtons(component, fileInput) {
 
     useBus(env.bus, "change_file_input", async (ev) => {
         if (component.constructor.name === "SignActionHelper") {
-            // Skip processing in SignActionHelper(signRenderer) call to prevent double handling
-            // because its triggered from signController too.
             return;
         }
         fileInput.el.files = ev.detail.files;

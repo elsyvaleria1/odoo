@@ -23,10 +23,6 @@ export class EmbeddedViewLinkEditDialog extends Component {
         this.input = elementRef();
     }
 
-    //--------------------------------------------------------------------------
-    // GETTERS/SETTERS
-    //--------------------------------------------------------------------------
-
     get name() {
         return this.state.name.trim();
     }
@@ -34,10 +30,6 @@ export class EmbeddedViewLinkEditDialog extends Component {
     get styles() {
         return EMBEDDED_VIEW_LINK_STYLES;
     }
-
-    //--------------------------------------------------------------------------
-    // HANDLERS
-    //--------------------------------------------------------------------------
 
     onConfirm() {
         if (!this.name) {

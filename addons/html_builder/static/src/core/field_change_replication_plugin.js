@@ -40,7 +40,6 @@ export class FieldChangeReplicationPlugin extends Plugin {
                 ),
             )
             .filter(Boolean)
-            // Do not forward "unstyled" copies to other nodes.
             .filter(
                 (fieldEl) => !fieldEl.classList.contains("o_translation_without_style"),
             )
@@ -110,9 +109,6 @@ export class FieldChangeReplicationPlugin extends Plugin {
                 this.dispatchTo("clean_for_save_handlers", { root: cloneEl });
                 for (const targetEl of targetEls) {
                     if (targetEl.classList.contains("o_translation_without_style")) {
-                        // For generated elements such as the navigation
-                        // labels of website's table of content, only the
-                        // text of the referenced translation must be used.
                         if (targetEl.innerText !== cloneEl.innerText) {
                             targetEl.innerText = cloneEl.innerText;
                             touchedEls.add(targetEl);

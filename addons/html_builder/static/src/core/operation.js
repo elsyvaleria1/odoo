@@ -1,9 +1,6 @@
 /** @odoo-module native */
 import { Mutex } from "@web/core/utils/concurrency";
 
-// TODO when making apply async:
-// - check `isDestroyed` instead of `this.editableDocument.defaultView`
-
 /**
  * @typedef OperationParams
  * @property {Function} load an async function for which the mutex should wait
@@ -85,8 +82,6 @@ export class Operation {
                 this.cancelPrevious = null;
                 isCancel = true;
                 cancelResolve?.();
-                // Cancel in the mutex to wait for the revert before the next
-                // apply.
                 this.mutex.exec(async () => {
                     await cancelPrevious?.();
                 });
@@ -127,8 +122,6 @@ export class Operation {
                 }
                 this.previousLoadResolve = null;
 
-                // Cancel the operation if the iframe has been reloaded
-                // and does not have a browsing context anymore.
                 if (!this.editableDocument.defaultView) {
                     return;
                 }
@@ -204,7 +197,6 @@ export class Operation {
 
         this.editableDocument.body.appendChild(loadingScreenEl);
 
-        // If specified, add a loading effect on that element after a delay.
         let loadingTimeout;
         if (withLoadingEffect) {
             loadingTimeout = setTimeout(

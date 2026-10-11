@@ -162,20 +162,17 @@ test("stacked line chart", async () => {
     await openChartSidePanel(model, env);
     await changeChartType("odoo_stacked_line");
 
-    // checked by default
     expect(model.getters.getChart(chartId).stacked).toBe(true);
     expect(".o-checkbox input[name='stackedBar']:checked").toHaveCount(1, {
         message: "checkbox should be checked",
     });
 
-    // uncheck
     await contains(".o-checkbox input:checked").click();
     expect(model.getters.getChart(chartId).stacked).toBe(false);
     expect(".o-checkbox input[name='stackedBar']:checked").toHaveCount(0, {
         message: "checkbox should no longer be checked",
     });
 
-    // check
     await contains(".o-checkbox input[name='stackedBar']").click();
     expect(model.getters.getChart(chartId).stacked).toBe(true);
     expect(".o-checkbox input[name='stackedBar']:checked").toHaveCount(1, {
@@ -196,7 +193,6 @@ test("Odoo line chart with cumulated start", async () => {
         message: "cumulated Start is not visible",
     });
 
-    // uncheck
     await contains(".o-checkbox input[name='cumulative']").click();
     expect(model.getters.getChart(chartId).cumulative).toBe(true);
     expect(model.getters.getChart(chartId).cumulatedStart).toBe(undefined);
@@ -207,7 +203,6 @@ test("Odoo line chart with cumulated start", async () => {
         message: "cumulated Start not checked",
     });
 
-    // check
     await contains(".o-checkbox input[name='cumulatedStart']").click();
     expect(model.getters.getChart(chartId).cumulative).toBe(true);
     expect(model.getters.getChart(chartId).cumulatedStart).toBe(true);
@@ -256,7 +251,6 @@ test("Open chart odoo's data properties", async function () {
     const sheetId = model.getters.getActiveSheetId();
     const figureId = model.getters.getFigures(sheetId)[0].id;
 
-    // opening from a chart
     model.dispatch("SELECT_FIGURE", { figureId });
     env.openSidePanel("ChartPanel");
     await animationFrame();
@@ -302,13 +296,11 @@ test("Cumulative line chart", async () => {
     await openChartSidePanel(model, env);
     await changeChartType("odoo_line");
     await contains(".o-checkbox input[name='cumulative']").click();
-    // check
     expect(model.getters.getChart(chartId).cumulative).toBe(true);
     expect(".o-checkbox input[name='cumulative']:checked").toHaveCount(1, {
         message: "checkbox should be checked",
     });
 
-    // uncheck
     await contains(".o-checkbox input[name='cumulative']").click();
     expect(model.getters.getChart(chartId).cumulative).toBe(false);
     expect(".o-checkbox input[name='cumulative']:checked").toHaveCount(0, {
@@ -371,7 +363,6 @@ test("population pyramid chart", async () => {
     const runtime = model.getters.getChartRuntime(chartId);
     expect(runtime.chartJsConfig.type).toBe("bar");
     expect(runtime.chartJsConfig.data.datasets[0].data).toEqual([15, 53]);
-    // negative values for the other side of the pyramid
     expect(runtime.chartJsConfig.data.datasets[1].data).toEqual([0, -10]);
 });
 
@@ -609,26 +600,23 @@ describe("trend line", () => {
     });
 
     test("Can change polynomial degree", async function () {
-        onRpc("formatted_read_group", () =>
-            // return at least 3 groups to have a valid trend line
-            [
-                {
-                    bar: true,
-                    __count: 1,
-                    __domain: [],
-                },
-                {
-                    bar: false,
-                    __count: 2,
-                    __domain: [],
-                },
-                {
-                    bar: null,
-                    __count: 3,
-                    __domain: [],
-                },
-            ],
-        );
+        onRpc("formatted_read_group", () => [
+            {
+                bar: true,
+                __count: 1,
+                __domain: [],
+            },
+            {
+                bar: false,
+                __count: 2,
+                __domain: [],
+            },
+            {
+                bar: null,
+                __count: 3,
+                __domain: [],
+            },
+        ]);
         const { model, env } = await createSpreadsheetFromGraphView();
         const sheetId = model.getters.getActiveSheetId();
         const chartId = model.getters.getChartIds(sheetId)[0];

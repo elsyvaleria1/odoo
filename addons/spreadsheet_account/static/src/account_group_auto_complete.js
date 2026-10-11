@@ -4,7 +4,6 @@ import { _t } from "@web/core/translation";
 
 const { insertTokenAfterLeftParenthesis } = helpers;
 
-// copy-pasted list of options from the `account_type` selection field.
 const ACCOUNT_TYPES = [
     ["asset_receivable", _t("Receivable")],
     ["asset_cash", _t("Bank and Cash")],

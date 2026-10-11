@@ -103,11 +103,6 @@ export class AttendeeCalendarModel extends CalendarModel {
         await this.updateAttendeeData(data);
     }
 
-    /**
-     * Split the events to display an event for each attendee with the correct status.
-     * If the all filter is activated, we don't display an event for each attendee and keep
-     * the previous behavior to display a single event.
-     */
     async updateAttendeeData(data) {
         const attendeeFilters = data.filterSections.partner_ids;
         let isEveryoneFilterActive = false;
@@ -126,8 +121,6 @@ export class AttendeeCalendarModel extends CalendarModel {
             attendeeIds,
             eventIds,
         ]);
-        // Indexed once: the two loops below look a detail up per (record, attendee)
-        // pair, which was a linear scan of the whole list every time.
         const attendeeByKey = new Map(
             data.attendees.map((a) => [`${a.id},${a.event_id}`, a]),
         );
@@ -141,7 +134,6 @@ export class AttendeeCalendarModel extends CalendarModel {
                     )
                     .map((filter) => filter.value),
             );
-            // Duplicate records per attendee
             const newRecords = {};
             let duplicatedRecordIdx = -1;
             for (const event of Object.values(data.records)) {
@@ -155,12 +147,9 @@ export class AttendeeCalendarModel extends CalendarModel {
                     if (!activeAttendeeIds.has(attendee)) {
                         continue;
                     }
-                    // Records will share the same rawRecord.
                     const record = { ...event };
                     const attendeeInfo = attendeeByKey.get(`${attendee},${event.id}`);
                     record.attendeeId = attendee;
-                    // Colors are linked to the partner_id but in this case we want it linked
-                    // to attendeeId
                     record.colorIndex = attendee;
                     if (attendeeInfo) {
                         record.attendeeStatus = attendeeInfo.status;
@@ -171,7 +160,6 @@ export class AttendeeCalendarModel extends CalendarModel {
                     const recordId = duplicatedRecords
                         ? duplicatedRecordIdx--
                         : record.id;
-                    // Index in the records
                     record._recordId = recordId;
                     newRecords[recordId] = record;
                     duplicatedRecords++;
@@ -193,9 +181,6 @@ export class AttendeeCalendarModel extends CalendarModel {
         }
     }
 
-    /**
-     * Archives a record, ask for the recurrence update policy in case of recurrent event.
-     */
     async archiveRecord(record) {
         let recurrenceUpdate = false;
         if (record.rawRecord.recurrency) {
@@ -210,9 +195,6 @@ export class AttendeeCalendarModel extends CalendarModel {
                     body: deleteConfirmationMessage,
                     confirm: resolve.bind(null, true),
                     confirmLabel: _t("Delete"),
-                    // `() => resolve.bind(null, false)` built a bound function
-                    // and threw it away, so cancelling left this promise pending
-                    // for ever and archiveRecord never returned.
                     cancel: () => resolve(false),
                     cancelLabel: _t("No, keep it"),
                 });
@@ -225,8 +207,6 @@ export class AttendeeCalendarModel extends CalendarModel {
     }
 
     async _archiveRecord(id, recurrenceUpdate) {
-        // `&& recurrenceUpdate !== "this"` used to be here: unreachable,
-        // "this" being truthy.
         if (!recurrenceUpdate) {
             await this.orm.call(this.resModel, "action_archive", [[id]]);
         } else {

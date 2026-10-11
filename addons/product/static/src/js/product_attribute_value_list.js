@@ -41,10 +41,6 @@ export class PAVListRenderer extends ListRenderer {
     }
 
     async onConfirmDelete(record) {
-        // The one2many's own delete command unlinks the value when the record is
-        // saved, inside that transaction. Unlinking here first as well made the
-        // deletion non-atomic: a save that failed validation left the value
-        // already gone from the database with the form still open on it.
         const res = await super.onDeleteRecord(record);
         await this.props.list.model.root.save();
         return res;

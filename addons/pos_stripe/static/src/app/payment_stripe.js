@@ -24,12 +24,10 @@ export class PaymentStripe extends PaymentInterface {
     }
 
     stripeUnexpectedDisconnect() {
-        // Include a way to attempt to reconnect to a reader ?
         this._showError(_t("Reader disconnected"));
     }
 
     async stripeFetchConnectionToken() {
-        // Do not cache or hardcode the ConnectionToken.
         try {
             const data = await this.pos.data.call(
                 "pos.payment.method",
@@ -54,8 +52,6 @@ export class PaymentStripe extends PaymentInterface {
         } else if (discoverResult.discoveredReaders.length === 0) {
             this._showError(_t("No available Stripe readers."));
         } else {
-            // Need to stringify all Readers to avoid to put the array into a proxy Object not interpretable
-            // for the Stripe SDK
             this.pos.discoveredReaders = JSON.stringify(
                 discoverResult.discoveredReaders,
             );
@@ -84,8 +80,6 @@ export class PaymentStripe extends PaymentInterface {
             return false;
         }
         const line = this.pos.getOrder().getSelectedPaymentline();
-        // Because the reader can only connect to one instance of the SDK at a time.
-        // We need the disconnect this reader if we want to use another one
         if (
             this.pos.connectedReader !== this.payment_method_id.stripe_serial_number &&
             this.terminal.getConnectionStatus() === "connected"
@@ -165,15 +159,11 @@ export class PaymentStripe extends PaymentInterface {
         const processPaymentDetails = intentCharge.payment_method_details;
 
         if (processPaymentDetails.type === "interac_present") {
-            // Canadian interac payments should not be captured:
-            // https://stripe.com/docs/terminal/payments/regional?integration-country=CA#create-a-paymentintent
             return ["interac", intentCharge.id];
         }
         const cardPresentBrand =
             this.getCardBrandFromPaymentMethodDetails(processPaymentDetails);
         if (cardPresentBrand.includes("eftpos")) {
-            // Australian eftpos should not be captured:
-            // https://stripe.com/docs/terminal/payments/regional?integration-country=AU
             return [cardPresentBrand, intentCharge.id];
         }
 
@@ -254,10 +244,6 @@ export class PaymentStripe extends PaymentInterface {
     }
 
     getCardBrandFromPaymentMethodDetails(paymentMethodDetails) {
-        // Both `card_present` and `interac_present` are "nullable" so we need to check for their existence, see:
-        // https://docs.stripe.com/api/charges/object#charge_object-payment_method_details-card_present
-        // https://docs.stripe.com/api/charges/object#charge_object-payment_method_details-interac_present
-        // In Canada `card_present` might not be present, but `interac_present` will be
         return (
             paymentMethodDetails?.card_present?.brand ||
             paymentMethodDetails?.interac_present?.brand ||
@@ -281,8 +267,6 @@ export class PaymentStripe extends PaymentInterface {
         return true;
     }
 
-    // After a reload the reader's outcome is unknown: a failed capture may be
-    // one that already succeeded, so it is left to the cashier, never retried.
     async resumeCapture(line) {
         const paymentIntentId = line.transaction_id;
         const captured =
@@ -340,9 +324,6 @@ export class PaymentStripe extends PaymentInterface {
     }
 
     async sendPaymentRequest(uuid) {
-        /**
-         * Override
-         */
         await super.sendPaymentRequest(...arguments);
         const line = this.pos.getOrder().getSelectedPaymentline();
         line.setPaymentStatus("waiting");
@@ -364,9 +345,6 @@ export class PaymentStripe extends PaymentInterface {
     }
 
     async sendPaymentCancel(order, uuid) {
-        /**
-         * Override
-         */
         super.sendPaymentCancel(...arguments);
         const line = this.pos.getOrder().getSelectedPaymentline();
         const stripeCancel = await this.stripeCancel();
@@ -394,8 +372,6 @@ export class PaymentStripe extends PaymentInterface {
             return true;
         }
     }
-
-    // private methods
 
     _showError(msg, title) {
         if (!title) {

@@ -75,10 +75,6 @@ class Stuff extends models.Model {
     _records = [{ id: 1, name: "Bruce Willis" }];
 }
 
-// Register the local Task subclass without mutating the SHARED projectModels
-// object: `projectModels.ProjectTask = Task` leaks `stuff_id` (relation
-// "stuff") into every other suite of the bundle that spreads projectModels
-// without defining the Stuff model (e.g. the whole project_todo suite).
 defineMailModels();
 defineModels({ ...projectModels, ProjectTask: Task, Stuff });
 
@@ -121,7 +117,6 @@ test("Unschedule button is displayed", async () => {
 });
 
 test("not user_ids grouped: no empty group if no records", async () => {
-    // delete the record having no stuff_id
     Task._records.splice(0, 1);
     await mountGanttView({ ...ganttViewParams, groupBy: ["stuff_id"] });
     expect(queryAllTexts(".o_gantt_row_headers .o_gantt_row_title")).toEqual([
@@ -142,7 +137,6 @@ test("user_ids grouped: specific empty group added, even if no records", async (
 });
 
 test("[user_ids, ...] grouped", async () => {
-    // add an unassigned task (no user_ids) that has a linked stuff
     Task._records.push({
         id: 3,
         name: "Gnop",
@@ -612,7 +606,6 @@ test("Copy pill in another row", async () => {
 
     await keyDown("Control");
 
-    // move blop to John Doe
     const { drop, moveTo } = await dragPill("Blop");
     await moveTo({ columnHeader: "14", groupHeader: "June 2021", row: "John Doe" });
 
@@ -891,7 +884,6 @@ test("template dropdown in gantt view of a project with no template", async () =
         message: "The “New” button should not be a dropdown since there is no template",
     });
 
-    // Test that we can create a new record without errors
     await contains(".o_gantt_button_add").click();
 });
 

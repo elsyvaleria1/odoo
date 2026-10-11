@@ -89,9 +89,6 @@ migrationStepRegistry.add("18.4.11", {
                 globalFilter.rangeType === "fixedPeriod"
             ) {
                 if (typeof globalFilter.defaultValue !== "string") {
-                    // If the defaultValue is not a string, it's probably a
-                    // something very old that we do not support anymore
-                    // See migration2to3 (antepenultimate_year for example)
                     delete globalFilter.defaultValue;
                 }
             }
@@ -163,7 +160,7 @@ migrationStepRegistry.add("18.5.10", {
                 };
             } else if (globalFilter.type === "boolean" && globalFilter.defaultValue) {
                 if (globalFilter.defaultValue.length === 2) {
-                    delete globalFilter.defaultValue; // [true, false] no longer supported
+                    delete globalFilter.defaultValue;
                 } else {
                     globalFilter.defaultValue = {
                         operator: globalFilter.defaultValue[0] ? "set" : "not set",
@@ -276,9 +273,6 @@ function migrate1to2(data) {
     return data;
 }
 
-/**
- * Migration of global filters
- */
 function migrate2to3(data) {
     if (data.globalFilters) {
         for (const gf of data.globalFilters) {
@@ -316,9 +310,6 @@ function migrate2to3(data) {
     return data;
 }
 
-/**
- * Migration of list/pivot names
- */
 function migrate3to4(data) {
     if (data.lists) {
         for (const list of Object.values(data.lists)) {
@@ -443,10 +434,6 @@ function migrate5to6(data) {
     return data;
 }
 
-/**
- * Migrate the pivot data to add the type, by default "ODOO". And replace the
- * pivot with a new object that contains type and definition (the old pivot).
- */
 function migrate6to7(data) {
     if (data.pivots) {
         for (const [id, definition] of Object.entries(data.pivots)) {
@@ -505,8 +492,6 @@ function migrate10to11(data) {
 }
 
 function migrate11to12(data) {
-    // remove the calls to ODOO.PIVOT.POSITION and replace
-    // the previous argument to a relative position
     for (const sheet of data.sheets || []) {
         for (const xc in sheet.cells || []) {
             const cell = sheet.cells[xc];
@@ -516,11 +501,6 @@ function migrate11to12(data) {
                 cell.content.includes("ODOO.PIVOT.POSITION")
             ) {
                 const tokens = tokenize(cell.content);
-                /* given that odoo.pivot.position is automatically set, we know that:
-                1) it is always on the form of ODOO.PIVOT.POSITION(1, ...)
-                2) it is always preceded by a dimension of a pivot or header, inside another pivot formula
-                3) there is only one odoo.pivot.position per cell
-                4) odoo.pivot.position can only exist after the 3rd token and needs at least 7 tokens to be valid*/
                 for (let i = 2; i < tokens.length - 7; i++) {
                     const token = tokens[i];
                     if (
@@ -528,9 +508,8 @@ function migrate11to12(data) {
                         token.value.toUpperCase() === "ODOO.PIVOT.POSITION"
                     ) {
                         const order = tokens[i + 6];
-                        tokens[i - 2].value = '"#' + tokens[i - 2].value.slice(1); // "dimension" becomes "#dimension"
-                        tokens.splice(i, 7); // remove "ODOO.PIVOT.POSITION", "(", "1", ",", "dimension", ", ", order
-                        // tokens[i-1] is the comma before odoo.pivot.position
+                        tokens[i - 2].value = '"#' + tokens[i - 2].value.slice(1);
+                        tokens.splice(i, 7);
                         tokens[i] = order;
                         cell.content = tokensToString(tokens);
                     }
@@ -541,9 +520,6 @@ function migrate11to12(data) {
     return data;
 }
 
-/**
- * Change pivot sortedColumn of the odoo's pivot model to the sortedColumn of o-spreadsheet
- */
 function migrate12to13(data) {
     if (data.pivots) {
         for (const pivot of Object.values(data.pivots)) {
@@ -553,10 +529,6 @@ function migrate12to13(data) {
             const measure = pivot.measures.find(
                 (measure) => measure.fieldName === pivot.sortedColumn.measure,
             );
-            // We're missing some information to convert the sortedColumn (fieldType), so we'll drop the sorted columns
-            // that are not on the total column
-            // Also, a previous bug allowed to have a sortedColumn measure that is not in the measures,
-            // in this case we also drop the sortedColumn because we can't sort a measure that is not there
             if (pivot.sortedColumn.groupId[1]?.length || !measure) {
                 pivot.sortedColumn = undefined;
                 continue;

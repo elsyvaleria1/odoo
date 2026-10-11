@@ -1,12 +1,3 @@
-/**
- * Knowledge history tour.
- * Features tested:
- * - Create / edit an article an ensure revisions are created on write
- * - Open the history dialog and check that the revisions are correctly shown
- * - Select a revision and check that the content / comparison are correct
- * - Click the restore button and check that the content is correctly restored
- */
-
 import { htmlEditorVersions } from "@html_editor/html_migrations/html_migrations_utils";
 import { endKnowledgeTour } from "@knowledge/../tests/tours/knowledge_tour_utils";
 import { registry } from "@web/core/registry";
@@ -19,17 +10,14 @@ const testArticleName = "Test history Article";
 function changeArticleContentAndSave(newContent) {
     return [
         {
-            // change the content of the article
             trigger: ".note-editable.odoo-editor-editable h1",
-            run: `editor ${newContent}`, // modify the article content
+            run: `editor ${newContent}`,
         },
         {
-            // reload knowledge articles to make sure that the article is saved
             trigger: 'a[data-menu-xmlid="knowledge.knowledge_menu_home"]',
             run: "click",
         },
         {
-            // wait for the page to reload and OWL to accept value change
             trigger:
                 '.o_article:contains("' + testArticleName + '"):not(.o_article_active)',
             run: async () => {
@@ -37,12 +25,10 @@ function changeArticleContentAndSave(newContent) {
             },
         },
         {
-            // click on the test article
             trigger: '.o_article:contains("' + testArticleName + '") a.o_article_name',
             run: "click",
         },
         {
-            // wait for the article to be loaded
             trigger: '.o_article_active:contains("' + testArticleName + '") ',
         },
     ];
@@ -53,17 +39,14 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
     steps: () => [
         stepUtils.showAppsMenuItem(),
         {
-            // open Knowledge App
             trigger: '.o_app[data-menu-xmlid="knowledge.knowledge_menu_root"]',
             run: "click",
         },
         {
-            // click on the "New Article" action
             trigger: ".o_knowledge_create_article",
             run: "click",
         },
         {
-            // check that the article is correctly created (private section)
             trigger:
                 'section[data-section="private"] .o_article .o_article_name:contains("Untitled")',
         },
@@ -72,17 +55,14 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
         ...changeArticleContentAndSave("Modified Title 02"),
         ...changeArticleContentAndSave("Modified Title 03"),
         {
-            // Open dropdown 'More actions'
             trigger: ".o_knowledge_header .dropdown-toggle",
             run: "click",
         },
         {
-            // Open history dialog
             trigger: '.dropdown-item:contains("Open Version History")',
             run: "click",
         },
         {
-            // check the history dialog is opened
             trigger: '.modal-header:contains("History")',
             run: "click",
         },
@@ -90,7 +70,6 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
             trigger: ".modal .html-history-dialog.html-history-loaded",
         },
         {
-            // check that we have the correct number of revision (5)
             trigger: ".html-history-dialog .revision-list .btn",
             run: function () {
                 const items = document.querySelectorAll(".revision-list .btn");
@@ -102,13 +81,11 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
             },
         },
         {
-            // check the first revision content is correct
             trigger:
                 '.history-container .history-content-view:contains("Modified Title 03")',
             run: "click",
         },
         {
-            // click on the 3rd revision
             trigger: ".html-history-dialog .revision-list .btn:nth-child(4)",
             run: "click",
         },
@@ -116,7 +93,6 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
             trigger: ".modal .html-history-dialog.html-history-loaded",
         },
         {
-            // check the 3rd revision content is correct
             trigger:
                 '.history-container .history-content-view:contains("' +
                 testArticleName +
@@ -124,12 +100,10 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
             run: "click",
         },
         {
-            // click on the split comparison tab
             trigger: ".history-container .history-view-top-bar a:contains(Comparison)",
             run: "click",
         },
         {
-            // check the comparison unified content is correct
             trigger: ".history-container .history-comparison-view",
             run: function () {
                 const comparisonHtml = document
@@ -152,12 +126,10 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
             },
         },
         {
-            // click on the unified comparison toggle
             trigger: ".history-container .history-view-top-bar label:contains(Split)",
             run: "click",
         },
         {
-            // check the comparison split content is correct
             trigger: ".history-container .history-comparison-view",
             run: function () {
                 const deletedElements = document.querySelectorAll(
@@ -199,12 +171,10 @@ registry.category("web_tour.tours").add("knowledge_history_tour", {
             },
         },
         {
-            // click on the restore button
             trigger: ".modal-footer .btn-primary:enabled",
             run: "click",
         },
         {
-            // ensure the article content is restored
             trigger:
                 '.note-editable.odoo-editor-editable h1:contains("' +
                 testArticleName +

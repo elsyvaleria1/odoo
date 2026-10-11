@@ -272,7 +272,6 @@ export async function save(record, { reload = true, onError, nextId } = {}) {
         return true;
     }
 
-    // a *Locked save runs as a job of the model mutex, except an urgent one
     record.saveState.enter(toRaw(record).changes, snapshotRowChanges(record), {
         holdsLock: !record.model.urgentSave.isActive,
     });

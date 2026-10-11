@@ -136,7 +136,7 @@ test("a form view has no accessibility violations", async () => {
         resModel: "partner",
         resId: 2,
         type: "form",
-        arch: /* xml */ `
+        arch: `
             <form>
                 <header><field name="state" widget="statusbar"/></header>
                 <sheet>
@@ -159,7 +159,7 @@ test("a list view has no accessibility violations", async () => {
     await mountView({
         resModel: "partner",
         type: "list",
-        arch: /* xml */ `
+        arch: `
             <list>
                 <field name="name"/>
                 <field name="email"/>
@@ -179,8 +179,8 @@ test("the search bar's autocomplete has no accessibility violations", async () =
     await mountView({
         resModel: "partner",
         type: "list",
-        arch: /* xml */ `<list><field name="name"/></list>`,
-        searchViewArch: /* xml */ `<search><field name="name"/><field name="email"/></search>`,
+        arch: `<list><field name="name"/></list>`,
+        searchViewArch: `<search><field name="name"/><field name="email"/></search>`,
     });
     await contains(".o_searchview_input").edit("Az", { confirm: false });
     await animationFrame();

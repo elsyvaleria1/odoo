@@ -42,8 +42,6 @@ export class SurveyQuestionTriggerWidget extends Component {
                     ),
             };
         } else if (triggerError !== "MISSING_TRIGGER_ERROR") {
-            // MISSING_TRIGGER_ERROR keeps the previous state: the trigger itself goes at the
-            // next save, and showing the "normal" icon until then would flicker.
             this.lastTrigger = {
                 warning: false,
                 tooltip: _t(
@@ -100,7 +98,6 @@ export class SurveyQuestionTriggerWidget extends Component {
             if (triggeringQuestionRecord) {
                 triggerQuestionsRecords.push(triggeringQuestionRecord);
             } else {
-                // Trigger question was deleted from the list
                 missingTriggerQuestionsIds.push(triggeringQuestion.resId);
             }
         }
@@ -112,7 +109,7 @@ export class SurveyQuestionTriggerWidget extends Component {
             return {
                 triggerError: "MISSING_TRIGGER_ERROR",
                 misplacedTriggerQuestionRecords: [],
-            }; // only if all are missing
+            };
         }
         const misplacedTriggerQuestionRecords = [];
         for (const triggerQuestionRecord of triggerQuestionsRecords) {
@@ -136,9 +133,6 @@ export class SurveyQuestionTriggerWidget extends Component {
 export const surveyQuestionTriggerWidget = {
     component: SurveyQuestionTriggerWidget,
     fieldDependencies: [
-        // Both are Many2many on survey.question. Declaring them as many2one
-        // makes addFieldDependencies skip the `related` sub-schema, and a
-        // dependency-first arch then loads them with no specification at all.
         { name: "triggering_question_ids", type: "many2many" },
         { name: "triggering_answer_ids", type: "many2many" },
     ],

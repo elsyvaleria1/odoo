@@ -27,7 +27,6 @@ const isScrollSwipable = (scrollables, direction) =>
         const rtl = getComputedStyle(el).direction === "rtl";
         const left = rtl ? -range : 0;
         const right = rtl ? 0 : range;
-        // scrollLeft is fractional; clientWidth and scrollWidth are rounded.
         return direction === "left"
             ? el.scrollLeft <= left + 1
             : el.scrollLeft >= right - 1;

@@ -67,23 +67,22 @@ export class AppointmentBookingGanttRenderer extends GanttRenderer {
             return enrichedPill;
         }
         const now = getNow();
-        // see o-colors-complete for array of colors to index into
         let color;
         if (!record.active) {
             color = false;
         } else if (record.appointment_status === "booked") {
-            color = diff(now, record.start, "minutes") > 15 ? 2 : 4; // orange if late ; light blue if not
+            color = diff(now, record.start, "minutes") > 15 ? 2 : 4;
         } else if (record.appointment_status === "attended") {
-            color = 10; // green
+            color = 10;
         } else if (record.appointment_status === "no_show") {
-            color = 1; // red
+            color = 1;
         } else if (
             record.appointment_status === "request" &&
             compareDates(record.start, now) < 0
         ) {
-            color = 2; // orange (request state has info-decoration)
+            color = 2;
         } else {
-            color = 8; // blue
+            color = 8;
         }
         if (color) {
             enrichedPill._color = color;
@@ -161,10 +160,6 @@ export class AppointmentBookingGanttRenderer extends GanttRenderer {
                     { onClose: () => this.model.fetchData() },
                 );
             },
-            /**
-             * Display the 'Add Closing Day(s)' button to appointment managers when
-             * grouping by appointment resources.
-             */
             get showAddLeaveButton() {
                 return showAddLeaveButton();
             },

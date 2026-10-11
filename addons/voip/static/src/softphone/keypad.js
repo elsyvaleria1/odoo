@@ -26,9 +26,6 @@ const T9_MAPPING = Object.freeze({
     9: "WXYZ",
 });
 
-/**
- * The actual keypad, its search bar, and recipient suggestions.
- */
 const log = makeLogger("voip.keypad");
 
 export class Keypad extends Component {
@@ -61,7 +58,7 @@ export class Keypad extends Component {
         });
         this.ui = useService("ui");
         this.softphone = useService("voip").softphone;
-        this.isMobile = isMobileOS(); // TODO unused, remove in master
+        this.isMobile = isMobileOS();
         useLayoutEffect(
             (shouldFocusInput) => {
                 log.logic("focus input effect", () => ({
@@ -79,14 +76,6 @@ export class Keypad extends Component {
                     (document.activeElement === this.inputRef.el ||
                         this.softphone.mayTakeFocus(isCurrentFocusEditable()))
                 ) {
-                    // By default, the <input> is rendered with "none" as
-                    // inputMode, which should ensure that no update from OWL
-                    // would open the keyboard. We also re-force "none" here, in
-                    // the function that controls the focus. We only set to
-                    // "text" when the user actually engages with the input
-                    // using his finger. As soon as the input will change in any
-                    // other way than using the mobile keyboard, this will be
-                    // switched back to "none".
                     this.inputRef.el.inputMode = "none";
 
                     this.inputRef.el.focus();
@@ -142,8 +131,6 @@ export class Keypad extends Component {
                     id: contact.id + " (by name)",
                     match,
                 });
-                // Since it contains letters, it's neither a T9 code nor a phone
-                // number: no need to go further.
                 continue;
             }
             if (looksLikeT9 && contact.t9_name) {
@@ -392,7 +379,6 @@ export class Keypad extends Component {
 
     async updateCountryCode() {
         const phoneNumber = this.props.state.input.value.trim();
-        // avoid making a request if the country code is already up to date
         if (this.phoneNumberStartsWithCountryCode) {
             return;
         }
@@ -434,7 +420,6 @@ function highlightT9Match(name, t9) {
             break;
         }
         const normalized = normalize(nameAsArr[matchEnd]).toUpperCase();
-        // extra loop, in case normalizing generates more letters
         for (const char of normalized) {
             if (t9.length === 0) {
                 return "";

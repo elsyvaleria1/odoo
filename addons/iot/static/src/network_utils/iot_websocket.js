@@ -4,9 +4,6 @@ import { uuid } from "@web/core/utils/format/strings";
 
 const log = makeLogger("iot.websocket");
 
-/**
- * Class to handle Websocket connections
- */
 export class IotWebsocket {
     constructor() {
         this.setup(...arguments);
@@ -47,7 +44,7 @@ export class IotWebsocket {
         await this.orm.call("iot.channel", "send_message", [
             {
                 iot_identifiers: [iotBoxIdentifier],
-                iot_identifier: iotBoxIdentifier, // compatibility with v19.1+ IoT Boxes
+                iot_identifier: iotBoxIdentifier,
                 session_id: messageId,
                 ...message,
             },
@@ -94,7 +91,7 @@ export class IotWebsocket {
                 sessionId,
             );
             unsubscribe();
-        }, 6000); // error callback if the listener is not called within 6 seconds
+        }, 6000);
 
         const messageCallback = (event) => {
             const { session_id, iot_box_identifier, device_identifier, message } =
@@ -120,10 +117,6 @@ export class IotWebsocket {
         const unsubscribe = this.busService.subscribe(messageType, messageCallback);
     }
 
-    /**
-     * Claims the IoT channel once, for the life of the service: a claim per
-     * message would add one the service never gives back on every message.
-     */
     claimChannel() {
         this.releaseChannel ??= this.busService.addChannel(this.iotChannel);
     }

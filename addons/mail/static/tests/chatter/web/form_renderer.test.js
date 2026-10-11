@@ -287,8 +287,6 @@ test("the form renderer inserts the record's thread once, not once per layout re
     await contains(".o-mail-Chatter");
     await contains(".o-mail-Chatter-attachFiles sup", { text: "1" });
     const insertsAfterMount = threadInserts;
-    // the controller's prefetch inserts the thread before the read, and its
-    // answers insert it again before the chatter mounts
     expect(insertsAfterMount).toBeLessThan(8);
     await insertText("[name='name'] input", "Jane Doe", { replace: true });
     await contains("[name='name'] input", { value: "Jane Doe" });

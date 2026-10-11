@@ -16,7 +16,6 @@ registry.category("web_tour.tours").add("PosBarcodelookupFlow", {
                 run: "edit 710535977349",
             },
             Dialog.confirm("Save"),
-            // new product will be available in pos by default so let's order.
             ProductScreen.addOrderline("Odoo Scale up", "1"),
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Bank"),

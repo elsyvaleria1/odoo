@@ -28,7 +28,6 @@ function under(term, parent) {
     };
 }
 
-// the es_MX names of the AgroMarin instance (`marin` installed), read 2026-09-27
 const MENUS = [
     app("Ventas", ["Sales", "sale"]),
     app("Compras", ["Purchase"]),

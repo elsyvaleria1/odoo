@@ -16,7 +16,6 @@ patch(ActivityMenu.prototype, {
     },
 });
 
-// the systray and the home activities tile open documents in the Documents app
 patch(activityGroupOpener, {
     async execute(context, group, domain, views, actionContext, newWindow) {
         if (group.model !== "document.document") {

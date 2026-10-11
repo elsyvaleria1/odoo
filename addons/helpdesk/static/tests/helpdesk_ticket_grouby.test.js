@@ -113,13 +113,12 @@ test("Verify stages nocontent helper is visible when all task stages are deleted
         type: "kanban",
         arch: kanbanViewArch,
         context: {
-            active_model: "wizard.helpdesk.stage.delete", // simulate stage deletion wizard
+            active_model: "wizard.helpdesk.stage.delete",
             default_team_id: newTeam.id,
         },
         domain: [["team_id", "=", newTeam.id]],
     });
 
-    // Assertions to check for ghost column visibility
     expect(".o_kanban_header").toHaveCount(1, {
         message: "should have 1 column",
     });

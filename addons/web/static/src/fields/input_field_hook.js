@@ -218,16 +218,9 @@ export function useInputField(params) {
         ctx.edit.lastSetValue = el.value;
         return changed;
     };
-    // at mount and patch, in hook order: a hook registered after this one (an
-    // autoresize) measures the input once it holds its value
     useLayoutEffect(() => {
         syncInput();
     });
-    // and tracked, since the field does not re-render when only its record
-    // changed; the input is read first because the first run is in setup,
-    // before the field has built what getValue() reads. A value it changes
-    // renders the field, as a record change did in OWL 2, so that its patch
-    // hooks (an autoresize) see the new value
     const render = useRender();
     useEffect(() => {
         if (syncInput()) {

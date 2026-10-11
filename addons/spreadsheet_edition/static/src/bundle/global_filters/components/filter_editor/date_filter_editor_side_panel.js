@@ -11,9 +11,6 @@ import { AbstractFilterEditorSidePanel } from "./filter_editor_side_panel.js";
  * @typedef {import("@spreadsheet").FieldMatching} FieldMatching
  */
 
-/**
- * This is the side panel to define/edit a global filter of type "date".
- */
 export class DateFilterEditorSidePanel extends AbstractFilterEditorSidePanel {
     static template = "spreadsheet_edition.DateFilterEditorSidePanel";
     static components = {

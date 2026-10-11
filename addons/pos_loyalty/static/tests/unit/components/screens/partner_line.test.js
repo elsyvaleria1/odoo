@@ -11,7 +11,6 @@ test("_getLoyaltyPointsRepr", async () => {
     const models = store.models;
 
     const partner = models["res.partner"].get(1);
-    // Get first 3 loyalty cards and map them with program
     const loyaltyCards = models["loyalty.card"]
         .getAll()
         .slice(0, 3)

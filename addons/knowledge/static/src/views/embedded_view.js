@@ -25,11 +25,6 @@ export class EmbeddedView extends View {
         };
     }
 
-    /**
-     * The super method makes the assumption that the props can only vary in
-     * the search keys, but we cannot make this assumption with embedded views:
-     * the user can edit the additionalViewProps from the embeddedViewComponent
-     */
     async onWillUpdateProps(nextProps) {
         super.onWillUpdateProps(nextProps);
         this.config.setDisplayName(nextProps.displayName);

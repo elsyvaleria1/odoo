@@ -27,8 +27,6 @@ patch(BarcodePickingModel.prototype, {
             return this.action.doAction(res, {
                 onClose: async () => {
                     this.trigger("refresh", { recordId: this.record.id });
-                    // update lines demand just split to their quantity done to mark them
-                    // validated
                     for (const line of this.pageLines) {
                         if (["pass", "fail"].includes(line.check_state)) {
                             line.reserved_uom_qty = line.quantity;
@@ -60,10 +58,8 @@ patch(BarcodePickingModel.prototype, {
         }
     },
 
-    /* Function called on press of X in quality control */
     async _closeValidate(ev) {
         super._closeValidate(ev);
-        // When going from draft to assign, need to reload JS to show quality check button
         if (this.record.state === "draft") {
             this.trigger("refresh", { recordId: this.record.id });
         }

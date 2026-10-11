@@ -17,8 +17,6 @@ export class ProductCatalogKanbanModel extends RelationalModel {
     static withCache = false;
 
     async _loadData(params, ...rest) {
-        // The sample ORM is installed for the duration of the sample load, so
-        // this has to be read before awaiting super.
         const isSample = Boolean(this.orm.isSample);
         const selectedSection = this.viewContext.searchModel.selectedSection;
         if (selectedSection.filtered) {
@@ -43,8 +41,6 @@ export class ProductCatalogKanbanModel extends RelationalModel {
             ? this._collectGroupedRecords(result.groups)
             : result.records;
         if (!records.length) {
-            // Nothing to describe -- the route would answer {} for an empty id
-            // list, so the round trip is pure latency.
             return result;
         }
 

@@ -15,9 +15,7 @@ export class ThemeTab extends Component {
     static template = "website.ThemeTab";
     static components = { OptionsContainer };
     static props = {
-        colorPresetToShow: t
-            .any() /* Number | null */
-            .optional(),
+        colorPresetToShow: t.any().optional(),
     };
     props = useProps(this.constructor.props);
 

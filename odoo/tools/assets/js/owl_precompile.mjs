@@ -13,10 +13,6 @@ const { window } = new JSDOM("<!DOCTYPE html><html><head></head><body></body></h
     pretendToBeVisual: true,
 });
 
-// Where jsdom departs from the browser the templates are compiled for, it
-// takes the browser's behaviour: its XPath engine matches `[@a='']` on an
-// element without `a`, and its innerHTML refuses an attribute named
-// `xml:space` that Chrome serializes as written.
 window.Document.prototype.createExpression = function createExpression(expression) {
     const parsed = xpath.parse(expression);
     return {
@@ -224,7 +220,6 @@ for (const [index, page] of pages.entries()) {
     entrySets.push(entries);
 }
 const owlPath = `${webStatic}/lib/owl/owl.es.js`;
-// OWL's own components (ErrorBoundary, Suspense) declare theirs with `xml`
 const sources = [
     { url: "/web/static/lib/owl/owl.es.js", content: readFileSync(owlPath, "utf-8") },
     ...(request.sources || []),

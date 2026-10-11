@@ -20,7 +20,6 @@ export class DocumentsRightPanel extends Component {
         this.ui = useService("ui");
         this.state = proxy(this.documentService.rightPanelReactive);
         this.panelRef = elementRef();
-        // opened, not mounted open: the view reopening on it scrolls nowhere
         let opened = this.state.visible;
         useLayoutEffect(
             (panel) => {

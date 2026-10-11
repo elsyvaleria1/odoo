@@ -120,8 +120,6 @@ test("an inner group's fields keep their small-screen margin in the editor", asy
                 <field name="display_name" string="Again"/>
             </group></sheet></form>`,
     });
-    // web gives the last cell of a row `mb-3 mb-sm-0`; Studio's item component
-    // renders the same template and must receive it too
     expect(
         ".o_web_studio_form_view_editor .o_inner_group .o_wrap_input.mb-3",
     ).toHaveCount(2);
@@ -330,7 +328,6 @@ test("image field edition (change size)", async () => {
         `,
     });
     expect(".o_web_studio_form_view_editor .o_field_image").toHaveCount(1);
-    // the image should have been fetched
     expect.verifySteps(["image, width: undefined, height: 90, previewImage: coucou"]);
     await contains(".o_web_studio_form_view_editor .o_field_image").click();
     expect(".o_web_studio_property_size").toHaveCount(1);
@@ -339,7 +336,6 @@ test("image field edition (change size)", async () => {
         "o-web-studio-editor--element-clicked",
     );
     await editSelectMenu(".o_web_studio_property_size input", { value: "Large" });
-    // the image should have been fetched again
     expect.verifySteps(["image, width: undefined, height: 270, previewImage: coucou"]);
     expect(".o_web_studio_property_size input").toHaveValue("Large");
 });
@@ -515,7 +511,6 @@ test("supports multiple occurences of field", async () => {
     await contains(
         ".o_web_studio_form_view_editor .o_inner_group .o-web-studio-editor--element-clickable:eq(0)",
     ).click();
-    // Would be true if not present in node's options
     expect(".o_web_studio_sidebar input[name='enable_sms']").not.toBeChecked();
     await contains(
         ".o_web_studio_form_view_editor .o_inner_group .o-web-studio-editor--element-clickable:eq(1)",
@@ -524,13 +519,7 @@ test("supports multiple occurences of field", async () => {
 });
 
 test("options with computed display to have a dynamic sidebar list of options", async () => {
-    // The sidebar renders one row per supported option AND supported
-    // attribute. odoo bf19a83c9ab declared `password` and `autocomplete` as
-    // attributes on char, so every count here for a char field is two higher
-    // than it was; the counts below are that baseline, not a magic number.
     let editCount = 0;
-    // For this test, create fake options and make them tied to each other,
-    // so the display and visibility is adapted in the editor sidebar
     patchWithCleanup(charField, {
         supportedOptions: [
             {
@@ -623,12 +612,6 @@ test("options with computed display to have a dynamic sidebar list of options", 
     expect(".o_web_studio_property").toHaveCount(16);
     expect(".o_web_studio_property input[id='suboption_d']").not.toBeEnabled();
     expect(".o_web_studio_property input[id='suboption_d']").toBeChecked();
-    // Selected by identity, not by position: each row carries
-    // `o_web_studio_property_<optionName>`, so this is the four suboptions and
-    // nothing else. The positional window this replaced (`nth-child(n+9)` to
-    // `nth-last-child(n+5)`) silently slid every time an unrelated option was
-    // added to char, which is what odoo bf19a83c9ab did with `password` and
-    // `autocomplete`.
     const computedOptions = queryAll(
         '[class*="o_web_studio_property_suboption_"] label',
     );
@@ -642,10 +625,6 @@ test("options with computed display to have a dynamic sidebar list of options", 
 });
 
 test("field selection when editing a suboption", async () => {
-    // The sidebar renders one row per supported option AND supported
-    // attribute. odoo bf19a83c9ab declared `password` and `autocomplete` as
-    // attributes on char, so every count here for a char field is two higher
-    // than it was; the counts below are that baseline, not a magic number.
     let editCount = 0;
     patchWithCleanup(charField, {
         supportedOptions: [
@@ -726,7 +705,7 @@ test("option of type 'string' are correctly saved and displayed", async () => {
     await contains('.o_cell:has([name="display_name"])').click();
     await waitFor("input[id=suboption_a]:value(cool cool)");
     expect("input[id=suboption_a]").toHaveValue("cool cool");
-    await contains("input[id=suboption_a]").edit("overriden"); // value overriden in route to make the assert relevant
+    await contains("input[id=suboption_a]").edit("overriden");
     await waitFor("input[id=suboption_a]:value(Noice)");
     expect("input[id=suboption_a]").toHaveValue("Noice");
 });
@@ -912,9 +891,6 @@ test("never save record -- hiding tab", async () => {
 
     document.dispatchEvent(new Event("visibilitychange"));
     await animationFrame();
-    // The autosave-on-hide path is dirty-gated (saveCoordinator.requestSave with
-    // checkDirty): a pristine record never even reaches Record.saveLocked, and
-    // studio's RecordNoEdit.saveLocked stub keeps web_save unreachable regardless.
     expect(steps).toEqual([]);
     Object.defineProperty(document, "visibilityState", visibilityStateProp);
     expect(document.visibilityState).toBe(prevVisibilitySate);
@@ -1022,7 +998,7 @@ test("disable creation(no_create options) in many2many_avatar_user and many2many
     await mountViewEditor({
         type: "form",
         resModel: "product",
-        arch: /*xml*/ `
+        arch: `
             <form>
                 <sheet>
                     <group>
@@ -1041,10 +1017,10 @@ test("disable creation(no_create options) in many2many_avatar_user and many2many
 });
 
 test("edit one2many form view (2 level) and check chatter allowed", async () => {
-    Product._views = { "list,2": /*xml*/ `<list><field name='display_name'/></list>` };
-    Partner._views = { list: /*xml*/ `<list><field name='display_name'/></list>` };
+    Product._views = { "list,2": `<list><field name='display_name'/></list>` };
+    Partner._views = { list: `<list><field name='display_name'/></list>` };
     Coucou._views = {
-        "form,1": /*xml*/ `
+        "form,1": `
             <form>
                 <sheet>
                     <field name='display_name'/>
@@ -1153,9 +1129,9 @@ test("edit one2many form view (2 level) and check chatter allowed", async () => 
 });
 
 test("edit one2many list view that uses parent key", async () => {
-    Product._views = { "list,2": /*xml*/ `<list><field name='display_name'/></list>` };
+    Product._views = { "list,2": `<list><field name='display_name'/></list>` };
     Coucou._views = {
-        "form,1": /*xml*/ `
+        "form,1": `
             <form>
                 <sheet>
                     <field name='display_name'/>
@@ -1203,7 +1179,6 @@ test("edit one2many list view that uses parent key", async () => {
     await animationFrame();
     await getService("action").doAction("studio.coucou_action");
     await openStudio();
-    // edit the x2m form view
     await contains(".o_field_one2many").click();
     await contains('.o_web_studio_editX2Many[data-type="form"]').click();
     expect(".o_field_widget[name='m2o_partner']").toHaveText("jacques", {
@@ -1211,7 +1186,6 @@ test("edit one2many list view that uses parent key", async () => {
     });
 
     await contains('.o_field_widget[name="m2o_partner"]').click();
-    // open the domain editor
     await waitForNone(".modal");
     expect(".o_web_studio_sidebar input#domain").toHaveValue(
         "[('display_name', '=', parent.display_name)]",
@@ -1227,7 +1201,6 @@ test("edit one2many list view that uses parent key", async () => {
     ]);
     expect(SELECTORS.addNewRule).toHaveCount(1);
 
-    // Close the modal and remove the domain on invisible attr
     await contains(".btn-close").click();
     await contains("#invisible").click();
     expect.verifySteps(["edit_view"]);
@@ -1235,7 +1208,7 @@ test("edit one2many list view that uses parent key", async () => {
 
 test("move a field in one2many list", async () => {
     Coucou._views = {
-        "form,1": /*xml*/ `
+        "form,1": `
             <form>
                 <sheet>
                     <field name='display_name'/>
@@ -1308,15 +1281,12 @@ test("move a field in one2many list", async () => {
     await animationFrame();
     await getService("action").doAction("studio.coucou_action");
     await openStudio();
-    // edit the x2m form view
     await contains(".o_field_one2many").click();
     await contains('.o_web_studio_editX2Many[data-type="list"]').click();
-    // list headers are styled text-transform: uppercase, which innerText reflects
     expect(
         queryAllTexts(".o_web_studio_list_view_editor th.o_column_sortable"),
     ).toEqual(["M2OPARTNER", "COUCOU"]);
 
-    // move coucou at index 0
     await contains(".o_web_studio_list_view_editor th:contains('coucou')").dragAndDrop(
         "th.o_web_studio_hook",
     );
@@ -1325,7 +1295,7 @@ test("move a field in one2many list", async () => {
 
 test("One2Many list editor column_invisible in attrs ", async () => {
     Coucou._views = {
-        "form,1": /*xml*/ `
+        "form,1": `
             <form>
                 <field name='product_ids'>
                     <list>
@@ -1360,27 +1330,18 @@ test("One2Many list editor column_invisible in attrs ", async () => {
     await animationFrame();
     await getService("action").doAction("studio.coucou_action");
     await openStudio();
-    // Enter edit mode of the O2M
     await contains(".o_field_one2many[name=product_ids]").click();
     await contains('.o_web_studio_editX2Many[data-type="list"]').click();
     await contains(".o_web_studio_sidebar .nav-link:contains('View')").click();
     await contains(".o_web_studio_sidebar input#show_invisible").click();
-    // select the first column
     await contains("thead th[data-studio-xpath]").click();
-    // enable readonly
     await contains(".o_web_studio_sidebar input#readonly").click();
     expect.verifySteps(["edit_view"]);
 });
 
 test("One2Many form datapoint doesn't contain the parent datapoint", async () => {
-    /*
-     * OPW-2125214
-     * When editing a child o2m form with studio, the fields_get method tries to load
-     * the parent fields too. This is not allowed anymore by the ORM.
-     * It happened because, before, the child datapoint contained the parent datapoint's data
-     */
     Coucou._views = {
-        "form,1": /*xml*/ `
+        "form,1": `
             <form>
                 <field name='product_ids'>
                     <form>
@@ -1392,7 +1353,7 @@ test("One2Many form datapoint doesn't contain the parent datapoint", async () =>
         `,
     };
     Product._views = {
-        "list,2": /*xml*/ `<list><field name="display_name" /></list>`,
+        "list,2": `<list><field name="display_name" /></list>`,
     };
     const { env: pyEnv } = await makeMockServer();
     const coucouId1 = pyEnv["coucou"].create({ display_name: "Coucou 11" });
@@ -1699,7 +1660,6 @@ test("correctly display hook below group title", async () => {
             </form>`,
     });
 
-    // First group
     expect(
         ".o_web_studio_form_view_editor .o_inner_group:nth-child(2) .o_web_studio_hook",
     ).toHaveCount(1);
@@ -1708,7 +1668,6 @@ test("correctly display hook below group title", async () => {
         ".o_web_studio_form_view_editor .o_inner_group:nth-child(2) > div:nth-child(1)",
     ).toHaveClass("o_web_studio_hook");
 
-    // Second group
     expect(
         ".o_web_studio_form_view_editor .o_inner_group:nth-child(3) .o_web_studio_hook",
     ).toHaveCount(1);
@@ -1721,7 +1680,6 @@ test("correctly display hook below group title", async () => {
         ".o_web_studio_form_view_editor .o_inner_group:nth-child(3) > div:nth-child(2)",
     ).toHaveClass("o_web_studio_hook");
 
-    // Third group
     expect(
         ".o_web_studio_form_view_editor .o_inner_group:nth-child(4) .o_web_studio_hook",
     ).toHaveCount(2);
@@ -1738,7 +1696,6 @@ test("correctly display hook below group title", async () => {
         ".o_web_studio_form_view_editor .o_inner_group:nth-child(4) [data-field-name='m2o'] + .o-web-studio-element-ghost + .o_web_studio_hook",
     ).toHaveCount(1);
 
-    // Last group
     expect(
         ".o_web_studio_form_view_editor .o_inner_group:nth-child(5) .o_web_studio_hook",
     ).toHaveCount(2);
@@ -2107,7 +2064,6 @@ test("restore active notebook tab and element", async () => {
         return editView(request, "form", arch);
     });
 
-    // first, let's change the properties of a tab element
     await contains(".o_notebook .kikou2").click();
     await contains("input[name=string]").edit("Kikou deux");
     await animationFrame();
@@ -2117,7 +2073,6 @@ test("restore active notebook tab and element", async () => {
         "o-web-studio-editor--element-clicked",
     );
 
-    // verify that the second tab does not keep the highlight when selecting another tab
     await contains(".o_notebook .kikou").click();
     await animationFrame();
     await animationFrame();
@@ -2125,7 +2080,6 @@ test("restore active notebook tab and element", async () => {
         "o-web-studio-editor--element-clicked",
     );
 
-    // now let's change the properties of an inside element
     await contains(".o_notebook .kikou2").click();
     await contains("div[name=char_field]").click();
     expect("div[name=char_field]").toHaveClass("o-web-studio-editor--element-clicked");
@@ -2693,8 +2647,6 @@ test("new button in buttonbox through 'Search more'", async () => {
         list: `<list><field name="display_name"/></list>`,
     };
 
-    // "Search more..." only appears when the search overflows the dropdown's
-    // searchLimit (7): return 8 records so the option shows up.
     onRpc("ir.model.fields", "web_name_search", () =>
         [...Array(8)].map((_, i) => ({
             id: i + 1,
@@ -3081,7 +3033,6 @@ test("approval one rule by default", async () => {
     expect(
         ".o_web_studio_sidebar_approval > .o_studio_sidebar_approval_rule",
     ).toHaveCount(2);
-    // one placeholder while any step waits, whatever the number of steps
     expect(".o_statusbar_buttons button img").toHaveCount(1);
 
     steps = [1];
@@ -3384,7 +3335,7 @@ test("Restrict drag and drop of notebook and group in a inner group", async () =
 test("edit_view route includes the context of the action", async () => {
     Coucou._records = [{ id: 1 }];
     Coucou._views = {
-        form: /*xml */ `
+        form: `
            <form>
                <field name="display_name" />
            </form>`,
@@ -3466,7 +3417,7 @@ test("cannot add a related properties field", async () => {
     expect(".modal .o_model_field_selector").toHaveCount(1);
 
     await contains(".modal .o_model_field_selector").click();
-    await followRelation(); // Product
+    await followRelation();
 
     expect(
         queryAllTexts(
@@ -3721,8 +3672,6 @@ test("button_box: many mixed buttons", async () => {
     expect(".o_form_sheet_bg > div > .o-form-buttonbox button:first-child").toHaveClass(
         "o_web_studio_add_element",
     );
-    // budget at ui.size 4 is 7 visible buttons: the add-element hook plus the 6
-    // visible arch buttons fit exactly, no "More" dropdown
     expect(
         queryAllAttributes(".o_form_sheet_bg > div > .o-form-buttonbox button", "name"),
     ).toEqual([null, "one", "two", "four", "five", "six", "seven"]);
@@ -3736,7 +3685,6 @@ test("button_box: many mixed buttons", async () => {
     expect(".o_form_sheet_bg > div > .o-form-buttonbox button:first-child").toHaveClass(
         "o_web_studio_add_element",
     );
-    // showing invisible raises the count to 8 slots: overflow into "More"
     expect(
         queryAllAttributes(".o_form_sheet_bg > div > .o-form-buttonbox button", "name"),
     ).toEqual([null, "one", "two", "three", "four", "five", null]);
@@ -3899,7 +3847,7 @@ test("edit one2many list view", async () => {
 
     serverState.debug = "1";
 
-    Coucou._views["form,1"] = /* xml */ `
+    Coucou._views["form,1"] = `
         <form>
             <sheet>
                 <field name='display_name'/>
@@ -3908,7 +3856,7 @@ test("edit one2many list view", async () => {
                 </field>
             </sheet>
         </form>`;
-    Product._views["form,1"] = /* xml */ `
+    Product._views["form,1"] = `
         <form />
     `;
     Product._fields.product_ids = fields.Many2many({ relation: "product" });
@@ -3955,7 +3903,7 @@ test("edit one2many list view", async () => {
             "/form[1]/sheet[1]/field[2]/list[1]",
         );
 
-        const newArch = /* xml */ `
+        const newArch = `
             <form>
                 <sheet>
                     <field name='display_name'/>
@@ -4039,8 +3987,6 @@ test("edit one2many list view with widget fieldDependencies and some records", a
         resId: 1,
     });
 
-    // the declared fieldDependencies entry is kept as-is (no readonly default
-    // is forced onto it)
     expect.verifySteps([
         ["widget Dependency", { name: "is_dep", type: "char" }, "the meters"],
     ]);
@@ -4482,7 +4428,7 @@ test("Change color on many2many tags", async () => {
     await mountViewEditor({
         type: "form",
         resModel: "product",
-        arch: /*xml*/ `
+        arch: `
             <form>
                 <sheet>
                     <group>
@@ -4497,7 +4443,7 @@ test("Change color on many2many tags", async () => {
         expect(params.operations[0].new_attrs).toEqual({
             options: '{"color_field":"partner_color"}',
         });
-        const newArch = /* xml */ `
+        const newArch = `
             <form>
                 <sheet>
                     <group>

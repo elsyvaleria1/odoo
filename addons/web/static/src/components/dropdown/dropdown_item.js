@@ -16,9 +16,7 @@ export class DropdownItem extends Component {
         tag: t.string().optional(),
         class: t.or([t.string(), t.object()]).optional(),
         onSelected: t.function().optional(),
-        closingMode: t
-            .any() /* Object.values(ClosingMode).map((value) => ({ value })) */
-            .optional(ClosingMode.AllParents),
+        closingMode: t.any().optional(ClosingMode.AllParents),
         attrs: t.object().optional({}),
         role: t.string().optional("menuitem"),
         slots: t.object().optional(),

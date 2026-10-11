@@ -4,10 +4,6 @@ import { MapRenderer } from "@web_map/map_view/map_renderer";
 export class StockMapRenderer extends MapRenderer {
     static markerPopupTemplate = "stock_enterprise.markerPopup";
 
-    /**
-     * Transfers leaving one warehouse make a round trip: the warehouse is both
-     * ends of the route and every delivery address is a stop along it.
-     */
     get googleMapParams() {
         const records = this.model.data.records;
         const warehouseAddress = records[0]?.warehouse_address_id;

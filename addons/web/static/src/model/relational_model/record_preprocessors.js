@@ -199,8 +199,6 @@ export function preprocessPropertiesChanges(record, changes) {
             );
         }
     }
-    // Explicit dotted edits take precedence over the aggregate, regardless of
-    // the insertion order of the keys in an update.
     Object.assign(changes, relatedChanges);
     preprocessRelatedPropertyChanges(record, changes, Object.keys(relatedChanges));
 }

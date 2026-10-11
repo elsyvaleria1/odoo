@@ -24,8 +24,6 @@ export class CalendarWithRecurrenceCommonRenderer extends CalendarCommonRenderer
 
     convertRecordToEvent(record) {
         const event = super.convertRecordToEvent(record);
-        // https://fullcalendar.io/docs/editable
-        // this is used to disable the 'drag and drop' and 'resizing' for recurring events
         event.editable = !record.isRecurrent;
         return event;
     }

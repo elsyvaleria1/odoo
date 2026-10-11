@@ -5,11 +5,6 @@ import { patch } from "@web/core/utils/patch";
 patch(PosSession.prototype, {
     _get_model_names_to_load(config_id) {
         const models = super._get_model_names_to_load(...arguments);
-        // This patch lands in the shared web.assets_unit_tests_setup bundle, so it
-        // also runs for point_of_sale's own unit tests, which never register the
-        // enterprise pos.prep.display mock. Only add the extra model when its mock
-        // is actually defined (prep-display test runs); otherwise load_data_params
-        // would crash resolving MockServer.env["pos.prep.display"].
         if ("pos.prep.display" in MockServer.env) {
             models.push("pos.prep.display");
         }

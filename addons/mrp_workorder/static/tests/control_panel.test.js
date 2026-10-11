@@ -60,8 +60,6 @@ test("workcenters that do not fit move into the overflow dropdown", async () => 
 test("the bar keeps rendering its own buttons rather than relocating DOM nodes", async () => {
     await mountBar(220);
 
-    // The overflowed buttons are rendered by the dropdown, not moved into it:
-    // nothing outside OWL may reparent nodes it owns.
     const inline = document.querySelectorAll(".o_work_centers > .o_work_center_btn");
     expect(inline.length).toBeGreaterThan(0);
     for (const el of inline) {

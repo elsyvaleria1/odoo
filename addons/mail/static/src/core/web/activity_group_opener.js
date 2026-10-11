@@ -28,8 +28,6 @@ const FILTERS = {
     upcoming_all: { search_default_activities_upcoming_all: 1 },
 };
 
-// The activity systray and the home dashboard's activities tile open a group
-// through this one object, so what a module patches here holds for both.
 export const activityGroupOpener = {
     /**
      * @param {AppContext} context

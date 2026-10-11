@@ -11,12 +11,6 @@ import { useRecordObserver } from "@web/fields/hooks/record_observer";
 
 import { KnowledgeSidebarRow } from "./sidebar_row.js";
 
-/**
- * This file defines the different sections used in the sidebar.
- * Each section is responsible of displaying an array of root articles and
- * their children.
- */
-
 export class KnowledgeSidebarSection extends Component {
     static template = "";
     static props = {
@@ -40,7 +34,6 @@ export class KnowledgeSidebarSection extends Component {
                 this.props.rootIds.length === 0,
         });
 
-        // Unfold the section of the current article:
         useRecordObserver((record) => {
             if (record.data.category === this.getSectionIdentifier()) {
                 this.state.isFolded = false;
@@ -58,7 +51,6 @@ export class KnowledgeSidebarSection extends Component {
 
     toggleSidebarSection() {
         this.state.isFolded = !this.state.isFolded;
-        // Persist the new folding state in local storage:
         const foldedSections = JSON.parse(
             browser.localStorage.getItem("knowledge.folded.sections") ?? "{}",
         );
@@ -77,7 +69,6 @@ export class KnowledgeSidebarFavoriteSection extends KnowledgeSidebarSection {
         super.setup();
         this.knowledgeContext = useKnowledgeContext();
 
-        // (Un)fold in the favorite tree by default.
         provideChildKnowledgeContext({
             fold: (id) => this.knowledgeContext.fold(id, true),
             unfold: (id) => this.knowledgeContext.unfold(id, true),

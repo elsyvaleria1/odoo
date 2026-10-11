@@ -3,14 +3,6 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { formView } from "@web/views/form";
 
-/**
- * This controller is overridden to allow configuring sale_order_lines through a popup
- * window when a service product linked to events is selected.
- *
- * This allows keeping an editable list view for sales order and remove the noise of
- * those 3 fields ('event_id', 'event_booth_category_id' and 'event_booth_ids')
- */
-
 class EventBoothConfiguratorController extends formView.Controller {
     setup() {
         super.setup();

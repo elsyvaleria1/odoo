@@ -77,13 +77,11 @@ export function startSignItemNavigator(parent, target, types, env) {
                 item.value = item.querySelector("input").value;
                 item.focus = () => item.querySelector("input").focus();
             }
-            // maybe store signature in data rather than in the dataset
             if (item.value === "" && !item.dataset.signature) {
                 setTip(type.tip);
             }
             parent.refreshSignItems();
             if (data.type === "radio") {
-                //we need to highligt the entire radio set items
                 highligtRadioSet(data.radio_set_id);
             } else {
                 item.focus();

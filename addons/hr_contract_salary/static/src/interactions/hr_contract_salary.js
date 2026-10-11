@@ -37,7 +37,6 @@ class SelectMenuWrapper extends Component {
     onSelect(value) {
         this.selectMenu.value = value;
         this.props.el.value = value;
-        // Manually trigger the change event
         const event = new Event("change", { bubbles: true });
         this.props.el.dispatchEvent(event);
     }
@@ -109,7 +108,6 @@ export class SalaryPackage extends Interaction {
             "#hr_contract_salary select:not(.refuse-reason-select)",
         );
 
-        // Create a wrapper div to ensure the working schedule selection appears directly below the label TODO: remove master
         const workingScheduleSelect = this.el.querySelector(
             "#hr_contract_salary select[name='simulation_working_schedule']",
         );
@@ -154,7 +152,6 @@ export class SalaryPackage extends Interaction {
             ?.querySelectorAll("option");
         this.onchangeCountry();
 
-        // When user use back button, unfold previously unfolded items.
         this.el
             .querySelectorAll("#hr_cs_configurator .hr_cs_control input.folded:checked")
             .forEach((input) => {
@@ -172,9 +169,6 @@ export class SalaryPackage extends Interaction {
     }
 
     setUpBenefits() {
-        // When we load the benefits, if any of the advantage is not set and it has
-        // dependent benefits (or requested documents),
-        // unset those dependent benefits (or hide those requested documents)
         return Promise.all(
             Array.from(document.querySelectorAll("input")).map(async (input) => {
                 const dependentBenefits = input.getAttribute(
@@ -447,21 +441,14 @@ export class SalaryPackage extends Interaction {
 
     onkeydownInput(event) {
         const disallowedKeys = ["KeyE", "NumpadSubtract", "Minus"];
-        // Decimal points are only disallowed on integer fields; float/monetary
-        // number inputs must still accept them.
         if (event.target.dataset.fieldType === "integer") {
             disallowedKeys.push("NumpadDecimal", "Period");
         }
-        // Only allow numbers to be written in the input fields with type="number"
         if (disallowedKeys.includes(event.code)) {
             event.preventDefault();
         }
     }
 
-    /**
-     * Auto-dismiss all visible `.alert` elements after a delay.
-     * Replaces jQuery's `$(".alert").delay(4000).slideUp(200, cb)`.
-     */
     _dismissAlerts() {
         setTimeout(() => {
             document.querySelectorAll(".alert").forEach((alertEl) => {
@@ -494,12 +481,9 @@ export class SalaryPackage extends Interaction {
     }
 
     async onchangeBenefit(event) {
-        // Check that https://github.com/odoo/enterprise/commit/e4fdb4df1d0d6aa5e8880ce1b4cc289a075479fd#diff-aa5bcb2caed35c99a7bd3e018a104342 is still valid
-        // Will check when the user has entered a floating value in the integer field
         if (this._isInvalidInput()) {
             return false;
         }
-        // Prevent negative value for number inputs
         if (event.target.type === "number" && parseFloat(event.target.value) < 0) {
             event.target.value = 0;
         }
@@ -581,14 +565,6 @@ export class SalaryPackage extends Interaction {
                 .trim()
                 .split(" ")
                 .map(async (dependentBenefit) => {
-                    /*
-            Let's say the benefit X depends on A, B, C
-            If one of the mandatory benefits, A, is selected
-                check that the B and C are selected too - if yes
-                    Enable X
-            Else
-                disable X
-            */
                     const targets = [
                         ...document.querySelectorAll(
                             "input[name='" + dependentBenefit + "']",
@@ -599,7 +575,6 @@ export class SalaryPackage extends Interaction {
                         return;
                     }
                     if (!mandatoryBenefitSelected) {
-                        // Here we unset the dependent benefit
                         const dependentBenefitSelected =
                             this.checkInputSelected(dependentBenefit);
                         let dependentBenefitField = dependentBenefit;
@@ -630,7 +605,6 @@ export class SalaryPackage extends Interaction {
                             );
                         }
                         if (dependentBenefitSelected) {
-                            // no need to update it if it was not selected to start with
                             const targetType = firstTarget.type;
                             if (targetType === "checkbox") {
                                 firstTarget.click();
@@ -842,8 +816,6 @@ export class SalaryPackage extends Interaction {
                     this.updateGrossToNetModal(data);
                 }),
                 () => {
-                    // Put the panel back the way it was before the call, so
-                    // "Recompute" stays clickable instead of hanging.
                     document
                         .querySelector("div[name='net']")
                         ?.classList.remove("d-none");
@@ -902,9 +874,6 @@ export class SalaryPackage extends Interaction {
     }
 
     checkFormValidity() {
-        // Don't make the input required, if the element is not displayed.
-        // For example, we don't want to require driving license
-        // when it is not displayed. As it will be conditionally hidden if car advantage is not set.
         const requiredInputs = [...document.querySelectorAll("input:required")];
         const requiredSelects = [...document.querySelectorAll("select:required")];
         const requiredTextAreas = [...document.querySelectorAll("textarea:required")];
@@ -955,7 +924,6 @@ export class SalaryPackage extends Interaction {
                 radioContainer.classList.remove("invalid_radio");
             }
         });
-        // Prevent stacking by removing existing alerts
         const submitParent =
             document.querySelector("button#hr_cs_submit")?.parentElement;
         if (submitParent) {

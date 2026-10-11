@@ -27,7 +27,6 @@ export class WhatsappVariablesTextField extends TextField {
         const nextVariable = Math.max(...integerList, 0) + 1;
 
         if (nextVariable > 10) {
-            // Show tooltip
             this.popover.open(this.variablesButton.el, {
                 tooltip: _t("You can set a maximum of 10 variables."),
             });
@@ -43,15 +42,13 @@ export class WhatsappVariablesTextField extends TextField {
             nextVariable +
             "}}" +
             originalContent.slice(end, originalContent.length);
-        // Trigger onInput from input_field hook to set field as dirty
         this.textareaRef.el.dispatchEvent(new InputEvent("input"));
-        // Keydown on "enter" serves to both commit the changes in input_field and trigger onchange for some fields
         this.textareaRef.el.dispatchEvent(
             new KeyboardEvent("keydown", { key: "Enter" }),
         );
         this.textareaRef.el.focus();
         const newCursorPos =
-            start + separator.length + nextVariable.toString().length + 4; // 4 is the number of brackets {{ }}
+            start + separator.length + nextVariable.toString().length + 4;
         this.textareaRef.el.setSelectionRange(newCursorPos, newCursorPos);
     }
 }

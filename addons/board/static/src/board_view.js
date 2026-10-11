@@ -47,7 +47,6 @@ export class BoardArchParser {
                     if (node.hasAttribute("domain")) {
                         const domain = node.getAttribute("domain");
                         action.domain = new Domain(domain).toList();
-                        // so it can be serialized when reexporting board xml
                         action.domain.toString = () => node.getAttribute("domain");
                     }
                     archInfo.columns[currentIndex].actions.push(action);

@@ -71,7 +71,6 @@ defineMailModels();
 test.tags("desktop");
 test("Opening a view with an agent updates the menu", async () => {
     await mountWebClient();
-    // the client mounts on the home menu, where no app is current
     await getService("menu").selectMenu(1);
     await waitFor(".o_kanban_view");
     expect(".o_menu_brand").toHaveText("App1");

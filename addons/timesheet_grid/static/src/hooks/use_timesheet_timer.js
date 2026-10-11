@@ -41,7 +41,6 @@ export function useTimesheetTimer(isListView = false) {
                 { manuallyAdded: !timesheetTimerResId },
             );
         } else {
-            // then we can add the new record inside the list view.
             timesheet = list._createRecordDatapoint(timesheetTimerData, "edit");
             list.addRecord(timesheet, 0);
         }

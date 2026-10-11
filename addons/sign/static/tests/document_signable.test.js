@@ -5,7 +5,7 @@ test("check datasetFromElements parsing", async () => {
     const backend_element = document.createElement("input");
     backend_element.dataset.name = "Text";
     backend_element.dataset.id = "36";
-    backend_element.dataset.value = "123456789123456789"; // > Number.MAX_SAFE_INTEGER
+    backend_element.dataset.value = "123456789123456789";
 
     const backend_element_2 = document.createElement("input");
     backend_element_2.dataset.name = "Text";

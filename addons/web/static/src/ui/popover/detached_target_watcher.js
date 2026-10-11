@@ -104,7 +104,6 @@ export function watchForDetachedTarget(target, onDetached) {
             ? target.getRootNode()
             : (target.ownerDocument ?? document);
         disposeRoot = watchRoot(root, target, checkTarget);
-        // A host is removed in its parent's tree, not inside its shadow root.
         const host = /** @type {ShadowRoot} */ (root).host;
         disposeHost = host ? watchForDetachedTarget(host, checkTarget) : () => {};
         log.lifecycle("watch", { shadow: Boolean(host), roots: watchersByRoot.size });

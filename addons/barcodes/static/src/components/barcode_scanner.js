@@ -30,7 +30,6 @@ export async function scanBarcodeOrWarn(scan, notification) {
         return null;
     }
     if (!barcode) {
-        // The dialog was closed without a scan. That is the user's decision.
         return null;
     }
     navigator.vibrate?.(100);

@@ -6,10 +6,6 @@ import { ServerData } from "./server_data.js";
 export class OdooDataProvider extends EventBus {
     constructor(env) {
         super();
-        // Not `orm.silent`: `loading_indicator.js` drops every request whose
-        // settings say `silent`, and a pivot, list or chart fetching its data
-        // is precisely when the user needs to be told the app is busy. The
-        // indicator only shows after 250 ms, so quick loads stay quiet.
         this.orm = env.services.orm;
         this.fieldService = env.services.field;
         this.serverData = new ServerData(this.orm, {
@@ -38,15 +34,9 @@ export class OdooDataProvider extends EventBus {
             });
     }
 
-    /**
-     * Notify that a data source has been updated. Could be useful to
-     * request a re-evaluation.
-     */
     notify() {
         if (this.pendingPromises.size) {
             if (!this.nextTriggerTimeOutId) {
-                // evaluates at least every 10 seconds, even if there are pending promises
-                // to avoid blocking everything if there is a really long request
                 this.nextTriggerTimeOutId = setTimeout(() => {
                     this.nextTriggerTimeOutId = undefined;
                     if (this.pendingPromises.size) {

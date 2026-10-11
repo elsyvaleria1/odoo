@@ -152,9 +152,6 @@ export class CellThreadsPlugin extends OdooCorePlugin {
         }
         return spreadsheetThreads;
     }
-    // ---------------------------------------------------------------------------
-    // Import/Export
-    // ---------------------------------------------------------------------------
 
     export(data) {
         for (const sheet of data.sheets) {

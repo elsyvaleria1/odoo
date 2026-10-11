@@ -5,11 +5,6 @@ import { browser } from "@web/core/browser/browser";
 const TEXTUAL_MIMETYPES = new Set(["application/xml"]);
 const NON_TEXTUAL_TEXT_MIMETYPES = ["text/html", "text/csv"];
 
-/**
- * A document as the file viewer shows it. Built from the view's record (the
- * target's, for a shortcut); it lives only as long as the preview and is not
- * inserted in the mail store, whose ir.attachment ids it would collide with.
- */
 export class DocumentFile extends FileModel {
     /** @type {string|null} */
     emailContent = null;
@@ -81,7 +76,6 @@ export class DocumentFile extends FileModel {
         return Boolean(this.mimetype?.startsWith("application/json"));
     }
 
-    /** Shown as escaped text: served raw, it could run as a page. */
     get isTextual() {
         const mimetype = this.mimetype || "";
         return (
@@ -105,10 +99,6 @@ export class DocumentFile extends FileModel {
     }
 }
 
-/**
- * Whether a document opens in the preview, the one rule behind every view and
- * the viewer. Modules that open more kinds of documents patch it.
- */
 export const documentPreview = {
     /** @param {Object} data a `document.document` read, the target's for a shortcut */
     isViewable(data) {

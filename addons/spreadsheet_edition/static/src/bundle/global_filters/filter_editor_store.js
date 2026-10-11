@@ -36,7 +36,7 @@ export class FilterEditorStore extends SpreadsheetStore {
             };
         }
         this._allModelsExist = false;
-        this.missingLabelError = false; // Recomputed in update() from the current draft label
+        this.missingLabelError = false;
         this.notificationStore = this.get(NotificationStore);
         this.sidePanelStore = this.get(SidePanelStore);
         this.loadDataPromise = this._loadData(initialProps);
@@ -160,17 +160,8 @@ export class FilterEditorStore extends SpreadsheetStore {
         );
     }
 
-    /**
-     * Returns a function called by ModelFieldSelector on each fields, to
-     * filter the ones that should be displayed
-     */
     get filterModelFieldSelectorField() {
         if (this.filter.type === "selection") {
-            /**
-             * We only want to show the selection field if it is the one
-             * selected in the filter (same resModel and selectionField), or
-             * if it is a relation field.
-             */
             const filterModelFieldSelectorField = (field, path, resModel) => {
                 if (
                     this.filter.resModel === resModel &&
@@ -329,7 +320,6 @@ export class FilterEditorStore extends SpreadsheetStore {
             return;
         }
         if (filter.rangesOfAllowedValues) {
-            // rangesOfAllowedValues is an array of RangeData in the command
             filter = {
                 ...filter,
                 rangesOfAllowedValues: filter.rangesOfAllowedValues.map((range) =>
@@ -425,9 +415,6 @@ export class FilterEditorStore extends SpreadsheetStore {
         return field;
     }
 
-    /**
-     * Compute the fields matching data that should be sent through the command
-     */
     _getFieldsMatchingPayload() {
         const fieldMatchings = {};
         [...this.fieldsMatching].forEach((fm) => {

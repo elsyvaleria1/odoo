@@ -179,7 +179,6 @@ export class FormSaveCoordinator extends StateMachine {
         }
     }
 
-    /** a root that reloads from the server is clean whatever the last save did */
     reset() {
         if (this.status !== "error") {
             return;

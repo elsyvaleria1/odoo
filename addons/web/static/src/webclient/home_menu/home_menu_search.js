@@ -147,7 +147,6 @@ function handOverToPalette(command, typed, refocus) {
  */
 function useTypeToFocus(inputRef, ui, focus) {
     useMountedListener(window, "keydown", (/** @type {KeyboardEvent} */ ev) => {
-        // Browser autofill and some extensions dispatch keydown with no key.
         const printable =
             [...(ev.key ?? "")].length === 1 &&
             !ev.ctrlKey &&

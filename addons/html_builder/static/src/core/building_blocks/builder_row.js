@@ -87,7 +87,6 @@ export class BuilderRow extends Component {
                     contentEl.style.height = "auto";
                 };
 
-                // Skip transition on first mount if expand=true.
                 if (isFirstMount && this.props.expand) {
                     setHeightAuto();
                     return;
@@ -102,9 +101,8 @@ export class BuilderRow extends Component {
                         break;
                     }
                     case "leave": {
-                        // Collapse from current height to 0
                         contentEl.style.height = contentEl.scrollHeight + "px";
-                        void contentEl.offsetHeight; // force reflow
+                        void contentEl.offsetHeight;
                         contentEl.style.height = "0px";
                         break;
                     }
@@ -180,11 +178,6 @@ function refreshSublevelLines(rowEl) {
     alignSublevelLines(optionsContainerEl);
 }
 
-// Recompute the vertical connector line for nested rows:
-// - Clear any previous offset on all rows.
-// - Skip hidden rows to avoid zero-size measurements.
-// - When a row comes back to a shallower level after deeper rows, stretch its
-//   line up to the last visible sibling of the same level.
 function alignSublevelLines(optionsContainerEl) {
     const rowEls = [...optionsContainerEl.querySelectorAll(".hb-row")];
     if (!rowEls.length) {
@@ -212,7 +205,6 @@ function alignSublevelLines(optionsContainerEl) {
         }
         for (let previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
             if (getRowLevel(visibleRowEls[previousIndex]) === level) {
-                // Stretch the line up to the previous sibling of the same level.
                 applyLineOffset(rowEl, visibleRowEls[previousIndex]);
                 break;
             }

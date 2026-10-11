@@ -186,8 +186,6 @@ class PwaService {
         }
         if (this.nativePrompt) {
             const prompt = this.nativePrompt;
-            // A browser prompt belongs to the window and may be consumed only once,
-            // even when several service instances expose an install action.
             if (pendingPrompt === prompt) {
                 pendingPrompt = null;
             }

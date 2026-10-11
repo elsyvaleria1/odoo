@@ -108,9 +108,6 @@ test("disabledCondition accepts literal booleans and callbacks", () => {
 });
 
 test("a component owner's props read through a reactive action", async () => {
-    // Actions live in reactive state, so an owner component is read through a
-    // proxy; its getters must still reach their props (a props view raw to
-    // proxy(), OWL 80dd04cc). Without it 42 chatter tests failed.
     class Owner extends Component {
         static props = ["value"];
         static template = xml`<span t-out="this.value"/>`;

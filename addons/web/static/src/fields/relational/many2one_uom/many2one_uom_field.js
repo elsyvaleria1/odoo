@@ -19,8 +19,6 @@ import {
     Many2XUomTagsAutocomplete,
 } from "../many2x_uom_tags/many2x_uom_tags.js";
 
-// @todo: this extension will be removed in the future
-// when the autocomplete source generation come from a hook.
 class UomMany2One extends Many2One {
     static components = {
         ...super.components,

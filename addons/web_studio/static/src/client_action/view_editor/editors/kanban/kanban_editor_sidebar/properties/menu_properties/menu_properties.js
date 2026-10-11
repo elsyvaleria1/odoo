@@ -17,8 +17,6 @@ export class MenuProperties extends Component {
         this.viewEditorModel = useCurrentViewEditorModel();
     }
 
-    // the tree the compiler stamps `studioXpath` on is the parser's copy
-    // (archInfo.xmlDoc), not the arch element the editor was mounted from
     get colorPicker() {
         return this.viewEditorModel.controllerProps.archInfo.xmlDoc.querySelector(
             "field[widget=kanban_color_picker]",

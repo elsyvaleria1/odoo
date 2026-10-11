@@ -481,7 +481,6 @@ export class CustomColorPicker extends Component {
      */
     onKeydown(ev) {
         if (ev.key === "Enter") {
-            // the hex input applies on blur, not on a form submit
             ev.preventDefault();
         }
     }

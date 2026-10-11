@@ -60,7 +60,6 @@ const archs = {
 
 function patchActivityDomain(load, params) {
     if (params.domain) {
-        // Remove domain term used to filter record having "done" activities (not understood by the getRecords mock)
         const domain = new Domain(params.domain);
         const newDomain = Domain.removeDomainLeaves(domain.toList(), [
             "activity_ids.active",
@@ -81,8 +80,6 @@ function patchActivityDomain(load, params) {
 describe.current.tags("desktop");
 defineTestMailModels();
 beforeEach(async () => {
-    // Because tests implicitly use Popover
-    // and that it uses HTMLElement.animate()
     disableAnimations();
     mockDate("2023-04-08 10:00:00", 0);
     patchWithCleanup(DynamicList.prototype, {
@@ -100,7 +97,6 @@ beforeEach(async () => {
         { name: "Template1" },
         { name: "Template2" },
     ]);
-    // reset incompatible setup
     pyEnv["mail.activity.type"].unlink(pyEnv["mail.activity.type"].search([]));
     const mailActivityTypeIds = pyEnv["mail.activity.type"].create([
         { name: "Email", mail_template_ids: mailTemplateIds },
@@ -148,9 +144,6 @@ beforeEach(async () => {
 });
 
 test("activity view: the control panel carries a search bar", async () => {
-    // The suite is `describe.current.tags("desktop")`, so the toggler button --
-    // which renders only on a small screen -- is asserted in
-    // activity_mobile.test.js instead.
     await start();
     registerArchs(archs);
     await openView({
@@ -161,9 +154,6 @@ test("activity view: the control panel carries a search bar", async () => {
 });
 
 test("activity view: an empty view shows the action's no-content help", async () => {
-    // There was nowhere for it to render before: the controller mounted
-    // `Layout` directly, and `Layout` has no no-content branch, so an activity
-    // view with nothing in it said nothing.
     await start();
     registerArchs(archs);
     await openView({
@@ -281,7 +271,6 @@ test("activity view: Activity rendering with done activities", async () => {
             const userId = pyEnv["res.users"].create({
                 partner_id: pyEnv["res.partner"].create({ name: `Partner ${idx}` }),
             });
-            // issue with compute/related, `display_name` is wrong until next write.
             pyEnv["res.users"].write([userId], {});
             return {
                 active: state !== "done",
@@ -348,7 +337,6 @@ test("activity view: Activity rendering with done activities", async () => {
     const selRowOfficeCellUpload = "table tbody tr:nth-child(2) td:nth-child(6)";
     const domRowOfficeCellUpload = domActivity.querySelector(selRowOfficeCellUpload);
 
-    // Headers
     await contains(
         ".o_column_progress .progress-bar:first-child[data-tooltip='3 Planned']",
         {
@@ -363,7 +351,6 @@ test("activity view: Activity rendering with done activities", async () => {
         target: domHeaderUpload,
         text: "7",
     });
-    // Cells avatars
     await contains(
         `.o-mail-Avatar img[data-src='/web/image/res.users/${uploadPlannedActs[0].user_id[0]}/avatar_128'`,
         { target: domRowMeetingCellUpload },
@@ -376,8 +363,7 @@ test("activity view: Activity rendering with done activities", async () => {
         `.o-mail-Avatar img[data-src='/web/image/res.users/${uploadPlannedActs[2].user_id[0]}/avatar_128'`,
         { target: domRowMeetingCellUpload, count: 0 },
     );
-    await contains(`.o-mail-Avatar`, { target: domRowOfficeCellUpload, count: 0 }); // all activity are done
-    // Cells counters
+    await contains(`.o-mail-Avatar`, { target: domRowOfficeCellUpload, count: 0 });
     await contains(".o-mail-ActivityCell-counter", {
         target: domRowMeetingCellUpload,
         text: "3 / 4",
@@ -386,7 +372,6 @@ test("activity view: Activity rendering with done activities", async () => {
         text: "3",
         target: domRowOfficeCellUpload,
     });
-    // Cells dates
     await contains(".o-mail-ActivityCell-deadline", {
         text: formatDate(parseISO(uploadPlannedActs[0].date_deadline)),
         target: domRowMeetingCellUpload,
@@ -395,11 +380,10 @@ test("activity view: Activity rendering with done activities", async () => {
         text: formatDate(parseISO(uploadDoneActs[1].date_done)),
         target: domRowOfficeCellUpload,
     });
-    // Activity list popovers content
     await click(`${selRowMeetingCellUpload} > div`, {
         target: domActivity,
     });
-    await contains(".o-mail-ActivityListPopover .badge.text-bg-success", { text: "3" }); // 3 planned
+    await contains(".o-mail-ActivityListPopover .badge.text-bg-success", { text: "3" });
     for (const actIdx of [0, 1, 2]) {
         await contains(".o-mail-ActivityListPopoverItem", {
             text: uploadPlannedActs[actIdx].user_id[1],
@@ -410,7 +394,7 @@ test("activity view: Activity rendering with done activities", async () => {
     await contains(".o-mail-ActivityListPopoverItem", { text: "Due in 6 days" });
     await contains(".o-mail-ActivityListPopover .badge.text-bg-secondary", {
         text: "1",
-    }); // 1 done
+    });
     await contains(".o-mail-ActivityListPopoverItem", {
         text: uploadDoneActs[0].user_id[1],
     });
@@ -422,7 +406,7 @@ test("activity view: Activity rendering with done activities", async () => {
     });
     await contains(".o-mail-ActivityListPopover .badge.text-bg-secondary", {
         text: "3",
-    }); // 3 done
+    });
     for (const actIdx of [1, 2, 3]) {
         await contains(".o-mail-ActivityListPopoverItem", {
             text: formatDate(parseISO(uploadDoneActs[actIdx].date_done)),
@@ -483,7 +467,6 @@ test("activity view: a pager can be used when there are more than the limit of 1
 
 test("activity view: no content rendering", async () => {
     await start();
-    // reset incompatible setup
     pyEnv["mail.activity.type"].unlink(pyEnv["mail.activity.type"].search([]));
     await openView({
         res_model: "mail.test.activity",
@@ -508,23 +491,17 @@ test("activity view: batch send mail on activity", async () => {
         res_model: "mail.test.activity",
         views: [[false, "activity"]],
     });
-    // `Dropdown` stamps its own classes on the slotted toggle (`o-dropdown`,
-    // `dropdown-toggle`) and renders the menu as `.o-dropdown--menu`. The
-    // Bootstrap-JS spelling this used -- `[data-bs-toggle=dropdown]` and
-    // `.dropdown-menu.show` -- matches nothing since the component stopped
-    // being Bootstrap-driven; it survived only because no CI gate selected
-    // these suites until test_mail/tests/test_js.py wired them in.
     await click(".dropdown-toggle", {
         parent: [".o_activity_view_table th", { text: "Email" }],
     });
     await contains(".o-dropdown--menu .o_send_mail_template", { count: 2 });
     await click(".o_send_mail_template", { text: "Template1" });
     await waitForSteps([
-        [[mailTestActivityIds[0], mailTestActivityIds[1]], mailTemplateIds[0]], // template 1 sendt on activity 1 and 2
+        [[mailTestActivityIds[0], mailTestActivityIds[1]], mailTemplateIds[0]],
     ]);
     await click(".o_send_mail_template", { text: "Template2" });
     await waitForSteps([
-        [[mailTestActivityIds[0], mailTestActivityIds[1]], mailTemplateIds[1]], // template 2 sendt on activity 1 and 2
+        [[mailTestActivityIds[0], mailTestActivityIds[1]], mailTemplateIds[1]],
     ]);
 });
 
@@ -543,12 +520,10 @@ test("activity view: activity_ids condition in domain", async () => {
     await keyDown("Enter");
 
     await waitForSteps([
-        // load view requests
         [["activity_ids.active", "in", [true, false]]],
-        [[1, "=", 1]], // Due to the relational model patch above that removes it
-        // pager requests
+        [[1, "=", 1]],
         [["activity_ids.active", "in", [true, false]]],
-        [[1, "=", 1]], // Due to the dynamic list patch above that removes it
+        [[1, "=", 1]],
     ]);
 });
 
@@ -706,14 +681,12 @@ test("activity widget: cancel an activity from the widget", async () => {
         views: [[false, "activity"]],
     });
 
-    // Check if activity is scheduled
     await click(".planned .o-mail-ActivityCell-deadline");
     await contains(".o-mail-ActivityListPopover");
 
     const activityListPopoverButtons = document.querySelectorAll(
         ".overflow-auto.d-flex.align-items-baseline button",
     );
-    // ensure the buttons are in the same order as in the chatter.
     expect(activityListPopoverButtons[0]).toHaveClass(
         "o-mail-ActivityListPopoverItem-markAsDone",
     );
@@ -724,13 +697,11 @@ test("activity widget: cancel an activity from the widget", async () => {
         "o-mail-ActivityListPopoverItem-cancel btn",
     );
 
-    // Cancel the activity
     await click(
         ".o-mail-ActivityListPopoverItem .o-mail-ActivityListPopoverItem-cancel",
     );
     await waitForSteps(["unlink"]);
 
-    // Verify no activity is scheduled
     await contains(".planned", { count: 0 });
 });
 
@@ -789,7 +760,6 @@ test("activity view: no group_by_menu and no comparison_menu", async () => {
 test("activity view: group_by in the action has no effect", async () => {
     patchWithCleanup(ActivityModel.prototype, {
         async load(params) {
-            // force params to have a groupBy set, the model should ignore this value during the load
             params.groupBy = ["user_id"];
             await super.load(params);
         },
@@ -869,11 +839,9 @@ test("activity view: Domain should not reset on load", async () => {
     });
 
     await click(".o_activity_view .o_record_selector");
-    // search create dialog
     await click(".modal-lg .o_data_row .o_data_cell");
     await waitForSteps(["doAction"]);
     await click(".o_activity_view .o_record_selector");
-    // again open search create dialog
     await contains(".modal-lg .o_data_row");
 });
 
@@ -897,13 +865,11 @@ test("activity view: 'scheduleActivity' does not add activity_ids condition as s
             options.onClose?.();
         },
     });
-    // open search create dialog and schedule an activity
     await click(".o_activity_view .o_record_selector");
     await click(".modal-lg .o_data_row .o_data_cell", {
         text: "Meeting Room Furnitures",
     });
 
-    // again open search create dialog
     await click(".o_activity_view .o_record_selector");
     await waitForSteps([[], []]);
 });
@@ -928,7 +894,6 @@ test("activity view: 'onClose' of 'openActivityFormView' does not add activity_i
             options.onClose?.();
         },
     });
-    //schedule an activity on an empty activity cell
     await click(
         ".o_activity_view :nth-child(1 of .o_data_row) :nth-child(1 of .o_activity_empty_cell)",
     );
@@ -936,14 +901,6 @@ test("activity view: 'onClose' of 'openActivityFormView' does not add activity_i
 });
 
 test("activity view: 'onReloadData' does not add activity_ids condition as selectCreateDialog domain", async () => {
-    // Collected rather than stepped: this is the only one of the three
-    // "does not add activity_ids" tests that hooks a *getter* instead of a
-    // method, so one entry lands per render and not per user action. Pinning
-    // the exact list therefore pinned the web model layer's render cadence --
-    // brittle in the way `waitForSteps([[], [], []])` was, which failed on a
-    // fourth, equally empty domain while the property the test is named for
-    // held. Assert that property instead: every domain the renderer is handed
-    // is free of an `activity_ids` condition, however many renders it takes.
     /** @type {import("@web/core/domain").DomainListRepr[]} */
     const domains = [];
     patchWithCleanup(ActivityController.prototype, {
@@ -967,7 +924,6 @@ test("activity view: 'onReloadData' does not add activity_ids condition as selec
         },
     });
 
-    //schedule another activity on an activity cell with a scheduled activity
     await click(".today .o-mail-ActivityCell-deadline");
     await click(".o-mail-ActivityListPopover button:contains(Schedule an activity)");
     expect(domains.length).toBeGreaterThan(0);
@@ -1020,7 +976,6 @@ test("Activity view: many2one_avatar_user widget in activity view", async () => 
     await contains(
         `tr:nth-child(2) .o_m2o_avatar > img[data-src="/web/image/res.users/${resUsersId1}/avatar_128"]`,
     );
-    // "should not have text on many2one_avatar_user if onlyImage node option is passed"
     await contains(".o_m2o_avatar > span", { count: 0 });
 });
 
@@ -1042,7 +997,6 @@ test("Activity view: on_destroy_callback doesn't crash", async () => {
         res_model: "mail.test.activity",
         views: [[false, "activity"]],
     });
-    // force the unmounting of the activity view by opening another one
     await openFormView("mail.test.activity");
     await waitForSteps(["mounted", "willUnmount"]);
 });
@@ -1065,7 +1019,6 @@ test("Schedule activity dialog uses the same search view as activity view", asyn
             [19, "search"],
         ],
     ]);
-    // click on "Schedule activity"
     await click(".o_activity_view .o_record_selector");
     await waitForSteps([
         [
@@ -1073,7 +1026,6 @@ test("Schedule activity dialog uses the same search view as activity view", asyn
             [19, "search"],
         ],
     ]);
-    // open an activity view (with search arch 1)
     await openView({
         res_model: "mail.test.activity",
         views: [[false, "activity"]],
@@ -1086,7 +1038,6 @@ test("Schedule activity dialog uses the same search view as activity view", asyn
             [16, "search"],
         ],
     ]);
-    // click on "Schedule activity"
     await click(".o_activity_view .o_record_selector");
     await waitForSteps([
         [
@@ -1147,11 +1098,6 @@ test("Activity view: apply progressbar filter", async () => {
         parent: [".o_activity_view tbody tr:first-of-type"],
     });
     await contains(".o_activity_view .planned", { count: 2 });
-    // Baseline: with no progress-bar filter active, no row or cell carries a
-    // filter class. `activeFilter.resIds` is the set of rows matching the
-    // ACTIVE filter, so it must be empty here — it used to hold every res id
-    // as a STRING, which only stayed invisible because the template looks it
-    // up with a number.
     await contains("[class*='o_activity_filter_']", { count: 0 });
     await click(".progress-bar[data-tooltip='1 Planned']", {
         parent: [".o_activity_view_table th", { text: "Email" }],
@@ -1245,7 +1191,6 @@ test("Activity view: dates in renderingContext", async () => {
 });
 
 test("test displaying image (write_date field)", async () => {
-    // the presence of write_date field ensures that the image is reloaded when necessary
     registerArchs({
         "mail.test.activity,false,activity": `
             <activity string="MailTestActivity">
@@ -1374,9 +1319,6 @@ test("Activity View: Hide 'New' button in SelectCreateDialog based on action con
 });
 
 test("mock server: a cell's summaries cover done activities too", async () => {
-    // `_get_activity_data_cells` builds `summaries` from ongoing AND completed,
-    // so a cell whose work is half finished still names all of it. The mock
-    // server took only the ongoing half, and no test could see the difference.
     const [record] = pyEnv["mail.test.activity"].search([]);
     const activityType = pyEnv["mail.activity.type"].create({ name: "Summaries" });
     pyEnv["mail.activity"].create([
@@ -1414,11 +1356,6 @@ test("mock server: a cell's summaries cover done activities too", async () => {
 });
 
 test("mock server: records with nothing left to do are ordered newest-done first", async () => {
-    // `_get_activity_data_order` sorts the completed tail by `date_done`
-    // descending; the mock sorted it ascending, so the two disagreed on every
-    // record whose activities were all finished.
-    // Fresh records: the fixture's already carry ongoing activities, which would
-    // put them in the deadline-ordered head and never exercise this branch.
     const records = pyEnv["mail.test.activity"].create([
         { name: "finished_oldest" },
         { name: "finished_middle" },
@@ -1444,6 +1381,5 @@ test("mock server: records with nothing left to do are ordered newest-done first
         0,
         true,
     );
-    // records[2] finished most recently, so it leads.
     expect(data.activity_res_ids).toEqual([...records].reverse());
 });

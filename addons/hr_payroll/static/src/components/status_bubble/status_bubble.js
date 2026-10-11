@@ -37,11 +37,6 @@ export class StatusBubble extends Component {
         return this.props.record.data.payslip_count ?? 0;
     }
 
-    /**
-     * A stage counts as reached once it is behind the current one. The current
-     * one only counts once the pay run actually holds payslips, so an empty pay
-     * run does not advertise progress it has not made.
-     */
     isReached(optionIndex) {
         return (
             optionIndex < this.activeIndex ||

@@ -2,12 +2,10 @@
 import { _t } from "@web/core/translation";
 import { floatIsZero, roundPrecision } from "@web/core/utils/format/numbers";
 
-/** [!] Mirror of `_group_everything_together` in account_tax.py. */
 function group_everything_together(base_line, tax_data) {
     return true;
 }
 
-/** [!] Mirror of `_group_by_tax` in account_tax.py. */
 function group_by_tax(base_line, tax_data) {
     return tax_data ? tax_data.tax.id.toString() : null;
 }
@@ -18,15 +16,6 @@ function isPlainObject(value) {
 }
 
 export const accountTaxHelpers = {
-    // -------------------------------------------------------------------------
-    // HELPERS IN BOTH PYTHON/JAVASCRIPT (account_tax.js / account_tax.py)
-    // -------------------------------------------------------------------------
-
-    /**
-     * Helper to stringify a grouping key that could contain some records.
-     *
-     * [!] Only added javascript-side.
-     */
     stringify_grouping_key(grouping_key) {
         if (!grouping_key || typeof grouping_key !== "object") {
             return grouping_key;
@@ -45,14 +34,6 @@ export const accountTaxHelpers = {
         return JSON.stringify(serializable_grouping_key);
     },
 
-    // -------------------------------------------------------------------------
-    // PREPARE TAXES COMPUTATION
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     flatten_taxes_and_sort_them(taxes) {
         function sort_key(taxes) {
             return taxes.toSorted(
@@ -63,8 +44,6 @@ export const accountTaxHelpers = {
         const group_per_tax = {};
         const sorted_taxes = [];
         const seen_tax_ids = new Set();
-        // Mirror Python's recordset union (|=): de-duplicate by id while preserving
-        // insertion order, so a tax reused across groups is not counted twice.
         const add_tax = (tax) => {
             if (!seen_tax_ids.has(tax.id)) {
                 seen_tax_ids.add(tax.id);
@@ -85,10 +64,6 @@ export const accountTaxHelpers = {
         return { sorted_taxes, group_per_tax };
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     batch_for_taxes_computation(
         taxes,
         { special_mode = null, filter_tax_function = null } = {},
@@ -104,7 +79,6 @@ export const accountTaxHelpers = {
             sorted_taxes: sorted_taxes,
         };
 
-        // Group them per batch.
         let batch = [];
         let is_base_affected = false;
         for (const tax of results.sorted_taxes.toReversed()) {
@@ -135,10 +109,6 @@ export const accountTaxHelpers = {
         return results;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     propagate_extra_taxes_base(taxes, tax, taxes_data, { special_mode = null } = {}) {
         function* get_tax_before() {
             for (const tax_before of taxes) {
@@ -167,7 +137,6 @@ export const accountTaxHelpers = {
         }
 
         if (tax.price_include) {
-            // Case: special mode is False or 'total_included'
             if (!special_mode || special_mode === "total_included") {
                 if (tax.include_base_amount) {
                     for (const other_tax of get_tax_after()) {
@@ -183,8 +152,6 @@ export const accountTaxHelpers = {
                 for (const other_tax of get_tax_before()) {
                     add_extra_base(other_tax, -1);
                 }
-
-                // Case: special_mode = 'total_excluded'
             } else {
                 if (tax.include_base_amount) {
                     for (const other_tax of get_tax_after()) {
@@ -195,7 +162,6 @@ export const accountTaxHelpers = {
                 }
             }
         } else if (!tax.price_include) {
-            // Case: special_mode is False or 'total_excluded'
             if (!special_mode || special_mode === "total_excluded") {
                 if (tax.include_base_amount) {
                     for (const other_tax of get_tax_after()) {
@@ -204,8 +170,6 @@ export const accountTaxHelpers = {
                         }
                     }
                 }
-
-                // Case: special_mode = 'total_included'
             } else {
                 if (!tax.include_base_amount) {
                     for (const other_tax of get_tax_after()) {
@@ -219,10 +183,6 @@ export const accountTaxHelpers = {
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     eval_tax_amount_fixed_amount(tax, batch, raw_base, evaluation_context) {
         if (tax.amount_type === "fixed") {
             const sign = evaluation_context.price_unit < 0.0 ? -1 : 1;
@@ -231,10 +191,6 @@ export const accountTaxHelpers = {
         return null;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     eval_tax_amount_price_included(tax, batch, raw_base, evaluation_context) {
         if (tax.amount_type === "percent") {
             const total_percentage =
@@ -251,10 +207,6 @@ export const accountTaxHelpers = {
         return null;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     eval_tax_amount_price_excluded(tax, batch, raw_base, evaluation_context) {
         if (tax.amount_type === "percent") {
             return (raw_base * tax.amount) / 100.0;
@@ -267,11 +219,6 @@ export const accountTaxHelpers = {
                 !floatIsZero(total_percentage - 1.0, 10) &&
                 total_percentage - 1.0 > 0
             ) {
-                // A price-excluded division batch summing to > 100% leaves a
-                // negative base: `1 - total_percentage < 0` would silently flip
-                // the tax sign and produce a negative total. Reject the
-                // configuration instead of returning garbage. (The valid 100%
-                // price-included case goes through the sibling method above.)
                 throw new Error(
                     _t(
                         "Division taxes applied together cannot exceed 100%% (got %s%%): it would leave a negative taxable base.",
@@ -287,10 +234,6 @@ export const accountTaxHelpers = {
         return null;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     get_tax_details(
         taxes,
         price_unit,
@@ -298,10 +241,6 @@ export const accountTaxHelpers = {
         {
             precision_rounding = null,
             rounding_method = "round_per_line",
-            // When product is null, we need the product default values to make the "formula" taxes
-            // working. In that case, we need to deal with the product default values before calling this
-            // method because we have no way to deal with it automatically in this method since it depends on
-            // the type of involved fields and we don't have access to this information js-side.
             product = null,
             product_uom_id = null,
             special_mode = null,
@@ -365,7 +304,6 @@ export const accountTaxHelpers = {
             };
         }
 
-        // Flatten the taxes, order them and filter them if necessary.
         const batching_results = this.batch_for_taxes_computation(taxes, {
             special_mode: special_mode,
             filter_tax_function: filter_tax_function,
@@ -400,28 +338,22 @@ export const accountTaxHelpers = {
             special_mode: special_mode,
         };
 
-        // Define the order in which the taxes must be evaluated.
-        // Fixed taxes are computed directly because they could affect the base of a price included batch right after.
         for (const tax of sorted_taxes.toReversed()) {
             eval_tax_amount(this.eval_tax_amount_fixed_amount.bind(this), tax);
         }
 
-        // Then, let's travel the batches in the reverse order and process the price-included taxes.
         for (const tax of sorted_taxes.toReversed()) {
             if (taxes_data[tax.id].price_include) {
                 eval_tax_amount(this.eval_tax_amount_price_included.bind(this), tax);
             }
         }
 
-        // Then, let's travel the batches in the normal order and process the price-excluded taxes.
         for (const tax of sorted_taxes) {
             if (!taxes_data[tax.id].price_include) {
                 eval_tax_amount(this.eval_tax_amount_price_excluded.bind(this), tax);
             }
         }
 
-        // Mark the base to be computed in the descending order. The order doesn't matter for no special mode or 'total_excluded' but
-        // it must be in the reverse order when special_mode is 'total_included'.
         const subsequent_taxes = [];
         for (const tax of sorted_taxes.toReversed()) {
             const tax_data = taxes_data[tax.id];
@@ -429,7 +361,6 @@ export const accountTaxHelpers = {
                 continue;
             }
 
-            // Base amount.
             const total_tax_amount =
                 taxes_data[tax.id].batch.reduce(
                     (sum, other_tax) => sum + taxes_data[other_tax.id].tax_amount,
@@ -451,13 +382,11 @@ export const accountTaxHelpers = {
             }
             tax_data.base = base;
 
-            // Subsequent taxes.
             tax_data.taxes = [];
             if (tax.include_base_amount) {
                 tax_data.taxes.push(...subsequent_taxes);
             }
 
-            // Reverse charge.
             if (tax.has_negative_factor) {
                 const reverse_charge_tax_data = reverse_charge_taxes_data[tax.id];
                 reverse_charge_tax_data.base = base;
@@ -513,14 +442,6 @@ export const accountTaxHelpers = {
         };
     },
 
-    // -------------------------------------------------------------------------
-    // MAPPING PRICE_UNIT
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     adapt_price_unit_to_another_taxes(
         price_unit,
         product,
@@ -538,7 +459,6 @@ export const accountTaxHelpers = {
             return price_unit;
         }
 
-        // Find the price unit without tax.
         let taxes_computation = this.get_tax_details(original_taxes, price_unit, 1.0, {
             rounding_method: "round_globally",
             product: product,
@@ -546,7 +466,6 @@ export const accountTaxHelpers = {
         });
         price_unit = taxes_computation.total_excluded;
 
-        // Find the new price unit after applying the price included taxes.
         taxes_computation = this.get_tax_details(new_taxes, price_unit, 1.0, {
             rounding_method: "round_globally",
             product: product,
@@ -562,14 +481,6 @@ export const accountTaxHelpers = {
         return price_unit + delta;
     },
 
-    // -------------------------------------------------------------------------
-    // GENERIC REPRESENTATION OF BUSINESS OBJECTS & METHODS
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     export_base_line_extra_tax_data(base_line) {
         const results = {};
         if (base_line.computation_key) {
@@ -606,14 +517,9 @@ export const accountTaxHelpers = {
         return results;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     import_base_line_extra_tax_data(base_line, extra_tax_data) {
         const currency_dp = base_line.currency_id.decimal_places;
 
-        // compare_amounts does not exist in numbers.js
         const are_amounts_equal = (a, b) =>
             floatIsZero(
                 roundPrecision(a, currency_dp) - roundPrecision(b, currency_dp),
@@ -680,27 +586,16 @@ export const accountTaxHelpers = {
         return results;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     get_base_line_field_value_from_record(record, field, extra_values, fallback) {
         if (field in extra_values) {
-            // Mirror Python: 'extra_values[field] or fallback' — truthy-or-fallback.
             return extra_values[field] || fallback;
         }
         if (record && field in record) {
-            // Mirror Python's 'record.get(field, fallback)': a present key keeps its
-            // value even when falsy (e.g. rate === 0); only an absent key falls back.
             return record[field];
         }
         return fallback;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     prepare_base_line_for_taxes_computation(record, kwargs = {}) {
         const load = (field, fallback) =>
             this.get_base_line_field_value_from_record(record, field, kwargs, fallback);
@@ -736,10 +631,6 @@ export const accountTaxHelpers = {
             base_line,
             load("extra_tax_data", {}) || {},
         );
-        // NOTE: manual_total_excluded[_currency] use `??`, not `||` — 0.0 is a
-        // legitimate override (force the base to zero) and must not be
-        // treated as absent, unlike `||`'s previous behavior here which
-        // silently discarded it in favor of extra_tax_data.
         Object.assign(base_line, {
             manual_total_excluded_currency:
                 kwargs.manual_total_excluded_currency ??
@@ -758,8 +649,6 @@ export const accountTaxHelpers = {
             base_line.price_unit = extra_tax_data.price_unit;
         }
 
-        // Propagate custom values. Only from a plain object, as Python does from a dict:
-        // enumerating a reactive record would subscribe to all of its own keys.
         if (record && isPlainObject(record)) {
             for (const [k, v] of Object.entries(record)) {
                 if (
@@ -776,10 +665,6 @@ export const accountTaxHelpers = {
         return base_line;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     add_tax_details_in_base_line(base_line, company, { rounding_method = null } = {}) {
         rounding_method = rounding_method || company.tax_calculation_rounding_method;
         const price_unit_after_discount =
@@ -822,11 +707,6 @@ export const accountTaxHelpers = {
         });
 
         if (rounding_method === "round_per_line") {
-            // `raw_total_excluded`/`raw_total_included` are company-currency
-            // amounts (total / rate), so they round with the company currency's
-            // precision — mirroring `company.currency_id.round(...)` in
-            // account_tax.py, and matching the per-tax amounts rounded with
-            // `company_currency_pd` just below.
             tax_details.raw_total_excluded = roundPrecision(
                 tax_details.raw_total_excluded,
                 company_currency_pd,
@@ -856,20 +736,12 @@ export const accountTaxHelpers = {
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     add_tax_details_in_base_lines(base_lines, company) {
         for (const base_line of base_lines) {
             this.add_tax_details_in_base_line(base_line, company);
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     normalize_target_factors(target_factors) {
         const factors = target_factors.map((x, i) => [i, Math.abs(x.factor)]);
         factors.sort((a, b) => b[1] - a[1]);
@@ -880,10 +752,6 @@ export const accountTaxHelpers = {
         ]);
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     distribute_delta_amount_smoothly(precision_digits, delta_amount, target_factors) {
         const precision_rounding = Number(`1e-${precision_digits}`);
         const amounts_to_distribute = target_factors.map((x) => 0.0);
@@ -892,8 +760,6 @@ export const accountTaxHelpers = {
         }
 
         const sign = delta_amount < 0.0 ? -1 : 1;
-        // Python's round() is banker's rounding (round-half-to-even); mirror it so
-        // exact .5 ties allocate the residual cent to the same line as the server.
         const nb_of_errors = roundPrecision(
             Math.abs(delta_amount / precision_rounding),
             1,
@@ -901,7 +767,6 @@ export const accountTaxHelpers = {
         );
         let remaining_errors = nb_of_errors;
 
-        // Distribute using the factor first.
         const factors = this.normalize_target_factors(target_factors);
         for (const [i, factor] of factors) {
             if (!remaining_errors) {
@@ -918,9 +783,6 @@ export const accountTaxHelpers = {
             amounts_to_distribute[i] += amount_to_distribute;
         }
 
-        // Distribute the remaining cents across the factors.
-        // There are sorted by the biggest first.
-        // Since the factors are normalized, the residual number of cents can't be higher than the number of factors.
         for (let i = 0; i < remaining_errors; i++) {
             amounts_to_distribute[factors[i][0]] += sign * precision_rounding;
         }
@@ -928,10 +790,6 @@ export const accountTaxHelpers = {
         return amounts_to_distribute;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     round_tax_details_tax_amounts(base_lines, company, { mode = "mixed" } = {}) {
         function grouping_function(base_line, tax_data) {
             if (!tax_data) {
@@ -966,7 +824,6 @@ export const accountTaxHelpers = {
                 ["_currency", currency],
                 ["", company.currency_id],
             ]) {
-                // Tax amount
                 const raw_total_tax_amount =
                     values[`target_tax_amount${delta_currency_indicator}`];
                 const rounded_raw_total_tax_amount = roundPrecision(
@@ -1005,7 +862,6 @@ export const accountTaxHelpers = {
                     }
                 }
 
-                // Base amount
                 const raw_total_base_amount =
                     values[`target_base_amount${delta_currency_indicator}`];
                 let delta_total_base_amount = 0.0;
@@ -1066,10 +922,6 @@ export const accountTaxHelpers = {
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     round_tax_details_base_lines(base_lines, company, { mode = "mixed" } = {}) {
         function grouping_function(base_line, tax_data) {
             return {
@@ -1092,9 +944,6 @@ export const accountTaxHelpers = {
             if (current_mode === "mixed") {
                 current_mode = "included";
                 for (const [base_line, taxes_data] of values.base_line_x_taxes_data) {
-                    // Mirror account_tax.py: a tax counts as "present" when it is
-                    // non-zero in EITHER the document or the company currency
-                    // (OR, not AND).
                     const not_zero_taxes_data = taxes_data.filter(
                         (tax_data) =>
                             !floatIsZero(
@@ -1123,7 +972,6 @@ export const accountTaxHelpers = {
                 let delta_total_excluded;
                 let target_factors;
                 if (current_mode === "excluded") {
-                    // Price-excluded rounding.
                     const raw_total_excluded =
                         values[`target_total_excluded${delta_currency_indicator}`];
                     if (!raw_total_excluded) {
@@ -1146,7 +994,6 @@ export const accountTaxHelpers = {
                         }),
                     );
                 } else {
-                    // Price-included rounding.
                     const raw_total_included =
                         values[`target_total_excluded${delta_currency_indicator}`] +
                         values[`target_tax_amount${delta_currency_indicator}`];
@@ -1187,12 +1034,7 @@ export const accountTaxHelpers = {
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     round_base_lines_tax_details(base_lines, company) {
-        // Raw rounding.
         for (const base_line of base_lines) {
             const tax_details = base_line.tax_details;
 
@@ -1218,7 +1060,6 @@ export const accountTaxHelpers = {
             }
         }
 
-        // Apply 'manual_tax_amounts'.
         for (const base_line of base_lines) {
             const manual_tax_amounts = base_line.manual_tax_amounts;
             const rate = base_line.rate;
@@ -1269,7 +1110,6 @@ export const accountTaxHelpers = {
             }
         }
 
-        // Compute 'total_included' & add 'delta_total_excluded'.
         for (const base_line of base_lines) {
             const tax_details = base_line.tax_details;
             for (const suffix of ["_currency", ""]) {
@@ -1287,14 +1127,6 @@ export const accountTaxHelpers = {
         this.round_tax_details_base_lines(base_lines, company);
     },
 
-    // -------------------------------------------------------------------------
-    // TAX TOTALS SUMMARY
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     get_tax_totals_summary(
         base_lines,
         currency,
@@ -1315,7 +1147,6 @@ export const accountTaxHelpers = {
             tax_amount: 0.0,
         };
 
-        // Global tax values.
         const global_grouping_function = (base_line, tax_data) => tax_data !== null;
 
         let base_lines_aggregated_values = this.aggregate_base_lines_tax_details(
@@ -1336,7 +1167,6 @@ export const accountTaxHelpers = {
             tax_totals_summary.tax_amount += values.tax_amount;
         }
 
-        // Tax groups.
         const untaxed_amount_subtotal_label = _t("Untaxed Amount");
         const subtotals = {};
 
@@ -1369,7 +1199,6 @@ export const accountTaxHelpers = {
         for (const [order, values] of sorted_total_per_tax_group.entries()) {
             const tax_group = values.grouping_key;
 
-            // Get all involved taxes in the tax group.
             const involved_tax_ids = new Set();
             const involved_amount_types = new Set();
             const involved_price_include = new Set();
@@ -1382,7 +1211,6 @@ export const accountTaxHelpers = {
                 });
             });
 
-            // Compute the display base amounts.
             let display_base_amount;
             let display_base_amount_currency;
             if (
@@ -1407,9 +1235,6 @@ export const accountTaxHelpers = {
                         tax_details.total_excluded_currency +
                         tax_details.delta_total_excluded_currency;
                     for (const tax_data of tax_details.taxes_data) {
-                        // Only the division taxes of this group are added back to the
-                        // displayed base; other taxes on the line belong to other groups
-                        // and must not inflate it (mirror of account_tax.py).
                         if (tax_data.tax.amount_type === "division") {
                             display_base_amount_currency +=
                                 tax_data.tax_amount_currency;
@@ -1430,7 +1255,6 @@ export const accountTaxHelpers = {
                 );
             }
 
-            // Order of the subtotals.
             const preceding_subtotal =
                 tax_group.preceding_subtotal || untaxed_amount_subtotal_label;
             if (!(preceding_subtotal in subtotals)) {
@@ -1460,7 +1284,6 @@ export const accountTaxHelpers = {
             });
         }
 
-        // Subtotals.
         if (!Object.keys(subtotals).length) {
             subtotals[untaxed_amount_subtotal_label] = {
                 tax_groups: [],
@@ -1492,7 +1315,6 @@ export const accountTaxHelpers = {
             tax_totals_summary.subtotals.push(subtotal);
         }
 
-        // Cash rounding
         const cash_rounding_lines = base_lines.filter(
             (base_line) => base_line.special_type === "cash_rounding",
         );
@@ -1572,14 +1394,11 @@ export const accountTaxHelpers = {
                         tax_totals_summary.tax_amount_currency +=
                             cash_rounding_base_amount_currency;
                         tax_totals_summary.tax_amount += cash_rounding_base_amount;
-                    } else {
-                        // Failed to apply the cash rounding since there is no tax.
                     }
                 }
             }
         }
 
-        // Subtract the cash rounding from the untaxed amounts.
         const cash_rounding_base_amount_currency =
             tax_totals_summary.cash_rounding_base_amount_currency || 0.0;
         const cash_rounding_base_amount =
@@ -1642,7 +1461,6 @@ export const accountTaxHelpers = {
             }
         }
 
-        // Total amount.
         tax_totals_summary.total_amount_currency =
             tax_totals_summary.base_amount_currency +
             tax_totals_summary.tax_amount_currency +
@@ -1660,10 +1478,6 @@ export const accountTaxHelpers = {
         return tax_totals_summary;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     round_tax_totals_summary_amounts(tax_totals_summary, currency, company_currency) {
         const round_amounts = (values) => {
             for (const [key, value] of Object.entries(values)) {
@@ -1689,21 +1503,12 @@ export const accountTaxHelpers = {
         }
     },
 
-    // -------------------------------------------------------------------------
-    // AGGREGATOR OF TAX DETAILS
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     aggregate_base_line_tax_details(base_line, grouping_function) {
         const values_per_grouping_key = {};
         const tax_details = base_line.tax_details;
         const taxes_data = tax_details.taxes_data;
         const manual_tax_amounts = base_line.manual_tax_amounts;
 
-        // If there are no taxes, we pass an empty object to the grouping function.
         for (const tax_data of taxes_data.length !== 0 ? taxes_data : [null]) {
             const current_manual_tax_amounts =
                 tax_data && manual_tax_amounts
@@ -1717,14 +1522,9 @@ export const accountTaxHelpers = {
                 typeof raw_grouping_key === "object" &&
                 "raw_grouping_key" in raw_grouping_key
             ) {
-                // TODO: TO BE REMOVED IN MASTER (here for retro-compatibility)
-                // There is no FrozenDict in javascript.
-                // When the key is a record, it can't be jsonified so this is a trick to provide both the
-                // raw_grouping_key (to be jsonified) from the grouping_key (to be added to the values).
                 raw_grouping_key = raw_grouping_key.raw_grouping_key;
                 grouping_key = raw_grouping_key.grouping_key;
 
-                // Handle dictionary-like keys (converted to string in JS)
                 if (typeof grouping_key === "object") {
                     grouping_key = JSON.stringify(grouping_key);
                 }
@@ -1732,7 +1532,6 @@ export const accountTaxHelpers = {
                 grouping_key = this.stringify_grouping_key(raw_grouping_key);
             }
 
-            // Base amount.
             if (!(grouping_key in values_per_grouping_key)) {
                 const values = {
                     grouping_key: raw_grouping_key,
@@ -1806,7 +1605,6 @@ export const accountTaxHelpers = {
                 }
             }
 
-            // Tax amount.
             if (tax_data) {
                 const reverse_charge_sign = tax_data.is_reverse_charge ? -1 : 1;
                 const values = values_per_grouping_key[grouping_key];
@@ -1837,10 +1635,6 @@ export const accountTaxHelpers = {
         return values_per_grouping_key;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     aggregate_base_lines_tax_details(base_lines, grouping_function) {
         return base_lines.map((base_line) => [
             base_line,
@@ -1848,10 +1642,6 @@ export const accountTaxHelpers = {
         ]);
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     aggregate_base_lines_aggregated_values(base_lines_aggregated_values) {
         const default_float_fields = new Set();
         for (const prefix of ["", "raw_", "target_"]) {
@@ -1889,22 +1679,10 @@ export const accountTaxHelpers = {
         return values_per_grouping_key;
     },
 
-    // -------------------------------------------------------------------------
-    // ADVANCED LINES MANIPULATION HELPERS
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     can_be_discounted(tax) {
         return !["fixed", "code"].includes(tax.amount_type);
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     merge_tax_details(tax_details_1, tax_details_2) {
         const results = {};
         for (const prefix of ["raw_", ""]) {
@@ -1943,9 +1721,6 @@ export const accountTaxHelpers = {
         }
         results.taxes_data = Object.values(agg_taxes_data);
 
-        // In case there is some taxes that are in tax_details_1 but not on tax_details_2,
-        // we have to shift manually the base amount. It happens with fixed taxes in which the base
-        // is meaningless but still used in the computations.
         const taxes_data_in_2 = new Set(
             tax_details_2.taxes_data.map((td) => td.tax.id),
         );
@@ -1970,10 +1745,6 @@ export const accountTaxHelpers = {
         return results;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     fix_base_lines_tax_details_on_manual_tax_amounts(
         base_lines,
         company,
@@ -2013,10 +1784,6 @@ export const accountTaxHelpers = {
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     split_tax_data(base_line, tax_data, company, target_factors) {
         const currency = base_line.currency_id;
 
@@ -2024,8 +1791,6 @@ export const accountTaxHelpers = {
 
         const new_taxes_data = new Array(factors.length);
 
-        // Distribution of raw amounts, placed back at each factor's ORIGINAL index:
-        // `normalize_target_factors` sorts, and every caller indexes positionally.
         for (const [index, factor] of factors) {
             new_taxes_data[index] = {
                 ...tax_data,
@@ -2036,7 +1801,6 @@ export const accountTaxHelpers = {
             };
         }
 
-        // Distribution of rounded amounts.
         const new_target_factors = new_taxes_data.map((new_tax_data, index) => ({
             factor: target_factors[index].factor,
             tax_data: new_tax_data,
@@ -2064,10 +1828,6 @@ export const accountTaxHelpers = {
         return new_taxes_data;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     split_tax_details(base_line, company, target_factors) {
         const currency = base_line.currency_id;
         const tax_details = base_line.tax_details;
@@ -2076,8 +1836,6 @@ export const accountTaxHelpers = {
 
         const new_tax_details_list = new Array(factors.length);
 
-        // Distribution of raw amounts, placed by original index -- see
-        // `split_tax_data`.
         for (const [index, factor] of factors) {
             new_tax_details_list[index] = {
                 raw_total_excluded_currency:
@@ -2092,7 +1850,6 @@ export const accountTaxHelpers = {
             };
         }
 
-        // Manage 'taxes_data'.
         for (const tax_data of tax_details.taxes_data) {
             const new_taxes_data = this.split_tax_data(
                 base_line,
@@ -2107,7 +1864,6 @@ export const accountTaxHelpers = {
             }
         }
 
-        // Distribution of rounded amounts.
         for (const [delta_currency_indicator, delta_currency] of [
             ["_currency", currency],
             ["", company.currency_id],
@@ -2133,7 +1889,6 @@ export const accountTaxHelpers = {
             }
         }
 
-        // Manage 'total_included'.
         for (const new_tax_details of new_tax_details_list) {
             for (const delta_currency_indicator of ["_currency", ""]) {
                 new_tax_details[`total_included${delta_currency_indicator}`] =
@@ -2148,21 +1903,15 @@ export const accountTaxHelpers = {
         return new_tax_details_list;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     split_base_line(base_line, company, target_factors, { update_kwargs = null } = {}) {
         const factors = this.normalize_target_factors(target_factors);
 
-        // Split 'tax_details'.
         const new_tax_details_list = this.split_tax_details(
             base_line,
             company,
             target_factors,
         );
 
-        // Split 'base_line'.
         const new_base_lines = new Array(factors.length);
         for (const [index, factor] of factors) {
             const kwargs = {
@@ -2182,11 +1931,6 @@ export const accountTaxHelpers = {
         return new_base_lines;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     * DEPRECATED: TO BE REMOVED IN MASTER
-     */
     compute_subset_base_lines_total(base_lines, company) {
         let base_amount_currency = 0.0;
         let tax_amount_currency = 0.0;
@@ -2241,10 +1985,6 @@ export const accountTaxHelpers = {
         };
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     reduce_base_lines_with_grouping_function(
         base_lines,
         {
@@ -2276,9 +2016,6 @@ export const accountTaxHelpers = {
             if (grouping_function) {
                 const generated_grouping_key = grouping_function(new_base_line);
 
-                // There is no FrozenDict in javascript.
-                // When the key is a record, it can't be jsonified so this is a trick to provide both the
-                // raw_grouping_key (to be jsonified) from the grouping_key (to be added to the values).
                 if ("raw_grouping_key" in generated_grouping_key) {
                     Object.assign(
                         raw_grouping_key,
@@ -2323,7 +2060,6 @@ export const accountTaxHelpers = {
             }
         }
 
-        // Remove zero lines.
         const reduced_base_lines = Object.values(base_line_map).filter(
             (base_line) =>
                 !floatIsZero(
@@ -2334,11 +2070,6 @@ export const accountTaxHelpers = {
         return reduced_base_lines;
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     * DEPRECATED: TO BE REMOVED IN MASTER
-     */
     apply_base_lines_manual_amounts_to_reach(
         base_lines,
         company,
@@ -2348,7 +2079,6 @@ export const accountTaxHelpers = {
     ) {
         const currency = base_lines[0].currency_id;
 
-        // Smooth distribution of the delta accross the base line, starting at the biggest one.
         const sorted_base_lines = base_lines.sort((base_line_1, base_line_2) => {
             const key_1 = [
                 Boolean(base_line_1.special_type),
@@ -2457,10 +2187,6 @@ export const accountTaxHelpers = {
         this.fix_base_lines_tax_details_on_manual_tax_amounts(base_lines, company);
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     reduce_base_lines_to_target_amount(
         base_lines,
         company,
@@ -2479,15 +2205,11 @@ export const accountTaxHelpers = {
         const currency = base_lines[0].currency_id;
         const rate = base_lines[0].rate;
 
-        // Compute the current total amount of the base lines.
         const [total_amount_currency, total_amount] =
             this.measure_base_lines_total(base_lines);
 
-        // Compute the current total tax amount per tax.
         const tax_amounts_per_tax = this.measure_tax_amounts_per_tax(base_lines);
 
-        // Turn the 'amount_type' / 'amount' into a percentage and the total amounts to be reached
-        // from the base lines.
         const sign = amount < 0.0 ? -1 : 1;
         const signed_amount = sign * amount;
         let percentage, expected_total_amount_currency, expected_total_amount;
@@ -2514,7 +2236,6 @@ export const accountTaxHelpers = {
             );
         }
 
-        // Compute the expected amounts.
         const expected_tax_amounts = {};
         for (const [grouping_key, values] of Object.entries(tax_amounts_per_tax)) {
             expected_tax_amounts[grouping_key] = {
@@ -2549,7 +2270,6 @@ export const accountTaxHelpers = {
                 0,
             );
 
-        // Reduce the base lines to minimize the number of lines.
         const reduced_base_lines = this.reduce_base_lines_with_grouping_function(
             base_lines,
             {
@@ -2562,7 +2282,6 @@ export const accountTaxHelpers = {
             return [];
         }
 
-        // Reduce the unit price to approach the target amount.
         const new_base_lines = reduced_base_lines.map((base_line) =>
             this.prepare_base_line_for_taxes_computation(base_line, {
                 price_unit: base_line.price_unit * sign * percentage,
@@ -2572,9 +2291,6 @@ export const accountTaxHelpers = {
         this.add_tax_details_in_base_lines(new_base_lines, company);
         this.round_base_lines_tax_details(new_base_lines, company);
 
-        // Smooth distribution of the delta tax/base amounts. Use toSorted so
-        // new_base_lines keeps its original order for the return value (mirror of
-        // Python's non-mutating sorted()); only the distribution below is ordered.
         const sorted_base_lines = new_base_lines.toSorted(
             (base_line_1, base_line_2) => {
                 const key_1 = [
@@ -2625,7 +2341,6 @@ export const accountTaxHelpers = {
                     company.currency_id,
                 ],
             ]) {
-                // Tax amount.
                 const tax_amount_currency = tax_amounts.tax_amount_currency;
                 if (tax_amount_currency) {
                     const target_factors = [];
@@ -2655,7 +2370,6 @@ export const accountTaxHelpers = {
                     }
                 }
 
-                // Base amount.
                 const base_amount_currency = tax_amounts.base_amount_currency;
                 if (base_amount_currency) {
                     const target_factors = [];
@@ -2698,11 +2412,6 @@ export const accountTaxHelpers = {
         return new_base_lines;
     },
 
-    /**
-     * Total of the base lines, taxes included, in both currencies.
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     measure_base_lines_total(base_lines) {
         const values_per_grouping_key = this.aggregate_base_lines_aggregated_values(
             this.aggregate_base_lines_tax_details(
@@ -2723,11 +2432,6 @@ export const accountTaxHelpers = {
         ];
     },
 
-    /**
-     * The base and tax amounts carried by each tax across the base lines.
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     measure_tax_amounts_per_tax(base_lines) {
         const values_per_grouping_key = this.aggregate_base_lines_aggregated_values(
             this.aggregate_base_lines_tax_details(base_lines, group_by_tax),
@@ -2747,11 +2451,6 @@ export const accountTaxHelpers = {
         return tax_amounts_per_tax;
     },
 
-    /**
-     * Move the base lines' excluded amounts onto the expected total.
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     spread_delta_on_base_amount(
         new_base_lines,
         sorted_base_lines,
@@ -2807,10 +2506,6 @@ export const accountTaxHelpers = {
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     partition_base_lines_taxes(base_lines, partition_function) {
         let has_taxes_to_exclude = false;
         const base_lines_partition_taxes = [];
@@ -2839,10 +2534,6 @@ export const accountTaxHelpers = {
         return [base_lines_partition_taxes, has_taxes_to_exclude];
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     prepare_discountable_base_lines(
         base_lines,
         company,
@@ -2862,14 +2553,6 @@ export const accountTaxHelpers = {
         );
     },
 
-    // -------------------------------------------------------------------------
-    // GLOBAL DISCOUNT
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     prepare_global_discount_lines(
         base_lines,
         company,
@@ -2892,14 +2575,6 @@ export const accountTaxHelpers = {
         return new_base_lines;
     },
 
-    // -------------------------------------------------------------------------
-    // DOWN PAYMENT
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     prepare_base_lines_for_down_payment(
         base_lines,
         company,
@@ -2916,18 +2591,11 @@ export const accountTaxHelpers = {
             company,
             dispatch_exclude_function.bind(this),
         );
-        // Fold taxes that cannot be part of a down payment (e.g. fixed taxes)
-        // back into the base so the down payment total stays consistent with
-        // the order total. Mirror of the Python method — keep both in sync.
         return new_base_lines.concat(
             this.turn_removed_taxes_into_new_base_lines(new_base_lines, company),
         );
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     prepare_down_payment_lines(
         base_lines,
         company,
@@ -2950,14 +2618,6 @@ export const accountTaxHelpers = {
         return new_base_lines;
     },
 
-    // -------------------------------------------------------------------------
-    // DISPATCHING OF LINES
-    // -------------------------------------------------------------------------
-
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     dispatch_taxes_into_new_base_lines(base_lines, company, exclude_function) {
         function partition_function(base_line, tax_data) {
             return !exclude_function(base_line, tax_data);
@@ -2981,7 +2641,6 @@ export const accountTaxHelpers = {
             const tax_details = base_line.tax_details;
             const taxes_data = tax_details.taxes_data;
 
-            // Get the index of the next 'tax_data' to exclude.
             let next_split_index = null;
             for (let i = 0; i < taxes_data.length; i++) {
                 if (taxes_to_exclude.includes(taxes_data[i].tax)) {
@@ -2999,7 +2658,6 @@ export const accountTaxHelpers = {
             const tax_data_to_remove = taxes_data[next_split_index];
             const remaining_taxes_data = taxes_data.slice(next_split_index + 1);
 
-            // Split 'tax_details'.
             const first_tax_details = {
                 raw_total_excluded_currency: tax_details.raw_total_excluded_currency,
                 raw_total_excluded: tax_details.raw_total_excluded,
@@ -3075,7 +2733,6 @@ export const accountTaxHelpers = {
                 this.add_tax_data_to_included_totals(first_tax_details, first_tax_data);
             }
 
-            // Split 'base_line'.
             const first_taxes = first_tax_details.taxes_data.map(
                 (tax_data) => tax_data.tax,
             );
@@ -3122,10 +2779,6 @@ export const accountTaxHelpers = {
         return final_base_lines;
     },
 
-    /**
-     * Add one tax's amounts to a tax details' 'total_included' figures.
-     * [!] Mirror of the same method in account_tax.py.
-     */
     add_tax_data_to_included_totals(tax_details, tax_data) {
         for (const suffix of ["_currency", ""]) {
             tax_details[`raw_total_included${suffix}`] +=
@@ -3134,10 +2787,6 @@ export const accountTaxHelpers = {
         }
     },
 
-    /**
-     * [!] Mirror of the same method in account_tax.py.
-     * PLZ KEEP BOTH METHODS CONSISTENT WITH EACH OTHERS.
-     */
     turn_removed_taxes_into_new_base_lines(
         base_lines,
         company,

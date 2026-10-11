@@ -39,13 +39,10 @@ export function batched(callback, synchronize = () => Promise.resolve()) {
                     log.pipeline("batch.resolve", () => ({ callers: settled }));
                     settling.resolve(result);
                 } catch (error) {
-                    // A callback may already have scheduled another batch.
                     if (batch === settling) {
                         batch = null;
                         callers = 0;
                     }
-                    // one promise for the whole batch: fire-and-forget callers
-                    // (all of them today) surface it as one unhandled rejection
                     log.pipeline("batch.reject", () => ({ error }));
                     settling.reject(error);
                 }
@@ -128,7 +125,6 @@ export function debounce(func, delay, options) {
         const awaiters = pending;
         const args = lastArgs;
         const self = lastSelf;
-        // Release the old invocation before user code can enqueue another one.
         pending = [];
         lastArgs = null;
         lastSelf = null;

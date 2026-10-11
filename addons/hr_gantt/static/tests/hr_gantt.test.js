@@ -68,16 +68,16 @@ class Task extends models.Model {
         {
             id: 5,
             display_name: "Task 5",
-            start: "2018-12-21 10:30:00", // 11:30:00 CET
-            stop: "2018-12-21 11:29:59", // 12:29:59 CET
+            start: "2018-12-21 10:30:00",
+            stop: "2018-12-21 11:29:59",
             employee_id: 1,
             foo: "Foo 3",
         },
         {
             id: 6,
             display_name: "Task 6",
-            start: "2018-12-22 10:30:00", // 11:30:00 CET
-            stop: "2018-12-22 11:59:59", // 12:59:59 CET
+            start: "2018-12-22 10:30:00",
+            stop: "2018-12-22 11:59:59",
             employee_id: 1,
             foo: "Foo 3",
         },
@@ -115,8 +115,6 @@ test("hr gantt view not grouped", async () => {
 });
 
 test("hr gantt view grouped by a differently-named employee many2one", async () => {
-    // Regression test for the fix in commit 4a9c1fbef3: avatar-row detection
-    // must key off the grouped field's relation, not its literal name.
     await mountGanttView({ resModel: "task", arch, groupBy: ["manager_id"] });
     expect(".o_gantt_row_title .o-mail-Avatar").toHaveCount(1);
 });
@@ -193,8 +191,6 @@ test("clicking a row avatar opens the employee card", async () => {
 });
 
 test("canOpenPopover=false suppresses the employee card", async () => {
-    // The base Avatar contract: this prop must disable the popover AND its
-    // RPC (audit rows H1-r4/J2-r4 — openCard used to ignore it).
     let called = false;
     onRpc("hr.employee", "get_avatar_card_data", () => {
         called = true;

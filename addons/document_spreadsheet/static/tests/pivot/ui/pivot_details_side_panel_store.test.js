@@ -15,7 +15,7 @@ defineDocumentSpreadsheetModels();
 
 test("deferred updates", async () => {
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="foo" type="row"/>
@@ -49,7 +49,7 @@ test("deferred updates", async () => {
 
 test("uncheck the defer updates checkbox applies the update", async () => {
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="foo" type="row"/>
@@ -71,7 +71,7 @@ test("uncheck the defer updates checkbox applies the update", async () => {
 
 test("remove row then add col", async () => {
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="foo" type="row"/>
                 <field name="probability" type="measure"/>
@@ -105,7 +105,7 @@ test("non-groupable fields are filtered", async () => {
     Partner._fields = { foo, bar };
     Partner._records = [];
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="__count" type="measure"/>
             </pivot>`,
@@ -143,7 +143,7 @@ test("fields already used are filtered", async () => {
     Partner._records = [];
 
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="bar" type="col"/>
                 <field name="foo" type="row"/>
@@ -168,7 +168,7 @@ test("can reuse date fields until all granularities are used", async () => {
     Partner._records = [];
 
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="__count" type="measure"/>
             </pivot>`,
@@ -225,7 +225,7 @@ test("add default datetime granularity", async () => {
     Partner._records = [];
 
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="__count" type="measure"/>
             </pivot>`,
@@ -310,7 +310,7 @@ test("non measure fields are filtered and sorted", async () => {
     Partner._fields = partnerFields;
     Partner._records = [];
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
             </pivot>`,
     });
@@ -381,7 +381,7 @@ test("Existing dimensions fields are filtered, but not measures", async () => {
     Partner._fields = partnerFields;
     Partner._records = [];
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
             <pivot>
                 <field name="product_id" type="row"/>
                 <field name="__count" type="measure"/>

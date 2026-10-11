@@ -264,7 +264,6 @@ test("search snippet in add snippet dialog", async () => {
             .map((s) => s.content),
     );
 
-    // Search base on snippet name
     await contains(".o_add_snippet_dialog aside input[type='search']").edit("Ban");
     expect("aside .list-group .list-group-item").toHaveCount(0);
     expect(
@@ -277,7 +276,6 @@ test("search snippet in add snippet dialog", async () => {
         ),
     );
 
-    // Search base on snippet name and keywords
     await contains(".o_add_snippet_dialog aside input[type='search']").edit("gra");
     expect("aside .list-group .list-group-item").toHaveCount(0);
     expect(
@@ -290,7 +288,6 @@ test("search snippet in add snippet dialog", async () => {
         ),
     );
 
-    // Search base on keywords
     await contains(".o_add_snippet_dialog aside input[type='search']").edit("or");
     expect("aside .list-group .list-group-item").toHaveCount(0);
     expect(
@@ -314,7 +311,6 @@ test("search snippet by class", async () => {
             additionalClassOnRoot: "s_additional_class",
             keywords: [],
         },
-        // Second snippet carries a class on a child node (searched by class below).
         {
             name: "foo",
             groupName: "a",
@@ -352,7 +348,6 @@ test("search snippet by class", async () => {
     );
     await waitForSnippetDialog();
 
-    // Search among classes of root node
     await contains(".o_add_snippet_dialog aside input[type='search']").edit("s_bar");
     expect(
         queryFirst(
@@ -369,7 +364,6 @@ test("search snippet by class", async () => {
         ).innerHTML,
     ).toEqual(snippetsDescriptionProcessed[0].content);
 
-    // Search among classes of child nodes
     await contains(".o_add_snippet_dialog aside input[type='search']").edit(
         "s_class_on_child",
     );
@@ -508,10 +502,6 @@ test("Cancel snippet drag & drop over sidebar", async () => {
     ).drag();
     expect(":iframe .oe_drop_zone").toHaveCount(1);
 
-    // Specifying an explicit target should not be needed, but the test
-    // sometimes fails, probably because the snippet is partially touching the
-    // iframe. We drop on the "mobile" button to be as far as possible from the
-    // iframe.
     await moveTo(".o-website-builder_sidebar button[data-action=mobile]");
     await drop(getDragHelper());
     expect(".o_add_snippet_dialog").toHaveCount(0);
@@ -529,7 +519,6 @@ test("Renaming custom snippets don't make an orm call", async () => {
     }
     addBuilderPlugin(TestSetupEditorPlugin);
 
-    // Stub rename_snippet RPC to succeed if it is called
     onRpc("ir.ui.view", "rename_snippet", ({ args }) => true);
 
     const customSnippets = createTestSnippets({
@@ -584,7 +573,6 @@ test("Renaming custom snippets don't make an orm call", async () => {
     ).click();
     await animationFrame();
 
-    // Throw if any render_public_asset RPC happens during rename
     onRpc("ir.ui.view", "render_public_asset", () => {
         throw new Error("shouldn't make an rpc call on snippet rename");
     });

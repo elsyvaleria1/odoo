@@ -42,7 +42,7 @@ test("Update the pivot domain from the side panel", async function () {
 
 test("Opening the sidepanel of a pivot while the panel of another pivot is open updates the side panel", async function () {
     const { model, env, pivotId } = await createSpreadsheetFromPivotView();
-    const arch = /* xml */ `
+    const arch = `
                     <pivot string="Product">
                         <field name="name" type="col"/>
                         <field name="active" type="row"/>
@@ -110,12 +110,6 @@ test("Undo a pivot insertion open the side panel with all pivots", async functio
     await animationFrame();
     expect(".o-sidePanelTitle").toHaveText("Pivot #2");
 
-    /**
-     * This is a bit bad because we need three undo to remove the pivot
-     * - AUTORESIZE
-     * - INSERT_PIVOT
-     * - ADD_PIVOT
-     */
     model.dispatch("REQUEST_UNDO");
     model.dispatch("REQUEST_UNDO");
     model.dispatch("REQUEST_UNDO");
@@ -175,8 +169,6 @@ test("Pivot side panel is disabled and dimmed in read-only mode but still scroll
     const scrollableContainer = sidePanel.querySelector(".overflow-y-auto");
     expect(scrollableContainer).toHaveCount(1);
 
-    // The [inert] wrapper with `pe-none` and `opacity-50` is placed inside the scrollable container,
-    // ensuring that user interactions are blocked while still allowing vertical scrolling.
     const interactiveWrapper = scrollableContainer.querySelector(
         ".o-sidePanelBody div[inert]",
     );

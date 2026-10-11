@@ -164,7 +164,6 @@ test("discard slot in calendar", async () => {
 
     expect(".fc-event").toHaveCount(2);
     expect(".o_calendar_slot").toHaveCount(0);
-    // Jump 7 days forward in the date picker
     const currentDayPickerElement = queryOne(".o_datetime_picker .o_today.o_selected");
     const allPickerElement = [...currentDayPickerElement.parentElement.children];
     await contains(
@@ -278,7 +277,6 @@ test("create slots for custom appointment type", async () => {
     expect(".fc-event").toHaveCount(2);
     expect(".o_calendar_slot").toHaveCount(0);
 
-    // Jump 7 days forward in the date picker
     const currentDayPickerElement = queryOne(".o_datetime_picker .o_today.o_selected");
     const allPickerElement = [...currentDayPickerElement.parentElement.children];
     await contains(
@@ -327,7 +325,6 @@ test("filter works in slots-creation mode", async () => {
     expect(".fc-event").toHaveCount(2);
     expect(".o_calendar_slot").toHaveCount(0);
 
-    // Switch to slot-creation mode
     await contains(".dropdownAppointmentLink").click();
     await contains(".o_appointment_select_slots").click();
 
@@ -335,7 +332,6 @@ test("filter works in slots-creation mode", async () => {
         '.o_appointment_scheduling_box b:contains("Pick your availabilities")',
     ).toHaveCount(1);
 
-    // Jump 7 days forward in the date picker
     const currentDayPickerElement = queryOne(".o_datetime_picker .o_today.o_selected");
     const allPickerElement = [...currentDayPickerElement.parentElement.children];
     await contains(
@@ -349,7 +345,6 @@ test("filter works in slots-creation mode", async () => {
     expect(".fc-event").toHaveCount(2);
     expect(".o_calendar_slot").toHaveCount(1);
 
-    // Filter out an attendee to display fewer calendar events
     await toggleFilter("partner_ids", 214);
     expect(".fc-event").toHaveCount(1);
     expect(".o_calendar_slot").toHaveCount(1);

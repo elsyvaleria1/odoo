@@ -38,7 +38,6 @@ export class ReportFormulaPlugin extends OdooUIPlugin {
      * @returns {number}
      */
     getReportValue(report, lineCode, label, dateRange, companyId, includeUnposted) {
-        // Excel dates start at 1899-12-30; a year this low raises server side.
         if (dateRange.year < 1900) {
             throw new EvaluationError(_t("%s is not a valid year.", dateRange.year));
         }

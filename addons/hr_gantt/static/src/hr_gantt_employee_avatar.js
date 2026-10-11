@@ -7,8 +7,6 @@ export class GanttEmployeeAvatar extends Avatar {
     static components = { ...Avatar.components, Popover: AvatarCardEmployeePopover };
 
     get popoverProps() {
-        // The employee card takes `recordModel` where the base card takes
-        // `model` (and validates it against res.users/res.partner).
         return {
             id: this.props.resId,
             recordModel: this.props.resModel,

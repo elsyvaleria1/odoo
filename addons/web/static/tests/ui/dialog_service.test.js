@@ -102,7 +102,6 @@ test("rendering with two dialogs", async () => {
     await animationFrame();
     expect(".o_dialog").toHaveCount(2);
     expect(queryAllTexts("header .modal-title")).toEqual(["Hello", "Sauron"]);
-    // the dialog below is covered and inert: the one on top closes
     await click(".o_dialog:not(.o_inactive_modal) button");
     await animationFrame();
     expect(".o_dialog").toHaveCount(1);
@@ -809,7 +808,6 @@ test("closing a dialog gives focus back to the page element that had it", async 
     page.focus();
     const close = getService("dialog").add(Content);
     await animationFrame();
-    // focus moves into the dialog (its body on a touch device, the button otherwise)
     expect(queryOne(".modal").contains(document.activeElement)).toBe(true);
     await close();
     await animationFrame();

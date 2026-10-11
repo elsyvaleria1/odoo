@@ -28,7 +28,6 @@ export class WorkorderFormController extends FormController {
             }
         });
         const rootRef = this.rootRef;
-        // before executing button action
         const beforeExecuteAction = async (params) => {
             params.context = {
                 ...params.context,
@@ -52,7 +51,6 @@ export class WorkorderFormController extends FormController {
                 );
             }
         };
-        // after executing button action
         const reload = () => this.workorderBus.trigger("refresh");
         useViewButtons(rootRef, { beforeExecuteAction, reload });
 

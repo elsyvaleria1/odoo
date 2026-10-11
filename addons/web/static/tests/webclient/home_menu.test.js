@@ -378,7 +378,6 @@ test("a keydown without a key, as browser autofill sends, neither throws nor tak
     await runAllTimers();
     expect(document.body).toBeFocused();
 
-    // A bare Event carries no `key` at all, unlike a KeyboardEvent whose key defaults to "".
     window.dispatchEvent(new Event("keydown"));
     await animationFrame();
     expect(document.body).toBeFocused();
@@ -1247,8 +1246,6 @@ test("a keystroke evaluates each derived list once per render, not once per resu
     await edit("app", { confirm: false });
     await animationFrame();
 
-    // a late answer to the page's own requests can render once more without
-    // a new query: the lists are counted per query, not per render
     expect(renders).toBeGreaterThanOrEqual(3, { message: "one render per character" });
     expect(".o_menu_result").toHaveCount(8, { message: "eight rows on screen" });
     for (const [name, n] of Object.entries(counts)) {
@@ -1541,11 +1538,6 @@ test("a hidden app is decluttered from the grid, not hidden from the search", as
 });
 
 test("the grid takes category headings once it stops fitting on a screen", async () => {
-    // Sales 5 and Supply Chain 25 are ir.module.category's own sequences. The
-    // even-numbered apps -- Supply Chain -- come first in the app list, so an
-    // order that follows the apps would head with SUPPLY CHAIN. It does not:
-    // the heading order is the category order, which is what the Apps store and
-    // the access-rights page already use.
     const make = (/** @type {number} */ count) =>
         Array.from({ length: count }, (_, i) => ({
             actionID: 100 + i,
@@ -1602,9 +1594,6 @@ test("the grid takes category headings once it stops fitting on a screen", async
 });
 
 test("category headings follow the sequence, and fall back to the name", async () => {
-    // The pin above cannot tell "sorted by sequence" from "sorted by name",
-    // because Sales sorts before Supply Chain either way. Here the sequences
-    // contradict the alphabet, and the equal pair settles what happens on a tie.
     const make = (/** @type {{ category: string, sequence: number }[]} */ heads) =>
         heads.flatMap(({ category, sequence }, group) =>
             Array.from({ length: 5 }, (_, i) => ({
@@ -1647,9 +1636,6 @@ test("category headings follow the sequence, and fall back to the name", async (
 });
 
 test("an app whose module names no category sorts after every heading", async () => {
-    // "Other" is not a category and has no sequence. Taking the 0 that
-    // ir.module.category would imply would put it FIRST, ahead of Invoicing at
-    // 4 -- the bucket for apps nobody classified heading the whole grid.
     const make = (/** @type {number} */ count) =>
         Array.from({ length: count }, (_, i) => ({
             actionID: 100 + i,

@@ -1,7 +1,5 @@
 import { registry } from "@web/core/registry";
 
-// Typing searches on every keystroke, so a partial query can leave an older, truncated list
-// on screen. A list in which every tax matches the full prefix is complete: only two taxes match.
 const TAX_ITEM = ".o-autocomplete--dropdown-item:not(.o_m2o_dropdown_option)";
 const COMPLETE_MENU = `.o-autocomplete--dropdown-menu:has(${TAX_ITEM}):not(:has(${TAX_ITEM}:not(:contains(TAXPICK))))`;
 

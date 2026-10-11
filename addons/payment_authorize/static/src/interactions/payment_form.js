@@ -9,10 +9,8 @@ import { patch } from "@web/core/utils/patch";
 patch(PaymentForm.prototype, {
     setup() {
         super.setup();
-        this.authorizeData = {}; // Store the form data of each instantiated payment method.
+        this.authorizeData = {};
     },
-
-    // #=== DOM MANIPULATION ===#
 
     /**
      * Prepare the inline form of Authorize.net for direct payment.
@@ -37,19 +35,16 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Check if the inline form values were already extracted.
         if (flow === "token") {
-            return; // Don't show the form for tokens.
+            return;
         } else if (this.authorizeData[paymentOptionId]) {
-            this._setPaymentFlow("direct"); // Overwrite the flow even if no re-instantiation.
-            await loadJS(this.authorizeData[paymentOptionId]["acceptJSUrl"]); // Reload the SDK.
-            return; // Don't re-extract the data if already done for this payment method.
+            this._setPaymentFlow("direct");
+            await loadJS(this.authorizeData[paymentOptionId]["acceptJSUrl"]);
+            return;
         }
 
-        // Overwrite the flow of the selected payment method.
         this._setPaymentFlow("direct");
 
-        // Extract and deserialize the inline form values.
         const radio = document.querySelector('input[name="o_payment_radio"]:checked');
         const inlineForm = this._getInlineForm(radio);
         const authorizeForm = inlineForm.querySelector('[name="o_authorize_form"]');
@@ -63,11 +58,8 @@ patch(PaymentForm.prototype, {
         this.authorizeData[paymentOptionId].form = authorizeForm;
         this.authorizeData[paymentOptionId].acceptJSUrl = acceptJSUrl;
 
-        // Load the SDK.
         await loadJS(acceptJSUrl);
     },
-
-    // #=== PAYMENT FLOW ===#
 
     /**
      * Trigger the payment processing by submitting the data.
@@ -82,7 +74,6 @@ patch(PaymentForm.prototype, {
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
         if (providerCode !== "authorize" || flow === "token") {
-            // Tokens are handled by the generic flow
             await super._initiatePaymentFlow(...arguments);
             return;
         }
@@ -91,7 +82,7 @@ patch(PaymentForm.prototype, {
             this._authorizeGetInlineFormInputs(paymentOptionId, paymentMethodCode),
         );
         if (!inputs.every((element) => element.reportValidity())) {
-            this._enableButton(); // The submit button is disabled at this point, enable it
+            this._enableButton();
             return;
         }
 
@@ -120,7 +111,6 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Build the authentication and card data objects to be dispatched to Authorized.Net
         const secureData = {
             authData: {
                 apiLoginID: this.authorizeData[paymentOptionId]["login_id"],
@@ -129,7 +119,6 @@ patch(PaymentForm.prototype, {
             ...this._authorizeGetPaymentDetails(paymentOptionId, paymentMethodCode),
         };
 
-        // Dispatch secure data to Authorize.Net to get a payment nonce in return
         Accept.dispatchData(secureData, async (response) => {
             await this._authorizeHandleResponse(response, processingValues);
         });
@@ -154,7 +143,6 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Initiate the payment
         try {
             await this.waitFor(
                 rpc("/payment/authorize/payment", {
@@ -177,8 +165,6 @@ patch(PaymentForm.prototype, {
             }
         }
     },
-
-    // #=== GETTERS ===#
 
     /**
      * Return all relevant inline form inputs based on the payment method type of the provider.
@@ -223,7 +209,7 @@ patch(PaymentForm.prototype, {
         if (paymentMethodCode === "card") {
             return {
                 cardData: {
-                    cardNumber: inputs.card.value.replace(/ /g, ""), // Remove all spaces
+                    cardNumber: inputs.card.value.replace(/ /g, ""),
                     month: inputs.month.value,
                     year: inputs.year.value,
                     cardCode: inputs.code.value,
@@ -232,7 +218,7 @@ patch(PaymentForm.prototype, {
         } else {
             return {
                 bankData: {
-                    nameOnAccount: inputs.accountName.value.substring(0, 22), // Max allowed by acceptjs
+                    nameOnAccount: inputs.accountName.value.substring(0, 22),
                     accountNumber: inputs.accountNumber.value,
                     routingNumber: inputs.abaNumber.value,
                     accountType: inputs.accountType.value,

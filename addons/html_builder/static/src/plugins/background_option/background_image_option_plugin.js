@@ -51,9 +51,6 @@ export class BackgroundImageOptionPlugin extends Plugin {
      * @param {HTMLElement} newEditingEl - The new editing element.
      */
     changeEditingEl(oldEditingEl, newEditingEl) {
-        // When we change the target of this option we need to transfer the
-        // background-image and the dataset information relative to this image
-        // from the old target to the new one.
         const oldBgURL = getBgImageURLFromEl(oldEditingEl);
         const isModifiedImage = oldEditingEl.classList.contains(
             "o_modified_image_to_save",
@@ -61,13 +58,9 @@ export class BackgroundImageOptionPlugin extends Plugin {
         const filteredOldDataset = Object.entries(oldEditingEl.dataset).filter(
             ([key]) => isBackgroundImageAttribute(key),
         );
-        // Delete the dataset information relative to the background-image of
-        // the old target.
         for (const [key] of filteredOldDataset) {
             delete oldEditingEl.dataset[key];
         }
-        // It is important to delete ".o_modified_image_to_save" from the old
-        // target as its image source will be deleted.
         oldEditingEl.classList.remove("o_modified_image_to_save");
         const filterColorAction =
             this.dependencies.builderActions.getAction("selectFilterColor");
@@ -80,7 +73,6 @@ export class BackgroundImageOptionPlugin extends Plugin {
                 value: filter,
             });
         }
-        // Apply the changes on the new editing element
         if (oldBgURL) {
             this.setImageBackground(newEditingEl, oldBgURL);
             for (const [key, value] of filteredOldDataset) {
@@ -107,7 +99,6 @@ export class BackgroundImageOptionPlugin extends Plugin {
         params: { forceClean = false },
     }) {
         if (!forceClean && !imageEl) {
-            // Do nothing: no images has been selected on the media dialog
             return;
         }
         const src = imageEl?.src || "";
@@ -146,10 +137,6 @@ export class BackgroundImageOptionPlugin extends Plugin {
                 "o_modified_image_to_save",
             );
         }
-        // TODO: check this comment
-        // We use selectStyle so that if when a background image is removed the
-        // remaining image matches the o_cc's gradient background, it can be
-        // removed too.
         this.dependencies.style.setBackgroundImageUrl(el, backgroundURL);
     }
     /**
@@ -185,14 +172,11 @@ export class SelectFilterColorAction extends StyleAction {
     static id = "selectFilterColor";
     static dependencies = ["color", "backgroundImageOption", "builderActions"];
     apply({ editingElement, value }) {
-        // Find the filter element.
         let filterEl = editingElement.querySelector(":scope > .o_we_bg_filter");
 
-        // If no value is provided, use the current one if any.
         if (filterEl && value === undefined) {
             value = filterEl.style.backgroundImage || filterEl.style.backgroundColor;
         }
-        // If the filter would be transparent, remove it / don't create it.
         const rgba = value && convertCSSColorToRgba(value);
         if (!value || (rgba && rgba.opacity < 0.001)) {
             if (filterEl) {
@@ -201,7 +185,6 @@ export class SelectFilterColorAction extends StyleAction {
             return;
         }
 
-        // Create the filter if necessary.
         if (!filterEl) {
             filterEl = document.createElement("div");
             filterEl.classList.add("o_we_bg_filter");

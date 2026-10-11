@@ -14,7 +14,7 @@ test("should prevent edition in many2one field", async () => {
     expect(":iframe a").toHaveProperty("isContentEditable", false);
 });
 
-test.tags("desktop"); // NavigationItem only react to mouvemove which is not triggered in test for mobile
+test.tags("desktop");
 test("Preview changes of many2one option", async () => {
     onRpc(
         "ir.qweb.field.contact",
@@ -44,10 +44,10 @@ test("Preview changes of many2one option", async () => {
     await contains("span.o-dropdown-item.dropdown-item").hover();
     expect(":iframe span.span-1 > span").toHaveText("The Name of 1");
     expect(":iframe span.span-2 > span").toHaveText("The Address of 1");
-    expect(":iframe span.span-3 > span").toHaveText("The Address of 3"); // author of other post is not changed
+    expect(":iframe span.span-3 > span").toHaveText("The Address of 3");
     expect(":iframe span.span-4").toHaveText("Hermit");
 
-    await press("esc"); // This causes the dropdown to close, and thus the preview to be reverted
+    await press("esc");
     await animationFrame();
     expect(":iframe span.span-1 > span").toHaveText("The Name of 3");
     expect(":iframe span.span-2 > span").toHaveText("The Address of 3");

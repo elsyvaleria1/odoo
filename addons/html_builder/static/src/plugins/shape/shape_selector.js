@@ -52,9 +52,6 @@ export class ShapeSelector extends BaseOptionComponent {
 
     _onScroll() {
         const pagerContainerRect = this.rootRef.el.getBoundingClientRect();
-        // The threshold for when a menu element is defined as 'active' is half
-        // of the container's height. This has a drawback as if a section
-        // is too small it might never get `active` if it's the last section.
         const threshold = pagerContainerRect.height / 2;
 
         const anchorEls = this.tabsRef.el.querySelectorAll(".o-hb-select-pager-tab");

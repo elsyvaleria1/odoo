@@ -90,11 +90,6 @@ export class ActivityMenu extends Component {
         }
     }
 
-    /**
-     * Location tracking is on but the browser gave us no coordinates. Only
-     * record the attendance if the employee accepts that it goes in without
-     * one.
-     */
     confirmChecking() {
         this.dialogService.add(ConfirmationDialog, {
             body: _t(
@@ -135,8 +130,6 @@ export class ActivityMenu extends Component {
                 },
             );
         } else if (trackingEnabled) {
-            // iOS app, offline, or no geolocation API at all: ask as well
-            // instead of recording an attendance with no location.
             this.confirmChecking();
         } else {
             await this.checking();

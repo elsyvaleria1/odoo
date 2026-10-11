@@ -76,7 +76,6 @@ export function useHomeMenuLayoutSync(onChange) {
         generation++;
     });
     useListener(window, "storage", async (/** @type {StorageEvent} */ event) => {
-        // A tab is not sent its own write; HOOT's storage mock sends it anyway.
         if (
             event.key !== homeMenuLayoutStorageKey() ||
             !event.newValue ||
@@ -84,8 +83,6 @@ export function useHomeMenuLayoutSync(onChange) {
         ) {
             return;
         }
-        // The event's payload is the writer's answer, which can be older than
-        // the server's state when two tabs save at once: read the server.
         const request = ++generation;
         let settings;
         try {
@@ -163,7 +160,6 @@ export class HomeMenuLayout {
     /** @param {import("@web/webclient/menus/menu_utils").HomeMenuConfig} config */
     setConfig(config) {
         if (this.unsaved) {
-            // This tab's answer may predate that config; ask again once saved.
             this.rereadAfterSave = true;
             log.logic("config_while_saving");
             return;
@@ -282,8 +278,6 @@ export class HomeMenuLayout {
         } while (this.unsaved);
     }
 
-    // A refusal is already on screen as "Changes could not be saved"; failing
-    // the leave on top of it would keep the user on the home menu for good.
     async flushBeforeLeave() {
         try {
             await this.flush();

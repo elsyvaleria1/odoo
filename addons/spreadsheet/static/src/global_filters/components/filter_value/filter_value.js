@@ -166,7 +166,6 @@ export class FilterValue extends Component {
 
     async onTagSelected(id, resIds) {
         if (!resIds.length) {
-            // force clear, even automatic default values
             this.clear(id);
         } else {
             const operator = this.filterValue?.operator ?? this.getDefaultOperator();

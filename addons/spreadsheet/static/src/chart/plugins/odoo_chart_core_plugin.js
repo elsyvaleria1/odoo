@@ -78,10 +78,6 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
     /**
      * Get all the odoo chart ids
      * @returns {Array<string>}
@@ -189,9 +185,6 @@ export class OdooChartCorePlugin extends OdooCorePlugin {
             }
         }
     }
-    // -------------------------------------------------------------------------
-    // Private
-    // -------------------------------------------------------------------------
 
     /**
      * Get the current odooChartFieldMatching of a chart

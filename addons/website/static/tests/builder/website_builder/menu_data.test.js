@@ -441,7 +441,6 @@ describe("EditMenuDialog", () => {
                         builder.getEditableContent().ownerDocument;
                 },
                 onClickOk() {
-                    // props are read-only views: swap the accessor for the call
                     const descriptor = Object.getOwnPropertyDescriptor(
                         this.props,
                         "isMegaMenu",

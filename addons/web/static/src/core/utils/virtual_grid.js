@@ -120,8 +120,6 @@ export function useVirtualGrid({
 
     /** @type {{ scroll: { left: number, top: number }, computedScroll?: { left: number, top: number }, summedColumnsWidths?: number[], summedRowsHeights?: number[], columnsIndexes?: [number, number] | [], rowsIndexes?: [number, number] | [] }} */
     const current = { scroll: { left: 0, top: 0, ...initialScroll } };
-    // measured untracked: the indexes are recomputed from renders, scrolls and
-    // resizes, and a render reading the ref would render again once it binds
     const scrollableEl = () => untrack(() => scrollableRef.el);
     const computeColumnsIndexes = () =>
         getIndexes({

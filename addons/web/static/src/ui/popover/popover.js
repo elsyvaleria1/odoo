@@ -67,8 +67,6 @@ export class Popover extends Component {
     hasTarget = true;
 
     setup() {
-        // owl 3 accepts props a schema does not declare: content given as
-        // slots would render nothing, so it is refused
         if (useProps().slots) {
             throw new Error(
                 "Popover renders props.component with props.componentProps; it takes no slots",
@@ -99,8 +97,6 @@ export class Popover extends Component {
             this.animationDone = true;
         }
 
-        // the observer's first delivery reports the size the popover was just
-        // positioned for; only later deliveries are resizes
         let observedOnce = false;
         const resizeObserver = new ResizeObserver(() => {
             if (observedOnce) {

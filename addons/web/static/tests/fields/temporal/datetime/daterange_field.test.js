@@ -1120,8 +1120,6 @@ test("there is no arrow between the dates with option always_range if nothing is
             <field name="datetime" widget="daterange" options="{'end_date_field': 'datetime_end', 'always_range': 'true'}" readonly="true" />
         </form>`,
     });
-    // the new record's autofocus lands in a microtask, and the picker it opens
-    // one render later
     await animationFrame();
 
     await contains(".o_form_button_save").click();

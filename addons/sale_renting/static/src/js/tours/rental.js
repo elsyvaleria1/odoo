@@ -51,7 +51,7 @@ registry.category("web_tour.tours").add("rental_tour", {
             run: "click",
         },
         {
-            trigger: ".o_form_button_create", // wait for the new product to be saved
+            trigger: ".o_form_button_create",
         },
         {
             trigger: 'button[data-menu-xmlid="sale_renting.rental_order_menu"]:enabled',

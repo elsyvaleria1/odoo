@@ -941,8 +941,6 @@ export class CaseResult {
         this.duration = $floor($now()) - this.ts;
     }
 
-    // untracked: an assertion or a step made during a render must not make
-    // that render depend on the counters it increments
     /**
      * @param {CaseEventType} type
      * @param {unknown} value

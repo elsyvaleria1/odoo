@@ -1,7 +1,4 @@
 /** @odoo-module native */
-/**
- * Adapt the steps related to sign/send feature of the fsm report to avoid duplicate steps between industry_fsm_report and industry_fsm_sale modules
- */
 
 import "@industry_fsm/js/tours/industry_fsm_tour";
 
@@ -20,7 +17,7 @@ patch(registry.category("web_tour.tours").get("industry_fsm_tour"), {
         originalSteps.splice(
             fsmStartStepIndex,
             fsmStopStepIndex - fsmStartStepIndex + 1,
-        ); // Remove duplicate steps from industry_fsm_sale
+        );
         return originalSteps;
     },
 });

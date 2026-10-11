@@ -93,12 +93,7 @@ export class CalendarController extends Component {
         this.displayDialog = useUniqueDialog();
 
         /** @type {any} */
-        this.model = proxy(
-            // Not the sample-data hook: calendar_view.rng admits no `sample`
-            // attribute and CalendarModel overrides no hasData(), so sample mode
-            // could never activate and the hook only ever warned about it.
-            useModel(this.props.Model, this.modelParams),
-        );
+        this.model = proxy(useModel(this.props.Model, this.modelParams));
 
         useSetupAction({
             getLocalState: () => this.model.exportedState,

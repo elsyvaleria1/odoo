@@ -43,9 +43,6 @@ defineModels([BarcodeNomenclature, BarcodeRule]);
 
 test.tags("headless");
 test("fetchNomenclature reads the rules in match order, beside the nomenclature", async () => {
-    // The rules are requested while the nomenclature read is still pending:
-    // the two reads are independent, so a session start waits for one round
-    // trip, not two.
     const nomenclatureRead = new Deferred();
     onRpc("barcode.nomenclature", "read", async () => {
         expect.step("nomenclature requested");

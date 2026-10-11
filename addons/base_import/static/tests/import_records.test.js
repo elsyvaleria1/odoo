@@ -155,7 +155,6 @@ test(`import should not be available in cog menu dropdown in kanban with create=
             actionType: "ir.actions.act_window",
         },
     });
-    // Cog menu will not show when empty
     expect(`.o_cp_action_menus`).toHaveCount(0);
 });
 
@@ -176,7 +175,6 @@ test(`import should not be available in cog menu dropdown in kanban with import=
             actionType: "ir.actions.act_window",
         },
     });
-    // Cog menu will not show when empty
     expect(`.o_cp_action_menus`).toHaveCount(0);
 });
 
@@ -191,7 +189,6 @@ test(`import should not be available in cog menu dropdown in pivot (other than k
             actionType: "ir.actions.act_window",
         },
     });
-    // Cog menu will not show when empty
     expect(`.o_cp_action_menus`).toHaveCount(0);
 });
 

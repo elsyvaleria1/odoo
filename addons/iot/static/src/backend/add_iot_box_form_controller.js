@@ -12,8 +12,8 @@ export class AddIoTBoxFormController extends FormController {
         this.notification = useService("notification");
         this.orm = useService("orm");
         this.iotBoxesBeforeConnection = [];
-        this.newIoTBoxes = []; // List of new IoT boxes found
-        this.iotCheckTimer = null; // Timer to manage polling
+        this.newIoTBoxes = [];
+        this.iotCheckTimer = null;
 
         onMounted(async () => {
             await this.initializeIoTConnection();
@@ -34,7 +34,6 @@ export class AddIoTBoxFormController extends FormController {
             ["identifier"],
         ]);
 
-        // Set a timer to check for new IoT Boxes every 5 seconds
         this.iotCheckTimer = setInterval(async () => {
             if (await this.lookForNewIoTBox()) {
                 this.notifyIoTBoxFound(true);
@@ -42,7 +41,6 @@ export class AddIoTBoxFormController extends FormController {
             }
         }, 5000);
 
-        // Set a timeout to stop the polling after 2 minutes
         setTimeout(() => this.notifyIoTBoxFound(false), 60 * 2 * 1000);
     }
 
@@ -76,9 +74,6 @@ export class AddIoTBoxFormController extends FormController {
         }
     }
 
-    /**
-     * Clear the timer when the component is unmounted.
-     */
     onWillUnmount() {
         if (this.iotCheckTimer) {
             clearInterval(this.iotCheckTimer);

@@ -35,7 +35,6 @@ export class BuilderOptionsTranslationPlugin extends Plugin {
     getCloneDisabledReason() {}
     updateContainers() {}
     setNextTarget(targetEl) {
-        // Store the next target to activate in the current step.
         this.dependencies.history.setStepExtra("nextTarget", targetEl);
     }
 }

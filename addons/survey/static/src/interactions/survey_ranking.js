@@ -25,12 +25,6 @@ export class SurveyRanking extends Interaction {
         this.renumber();
     }
 
-    /**
-     * The submitted value of each item is its position, so the hidden inputs and
-     * the visible badges are both rewritten from the DOM order after every move.
-     * Reading positions off the DOM rather than tracking them separately means
-     * there is only one place the order can be wrong.
-     */
     renumber() {
         const items = this.listEl.querySelectorAll("li[data-answer-id]");
         items.forEach((itemEl, index) => {
@@ -70,10 +64,6 @@ export class SurveyRanking extends Interaction {
         this.renumber();
     }
 
-    /**
-     * Alt+Arrow reorders without a pointer. A ranking that can only be answered
-     * by dragging cannot be answered with a keyboard or a screen reader at all.
-     */
     onKeyDown(ev) {
         if (!ev.altKey || (ev.key !== "ArrowUp" && ev.key !== "ArrowDown")) {
             return;

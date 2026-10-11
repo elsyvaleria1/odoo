@@ -219,8 +219,6 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
         return this.displayByProduct || super.lineCanBeSelected(line);
     }
 
-    /** Fetch data and set state */
-
     getActionRefresh(newId) {
         return {
             route: "/stock_barcode/get_barcode_data",
@@ -237,10 +235,6 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
 
     async resetState(records) {
         if (!this.resId && "mrp.production" in records) {
-            /** A new MO has no ID because it requires the finish product to be saved.
-             * If there is no `resId` but a production belongs to the records, we assume this record
-             * is the current MO who as been saved.
-             */
             this._adoptRecordId(records["mrp.production"]?.[0]?.id);
         }
         return super.resetState(...arguments);
@@ -316,8 +310,6 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
         const result = await rpc(route, params);
         this.setData(result);
     }
-
-    /** Line Operations */
 
     _checkBarcode(barcodeData) {
         if (
@@ -403,7 +395,6 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
     }
 
     updateLine(line, args) {
-        // handle header line updates here
         if (line.finalProduct) {
             if (args.lot_name) {
                 this.record.lot_name = args.lot_name;
@@ -580,8 +571,6 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
         return super.displayLineQtyDemand(line);
     }
 
-    /** Save commands */
-
     _getPrintOptions() {
         if (!this.resId) {
             return {};
@@ -600,13 +589,11 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
     }
 
     _getSaveCommand() {
-        // only need the last two arguments (id / 0 and vals) from each command
         const commands = this._getSaveLineCommand().map((cmd) => [
             this.lineModel,
             cmd[1],
             cmd[2],
         ]);
-        // we need a product before we can create an MO
         if (this.record.product_id) {
             const vals = this._getRecordSaveVals();
             if (Object.keys(vals).length) {
@@ -629,7 +616,6 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
     }
 
     _getRecordSaveVals() {
-        // compare current record with initial value;
         const res = {};
         const writeFields = this._getRecordFieldsToWrite();
         for (const fieldName of writeFields) {
@@ -654,7 +640,7 @@ export default class BarcodeMRPModel extends BarcodePickingModel {
                 {
                     name: this.record.lot_name,
                     product_id: this.record.product_id.id,
-                    company_id: this.record.company_id, // only the id is fetched from the backend
+                    company_id: this.record.company_id,
                 },
             ];
         }

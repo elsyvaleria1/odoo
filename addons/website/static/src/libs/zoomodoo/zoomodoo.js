@@ -22,38 +22,27 @@ const instanceMap = new WeakMap();
 const noop = () => {};
 
 const defaults = {
-    // Attribute to retrieve the zoom image URL from.
     linkTag: "a",
     linkAttribute: "data-zoom-image",
 
-    // event to trigger zoom
-    event: "click", //or mouseenter
+    event: "click",
 
-    // Timer before trigger zoom
     timer: 0,
 
-    // Prevent clicks on the zoom image link.
     preventClicks: true,
 
-    // disable on mobile
     disabledOnMobile: true,
 
-    // Callback function to execute before the flyout is displayed.
     beforeShow: noop,
 
-    // Callback function to execute before the flyout is removed.
     beforeHide: noop,
 
-    // Callback function to execute when the flyout is displayed.
     onShow: noop,
 
-    // Callback function to execute when the flyout is removed.
     onHide: noop,
 
-    // Callback function to execute when the cursor is moved while over the image.
     onMove: noop,
 
-    // Callback function to execute when the flyout is attached to the target.
     beforeAttach: noop,
 };
 
@@ -66,10 +55,8 @@ function ZoomOdoo(target, options) {
     this.target = target;
     this.opts = Object.assign({}, defaults, options, target.dataset);
 
-    // AbortController for grouped event cleanup
     this._ac = new AbortController();
 
-    // Module-level state for move calculations
     this._dw = 0;
     this._dh = 0;
     this._rw = 0;
@@ -135,10 +122,6 @@ ZoomOdoo.prototype._init = function () {
                 () => {
                     this.hide();
                     this._ac.abort();
-                    // The aborted controller is permanently dead (and _init()
-                    // reuses it), so drop the cached instance; the next
-                    // initZoomOdoo(el) rebuilds it with a fresh AbortController
-                    // and listeners instead of returning this dead one.
                     instanceMap.delete(this.target);
                 },
                 { signal },
@@ -173,7 +156,6 @@ ZoomOdoo.prototype.show = function (e, testMouseOver) {
         }
     }
 
-    // Prevents having multiple zoom flyouts
     const existing = attach.parentNode.querySelector(".zoomodoo-flyout");
     if (existing) {
         existing.remove();
@@ -184,7 +166,6 @@ ZoomOdoo.prototype.show = function (e, testMouseOver) {
     if (this.opts.attachToTarget) {
         this.opts.beforeAttach.call(this);
 
-        // Be sure that the flyout is at top 0, left 0 to ensure correct computation
         this.flyout.style.position = "fixed";
         const flyoutRect = this.flyout.getBoundingClientRect();
         if (flyoutRect.left > 0) {
@@ -214,8 +195,6 @@ ZoomOdoo.prototype.show = function (e, testMouseOver) {
         const docWidth = document.documentElement.clientWidth;
         const docHeight = document.documentElement.clientHeight;
 
-        // Position the zoom on the right side of the target
-        // if there's not enough room on the left
         if (left < 0) {
             if (offsetLeft < docWidth / 2) {
                 left = offsetLeft + this.target.offsetWidth;
@@ -224,21 +203,18 @@ ZoomOdoo.prototype.show = function (e, testMouseOver) {
             }
         }
 
-        // Prevents the flyout to overflow
         if (left + this.flyout.offsetWidth > docWidth) {
             this.flyout.style.width = docWidth - left + "px";
         } else if (left === 0) {
             this.flyout.style.width = offsetLeft + "px";
         }
 
-        // Prevents the zoom to be displayed outside the current viewport
         if (top + this.flyout.offsetHeight > docHeight) {
             top = docHeight - this.flyout.offsetHeight;
         }
 
         this.flyout.style.transform = `translate3d(${left}px, ${top}px, 0px)`;
     } else {
-        // Computing flyout max-width depending to the available space on the right
         const rightAvailableSpace =
             document.body.clientWidth - this.flyout.getBoundingClientRect().left;
         this.flyout.style.maxWidth = rightAvailableSpace + "px";
@@ -359,7 +335,6 @@ ZoomOdoo.prototype._move = function (e) {
     const xt = Math.ceil(pt * this._rh);
     const xl = Math.ceil(pl * this._rw);
 
-    // Close if outside
     if (
         !this.opts.attachToTarget &&
         (xl < 0 ||
@@ -380,9 +355,6 @@ ZoomOdoo.prototype._move = function (e) {
     }
 };
 
-/**
- * Hide
- */
 ZoomOdoo.prototype.hide = function () {
     if (!this.isOpen) {
         return;

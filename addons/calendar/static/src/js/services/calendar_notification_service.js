@@ -5,8 +5,6 @@ import { ConnectionLostError, rpc } from "@web/core/network";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 
-// Floor for the re-poll delay, so a batch of already-overdue reminders
-// reschedules instead of hammering the route.
 const MIN_REPOLL_DELAY_SECONDS = 60;
 
 export const calendarNotificationService = {
@@ -22,30 +20,21 @@ export const calendarNotificationService = {
         });
         bus_service.start();
 
-        /**
-         * Displays the Calendar notification on user's screen
-         */
         function displayCalendarNotification(notifications) {
             let lastNotifTimer = 0;
 
-            // Clear previously set timeouts and destroy currently displayed calendar notifications
             browser.clearTimeout(nextCalendarNotifTimeout);
             Object.values(calendarNotifTimeouts).forEach((notif) =>
                 browser.clearTimeout(notif),
             );
             calendarNotifTimeouts = {};
 
-            // For each notification, set a timeout to display it
             notifications.forEach(function (notif) {
                 const key = notif.event_id + "," + notif.alarm_id;
                 if (displayedNotifications.has(key)) {
                     return;
                 }
                 calendarNotifTimeouts[key] = browser.setTimeout(function () {
-                    // `markup`: the server sends the formatted time and the
-                    // alarm's body as HTML, and the notification renders its
-                    // message with `t-out`, which escapes a plain string -- the
-                    // user was reading the tags.
                     const notificationRemove = notification.add(markup(notif.message), {
                         title: notif.title,
                         type: "warning",
@@ -87,10 +76,6 @@ export const calendarNotificationService = {
                 lastNotifTimer = Math.max(lastNotifTimer, notif.timer);
             });
 
-            // Set a timeout to get the next notifications when the last one has
-            // been displayed. `timer` is negative for a reminder that is already
-            // overdue, and a batch where every reminder is overdue used to leave
-            // this at 0 and stop polling until the next bus push.
             if (notifications.length) {
                 nextCalendarNotifTimeout = browser.setTimeout(
                     getNextCalendarNotif,

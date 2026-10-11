@@ -46,7 +46,6 @@ patch(OrderPaymentValidation.prototype, {
         }
         return true;
     },
-    //@override
     async isOrderValid(isForceValidate) {
         if (!(await super.isOrderValid(...arguments))) {
             return false;
@@ -75,7 +74,6 @@ patch(OrderPaymentValidation.prototype, {
             let lastOrderServerOPData = null;
             for (const onlinePaymentLine of onlinePaymentLines) {
                 const onlinePaymentLineAmount = onlinePaymentLine.getAmount();
-                // The local state is not aware if the online payment has already been done.
                 lastOrderServerOPData =
                     await this.pos.updateOnlinePaymentsDataWithServer(
                         this.order,
@@ -160,7 +158,7 @@ patch(OrderPaymentValidation.prototype, {
             }
 
             await this.afterPaidOrderSavedOnServer(lastOrderServerOPData.paid_order);
-            return false; // Cancel normal flow because the current order is already saved on the server.
+            return false;
         } else if (this.order.isSynced) {
             const orderServerOPData = await this.pos.updateOnlinePaymentsDataWithServer(
                 this.order,
@@ -177,7 +175,7 @@ patch(OrderPaymentValidation.prototype, {
             }
             if (orderServerOPData.isPaid) {
                 await this.afterPaidOrderSavedOnServer(orderServerOPData.paid_order);
-                return false; // Cancel normal flow because the current order is already saved on the server.
+                return false;
             }
             if (orderServerOPData.modified_payment_lines) {
                 this.pos.dialog.add(AlertDialog, {
@@ -193,7 +191,6 @@ patch(OrderPaymentValidation.prototype, {
         return true;
     },
     cancelOnlinePayment(order) {
-        // Remove the draft order from the server if there is no done online payment
         this.pos.updateOnlinePaymentsDataWithServer(order, 0);
     },
     async afterPaidOrderSavedOnServer(orderJSON) {
@@ -206,13 +203,6 @@ patch(OrderPaymentValidation.prototype, {
             return;
         }
 
-        // Update the local order with the data from the server, because it's the server
-        // that is responsible for saving the final state of an order when there is an
-        // online payment in it.
-        // This prevents the case where the cashier changes the payment lines after the
-        // order is paid with an online payment and the server saves the order as paid.
-        // Without that update, the payment lines printed on the receipt ticket would
-        // be invalid.
         const isInvoiceRequested = this.order.isToInvoice();
         if (!orderJSON[0] || this.order.id !== orderJSON[0].id) {
             this.pos.dialog.add(AlertDialog, {
@@ -225,7 +215,6 @@ patch(OrderPaymentValidation.prototype, {
         this.order.state = "paid";
         this.pos.validated_orders_name_server_id_map[this.order.name] = this.order.id;
 
-        // Now, do practically the normal flow
         if (
             (this.order.isPaidWithCash() || this.order.change) &&
             this.pos.config.iface_cashdrawer

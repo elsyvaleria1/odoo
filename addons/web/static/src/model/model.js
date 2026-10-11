@@ -102,9 +102,6 @@ export class Model extends SignalStore {
         /** @type {Deferred} */
         this.whenReady = new Deferred();
         this.whenReady.then(() => {
-            // Through a proxy of this model, so a component that read
-            // `isReady` through its own useState proxy is notified; a bare
-            // write on the raw model reaches no subscriber.
             proxy(this).isReady = true;
         });
         this.setup(params, services);
@@ -182,8 +179,6 @@ export class Model extends SignalStore {
     }
 
     notify() {
-        // through the proxy: a caller may hold the raw model, and only a
-        // proxied write reaches what reads the epoch (a model's raw data)
         proxy(this)._updateEpoch++;
         this.bus.trigger(ModelEvent.UPDATE);
     }
@@ -433,7 +428,6 @@ export function useModelWithSampleData(ModelClass, params, options = {}) {
         let paintedWithoutData = false;
         prom.catch((e) => {
             if (!paintedWithoutData) {
-                // nothing was painted: the mount fails with it, like any other
                 return;
             }
             if (e instanceof RPCError) {

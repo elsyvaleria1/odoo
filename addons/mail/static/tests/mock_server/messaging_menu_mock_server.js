@@ -1,12 +1,6 @@
 // @ts-check
 import { deserializeDateTime, hasSame, now } from "@web/core/l10n/dates";
 
-/**
- * Mirrors `MessagingMenuController` (mail/controllers/messaging_menu.py) and
- * `DiscussMessagingMenuController` (mail/controllers/discuss/messaging_menu.py): the
- * predicates stand for their tab and filter domains. Addons adding tabs patch this
- * object and fall through with `super`, as their controllers do.
- */
 export const messagingMenuHelpers = {
     /**
      * @param {any} env

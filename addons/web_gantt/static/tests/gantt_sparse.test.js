@@ -399,7 +399,6 @@ test("empty sparse gantt with unavailabilities", async () => {
         domain: [["id", "=", 0]],
     });
     expect.verifySteps(["get_gantt_data"]);
-    // Full unavailability
     expect(getCellColorProperties("19", "December 2018")).toEqual([
         "--Gantt__DayOff-background-color",
     ]);
@@ -425,7 +424,6 @@ test("sparse gantt with unavailabilities", async () => {
         domain: [["id", "=", 1]],
     });
     expect.verifySteps(["get_gantt_data"]);
-    // Full unavailability
     expect(getCellColorProperties("19", "December 2018")).toEqual([
         "--Gantt__DayOff-background-color",
     ]);
@@ -451,7 +449,6 @@ test("sparse grouped gantt with unavailabilities", async () => {
         groupBy: ["user_id"],
     });
     expect.verifySteps(["get_gantt_data"]);
-    // Full unavailability
     expect(getCellColorProperties("19", "December 2018", "Task 5")).toEqual([
         "--Gantt__DayOff-background-color",
     ]);
@@ -486,7 +483,6 @@ test("sparse gantt with consolidation with unavailabilities", async () => {
         groupBy: ["user_id"],
     });
     expect.verifySteps(["get_gantt_data"]);
-    // Full unavailability
     expect(getCellColorProperties("19", "December 2018", "", { num: 2 })).toEqual([
         "--Gantt__DayOff-background-color",
     ]);

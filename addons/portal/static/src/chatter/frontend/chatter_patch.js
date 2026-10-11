@@ -45,7 +45,6 @@ patch(Chatter.prototype, {
                 return () => {
                     observer.disconnect();
                     resizeObserver.disconnect();
-                    // Do not overwrite a style that Owl or another owner replaced.
                     if (
                         topEl.style.paddingTop === appliedPadding &&
                         !topEl.style.getPropertyPriority("padding-top")

@@ -81,9 +81,7 @@ test("mixed structures offer no benefit column at all", async () => {
     HrPayslip._records = [payslip(1, 1), payslip(2, 2)];
     await mountView({ type: "list", resModel: "hr.payslip", arch: ARCH });
     expect(propertyHeaders()).toEqual([]);
-    // ...and they are not even on offer in the optional-columns dropdown,
-    // since benefits of two different structures cannot share a column.
     await contains(".o_optional_columns_dropdown .dropdown-toggle").click();
-    expect(".o-dropdown--menu input").toHaveCount(1); // only net_wage is offered
+    expect(".o-dropdown--menu input").toHaveCount(1);
     expect(".o-dropdown--menu input[name^='payslip_properties.']").toHaveCount(0);
 });

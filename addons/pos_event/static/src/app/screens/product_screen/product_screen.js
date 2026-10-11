@@ -38,12 +38,10 @@ patch(ProductScreen.prototype, {
                 ticket.product_id && ticket.product_id.service_tracking === "event",
         );
 
-        // Multi Slot
         let avaibilityByTicket;
         let slotResult = {};
         let slotSelected;
         if (event.is_multi_slots) {
-            // Updating data in case of event change
             await this.pos.data.read(
                 "event.event",
                 [event.id],
@@ -212,7 +210,6 @@ patch(ProductScreen.prototype, {
             });
 
             for (const registration of data) {
-                // Global answers have precedence for identification question types.
                 const userData = { ...globalIdentificationAnswers };
                 for (const [questionId, answer] of Object.entries(registration)) {
                     const question = this.pos.models["event.question"].get(
@@ -261,7 +258,6 @@ patch(ProductScreen.prototype, {
                     },
                     { simpleChoice: {}, textAnswer: {} },
                 );
-                // This will throw an error on creation if not possible (python constraint)
                 this.pos.models["event.registration"].create({
                     ...userData,
                     event_id: event,

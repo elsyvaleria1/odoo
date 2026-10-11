@@ -40,7 +40,6 @@ export class AccountAuditBalanceListRenderer extends ListRenderer {
 
     onGlobalClick(event) {
         if (this.chatterRef.el.contains(event.target)) {
-            // ignore clicks inside the chatter as we dont want it to close when clicking inside it
             return;
         }
         super.onGlobalClick(event);

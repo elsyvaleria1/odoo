@@ -57,10 +57,6 @@ export function useCashierSelector(
         return true;
     }
 
-    /**
-     * Select a cashier. Return the selected `hr.employee` record, `false` when
-     * the PIN check fails, or `undefined` when no cashier was selected.
-     */
     return async function selectCashier(pin = false, login = false, list = false) {
         if (!pos.config.module_pos_hr) {
             return;

@@ -28,12 +28,6 @@ patch(PosStore.prototype, {
         });
     },
     get employeeIsAdmin() {
-        // Guard against an undefined cashier: when module_pos_hr is enabled,
-        // getCashier() returns this.cashier, which is unset until the user
-        // completes LoginScreen. The Navbar template evaluates employeeIsAdmin
-        // on mount (before any cashier is picked) and would throw
-        // "Cannot read properties of undefined (reading '_role')".
-        // Semantically, no cashier means no admin privileges -> return false.
         const cashier = this.getCashier();
         return cashier?._role === "manager";
     },
@@ -78,8 +72,6 @@ patch(PosStore.prototype, {
             }
             const o = this.getOrder();
             if (o && !o.getOrderlines().length) {
-                // Order without lines can be considered to be un-owned by any employee.
-                // We set the cashier on that order to the currently set employee.
                 o.employee_id = employee;
             }
             if (!this.cashierHasPriceControlRights() && this.numpadMode === "price") {
@@ -115,12 +107,6 @@ patch(PosStore.prototype, {
     },
     getCashierUserId() {
         if (this.config.module_pos_hr) {
-            // Must return the *id*, like the base implementation
-            // (`utils/cashier.js`: `pos.user?.id`): `cashier.user_id` is a
-            // res.users record here, and every consumer compares it against a
-            // plain id. Optional chaining for the same reason as
-            // `employeeIsAdmin` above: the Navbar evaluates this on mount,
-            // before LoginScreen has set a cashier.
             return this.cashier?.user_id?.id ?? null;
         }
         return super.getCashierUserId(...arguments);

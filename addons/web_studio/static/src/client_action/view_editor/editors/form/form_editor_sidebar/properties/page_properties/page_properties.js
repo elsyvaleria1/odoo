@@ -11,7 +11,6 @@ class PageNodeToolbox extends SidebarPropertiesToolbox {
         const node = this.node;
         let xpathToRemove = node.xpath;
         if (node.arch.parentElement.children.length <= 1) {
-            // retarget to the parent notebook
             xpathToRemove = node.xpath.split("/").slice(0, -1).join("/");
         }
         return super.removeNodeFromArch(xpathToRemove);

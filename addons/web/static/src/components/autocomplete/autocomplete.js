@@ -157,8 +157,6 @@ export class AutoComplete extends Component {
             if (this.props.value !== nextProps.value || this.forceValFromProp) {
                 this.forceValFromProp = false;
                 if (this.inEdition) {
-                    // the value echoes what is being typed: the pending
-                    // processing of that input is what opens the dropdown
                     this.closeDropdown();
                 } else {
                     this.setInputValue(nextProps.value);
@@ -649,12 +647,6 @@ export class AutoComplete extends Component {
         this.props.onFocus({ inputValue: this.inputRef.el.value });
     }
 
-    /**
-     * An Enter held back while suggestions load has lost the browser's
-     * commit of the typed value; when it selects nothing, this replays that
-     * `change`. The browser does not know it was committed and may send its
-     * own `change` for the same value on blur.
-     */
     _replayHeldEnterChange() {
         const destroyed = status(this) === "destroyed";
         const value = destroyed ? null : this.targetDropdown.value;

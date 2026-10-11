@@ -8,28 +8,6 @@ import { useService } from "@web/core/utils/hooks";
 import { CharField, charField } from "@web/fields/basic/char/char_field";
 import { ConfirmationDialog } from "@web/ui/dialog";
 
-/**
- * Override of the FieldChar that will handle the YouTube video upload process.
- *
- * We want to handle the upload from the client browser directly to their YouTube account and avoid
- * that the video file goes through our Odoo server to save time and bandwidth.
- *
- * User selects a file "c:/temp/my_video.mp4", which triggers the upload process directly on the
- * YouTube account they selected on the form view.
- * When the upload is finished, we save the 'youtube_video_id' value in a separate field and keep
- * a "dumb" string as the value of the 'youtube_video' field that will simply contain 'my_video.mp4'.
- *
- * Obviously the usage of this Widget is very limited:
- * - Only works in a form view
- * - Only works along specific other fields in the form view of the social.post model
- *   (youtube_access_token, youtube_video_id, ...)
- *
- * It is not meant to be used anywhere else.
- *
- * The template of the Char field was replaced by a custom one that can display upload buttons and
- * readonly input containing the uploaded file name.
- *
- */
 export class YoutubeUploadField extends CharField {
     static template = "social_youtube.YoutubeUploadField";
     setup() {
@@ -46,7 +24,7 @@ export class YoutubeUploadField extends CharField {
         this.dialogService = useService("dialog");
 
         this.useFileAPI = !!window.FileReader;
-        this.maxUploadSize = 128 * 1024 * 1024 * 1024; // 128 Go -> max Youtube upload
+        this.maxUploadSize = 128 * 1024 * 1024 * 1024;
     }
 
     /**
@@ -174,7 +152,6 @@ export class YoutubeUploadField extends CharField {
             );
             data = response.ok ? await response.json() : undefined;
         } catch {
-            // Network hiccup: the next tick of the interval polls again.
             return;
         }
 
@@ -260,10 +237,6 @@ export class YoutubeUploadField extends CharField {
             throw error;
         });
     }
-
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
 
     /**
      * Clear the value and ask the user if they also want to delete the actual
@@ -358,7 +331,6 @@ export class YoutubeUploadField extends CharField {
         const { videoId, categoryId } = await this._uploadFile(sessionLocation, file);
         await this._awaitPostProcessing(videoId);
 
-        // Strip and keep the last part of file name to get "video.mp4" and not "C:/fakepath/video.mp4".
         const fileName = this.fileInputRef.el.value.match(/([^\\.]+)\.\w+$/)[0];
 
         this.state.uploading = false;

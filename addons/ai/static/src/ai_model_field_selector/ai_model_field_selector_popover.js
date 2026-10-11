@@ -31,7 +31,6 @@ export class AiModelFieldSelectorPopover extends ModelFieldSelectorPopover {
     }
 
     get fieldNames() {
-        // Can not use `page.path`, because properties have custom code
         const currentPath = [];
         let page = this.state.page.previousPage;
         while (page) {
@@ -63,7 +62,6 @@ export class AiModelFieldSelectorPopover extends ModelFieldSelectorPopover {
         this.aiFieldsState.selected.push([...this.fieldsChain, field]);
 
         if (!(await user.hasGroup("mail.group_mail_template_editor"))) {
-            // Non template editors select a single field: insert it and close right away
             this.onInsert();
         }
     }
@@ -121,7 +119,6 @@ export class AiModelFieldSelectorPopover extends ModelFieldSelectorPopover {
                 return false;
             }
             if (fieldDefs[key].type === "separator") {
-                // Don't show separator property
                 return false;
             }
             return fieldDefs[key].searchable;

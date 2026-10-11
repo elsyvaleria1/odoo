@@ -14,7 +14,6 @@ describe("PosStore - loyalty essentials", () => {
         const order = store.addNewOrder();
 
         const partner = models["res.partner"].get(1);
-        // Get loyalty program #5 with program_type = "gift_card" and is_nominative = true
         const program = models["loyalty.program"].get(5);
 
         models["loyalty.program"].getAll = () => [program];
@@ -49,7 +48,6 @@ describe("PosStore - loyalty essentials", () => {
         onRpc("loyalty.card", "get_loyalty_card_partner_by_code", () => false);
         const store = await setupPosEnv();
         const order = store.addNewOrder();
-        // Rule #3 (code "EXPIRED") belongs to program #6, which ended yesterday.
         const program = store.models["loyalty.program"].get(6);
         const orderDay = toDate(order.date_order);
 
@@ -73,7 +71,6 @@ describe("PosStore - loyalty essentials", () => {
         const store = await setupPosEnv();
         const models = store.models;
 
-        // Get loyalty program #2 with program_type = "ewallet"
         const program = models["loyalty.program"].get(2);
         const partner = models["res.partner"].get(1);
 

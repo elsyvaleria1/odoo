@@ -71,7 +71,7 @@ registry.category("web_tour.tours").add("mailing_editor", {
             run: "edit TestFromTour",
         },
         {
-            trigger: ".o_form_view", // blur previous input
+            trigger: ".o_form_view",
             run: "click",
         },
         ...stepUtils.saveForm(),

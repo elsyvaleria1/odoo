@@ -19,14 +19,12 @@ registry.category("web_tour.tours").add("configurator_flow", {
             run: "click",
             expectUnloadPage: true,
         },
-        // Configurator first screen
         {
             content: "click next",
             trigger: "button.o_configurator_show",
             run: "click",
-            timeout: 20000 /* previous step create a new website, this could take a long time */,
+            timeout: 20000,
         },
-        // Description screen
         {
             content: "select a website type",
             trigger: "button.o_change_website_type",
@@ -47,13 +45,11 @@ registry.category("web_tour.tours").add("configurator_flow", {
             trigger: "button.o_change_website_purpose",
             run: "click",
         },
-        // Palette screen
         {
             content: "chose a palette card",
             trigger: ".palette_card",
             run: "click",
         },
-        // Features screen
         {
             content: "select Pricing",
             trigger: '.card:contains("Pricing")',
@@ -83,13 +79,11 @@ registry.category("web_tour.tours").add("configurator_flow", {
             trigger: "button.btn-primary",
             run: "click",
         },
-        // Online catalog screen
         {
             content: "Choose a shop page style",
             trigger: ".o_configurator_screen:contains(online catalog) .button_area",
             run: "click",
         },
-        // Product page Screen
         {
             content: "Choose a product page style",
             trigger: ".o_configurator_screen:contains(product page) .button_area",
@@ -107,7 +101,7 @@ registry.category("web_tour.tours").add("configurator_flow", {
         },
         {
             content: "check menu and footer links are correct",
-            trigger: "body:not(.editor_enable)", // edit mode left
+            trigger: "body:not(.editor_enable)",
         },
         ...["Contact us", "Privacy Policy"].map((menu) => ({
             content: `Check footer menu ${menu} is there`,

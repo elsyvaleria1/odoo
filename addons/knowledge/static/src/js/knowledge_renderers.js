@@ -4,9 +4,6 @@ import { useListener } from "@odoo/owl";
 import { FormRenderer } from "@web/views/form";
 
 export class KnowledgeArticleFormRenderer extends FormRenderer {
-    //--------------------------------------------------------------------------
-    // Component
-    //--------------------------------------------------------------------------
     setup() {
         super.setup();
         this.knowledgeContext = useKnowledgeContext();

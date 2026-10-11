@@ -7,10 +7,6 @@ import { useService } from "@web/core/utils/hooks";
 import { useDebounced } from "@web/core/utils/timing";
 import { ConfirmationDialog } from "@web/ui/dialog";
 
-/**
- * List of "call activities", i.e. activities of type call you were scheduled
- * to handle today.
- */
 export class Agenda extends Component {
     static components = tabComponents;
     static props = { extraClass: t.string().optional("") };

@@ -14,7 +14,6 @@ const addAnswerComment = (commentText) => [
         },
     },
     {
-        // Send comment
         trigger: ".o-mail-Composer-send:enabled",
         run: "click",
     },
@@ -28,7 +27,6 @@ registry.category("web_tour.tours").add("knowledge_article_comments", {
     steps: () => [
         stepUtils.showAppsMenuItem(),
         {
-            // Open Knowledge App
             trigger: '.o_app[data-menu-xmlid="knowledge.knowledge_menu_root"]',
             run: "click",
         },
@@ -77,7 +75,6 @@ registry.category("web_tour.tours").add("knowledge_article_comments", {
             },
         },
         {
-            // Trigger comment creation with the editor toolbar
             trigger: '.o-we-toolbar button[name="expand_toolbar"]',
             run: "click",
         },
@@ -92,12 +89,10 @@ registry.category("web_tour.tours").add("knowledge_article_comments", {
             },
         },
         {
-            // Send comment
             trigger: ".o_knowledge_comments_popover .o-mail-Composer-send:enabled",
             run: "click",
         },
         {
-            // Wait for the comment to be fully created
             trigger:
                 ".note-editable p.o_knowledge_tour_first_paragraph a:not([data-id='undefined']):not(:visible)",
         },
@@ -106,29 +101,23 @@ registry.category("web_tour.tours").add("knowledge_article_comments", {
                 ".o_knowledge_comment_box[data-thread-id] .o_knowledge_comment_small_ui img",
         },
         {
-            // Open the comments panel
             trigger: ".btn-comments",
             run: "click",
         },
         {
-            // Panel loads un-resolved messages
             trigger: '.o-mail-Thread :contains("My Knowledge Comment")',
         },
         {
-            // Switch to "resolved" mode
             trigger: ".o_knowledge_comments_panel select",
             run: "select resolved",
         },
         {
-            // Panel loads resolved messages
             trigger: '.o-mail-Thread :contains("Sure thing boss, all done!")',
         },
         {
-            // Open the comment to enable replies
             trigger: ".o_knowledge_comment_box",
             run: "click",
         },
-        // Add an extra reply to the resolved comment
         ...addAnswerComment("Oops forgot to mention, will be done in task-112233"),
         ...endKnowledgeTour(),
     ],

@@ -128,8 +128,6 @@ export class TreeEditor extends Component {
             loaded = await this.keepLastInfo.add(
                 Promise.all([
                     this.fieldService.loadFields(props.resModel),
-                    // a readonly editor needs the descriptions too; the tree
-                    // context resolves the defs once for both
                     props.readonly
                         ? this.treeProcessor.makeTreeContext(props.resModel, this.tree)
                         : this.treeProcessor

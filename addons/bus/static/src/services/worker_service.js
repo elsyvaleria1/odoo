@@ -43,13 +43,6 @@ export class WorkerService {
 
     async startWorker() {
         this._state = WORKER_STATE.INITIALIZING;
-        // A worker shared by the tabs needs a script of the page's own origin:
-        // a blob is new per tab, so is a worker started from one. A page whose
-        // bus is its own server's serves the bundle -- under prefork without a
-        // proxy the bus is on another port of its host, and the websocket
-        // alone goes there. Any other page (a live chat embedded on a
-        // customer's site, even one on the same host) has no choice: it reads
-        // the public bundle anonymously.
         const ownServer = this.params.serverURL === pageServerURL();
         const version = session.websocket_worker_version;
         let workerURL = `${window.origin}/bus/websocket_worker_bundle?v=${version}`;
@@ -91,28 +84,15 @@ export class WorkerService {
                 type: "module",
             });
         } catch (e) {
-            // Worker construction can throw SYNCHRONOUSLY (CSP `worker-src`
-            // restrictions, blob: SecurityError, missing Worker class).
-            // Without this catch the rejection escapes `startWorker`,
-            // `connectionInitializedDeferred` never settles and every caller
-            // hangs forever. Route it through the same fallback/FAILED
-            // transitions as an async worker error.
             this.onInitError(e);
             return;
         } finally {
-            // The browser resolved (or rejected) the script fetch at
-            // construction time: the blob URL served its purpose and keeping
-            // it alive would leak the whole bundle text.
             if (blobURL) {
                 URL.revokeObjectURL(blobURL);
             }
         }
         const worker = this.worker;
         worker.onerror = (e) => {
-            // The abandoned SharedWorker keeps this handler after the
-            // fallback replaced `this.worker` with a dedicated Worker. A late
-            // second error from it must not mark the service FAILED while the
-            // replacement is still initializing.
             if (worker === this.worker) {
                 this.onInitError(e);
             }
@@ -122,8 +102,6 @@ export class WorkerService {
                 this._state = WORKER_STATE.INITIALIZED;
                 this.connectionInitializedDeferred.resolve();
             } else if (ev.data.type === "BUS:PING") {
-                // Liveness probe from the websocket worker's dead-client
-                // sweep: answering proves this tab is alive and unfrozen.
                 this._send("BUS:PONG");
             }
         });
@@ -141,7 +119,6 @@ export class WorkerService {
     }
 
     onInitError(e) {
-        // FIXME: SharedWorker can still fail for unknown reasons even when it is supported.
         if (this._state === WORKER_STATE.INITIALIZING && this.isUsingSharedWorker) {
             console.warn("Error while loading SharedWorker, fallback on Worker: ", e);
             this.isUsingSharedWorker = false;
@@ -152,12 +129,6 @@ export class WorkerService {
             this.connectionInitializedDeferred.resolve();
             console.warn("Worker service failed to initialize: ", e);
         } else {
-            // The worker crashed after a successful handshake
-            // (_state === INITIALIZED): `connectionInitializedDeferred` is
-            // already resolved, so it cannot signal this. Transition to
-            // FAILED anyway so later callers (`send`, `registerHandler`,
-            // `workerKind`) see the dead worker instead of silently acting as
-            // if it were still alive.
             this._state = WORKER_STATE.FAILED;
             console.warn("Worker crashed after initialization: ", e);
         }
@@ -218,11 +189,6 @@ export class WorkerService {
         this._registerHandler(handler);
     }
 
-    /**
-     * Warn (once — the bus is chatty, one warning per send would flood the
-     * console) that the service runs in FAILED mode: sends and handler
-     * registrations are silently dropped.
-     */
     _warnFailedOnce() {
         if (this._failureWarned) {
             return;

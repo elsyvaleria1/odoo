@@ -83,13 +83,11 @@ test("Undo/Redo multiple actions always restores the action container target", a
     expect(".options-container").toHaveAttribute("data-container-title", "Target 2");
     await contains("[data-action-id='customAction']").click();
     expect(":iframe .test-options-target.test").toHaveCount(2);
-    // Undo everything.
     await contains(".o-snippets-top-actions .fa-undo").click();
     expect(".options-container").toHaveAttribute("data-container-title", "Target 2");
     await contains(".o-snippets-top-actions .fa-undo").click();
     expect(".options-container").toHaveAttribute("data-container-title", "Target 1");
     expect(":iframe .test-options-target.test").toHaveCount(0);
-    // Redo everything.
     await contains(".o-snippets-top-actions .fa-arrow-rotate-right").click();
     expect(".options-container").toHaveAttribute("data-container-title", "Target 1");
     await contains(".o-snippets-top-actions .fa-arrow-rotate-right").click();
@@ -131,7 +129,6 @@ test("Undo/Redo an action that activates another target restores the old one on 
     expect(".options-container").toHaveAttribute("data-container-title", "Target 1");
     await contains("[data-action-id='customAction']").click();
     expect(".options-container").toHaveAttribute("data-container-title", "Target 2");
-    // Undo everything.
     await contains(".o-snippets-top-actions .fa-undo").click();
     expect(".options-container").toHaveAttribute("data-container-title", "Target 1");
     await contains(".o-snippets-top-actions .fa-arrow-rotate-right").click();
@@ -167,7 +164,6 @@ test("Undo/Redo an action that deactivates the containers restores the old one o
     await contains("[data-action-id='customAction']").click();
     expect(".options-container").toHaveCount(0);
     expect("button[data-name='blocks']").toHaveClass("active");
-    // Undo everything.
     await contains(".o-snippets-top-actions .fa-undo").click();
     expect(".options-container").toHaveAttribute("data-container-title", "Target 1");
     await contains(".o-snippets-top-actions .fa-arrow-rotate-right").click();
@@ -292,7 +288,6 @@ test("Do not show parent container for no_parent_containers targets", async () =
     await contains(":iframe .test-child-target").click();
     expect(".options-container").toHaveCount(1);
     expect(".options-container").toHaveAttribute("data-container-title", "Child");
-    // Try with several layers
     await contains(":iframe .test-grand-child-target").click();
     expect(".options-container").toHaveCount(2);
     expect(".options-container:eq(0)").toHaveAttribute("data-container-title", "Child");
@@ -300,7 +295,6 @@ test("Do not show parent container for no_parent_containers targets", async () =
         "data-container-title",
         "Grand-child",
     );
-    // Make sure the parent's options still appear for itself.
     await contains(":iframe .test-parent-target").click();
     expect(".options-container").toHaveCount(1);
     expect(".options-container").toHaveAttribute("data-container-title", "Parent");

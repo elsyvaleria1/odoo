@@ -9,7 +9,6 @@ import { uniqueId } from "@web/core/utils/functions";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 
-// the upload's form field naming the dialog that shared it
 const TRACEBACK_MARKER = "documents_traceback";
 
 patch(ErrorDialog.prototype, {
@@ -21,12 +20,10 @@ patch(ErrorDialog.prototype, {
         this.tracebackMarker = uniqueId("traceback_");
         this.state.tracebackUrl = null;
         this.state.processed = false;
-        // every open error dialog hears every upload: only its own is its link
         const isOwnUpload = (upload) =>
             upload.data?.get(TRACEBACK_MARKER) === this.tracebackMarker;
         useBus(this.fileUpload.bus, FileUploadEvent.ERROR, ({ detail }) => {
             if (isOwnUpload(detail.upload)) {
-                // the service said why; Share may be tried again
                 this.state.processed = false;
             }
         });
@@ -41,8 +38,6 @@ patch(ErrorDialog.prototype, {
                 return;
             }
             this.state.tracebackUrl = response[0];
-            // Deferred so the upload service finishes its own bookkeeping
-            // first; the copy is best effort, the URL is on screen anyway.
             setTimeout(async () => {
                 try {
                     await browser.navigator.clipboard.writeText(response[0]);

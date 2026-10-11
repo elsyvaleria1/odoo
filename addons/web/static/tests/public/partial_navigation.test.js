@@ -137,7 +137,6 @@ test("a Bootstrap toggle or an in-page anchor in scope is left to the browser", 
         ),
     );
     serve(() => page(""));
-    // keeps the anchor from moving the test runner's own URL
     const preventDefault = (ev) => ev.preventDefault();
     document.addEventListener("click", preventDefault);
     after(() => document.removeEventListener("click", preventDefault));

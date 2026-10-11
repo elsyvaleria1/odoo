@@ -99,7 +99,7 @@ patch(AttendeeCalendarCommonRenderer.prototype, {
                         : "fa-2x";
                 const domParser = new DOMParser();
                 const injectedContentEl = domParser.parseFromString(
-                    /* xml */ `
+                    `
                     <div class="fc-bg position-absolute top-0 end-0 bottom-0 start-0 o_calendar_slot_delete">
                         <button class="close btn d-flex align-items-center justify-content-center w-100 h-100 m-0 border-0 p-0 bg-success bg-opacity-50 o_hidden">
                             <i class='fa fa-trash ${iconSize}'></i>
@@ -146,7 +146,6 @@ patch(AttendeeCalendarCommonRenderer.prototype, {
         if (!this.isSlotCreationMode()) {
             return super.onDateClick(...arguments);
         }
-        // Disabled in month view
         if (this.props.model.scale === "month") {
             return;
         }
@@ -217,9 +216,6 @@ patch(AttendeeCalendarCommonRenderer.prototype, {
         buttonEl && buttonEl.classList.add("o_hidden");
     },
 
-    /**
-     * Prevent drag & drop of events in the past in slot creation mode
-     */
     onEventAllow(dropInfo, draggedEvent) {
         if (!this.isSlotCreationMode()) {
             return super.onEventAllow?.(...arguments) || true;

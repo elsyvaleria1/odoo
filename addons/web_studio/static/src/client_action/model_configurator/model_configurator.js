@@ -4,10 +4,6 @@ import { _t } from "@web/core/translation";
 import { user } from "@web/core/user";
 import { Dialog } from "@web/ui/dialog";
 
-/** You might wonder why I defined all these strings here and not in the template.
- * The reason is that I wanted clear templates that use a single element to render an option,
- * meaning that the label and helper text had to be defined here in the code.
- */
 function getModelOptions(isMultiCompany) {
     const modelOptions = {
         use_partner: {
@@ -103,10 +99,6 @@ export class ModelConfigurator extends Component {
         this.options = proxy(getModelOptions(user.allowedCompanies.length > 1));
     }
 
-    /**
-     * Handle the confirmation of the dialog, just fires an event
-     * to whoever instanciated it.
-     */
     async onConfirm() {
         try {
             this.state.saving = true;

@@ -28,7 +28,6 @@ export class HomeTileRecordLink extends Component {
 
     /** @param {MouseEvent} ev */
     onClick(ev) {
-        // a modified or secondary click is the browser's: a new tab, a window
         if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) {
             return;
         }

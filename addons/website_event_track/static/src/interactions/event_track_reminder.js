@@ -141,7 +141,6 @@ export class WebsiteEventTrackReminder extends Interaction {
         this.modalEl = renderToElement("website_event_track.email_reminder_modal", {
             track_id: this.trackId,
         });
-        // after the bell's form, which a form may not be nested in
         this.insert(this.modalEl, this.el, "afterend");
         for (const cancelEl of this.modalEl.querySelectorAll(".o_form_button_cancel")) {
             this.addListener(cancelEl, "click", this.modalEmailReminderCancel);

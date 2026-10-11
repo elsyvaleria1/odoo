@@ -17,7 +17,6 @@ export class DocumentsListController extends DocumentsControllerMixin(ListContro
     setup() {
         super.setup(...arguments);
         if (!this.documentService.userIsInternal) {
-            // a copy: the parsed arch may be shared with another view of it
             this.archInfo = {
                 ...this.archInfo,
                 columns: this.archInfo.columns.filter(

@@ -7,7 +7,6 @@ patch(Order.prototype, {
     setup() {
         super.setup();
         this.didMount = false;
-        // Ensure the correct duration is calculated immediately when switching from "pending" to a non-pending state
         useLayoutEffect(
             (isPending) => {
                 if (!this.didMount) {
@@ -33,7 +32,6 @@ patch(Order.prototype, {
     },
     _getOrderDuration() {
         const course = this.order.pos_course_id;
-        // Legacy data may have fired=true without a fired_date, so we check fired_date to avoid a blank preparation display.
         if (this.isInFirstStage() && course?.fired && course?.fired_date) {
             return this.order.getDurationSinceFireDate();
         }

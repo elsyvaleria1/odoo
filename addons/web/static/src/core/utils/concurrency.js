@@ -213,7 +213,6 @@ export class KeepLastByKey {
         const result = keepLast.add(promise, options);
         const generation = keepLast.generation;
         return result.finally(() => {
-            // Supersession and key reuse can both precede this settlement.
             if (
                 this._byKey.get(key) === keepLast &&
                 keepLast.generation === generation

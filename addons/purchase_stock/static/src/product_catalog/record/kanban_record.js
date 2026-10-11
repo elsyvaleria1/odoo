@@ -4,7 +4,6 @@ import { PurchaseProductCatalogKanbanRecord } from "@purchase/product_catalog/ka
 
 import { ProductCatalogPurchaseSuggestOrderLine } from "./purchase_order_line.js";
 
-// purchase registers its own line for the same model; this one replaces it.
 productCatalogOrderLines.add("purchase.order", ProductCatalogPurchaseSuggestOrderLine, {
     force: true,
 });

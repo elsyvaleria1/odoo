@@ -53,7 +53,7 @@ export class QWebPlugin extends _QWebPlugin {
 
     onClick(ev) {
         if (ev.detail === 1) {
-            /* simple click */ if (this.setFullSelection(ev.srcElement)) {
+            if (this.setFullSelection(ev.srcElement)) {
                 return;
             }
         }

@@ -66,7 +66,6 @@ export class ThemeModel extends SignalStore {
                 themeOptions.getImageInfo = (filename) =>
                     imagesInfo[filename] || imagesInfo.all;
             }
-            // Wrap the Theme `html` with a technical layout.
             themeOptions.html = renderToMarkup(
                 "mass_mailing.ThemeLayout",
                 themeOptions,

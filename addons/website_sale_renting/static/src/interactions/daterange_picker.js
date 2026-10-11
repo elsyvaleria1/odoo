@@ -82,9 +82,6 @@ export class DaterangePicker extends Interaction {
         const hasDefaultDates = Boolean(this._hasDefaultDates());
         el.dataset.hasDefaultDates = hasDefaultDates;
         const type = this._canSelectHours() ? "datetime" : "date";
-        // A date picker holds days: the rental's datetimes are shown as the
-        // days they fall on in the website's zone, and read back as the start
-        // of those days there.
         const toPicker = (value) => (type === "date" ? toDate(value) : value);
         const fromPicker = (value) => value && toDateTime(value, this.websiteTz);
         const value =

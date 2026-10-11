@@ -33,8 +33,6 @@ export const websiteService = {
         let websites = [];
         let currentWebsiteId;
         const currentWebsiteIdList = [];
-        // read by the current website's getters, bumped where it changes: a
-        // component showing the current website follows it without a render
         const currentWebsiteRevision = signal(0);
         let currentMetadata = {};
         let fullscreen;

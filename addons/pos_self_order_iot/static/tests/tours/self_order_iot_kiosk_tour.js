@@ -13,7 +13,7 @@ registry.category("web_tour.tours").add("self_order_kiosk_iot_printer", {
         Utils.clickBtn("Checkout"),
         CartPage.checkProduct("Coca-Cola", "2.53", "1"),
         Utils.clickBtn("Order"),
-        IotUtils.waitForIotRequest(6000), // wait for webrtc timeout
+        IotUtils.waitForIotRequest(6000),
         Utils.clickBtn("Close"),
     ],
 });

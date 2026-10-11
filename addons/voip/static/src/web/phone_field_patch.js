@@ -8,8 +8,6 @@ patch(PhoneField.prototype, {
         super.setup();
         this.appServices = useServices();
         if ("voip" in this.appServices) {
-            // FIXME: this is only because otherwise @web tests would fail.
-            // This is one of the major pitfalls of patching.
             this.voip = useService("voip");
             this.callService = useService("voip.call");
             this.userAgent = useService("voip.user_agent");

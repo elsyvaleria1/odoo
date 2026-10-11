@@ -41,7 +41,6 @@ test("the calendar parser consumes the IR", () => {
         color: "color",
         create_name_field: "name",
     });
-    // root attributes in FIELD_ATTRIBUTE_NAMES order, then the field nodes
     expect(fromIR.fieldNames).toEqual([
         "start",
         "delay",
@@ -115,11 +114,9 @@ test("parseFieldNode reads an IR node and an element alike, sub-views included",
         mode: "list,kanban",
         readonly: "0",
     });
-    // `default` is the widget's relatedFields view; list and kanban are the sub-archs
     expect(Object.keys(fromIR.views)).toEqual(["default", "list", "kanban"]);
     expect(fromIR.views.list.columns.map((c) => c.name)).toEqual(["name"]);
 
-    // `field` is a registry entry, compared by identity
     expect(fromIR.field).toBe(fromElement.field);
     expect({ ...fromIR, field: null, views: null }).toEqual({
         ...fromElement,

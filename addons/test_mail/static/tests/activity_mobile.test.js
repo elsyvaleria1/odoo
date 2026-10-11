@@ -26,11 +26,6 @@ beforeEach(async () => {
 });
 
 test("the search bar can be revealed on a small screen", async () => {
-    // The activity view rendered `<SearchBar/>` with no toggler, so
-    // `showSearchBar` defaulted to true and the bar could not be COLLAPSED --
-    // it spent control-panel width on a phone where every other view hides it
-    // behind this button. `ViewLayout` owns the pair, so the two cannot be
-    // wired up half-way.
     await start();
     registerArchs(ARCHS);
     await openView({

@@ -138,7 +138,6 @@ test("a component rendering a dialog is scoped to that dialog", async () => {
     expect(/** @type {any} */ (ambient)()).toBe(modal);
     expect(/** @type {any} */ (declared)()).toBe(modal);
 
-    // a dialog it opens takes the active element away from it
     class Sub extends Component {
         static template = xml`<Dialog><div class="sub"/></Dialog>`;
         static components = { Dialog };

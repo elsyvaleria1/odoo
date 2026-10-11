@@ -29,8 +29,6 @@ export class HierarchyEditorSidebar extends Component {
         return this.viewEditorModel.controllerProps.archInfo;
     }
 
-    // The root attributes HIERARCHY_VALID_ATTRIBUTES admits and the parser
-    // reads. The card is a `hierarchy-box` template, edited as XML.
     get parentFieldChoices() {
         const resModel = this.viewEditorModel.resModel;
         return Object.values(this.viewEditorModel.fields)

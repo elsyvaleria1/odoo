@@ -142,7 +142,6 @@ export class OptionsContainer extends BaseOptionComponent {
         this.toggleOverlayPreview(this.props.editingElement, false);
     }
 
-    // Actions of the buttons in the title bar.
     removeElement() {
         this.callOperation(() => {
             this.dependencies.remove.removeElement(this.props.editingElement);

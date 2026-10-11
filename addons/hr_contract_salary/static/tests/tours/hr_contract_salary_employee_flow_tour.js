@@ -59,9 +59,6 @@ export const salaryConfigTourStart = () => [
         trigger: ".o-mail-Chatter .o-mail-Message:eq(0) a",
         async run(helpers) {
             const offer_link = helpers.anchor.href;
-            // Retrieve the link without the origin to avoid
-            // mismatch between localhost:8069 and 127.0.0.1:8069
-            // when running the tour with chrome headless
             const regex = "/salary_package/simulation/.*";
             const url = offer_link.match(regex)[0];
             redirect(url);
@@ -185,7 +182,6 @@ export const salaryConfigTourSubmitAndSign = () => [
         trigger: ":iframe input.o_sign_sign_item_default:eq(0)",
         run: "click",
     },
-    // fill signature
     {
         content: "Click Signature",
         trigger: ":iframe button.o_sign_sign_item",
@@ -205,7 +201,6 @@ export const salaryConfigTourSubmitAndSign = () => [
         content: "Wait for modal to close",
         trigger: ":iframe body:not(:has(footer.modal-footer button.btn-primary))",
     },
-    // fill date
     {
         content: "Type Date",
         trigger: ":iframe input.o_sign_sign_item_default:eq(1)",

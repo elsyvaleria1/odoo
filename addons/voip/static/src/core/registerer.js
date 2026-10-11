@@ -3,32 +3,8 @@
 import { _t } from "@web/core/translation";
 
 export class Registerer {
-    /**
-     * When sending a REGISTER request, an “expires” parameter with the value of
-     * this field is added to the Contact header. It is used to indicate how
-     * long we would like the registration to remain valid.
-     * Note however that the definitive value is decided by the server based on
-     * its own policy and may therefore differ.
-     *
-     * The library automatically renews the registration for the same duration
-     * shortly before it expires.
-     *
-     * The value is expressed in seconds.
-     */
     static EXPIRATION_INTERVAL = 600;
-    /**
-     * Possible values:
-     * - SIP.RegistererState.Initial
-     * - SIP.RegistererState.Registered
-     * - SIP.RegistererState.Unregistered
-     * - SIP.RegistererState.Terminated
-     */
     state;
-    /**
-     * An instance of the Registerer class from the SIP.js library. It shouldn't
-     * be used outside of this class; only this class is responsible for
-     * interfacing with this object.
-     */
     __sipJsRegisterer;
 
     constructor(voip, sipJsUserAgent) {
@@ -43,17 +19,12 @@ export class Registerer {
             voip.isUnloading = true;
             this.__sipJsRegisterer.unregister();
             setTimeout(() => {
-                // if this runs, the unload has most likely been canceled;
-                // reestablish the connection
                 voip.isUnloading = false;
                 voip.env.services["voip.user_agent"].attemptReconnection();
             }, 7_500);
         });
     }
 
-    /**
-     * Sends the REGISTER request to the Registrar.
-     */
     register() {
         this.__sipJsRegisterer.register({
             requestDelegate: {
@@ -79,11 +50,11 @@ export class Registerer {
         );
         const help = (() => {
             switch (response.message.statusCode) {
-                case 401: // Unauthorized
+                case 401:
                     return _t(
                         "The server failed to authenticate you. Please have an administrator verify that you are reaching the right server (PBX server IP in the VoIP Provider Settings) and that the credentials in your user preferences are correct.",
                     );
-                case 503: // Service Unavailable
+                case 503:
                     return _t(
                         "The error may come from the transport layer. Please have an administrator verify the websocket server URL in the VoIP Provider Settings. If the problem persists, this is probably an issue with the server.",
                     );

@@ -5,10 +5,6 @@ import { getNumberOfListFormulas } from "@spreadsheet/list/list_helpers";
 
 const { autofillModifiersRegistry, autofillRulesRegistry } = spreadsheet.registries;
 
-//--------------------------------------------------------------------------
-// Autofill Rules
-//--------------------------------------------------------------------------
-
 autofillRulesRegistry.add("autofill_list", {
     condition: (cell) =>
         cell &&
@@ -26,10 +22,6 @@ autofillRulesRegistry.add("autofill_list", {
     },
     sequence: 3,
 });
-
-//--------------------------------------------------------------------------
-// Autofill Modifier
-//--------------------------------------------------------------------------
 
 autofillModifiersRegistry.add("LIST_UPDATER", {
     apply: (rule, data, getters, direction) => {

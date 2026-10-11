@@ -99,8 +99,6 @@ test("correctly fill all standard fields", async () => {
             city: "Ramillies",
             country_id: 13,
             state_id: 2,
-            // this was input by the user
-            // save as is
             street: "odoo farm 3",
             street2: "Ferme 2",
             zip: "1367",

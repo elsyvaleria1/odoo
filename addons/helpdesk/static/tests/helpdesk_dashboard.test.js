@@ -96,7 +96,6 @@ test("edit the target", async () => {
 });
 
 test("dashboard rendering with empty many2one", async () => {
-    // add an empty many2one
     class HelpdeskPartner extends models.Model {
         _name = "helpdesk.partner";
 

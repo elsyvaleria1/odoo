@@ -10,13 +10,6 @@ import { useCurrentViewEditorModel } from "@web_studio/client_action/view_editor
 
 const components = formView.Renderer.components;
 
-/*
- * Overrides for FormGroups: Probably the trickiest part of all, especially InnerGroup
- * - Append droppable hooks below every visible field, or on empty OuterGroup
- * - Elements deal with invisible themselves
- */
-
-// An utility function that extends the common API parts of groups
 function extendGroup(GroupClass) {
     class Group extends GroupClass {
         static props = {
@@ -68,9 +61,6 @@ function extendGroup(GroupClass) {
     return Group;
 }
 
-// A component to display fields with an automatic label.
-// Those are the only ones (for now), to be draggable internally
-// It should shadow the Field and its Label below
 class InnerGroupItemComponent extends Component {
     static template = "web_studio.Form.InnerGroup.ItemComponent";
     static props = {
@@ -88,7 +78,6 @@ class InnerGroupItemComponent extends Component {
 
         useLayoutEffect(
             (studioIsVisible, labelEl, fieldEl) => {
-                // Only label act as the business unit for studio
                 if (labelEl) {
                     const clickable = labelEl.querySelector(
                         ".o-web-studio-editor--element-clickable",
@@ -218,6 +207,5 @@ export class InnerGroup extends _InnerGroup {
 
 InnerGroup.components.InnerGroupItemComponent = InnerGroupItemComponent;
 
-// Simple override for OuterGroups
 export const OuterGroup = extendGroup(components.OuterGroup);
 OuterGroup.template = "web_studio.Form.OuterGroup";

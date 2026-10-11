@@ -3459,7 +3459,6 @@ test("many2many list: unlink two records", async () => {
 
 test("one2many list: deleting one records", async () => {
     expect.assertions(3);
-    // the line deleted is a record of its own; it must not be the one edited
     Partner._records[0].p = [2, 4];
     Partner._views = {
         form: `

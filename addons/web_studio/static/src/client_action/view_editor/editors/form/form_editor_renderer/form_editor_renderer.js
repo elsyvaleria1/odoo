@@ -45,7 +45,6 @@ export class FormEditorRenderer extends formView.Renderer {
         this.viewEditorModel = proxy(viewEditorModel);
         this.mailComponents.Chatter = ChatterContainer;
 
-        // Deals with invisible modifier by reacting to config.studioShowVisible.
         useLayoutEffect(
             (rootEl, showInvisible) => {
                 if (!rootEl) {
@@ -75,7 +74,6 @@ export class FormEditorRenderer extends formView.Renderer {
             () => [rootRef.el, viewEditorModel.showInvisible],
         );
 
-        // do this in another way?
         useLayoutEffect(
             (rootEl) => {
                 if (rootEl) {

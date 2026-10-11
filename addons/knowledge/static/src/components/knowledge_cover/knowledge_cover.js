@@ -21,7 +21,6 @@ class KnowledgeCover extends Component {
         this.state = proxy({
             repositioning: false,
             grabbing: false,
-            // cover_image_position is false if the cover has never been repositioned before
             verticalPosition: this.props.record.data.cover_image_position || 50,
         });
 
@@ -29,9 +28,6 @@ class KnowledgeCover extends Component {
             this.isInternalUser = await user.hasGroup("base.group_user");
         });
 
-        // Update the state when we open an article (because since we open an
-        // article by loading the related record, the state of this component
-        // is shared between the articles and is not recomputed).
         let previousArticleId = this.props.record.resId;
         useRecordObserver((record) => {
             if (!previousArticleId || previousArticleId !== record.resId) {
@@ -65,9 +61,6 @@ class KnowledgeCover extends Component {
         this.props.record.update({ cover_image_id: false });
     }
 
-    /**
-     * Make the cover draggable so that the user can reposition it.
-     */
     repositionCover() {
         this.state.repositioning = true;
         const cover = this.image.el;
@@ -75,12 +68,8 @@ class KnowledgeCover extends Component {
 
         const moveCover = throttleForAnimation((ev) => {
             if (prevPos !== ev.y) {
-                // Add offset proportional to the distance traveled by the cursor.
-                // (dividing by 5 to not move the cover too fast).
                 const verticalPosition =
                     this.state.verticalPosition + (prevPos - ev.y) / 5;
-                // Make sure we are between 0.01 and 100% (not 0 since it's the
-                // default value when the cover has never been repositioned).
                 this.state.verticalPosition = Math.max(
                     0.01,
                     Math.min(100, verticalPosition),
@@ -108,18 +97,15 @@ class KnowledgeCover extends Component {
 
         cover.addEventListener("pointerdown", onPointerDown);
 
-        // Click outside the cover (or on save button) leaves the repositioning mode
         document.addEventListener(
             "pointerdown",
             (ev) => {
                 cover.removeEventListener("pointerdown", onPointerDown);
                 this.state.repositioning = false;
                 if (ev.target.classList.contains("o_knowledge_undo_cover_move")) {
-                    // Undo move
                     this.state.verticalPosition =
                         this.props.record.data.cover_image_position || 50;
                 } else {
-                    // Save new position
                     this.props.record.update({
                         cover_image_position: this.state.verticalPosition,
                     });

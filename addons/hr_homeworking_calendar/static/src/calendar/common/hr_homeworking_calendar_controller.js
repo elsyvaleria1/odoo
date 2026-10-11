@@ -42,12 +42,6 @@ patch(AttendeeCalendarController.prototype, {
                             .setLocale("en")
                             .weekdayLong.toLowerCase();
                         const locationField = `${dayName}_location_id`;
-                        // res.users carries the weekday fields as writable
-                        // relateds so a user can clear their OWN; an employee
-                        // with no user has no row there, and `[false]` clears
-                        // nothing. Unreachable while `hasFooter` gates the
-                        // delete on the record being yours, but wrong whenever
-                        // that gate moves.
                         const [model, id] = record.rawRecord.user_id
                             ? ["res.users", record.rawRecord.user_id]
                             : ["hr.employee", record.employeeId];

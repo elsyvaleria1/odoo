@@ -38,10 +38,6 @@ export class Razorpay {
         return true;
     }
 
-    // "failed" is the only outcome that lets the customer pay again: the
-    // device cancelled. Any other answer was settled by the server (paid, or
-    // held for staff), and no answer means the device may still charge, so
-    // the kiosk asks again instead of offering Retry
     async cancelPayment(order) {
         let response;
         try {
@@ -91,15 +87,9 @@ export class Razorpay {
         }
     }
 
-    /**
-     * Polling
-     * This method calls and handles the razorpay payment status
-     * calls every 10 sec until payment status not found.
-     */
     async paymentPolling(order) {
         this.stopInactivePayment().then(() => (this.payment_stopped = true));
         const fetchPaymentStatus = async () => {
-            // Within 90 seconds, inactivity will result in transaction cancellation and payment termination.
             if (this.payment_stopped) {
                 await this.cancelPayment(order);
                 return;
@@ -112,9 +102,7 @@ export class Razorpay {
                     payment_data: {},
                     payment_method_id: this.razorpayPaymentMethod.id,
                 });
-            } catch {
-                // no answer is no outcome: the device may still be charging
-            }
+            } catch {}
             const outcome = response?.outcome;
             if (outcome === "failed") {
                 this.handleRazorpayResponse({

@@ -8,17 +8,6 @@ import { Interaction } from "@web/public/interaction";
 import { PARTIAL_NAVIGATION_HEADER } from "@web/public/page_swap";
 import { TAB_ID } from "@web/public/tab_id";
 
-/**
- * Keeps a page's live regions in step with changes made elsewhere (htmx's
- * hx-ws, by invalidation): the server sends `fragment.invalidated` on a
- * channel it subscribed the visitor to, naming the keys that changed and the
- * page events to replay; this tab, unless it caused the change, replays the
- * events and re-reads its own page (asked without header and footer) to morph
- * each region marked `data-fragment-live` with one of those keys. The notice
- * carries no content: every tab renders under its own session and rights.
- * The bus starts only on a page with a `data-fragment-live` element; one
- * without a `data-fragment` key just hears the events.
- */
 export class LiveFragments extends Interaction {
     static selector = "#wrapwrap";
     static selectorHas = "[data-fragment-live]";
@@ -26,9 +15,6 @@ export class LiveFragments extends Interaction {
     setup() {
         /** @param {{ keys?: string[], events?: Record<string, any>, origin?: string | null }} notice */
         this.onInvalidated = (notice) => this.refresh(notice);
-        // Two notices close together start two reads that may answer out of
-        // order: a key never renders from a read older than one it rendered
-        // from. A newer read that fails leaves the older one's answer.
         this.refreshes = 0;
         /** @type {Map<string, number>} */
         this.appliedRefreshOf = new Map();

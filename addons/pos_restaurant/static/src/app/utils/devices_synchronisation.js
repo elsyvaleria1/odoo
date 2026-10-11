@@ -7,9 +7,7 @@ patch(DevicesSynchronisation.prototype, {
         if (!dynamicRecords["pos.order"]?.length) {
             return result;
         }
-        // Verify if there is only 1 order by table.
         const orderByTableId = this.models["pos.order"].reduce((acc, order) => {
-            // Floating order doesn't need to be verified.
             if (!order.finalized && order.table_id?.id) {
                 acc[order.table_id.id] = acc[order.table_id.id] || [];
                 acc[order.table_id.id].push(order);
@@ -19,8 +17,6 @@ patch(DevicesSynchronisation.prototype, {
 
         for (const orders of Object.values(orderByTableId)) {
             if (orders.length > 1) {
-                // The only way to get here is if there is several waiters on the same table.
-                // In this case we take orderline of the local order and we add it to the synced order.
                 const localOrders = orders.filter((order) => !order.isSynced);
                 const syncedOrder = orders
                     .filter((order) => order.isSynced)

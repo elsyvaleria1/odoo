@@ -18,9 +18,7 @@ export function useScrollShadow(scrollContainerRef, options = {}) {
             const { scrollTop, scrollHeight, clientHeight } = el;
             shadows.top = scrollTop > 0;
             shadows.bottom = scrollTop + clientHeight < scrollHeight - threshold;
-        } catch {
-            // Ignore error
-        }
+        } catch {}
     };
 
     initScrollShadow(scrollContainerRef, updateShadows, options);
@@ -55,9 +53,7 @@ export function useHorizontalScrollShadow(
                 "has-scroll",
                 scrollEl.clientWidth < scrollEl.scrollWidth,
             );
-        } catch {
-            // Ignore error
-        }
+        } catch {}
     };
 
     initScrollShadow(scrollContainerRef, updateShadows, options);
@@ -91,9 +87,7 @@ function initScrollShadow(scrollContainerRef, updateFn, options = {}) {
             el.addEventListener("scroll", handleScroll);
             window.addEventListener("resize", debouncedResize);
             updateFn();
-        } catch {
-            // Ignore error
-        }
+        } catch {}
     });
 
     onPatched(updateFn);
@@ -102,8 +96,6 @@ function initScrollShadow(scrollContainerRef, updateFn, options = {}) {
         try {
             scrollContainerRef.el?.removeEventListener("scroll", handleScroll);
             window.removeEventListener("resize", debouncedResize);
-        } catch {
-            // Ignore error
-        }
+        } catch {}
     });
 }

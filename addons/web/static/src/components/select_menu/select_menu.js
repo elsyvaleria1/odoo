@@ -207,7 +207,6 @@ export class SelectMenu extends Component {
     }
 
     get isBottomSheet() {
-        // decided when the menu opens, as its Dropdown does, and kept while open
         if (this.openedAsBottomSheet !== undefined) {
             return this.openedAsBottomSheet;
         }
@@ -272,8 +271,6 @@ export class SelectMenu extends Component {
         if (this.dropdownState.isOpen && related && menuEl?.contains(related)) {
             return;
         }
-        // what the user typed, not the element's value: a render computed
-        // before the keystroke may have been patched over it since
         if (this.search.value === "" && !this.props.multiSelect) {
             if (this.canDeselect) {
                 this.onInputClear();
@@ -414,8 +411,6 @@ export class SelectMenu extends Component {
     }
 
     async onInput(searchString) {
-        // the parent's synchronous answer (new choices) lands before the search
-        // does: the menu, a root of its own, then filters once, not once per change
         const result = this.props.onInput?.(searchString);
         this.state.appliedSearch = searchString;
         if (this.props.onInput) {

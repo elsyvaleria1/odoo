@@ -76,7 +76,6 @@ export class IminPrinterAdapter extends BasePrinter {
      */
     async printReceipt(receipt) {
         const status = await this.printerStatus();
-        // We only use the fallback printer if the printer is not connected or not powered on
         if ([-1, 1].includes(status.value) && this.fallbackPrinter) {
             return await this.fallbackPrinter.printReceipt(receipt);
         }
@@ -123,7 +122,6 @@ export class IminPrinterAdapter extends BasePrinter {
         try {
             this.iminPrinter.openCashBox();
         } catch (error) {
-            // Avoid throwing an error when opening the cashbox
             logPosMessage(
                 "IminPrinterAdapter",
                 "openCashbox",
@@ -139,7 +137,6 @@ export class IminPrinterAdapter extends BasePrinter {
      */
     getResultsError(printResult) {
         const errorCode = printResult.errorCode;
-        // https://oss-sg.imin.sg/docs/en/JSPrinterSDK.html
         let message;
         switch (errorCode) {
             case -1:

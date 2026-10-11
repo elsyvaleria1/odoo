@@ -48,22 +48,12 @@ class EditorOperationsWithSnackbar extends EditorOperations {
     }
 }
 
-/**
- * Determines whether a given x2m field has a subview corresponding to archTag.
- * it returns hasArch, true if there is one usable arch already
- * and position, an index, starting at 1, to locate the node via an xpath
- * If there is no arch, hasArch is false, and we expect to go through "createInlineView"
- * The position is then the position of the future arch node
- */
 function getSubarchPosition(mainArch, xpathToField, archTag) {
-    // get eligible arch nodes, which were not automatically inlined by the server
     const xpathToArch = `${xpathToField}/${archTag}[not(@studio_subview_inlined)]`;
     const nodes = getNodesFromXpath(xpathToArch, parseStringToXml(mainArch));
     let hasArch = false;
     let position = 1;
     for (const node of nodes) {
-        // When a subarch has groups="somegroup" and the user doesn't have those groups
-        // The server makes it invisible via the modifiers.
         if (
             getModifier(node, "invisible") !== "True" &&
             getModifier(node, "invisible") !== "1"
@@ -151,15 +141,9 @@ export class ViewEditorModel extends SignalStore {
                 ? editorsRegistry.get(viewType)
                 : null;
 
-            // When the mode is interactive, the priority is to get the taylor-made editor if it exists.
-            // otherwise, the priority is to get the view, if it exists (e.g.:, the search editor doesn't have a view)
             const rendered =
                 this.mode === "interactive" ? editor || view : view || editor;
             return {
-                // What gets rendered decides which classes the props carry;
-                // an editor that overrides `props` still decides HOW they are
-                // built, with the rendered descriptor as its `view` argument,
-                // so the XML editor's read-only form is the plain form.
                 buildProps: (controllerProps, config) =>
                     editor?.props
                         ? editor.props(controllerProps, rendered, config)
@@ -211,10 +195,6 @@ export class ViewEditorModel extends SignalStore {
             ) {
                 controllerProps.parentRecord = this._subviewInfo.parentRecord;
             }
-            // if (custom_view_id) {
-            //     // for dashboard
-            //     controllerProps.info.customViewId = custom_view_id;
-            // }
 
             controllerProps = this.editorInfo.buildProps(
                 controllerProps,
@@ -311,31 +291,22 @@ export class ViewEditorModel extends SignalStore {
 
         this.showInvisible = initialState.showInvisible || false;
 
-        // Keep track of the current sidebarTab to be able to
-        // restore it when switching back from the xml editor
-        // to the interactive editor.
         this._currentSidebarTab = undefined;
 
         this._getFieldsAllowedRename = memoizeOnce(() => new Set());
     }
 
-    //-----------------------------------------------------------------
-    // Static methods
-    //-----------------------------------------------------------------
     static sanitizeString(string) {
         string = string.normalize("NFD");
         string = string
             .toLowerCase()
             .trim()
-            .replace(/[^\w\s-]/g, "") // remove non-word [a-z0-9_], non-whitespace, non-hyphen characters
-            .replace(/[\s_-]+/g, "_") // swap any length of whitespace, underscore, hyphen characters with a single _
-            .replace(/^-+|-+$/g, ""); // remove leading, trailing
+            .replace(/[^\w\s-]/g, "")
+            .replace(/[\s_-]+/g, "_")
+            .replace(/^-+|-+$/g, "");
         return string;
     }
 
-    //-----------------------------------------------------------------
-    // Public getters and setters
-    //-----------------------------------------------------------------
     get editorInfo() {
         return this._getEditor(buildKey(this.viewType, this.mode));
     }
@@ -371,7 +342,7 @@ export class ViewEditorModel extends SignalStore {
     }
 
     set isInEdition(value) {
-        value = !!value; // enforce boolean
+        value = !!value;
         if (this.isInEdition === value) {
             return;
         }
@@ -463,23 +434,12 @@ export class ViewEditorModel extends SignalStore {
         this._currentSidebarTab = newTab;
     }
 
-    //-----------------------------------------------------------------
-    // Public methods
-    //-----------------------------------------------------------------
-
     async editX2ManyView({ viewType, fieldName, record, xpath, fieldContext }) {
         const staticList = record.data[fieldName];
         const resIds = staticList.records.map((r) => r.resId).filter((id) => !!id);
         const resModel = staticList.resModel;
         const archTag = viewType;
 
-        // currentFullXpath is the absolute xpath to the current edited subview as a function of the whole full arch
-        // while xpath is the absolute xpath to the field we want to edit a subarch for, as a function of its subArch
-        // currentFullXpath: /form[x]/field[y]/form[z]
-        // xpath: /form[g]/field[h]/form[i]
-        // Where form[z] and form[g] do point to the same subArch
-        // We need to combine them to get a xpath of the field's arch we want to edit as a function of the entire main arch
-        // what we want: /form[x]/field[y]/form[z]/field[h]/form[i]
         const currentFullXpath = this.getSubviewXpath();
         let xpathToField = xpath;
         if (currentFullXpath) {
@@ -523,7 +483,7 @@ export class ViewEditorModel extends SignalStore {
             resIds,
             viewType,
             parentRecord: record,
-            xpath: `${xpath}/${archTag}[${position}]`, // /form[x]/field[y]/list[z]
+            xpath: `${xpath}/${archTag}[${position}]`,
             fieldName,
             getArch: memoizeOnce((mainArch) =>
                 getSubArch(mainArch, xpathToField, archTag, position),
@@ -560,8 +520,6 @@ export class ViewEditorModel extends SignalStore {
         this.studioViewArch = arch;
         this.studioViewId = viewId;
         if (!this.mainView.id) {
-            // the call to getStudioViewArch has created the view in DB (before that, it was the default_view)
-            // Clear the caches, in particular the one of the viewService to aknowledge that.
             rpcBus.trigger("CLEAR-CACHES");
             this.mainView.id = mainViewId;
         }
@@ -586,8 +544,6 @@ export class ViewEditorModel extends SignalStore {
         }
         const element = nodes[0];
 
-        // Attributes that could be used to identify the node python side, it is mandatory
-        // Although it might be more robust to rely solely on a sufficiently expressive xpath
         const attrs = {};
         ["name", "id", "class", "for"].forEach((attrName) => {
             if (element.hasAttribute(attrName)) {
@@ -627,10 +583,8 @@ export class ViewEditorModel extends SignalStore {
         return this._operations.pushOp(operation);
     }
 
-    /** Mode and Sidebar */
     resetSidebar(tab = null) {
         this.sidebarTab = tab;
-        // store the last active xpath in this variable
         this.activeNodeXpath = undefined;
 
         const resetEl = this.viewRef.el;
@@ -644,7 +598,6 @@ export class ViewEditorModel extends SignalStore {
         this.mode = this.mode === "interactive" ? "xml" : "interactive";
     }
 
-    /** Field Renaming */
     setRenameableField(fieldName, add = true) {
         if (add) {
             this._fieldsAllowedRename.add(fieldName);
@@ -700,10 +653,6 @@ export class ViewEditorModel extends SignalStore {
         }
 
         const strOperations = JSON.stringify(this._operations.operations);
-        // We only want to replace exact matches of the field name, but it can
-        // be preceeded/followed by other characters, like parent.my_field or in
-        // a domain like [('...', '...', my_field)] etc.
-        // Negative lookbehind is not correctly handled in JS ...
         const chars = "[^\\w\\u007F-\\uFFFF]";
         const re = new RegExp(`(${chars}|^)${fieldName}(${chars}|$)`, "g");
         this._operations.clear();
@@ -714,10 +663,6 @@ export class ViewEditorModel extends SignalStore {
         );
     }
 
-    //-----------------------------------------------------------------
-    // Private
-    //-----------------------------------------------------------------
-
     async _createInlineView({
         subViewType,
         fullXpath,
@@ -725,16 +670,11 @@ export class ViewEditorModel extends SignalStore {
         resModel,
         fieldName,
     }) {
-        // We build the correct xpath if we are editing a 'sub' subview
-        // Use specific view if available in context
-        // We write views in the base language to make sure we do it on the source term field
-        // of ir.ui.view
         const context = { ...user.context, lang: false, studio: true };
         if (subViewRef) {
             context[`${subViewType}_view_ref`] = subViewRef;
         }
 
-        // FIXME: maybe this route should return def _return_view
         const studioViewArch = await this._decoratedRpc(
             "/web_studio/create_inline_view",
             {
@@ -750,7 +690,6 @@ export class ViewEditorModel extends SignalStore {
         return studioViewArch;
     }
 
-    /** Arch Edition */
     async _editView(operations) {
         const context = {
             ...user.context,
@@ -777,8 +716,6 @@ export class ViewEditorModel extends SignalStore {
         const result = await rpc("/web_studio/edit_view_arch", {
             view_id: viewId,
             view_arch: viewArch,
-            // We write views in the base language to make sure we do it on the source term field
-            // of ir.ui.view
             context,
         });
         return result;
@@ -811,9 +748,6 @@ export class ViewEditorModel extends SignalStore {
     _handleDone({ mode, pending, pendingUndone, result }) {
         rpcBus.trigger("CLEAR-CACHES");
         if (this.mainViewType === "kanban") {
-            // the cache is on a by-template basis
-            // kanban may have multiple t-name templates
-            // Wipe everything to force re-compilation
             resetViewCompilerCache();
         }
         if (result) {

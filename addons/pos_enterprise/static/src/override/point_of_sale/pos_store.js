@@ -54,7 +54,6 @@ patch(PosStore.prototype, {
                     [error],
                 );
 
-                // Show error popup only if warningTriggered is false
                 if (!this.data.network.warningTriggered) {
                     this.dialog.add(AlertDialog, {
                         title: _t("Send failed"),

@@ -221,9 +221,6 @@ export class HomeMenuGrid {
             if (section) {
                 section.apps.push(app);
             } else {
-                // An app whose module names no category heads no group of its
-                // own, so "Other" collects them and sorts after every real
-                // heading rather than at ir.module.category's implicit 0.
                 const sequence = app.category ? app.categorySequence || 0 : Infinity;
                 byCategory.set(category, { apps: [app], sequence });
             }

@@ -25,18 +25,15 @@ import { diffColumn, localStartOf } from "./gantt_helpers.js";
 export const PARTS = { full: 1, half: 2, quarter: 4 };
 export const SCALES = {
     day: {
-        // determines subcolumns
         cellPrecisions: { full: 60, half: 30, quarter: 15 },
         defaultPrecision: "full",
         time: "minute",
         unitDescription: _t("minutes"),
 
-        // determines columns
         interval: "hour",
         minimalColumnWidth: 40,
         colHeaderTitle: (date) => formatValue(date, "DDDD, t"),
 
-        // determines column groups
         unit: "day",
         groupHeaderFormatter: (date) => formatValue(date, "DDD"),
         groupHeaderTitle: (date) => formatValue(date, "DDDD"),
@@ -137,7 +134,6 @@ function getScaleClosestTo(scaleId, ranges) {
     const byScaleId = (id) => available.find((scale) => scale.id === id);
     const scaleIds = Object.keys(SCALES);
     const index = scaleIds.indexOf(scaleId);
-    // Coarser first, as a too-fine scale explodes the column count.
     for (let j = index; j >= 0; j--) {
         const scale = byScaleId(scaleIds[j]);
         if (scale) {

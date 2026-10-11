@@ -9,8 +9,6 @@ registry.category("services").add("google_maps", {
         return {
             getGMapsAPIKey: service.getGMapAPIKey,
             loadGMapsAPI(editableMode, refetch) {
-                // Calls inside the shared implementation must still reach
-                // overrides on this service's public, plural-named API.
                 return service.loadGMapAPI.call(
                     { getGMapAPIKey: (...args) => this.getGMapsAPIKey(...args) },
                     editableMode,

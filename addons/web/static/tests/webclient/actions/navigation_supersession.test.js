@@ -189,8 +189,6 @@ test("a dialog above a pending clearBreadcrumbs dispatch does not cancel it", as
         }
     });
 
-    // its records wait, so the dispatch stays pending whatever the action's
-    // load takes to get there
     const records = new Deferred();
     onRpc("web_search_read", () => records);
     const beneath = action.doAction(22, { clearBreadcrumbs: true });

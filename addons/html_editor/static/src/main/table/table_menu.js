@@ -101,10 +101,7 @@ export class TableMenu extends Component {
         let frameElement;
         try {
             frameElement = this.props.document.defaultView.frameElement;
-        } catch {
-            // We don't access the frameElement if we don't have access to it.
-            // (i.e. iframe origin or sandbox restriction)
-        }
+        } catch {}
         if (frameElement) {
             frameRect = frameElement.getBoundingClientRect();
         }

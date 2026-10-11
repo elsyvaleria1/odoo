@@ -50,7 +50,7 @@ export class ReadonlyEmbeddedViewComponent extends Component {
         this.notificationService = useService("notification");
         this.uiService = useService("ui");
         this.viewFilters = useService("knowledgeEmbedViewsFilters");
-        provideDebugContext(); // define a debug context when the developer mode is enable
+        provideDebugContext();
         this.state = proxy({
             error: false,
             isLoaded: false,
@@ -76,20 +76,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
             this.openView();
         });
 
-        /**
-         * Normally, the editable is the only element in the editor which has the focus.
-         * In this case, it can be useful to delegate the focus at a lower level
-         * (i.e. to use hotkeys with the uiService).
-         *
-         * `activateElement` is used to set the host as an active element in the ui service, this enables
-         * us to contain the events inside the embedded view when it has the focus.
-         *
-         * `deactivateElement` removes the host as an active element, leaving only the document as active
-         * and we come back to the default behavior of the document handling all the events.
-         *
-         * As a reminder, tabindex="-1" must be set in the template for an element to capture
-         * focusin and focusout events.
-         */
         useListener(this.props.host, "focusin", () => {
             if (!this.props.host.contains(this.uiService.activeElement)) {
                 this.uiService.activateElement(this.props.host);
@@ -105,7 +91,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
             await this.loadEmbeddedView();
         });
 
-        // TODO ABD: better error handling (discard filters)
         onError((error) => {
             console.error(error);
             this.state.error = true;
@@ -113,8 +98,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
     }
 
     get embeddedViewProps() {
-        // forces reactivity for additionalViewProps, displayName and
-        // favoriteFilters
         return {
             ...this.staticEmbeddedViewProps,
             additionalViewProps: { ...this.additionalViewProps },
@@ -140,8 +123,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
     }
 
     get irFilters() {
-        // TODO ABD: make collaborative filters update reactive since the embedded state is updated,
-        // it should be possible to update the searchModel too.
         return (Object.values(this.favoriteFilters || {}) || []).map((filter) => ({
             ...filter,
             context: JSON.stringify(filter.context),
@@ -150,7 +131,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
 
     async createRecord() {
         this.saveFilters();
-        // can we use res_id: false and thus make one method for select and create?
         this.actionService.doAction({
             res_model: this.action.res_model,
             type: "ir.actions.act_window",
@@ -190,7 +170,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
     }
 
     async loadEmbeddedView() {
-        // allow access to the SearchModel exported state which contain facets
         this.__getGlobalState__ = new CallbackRecorder();
         const context = this.makeEmbeddedContext();
         this.action = await this.loadAction(context);
@@ -206,7 +185,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
     }
 
     async loadAction(context) {
-        // never use an action help with actWindow (could have been added by a malicious user)
         if (this.props.actWindow?.help) {
             delete this.props.actWindow.help;
         }
@@ -226,9 +204,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
         return action;
     }
 
-    /**
-     * Create the context used by the embedded view.
-     */
     makeEmbeddedContext() {
         const context = makeContext([
             this.props.viewProps.context || {},
@@ -239,9 +214,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
         return context;
     }
 
-    /**
-     * Open the view in "full screen"
-     */
     openView() {
         this.saveFilters();
         const props = { ...this.additionalViewProps };
@@ -252,7 +224,6 @@ export class ReadonlyEmbeddedViewComponent extends Component {
                 console.error("Parsing orderBy failed");
             }
         }
-        // make sure name is up to date (could have been updated by collaborative)
         if (this.displayName !== this.action.display_name) {
             this.action.display_name = this.displayName;
             this.action.name = this.displayName;

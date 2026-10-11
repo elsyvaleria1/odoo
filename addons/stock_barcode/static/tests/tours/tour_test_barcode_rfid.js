@@ -8,13 +8,11 @@ import { stepUtils } from "./tour_step_utils.js";
 registry.category("web_tour.tours").add("test_rfid_inventory_scan_sgtin", {
     steps: () => [
         { trigger: ".o_button_inventory", run: "click" },
-        // Scan a first batch of RFID (51), should causes a RPC.
         {
             trigger: ".o_barcode_client_action",
             run:
                 "scanRFID " +
                 [
-                    // 20 French wine RFID.
                     "urn:epc:id:sgtin:230000.0100008.20",
                     "urn:epc:id:sgtin:230000.0100008.0",
                     "urn:epc:id:sgtin:230000.0100008.12",
@@ -35,15 +33,12 @@ registry.category("web_tour.tours").add("test_rfid_inventory_scan_sgtin", {
                     "urn:epc:id:sgtin:230000.0100008.8",
                     "urn:epc:id:sgtin:230000.0100008.19",
                     "urn:epc:id:sgtin:230000.0100008.10",
-                    // 2 Lunch box RFID.
                     "urn:epc:id:sgtin:230000.0100001.1",
                     "urn:epc:id:sgtin:230000.0100001.2",
-                    // 4 Japanese wine RFID.
                     "urn:epc:id:sgtin:230000.0100012.1",
                     "urn:epc:id:sgtin:230000.0100012.7",
                     "urn:epc:id:sgtin:230000.0100012.4",
                     "urn:epc:id:sgtin:230000.0100012.2",
-                    // 10 Large plate RFID.
                     "urn:epc:id:sgtin:546812.0300123.29",
                     "urn:epc:id:sgtin:546812.0300123.22",
                     "urn:epc:id:sgtin:546812.0300123.2",
@@ -54,7 +49,6 @@ registry.category("web_tour.tours").add("test_rfid_inventory_scan_sgtin", {
                     "urn:epc:id:sgtin:546812.0300123.10",
                     "urn:epc:id:sgtin:546812.0300123.19",
                     "urn:epc:id:sgtin:546812.0300123.12",
-                    // 8 Inox knife RFID.
                     "urn:epc:id:sgtin:546812.0300246.4",
                     "urn:epc:id:sgtin:546812.0300246.7",
                     "urn:epc:id:sgtin:546812.0300246.2",
@@ -63,11 +57,9 @@ registry.category("web_tour.tours").add("test_rfid_inventory_scan_sgtin", {
                     "urn:epc:id:sgtin:546812.0300246.0",
                     "urn:epc:id:sgtin:546812.0300246.1",
                     "urn:epc:id:sgtin:546812.0300246.3",
-                    // 3 Handmade argyle plate RFID.
                     "urn:epc:id:sgtin:876543.0210000.00128",
                     "urn:epc:id:sgtin:876543.0210000.00129",
                     "urn:epc:id:sgtin:876543.0210000.00130",
-                    // 4 Chief suit RFID.
                     "urn:epc:id:sgtin:876543.0230004.12",
                     "urn:epc:id:sgtin:876543.0230004.9",
                     "urn:epc:id:sgtin:876543.0230004.15",
@@ -97,21 +89,15 @@ registry.category("web_tour.tours").add("test_rfid_inventory_scan_sgtin", {
                 helper.assertLineQty(6, "4/3");
             },
         },
-        // Scan a second batch of RFID. A RPC is done for missing SN.
-        // TODO: Ideally, once product's quants were fetched, no more RPC are needed
-        // for this product and product's LN/SN. Need to find a way to not fetch
-        // data for missing SN when quants already fetched.
         {
             trigger: ".o_barcode_client_action",
             run:
                 "scanRFID " +
                 [
-                    // 4 French wine RFID.
                     "urn:epc:id:sgtin:230000.0100008.23",
                     "urn:epc:id:sgtin:230000.0100008.2",
                     "urn:epc:id:sgtin:230000.0100008.7",
                     "urn:epc:id:sgtin:230000.0100008.15",
-                    // 8 Lunch box RFID.
                     "urn:epc:id:sgtin:230000.0100001.3",
                     "urn:epc:id:sgtin:230000.0100001.4",
                     "urn:epc:id:sgtin:230000.0100001.5",
@@ -120,12 +106,10 @@ registry.category("web_tour.tours").add("test_rfid_inventory_scan_sgtin", {
                     "urn:epc:id:sgtin:230000.0100001.8",
                     "urn:epc:id:sgtin:230000.0100001.9",
                     "urn:epc:id:sgtin:230000.0100001.10",
-                    // 4 Japanese wine RFID.
                     "urn:epc:id:sgtin:230000.0100012.3",
                     "urn:epc:id:sgtin:230000.0100012.5",
                     "urn:epc:id:sgtin:230000.0100012.6",
                     "urn:epc:id:sgtin:230000.0100012.0",
-                    // 25 Large plate RFID.
                     "urn:epc:id:sgtin:546812.0300123.34",
                     "urn:epc:id:sgtin:546812.0300123.31",
                     "urn:epc:id:sgtin:546812.0300123.28",
@@ -151,10 +135,8 @@ registry.category("web_tour.tours").add("test_rfid_inventory_scan_sgtin", {
                     "urn:epc:id:sgtin:546812.0300123.9",
                     "urn:epc:id:sgtin:546812.0300123.17",
                     "urn:epc:id:sgtin:546812.0300123.32",
-                    // 2 Handmade argyle plate RFID.
                     "urn:epc:id:sgtin:876543.0210000.00131",
                     "urn:epc:id:sgtin:876543.0210000.00132",
-                    // 3 Chief suit RFID.
                     "urn:epc:id:sgtin:876543.0230004.10",
                     "urn:epc:id:sgtin:876543.0230004.16",
                     "urn:epc:id:sgtin:876543.0230004.7",

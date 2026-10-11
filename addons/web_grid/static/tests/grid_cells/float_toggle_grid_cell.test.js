@@ -25,7 +25,7 @@ class Grid extends models.Model {
     ];
 
     _views = {
-        grid: /* xml */ `
+        grid: `
             <grid editable="1">
                 <field name="foo_id" type="row"/>
                 <field name="date" type="col">
@@ -33,7 +33,7 @@ class Grid extends models.Model {
                 </field>
                 <field name="time" type="measure" widget="float_toggle"/>
         </grid>`,
-        "grid,1": /* xml */ `
+        "grid,1": `
             <grid editable="1">
                 <field name="foo_id" type="row"/>
                 <field name="date" type="col">
@@ -111,22 +111,18 @@ test("FloatToggleGridCell: keyboard navigation", async () => {
         message: "The element focused should be the button of the grid cell",
     });
 
-    // Go to the next cell
     await press("tab");
     await animationFrame();
     checkGridCellInRightPlace("2", "3");
 
-    // Go to the previous cell
     await press("shift+tab");
     await animationFrame();
     checkGridCellInRightPlace("2", "2");
 
-    // Go the cell below
     await press("enter");
     await animationFrame();
     checkGridCellInRightPlace("3", "2");
 
-    // Go up since it is the cell in the row
     await press("enter");
     await animationFrame();
     checkGridCellInRightPlace("2", "3");
@@ -135,22 +131,18 @@ test("FloatToggleGridCell: keyboard navigation", async () => {
     await animationFrame();
     checkGridCellInRightPlace("2", "2");
 
-    // Go to the last editable cell in the grid view since it is the first cell.
     await press("shift+tab");
     await animationFrame();
     checkGridCellInRightPlace("3", "8");
 
-    // Go back to the first cell since it is the last cell in grid view.
     await press("tab");
     await animationFrame();
     checkGridCellInRightPlace("2", "2");
 
-    // Go to the last editable cell in the grid view since it is the first cell.
     await press("shift+tab");
     await animationFrame();
     checkGridCellInRightPlace("3", "8");
 
-    // Go back to the first cell since it is the last cell in grid view.
     await press("enter");
     await animationFrame();
     checkGridCellInRightPlace("2", "2");

@@ -149,16 +149,13 @@ describe("board_desktop", () => {
 
         await contains("h3 i.fa-window-maximize").click();
 
-        // content is visible again
         expect(".o-dashboard-action .o_list_view").toHaveCount(1);
         expect.verifySteps(["load action", "edit custom", "edit custom"]);
 
-        // header should have dropdown with correct image
         expect(
             ".o-dashboard-header .dropdown img[data-src='/board/static/img/layout_2-1.png']",
         ).toHaveCount(1);
 
-        // change layout to 1-1
         await contains(".o-dashboard-header .dropdown img").click();
         await contains(".dropdown-item:nth-child(2)").click();
         expect(
@@ -197,13 +194,6 @@ describe("board_desktop", () => {
     });
 
     test("can render an action without view_mode attribute", async () => {
-        // The view_mode attribute is automatically set to the 'action' nodes when
-        // the action is added to the dashboard using the 'Add to dashboard' button
-        // in the searchview. However, other dashboard views can be written by hand
-        // (see openacademy tutorial), and in this case, we don't want hardcode
-        // action's params (like context or domain), as the dashboard can directly
-        // retrieve them from the action. Same applies for the view_type, as the
-        // first view of the action can be used, by default.
         onRpc("/web/action/load", () => ({
             res_model: "partner",
             views: [
@@ -401,12 +391,7 @@ describe("board_desktop", () => {
     });
 
     test("non-existing action in a dashboard", async () => {
-        onRpc(
-            "/web/action/load",
-            () =>
-                // server answer if the action doesn't exist anymore
-                false,
-        );
+        onRpc("/web/action/load", () => false);
         await mountView({
             type: "form",
             resModel: "board",

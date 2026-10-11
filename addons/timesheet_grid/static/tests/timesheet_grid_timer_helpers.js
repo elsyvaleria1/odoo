@@ -19,7 +19,6 @@ export async function clickTimerButton(action) {
     await click(selector);
 
     if (action !== "discard") {
-        // add a delay for the debounce added on start/stop actions
         await delay(250);
     }
     await animationFrame();

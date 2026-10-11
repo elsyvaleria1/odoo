@@ -83,7 +83,6 @@ registerWebsitePreviewTour(
     },
     () => [
         ...setupSteps(),
-        // 1. Check multi image upload
         {
             content: "click on dropped snippet",
             trigger: ":iframe #wrap .s_image_gallery .img",
@@ -98,8 +97,6 @@ registerWebsitePreviewTour(
             content: "manually trigger input change",
             trigger: ".o_select_media_dialog .o_upload_media_button",
             run() {
-                // This will trigger upload of dummy files for test purpose, as a
-                // test can't select local files to upload into the input.
                 document.body
                     .querySelector(".o_select_media_dialog .o_file_input")
                     .dispatchEvent(new Event("change"));
@@ -150,7 +147,6 @@ registerWebsitePreviewTour(
             trigger: ".modal-footer .btn-secondary",
             run: "click",
         },
-        // 2. Check success single image upload
         {
             content: "click on dropped snippet",
             trigger: ":iframe #wrap .s_text_image .img",
@@ -165,8 +161,6 @@ registerWebsitePreviewTour(
             content: "manually trigger input change",
             trigger: ".o_select_media_dialog .o_upload_media_button",
             run() {
-                // This will trigger upload of dummy files for test purpose, as a
-                // test can't select local files to upload into the input.
                 document.body
                     .querySelector(".o_select_media_dialog .o_file_input")
                     .dispatchEvent(new Event("change"));
@@ -203,7 +197,6 @@ registerWebsitePreviewTour(
                 "toaster should disappear after a few seconds if the uploaded image is successful",
             trigger: "body:not(:has(.o_we_progressbar))",
         },
-        // 3. Check error single image upload
         {
             content: "click on dropped snippet",
             trigger: ":iframe #wrap .s_text_image .img",
@@ -219,8 +212,6 @@ registerWebsitePreviewTour(
             trigger: ".o_select_media_dialog .o_upload_media_button",
             run() {
                 patchWithError = true;
-                // This will trigger upload of dummy files for test purpose, as a
-                // test can't select local files to upload into the input.
                 document.body
                     .querySelector(".o_select_media_dialog .o_file_input")
                     .dispatchEvent(new Event("change"));
@@ -258,7 +249,6 @@ registerWebsitePreviewTour(
     },
     () => [
         ...setupSteps(),
-        // 1. Check multi image upload
         {
             content: "click on dropped snippet",
             trigger: ":iframe #wrap .s_image_gallery .img",
@@ -275,7 +265,7 @@ registerWebsitePreviewTour(
             run: "edit fox",
         },
         {
-            content: "click on unsplash result", // note that unsplash is mocked
+            content: "click on unsplash result",
             trigger:
                 ".o_we_media_dialog_img_wrapper:has(img[alt~=fox]) + .o_button_area",
             run: "click",
@@ -285,7 +275,6 @@ registerWebsitePreviewTour(
         },
         {
             content: "check that the upload progress bar is correctly shown",
-            // ensure it is there so we are sure next step actually test something
             trigger:
                 ".o_we_progressbar:contains('fox'):contains('File has been uploaded')",
         },

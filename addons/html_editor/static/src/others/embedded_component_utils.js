@@ -63,11 +63,6 @@ class EmbeddedHost extends Component {
 
     setup() {
         if (this.props.pluginManager) {
-            // the component is a root of its own but sits in its host's
-            // content: it reads the scopes (view model, dialog, ...) the host
-            // reads, as OWL 2's inherited env did. Set here, before providing,
-            // since createRoot's own pluginManager option is applied after
-            // setup and would discard the scope provided below.
             useScope().pluginManager = this.props.pluginManager;
         }
         provideEmbeddedComponentContext(this.props.context);

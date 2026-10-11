@@ -11,7 +11,6 @@ patch(OrderPaymentValidation.prototype, {
             if (pe.coupon_id > 0) {
                 pointChanges[pe.coupon_id] = pe.points;
             } else if (pe.barcode && !pe.giftCardId) {
-                // New coupon with a specific code, validate that it does not exist
                 newCodes.push(pe.barcode);
             }
         }
@@ -28,7 +27,6 @@ patch(OrderPaymentValidation.prototype, {
         if (!(await this.isOrderValid(isForceValidate))) {
             return;
         }
-        // No need to do an rpc if no existing coupon is being used.
         if (Object.keys(pointChanges || {}).length > 0 || newCodes.length) {
             try {
                 const { successful, payload } = await this.pos.data.call(
@@ -36,7 +34,6 @@ patch(OrderPaymentValidation.prototype, {
                     "check_coupon_programs",
                     [[], pointChanges, newCodes],
                 );
-                // Payload may contain the points of the concerned coupons to be updated in case of error. (So that rewards can be corrected)
                 if (payload && payload.updated_points) {
                     for (const pointChange of Object.entries(payload.updated_points)) {
                         const coupon = this.pos.models["loyalty.card"].get(
@@ -60,10 +57,7 @@ patch(OrderPaymentValidation.prototype, {
                     });
                     return;
                 }
-            } catch {
-                // Do nothing with error, while this validation step is nice for error messages
-                // it should not be blocking.
-            }
+            } catch {}
         }
         await super.validateOrder(...arguments);
     },

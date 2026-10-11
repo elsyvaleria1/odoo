@@ -41,7 +41,6 @@ export class ActivitiesTile extends Component {
 
     /** @param {ActivityGroup} group */
     open(group) {
-        // a group with nothing due today or before would open an empty list
         const filter = group.overdue || group.today ? "all" : "upcoming_all";
         return activityGroupOpener.open(this.appContext, group, filter);
     }

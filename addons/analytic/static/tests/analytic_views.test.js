@@ -159,9 +159,8 @@ test("Analytic hierachy in pivot view", async () => {
         ".o_group_by_menu .o_accordion_values .o-dropdown-item:last",
     ).click();
     expect(".o_facet_value").toHaveText("Country");
-    expect(".o_pivot tbody .o_value").toHaveCount(4); // 3 groups + 1 total
+    expect(".o_pivot tbody .o_value").toHaveCount(4);
 
-    // Also check the pivot cell choices
     await contains(".o_pivot tbody .o_pivot_header_cell_closed").click();
     await contains(".o_popover .o-dropdown-caret").hover();
     expect(".o_popover.o-dropdown--menu-submenu span.o-dropdown-item").toHaveCount(3);

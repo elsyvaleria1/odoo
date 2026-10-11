@@ -67,9 +67,9 @@ export class MainMenu extends Component {
                     "It won't appear anymore, so make sure you don't need the barcodes sheet or you have a copy.",
             ),
             confirm: async () => {
-                await rpc("/stock_barcode/rid_of_message_demo_barcodes"); // Sets action message param false on server
-                this.state.displayDemoMessage = false; // Remove message from current view
-                this.props.action.params.message_demo_barcodes = false; // Remove message if using breadcrumbs
+                await rpc("/stock_barcode/rid_of_message_demo_barcodes");
+                this.state.displayDemoMessage = false;
+                this.props.action.params.message_demo_barcodes = false;
             },
             cancel: () => {},
             confirmLabel: _t("Remove it"),
@@ -93,7 +93,6 @@ export class MainMenu extends Component {
         this.notificationService.add(res.warning, { type: "danger" });
     }
 
-    /** Builds the barcode landing page bullet points, decribing features available depending on settings */
     get barcodeHomeHelper() {
         const tags = {
             bold_s: markup`<b>`,
@@ -106,7 +105,6 @@ export class MainMenu extends Component {
                 tags,
             ),
         ];
-        // 2nd bullet point depends on which setting is activated
         if (this.packagesEnabled && this.trackingEnabled) {
             bullets.push(
                 _t(

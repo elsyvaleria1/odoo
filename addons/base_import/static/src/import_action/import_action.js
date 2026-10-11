@@ -31,10 +31,6 @@ export class ImportAction extends Component {
     static props = { ...standardActionServiceProps };
     static path = "import";
     static displayName = _t("Import a File");
-    // Single source of truth for both the FileInput button (import_action.xml)
-    // and the dropzone validation below: they used to disagree (button allowed
-    // .xls/.xlsm/.ods too, dropzone only .csv/.xlsx and rejected the rest with
-    // two different, both-incomplete error messages) (t24068 F6-frontend).
     static ACCEPTED_FILE_EXTENSIONS = [".csv", ".xls", ".xlsx", ".xlsm", ".ods"];
     props = useProps(this.constructor.props);
 
@@ -75,10 +71,6 @@ export class ImportAction extends Component {
                 });
             } else {
                 const file = files[0];
-                // Same accepted-extension list as the FileInput button
-                // (import_action.xml) — used to only accept .csv/.xlsx here,
-                // silently rejecting valid .xls/.xlsm/.ods drops that the
-                // button accepted fine (t24068 F6-frontend).
                 const isValidFile = ImportAction.ACCEPTED_FILE_EXTENSIONS.some((ext) =>
                     file.name.toLowerCase().endsWith(ext),
                 );
@@ -118,12 +110,6 @@ export class ImportAction extends Component {
      */
     async _getOriginAction() {
         const stack = this.actionService.controllerStack ?? [];
-        // This client action is itself on the stack by the time we run, so walk
-        // down to the nearest window action rather than taking the top. Read
-        // `_originalAction`, not the controller's live `action`: the latter is
-        // the processed runtime copy, whose `views`/`view_mode` no longer match
-        // what the user's own action declared — and those two fields are the
-        // whole reason we want it (see `openRecords`).
         for (let i = stack.length - 1; i >= 0; i--) {
             const controller = stack[i];
             if (controller?.action?.type !== "ir.actions.act_window") {
@@ -133,11 +119,6 @@ export class ImportAction extends Component {
             return original ?? controller.action;
         }
 
-        // Deep link, e.g. /odoo/action-2/import: the web client mounts this
-        // client action while restoring URL state, so nothing is on the
-        // controller stack yet and the action beneath us exists only as an id
-        // in `actionStack`. Resolve it — otherwise the import screen has no
-        // model to import into and bounces straight back out.
         const urlStack = this.props.action.params?.actionStack ?? [];
         const selfIndex = urlStack.findIndex(
             (entry) => entry?.action === ImportAction.path,
@@ -153,16 +134,12 @@ export class ImportAction extends Component {
                 if (action?.type === "ir.actions.act_window") {
                     return action;
                 }
-            } catch {
-                // A stale or deleted action in the URL is not this screen's
-                // problem to report; keep looking further down the stack.
-            }
+            } catch {}
         }
         return null;
     }
 
     async onWillStart() {
-        // this.props.action.params.model is there for retro-compatibility issues
         const activeModel =
             this.props.action.params?.model || this.props.action.params?.active_model;
         const originAction = await this._getOriginAction();
@@ -177,9 +154,6 @@ export class ImportAction extends Component {
             this.action = originAction;
             this.resModel = originAction.res_model;
         } else {
-            // Nothing tells us what to import into — a bare /odoo/import URL,
-            // or an import opened over a non-window action. Leave rather than
-            // mount an action that cannot work.
             return this.config.historyBack();
         }
         this.model.setResModel(this.resModel);
@@ -230,10 +204,6 @@ export class ImportAction extends Component {
         });
     }
 
-    //--------------------------------------------------------------------------
-    // Options
-    //--------------------------------------------------------------------------
-
     get formattingOptions() {
         return this.model.formattingOptions;
     }
@@ -256,8 +226,6 @@ export class ImportAction extends Component {
         return this.state.filename !== undefined;
     }
 
-    // Activate the batch configuration panel only if the number of rows > 100. (In order to let the user choose
-    // the batch size even for medium size file. Could be useful to reduce the batch size for complex models).
     get isBatched() {
         return this.state.numRows > 100;
     }
@@ -283,10 +251,6 @@ export class ImportAction extends Component {
         this.model.unblock();
     }
 
-    //--------------------------------------------------------------------------
-    // File
-    //--------------------------------------------------------------------------
-
     async handleFilesUpload(files) {
         if (!files || files.length <= 0) {
             return;
@@ -309,11 +273,6 @@ export class ImportAction extends Component {
     }
 
     async handleImport(isTest = true) {
-        // `model.block()` paints the overlay asynchronously (next frame), so it
-        // alone doesn't stop a double-click firing two concurrent
-        // execute_import calls within the same frame (duplicate-import risk,
-        // t24068 F4-frontend). This flag is set synchronously, before any
-        // `await`.
         if (this.state.isImporting) {
             return;
         }
@@ -375,10 +334,6 @@ export class ImportAction extends Component {
     stopImport() {
         this.model.stopImport();
     }
-
-    //--------------------------------------------------------------------------
-    // Fields
-    //--------------------------------------------------------------------------
 
     onFieldChanged(column, fieldInfo) {
         this.model.setColumnField(column, fieldInfo);

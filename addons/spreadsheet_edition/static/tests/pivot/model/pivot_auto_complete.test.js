@@ -58,13 +58,11 @@ test("do not show autocomplete if pivot id already set", async function () {
     await insertPivotInSpreadsheet(model, "pivot2", { arch: getBasicPivotArch() });
     const { store: composer } = makeStoreWithModel(model, CellComposerStore);
     for (const func of ["PIVOT", "PIVOT.HEADER", "PIVOT.VALUE"]) {
-        // id as a number
         composer.startEdition(`=${func}(1`);
         await animationFrame();
         expect(composer.isAutoCompleteDisplayed).toBe(false);
         composer.cancelEdition();
 
-        // id as a string
         composer.startEdition(`=${func}("1"`);
         await animationFrame();
         expect(composer.isAutoCompleteDisplayed).toBe(false);
@@ -74,7 +72,7 @@ test("do not show autocomplete if pivot id already set", async function () {
 
 test("PIVOT.VALUE measure", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
                 <field name="__count" type="measure"/>
@@ -108,7 +106,7 @@ test("PIVOT.VALUE measure", async function () {
 
 test("PIVOT.VALUE measure with the pivot id as a string", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="probability" type="measure"/>
             </pivot>`,
@@ -138,7 +136,7 @@ test("PIVOT.VALUE measure without any pivot id", async function () {
 
 test("PIVOT.VALUE group with a single col group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="probability" type="measure"/>
@@ -171,7 +169,7 @@ test("PIVOT.VALUE group with a single col group", async function () {
 
 test("PIVOT.VALUE group with a pivot id as string", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="probability" type="measure"/>
@@ -186,7 +184,7 @@ test("PIVOT.VALUE group with a pivot id as string", async function () {
 
 test("PIVOT.VALUE group with a single row group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="row"/>
                 <field name="probability" type="measure"/>
@@ -220,7 +218,7 @@ test("PIVOT.VALUE group with a single row group", async function () {
 
 test("ODOO.VALUE group with a single date grouped by day", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" type="row" interval="day"/>
                 <field name="probability" type="measure"/>
@@ -254,7 +252,7 @@ test("ODOO.VALUE group with a single date grouped by day", async function () {
 
 test("PIVOT.VALUE group after a positional group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="date" type="row"/>
@@ -270,7 +268,7 @@ test("PIVOT.VALUE group after a positional group", async function () {
 
 test("PIVOT.VALUE search field", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="probability" type="measure"/>
@@ -285,7 +283,7 @@ test("PIVOT.VALUE search field", async function () {
 
 test("PIVOT.VALUE search field with both col and row group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="date" type="row"/>
@@ -293,7 +291,6 @@ test("PIVOT.VALUE search field with both col and row group", async function () {
             </pivot>`,
     });
     const { store: composer } = makeStoreWithModel(model, CellComposerStore);
-    // (notice the space after the comma)
     composer.startEdition('=PIVOT.VALUE(1,"probability", ');
     await animationFrame();
     const proposals = composer.autoCompleteProposals;
@@ -307,7 +304,7 @@ test("PIVOT.VALUE search field with both col and row group", async function () {
 
 test("PIVOT.VALUE group with row and col groups for the first group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="row"/>
                 <field name="date" type="col"/>
@@ -328,7 +325,7 @@ test("PIVOT.VALUE group with row and col groups for the first group", async func
 
 test("PIVOT.VALUE group with row and col groups for the col group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="row"/>
                 <field name="date" type="col"/>
@@ -344,7 +341,7 @@ test("PIVOT.VALUE group with row and col groups for the col group", async functi
 
 test("PIVOT.VALUE group with two rows, on the first group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="row"/>
                 <field name="date" type="row"/>
@@ -353,7 +350,6 @@ test("PIVOT.VALUE group with two rows, on the first group", async function () {
     });
     const { store: composer } = makeStoreWithModel(model, CellComposerStore);
     composer.startEdition('=PIVOT.VALUE(1,"probability", ,1,"date", "11/2020")');
-    //..................................................^ the cursor is here
     composer.changeComposerCursorSelection(29, 29);
     await animationFrame();
     const proposals = composer.autoCompleteProposals;
@@ -362,7 +358,7 @@ test("PIVOT.VALUE group with two rows, on the first group", async function () {
 
 test("PIVOT.VALUE search a positional group", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="probability" type="measure"/>
@@ -377,7 +373,7 @@ test("PIVOT.VALUE search a positional group", async function () {
 
 test("PIVOT.VALUE autocomplete relational field for group value", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="row"/>
                 <field name="probability" type="measure"/>
@@ -413,7 +409,7 @@ test("PIVOT.VALUE autocomplete relational field for group value", async function
 
 test("PIVOT.VALUE autocomplete date field for group value", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" type="row" interval="month"/>
                 <field name="probability" type="measure"/>
@@ -460,7 +456,7 @@ test("PIVOT.VALUE autocomplete date field for group value", async function () {
 
 test("PIVOT.VALUE autocomplete date field with no specified granularity for group value", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" type="row"/>
                 <field name="probability" type="measure"/>
@@ -507,7 +503,7 @@ test("PIVOT.VALUE autocomplete date field with no specified granularity for grou
 
 test("PIVOT.VALUE autocomplete field after a date field", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" type="row" interval="month"/>
                 <field name="product_id" type="row"/>
@@ -523,7 +519,7 @@ test("PIVOT.VALUE autocomplete field after a date field", async function () {
 
 test("PIVOT.VALUE autocomplete field after a date field with granularity in arch but not in formula", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" type="row" interval="month"/>
                 <field name="product_id" type="row"/>
@@ -538,7 +534,7 @@ test("PIVOT.VALUE autocomplete field after a date field with granularity in arch
 
 test("PIVOT.VALUE autocomplete field after a date field without granularity", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" type="row"/>
                 <field name="product_id" type="row"/>
@@ -553,7 +549,7 @@ test("PIVOT.VALUE autocomplete field after a date field without granularity", as
 
 test("PIVOT.VALUE no autocomplete for positional group field", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="row"/>
                 <field name="probability" type="measure"/>
@@ -567,7 +563,7 @@ test("PIVOT.VALUE no autocomplete for positional group field", async function ()
 
 test("PIVOT.HEADER first field", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="probability" type="measure"/>
@@ -588,7 +584,7 @@ test("PIVOT.HEADER first field", async function () {
 
 test("PIVOT.HEADER search field", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="probability" type="measure"/>
@@ -609,7 +605,7 @@ test("PIVOT.HEADER search field", async function () {
 
 test("PIVOT.HEADER group value", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="product_id" type="col"/>
                 <field name="probability" type="measure"/>

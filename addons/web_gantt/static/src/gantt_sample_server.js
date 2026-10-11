@@ -2,12 +2,6 @@
 import { registry } from "@web/core/registry";
 
 function _mockGetGanttData(params) {
-    // Through the public entry point rather than `_mockFormattedReadGroup`:
-    // `mockRpc` calls a contributed handler with the sample server as `this`,
-    // which makes its underscore-prefixed helpers reachable but not public --
-    // TypeScript reports them as private the moment a file opts into checking.
-    // `mockRpc` dispatches `formatted_read_group` to the same helper, and
-    // `_createSampleRecords` is guarded, so re-entering it costs nothing.
     let groups = this.mockRpc({
         ...params,
         method: "formatted_read_group",

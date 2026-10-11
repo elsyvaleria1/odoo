@@ -10,7 +10,6 @@ import { addFieldDependencies } from "@web/model/relational_model";
 export class GoalListController extends AppraisalGoalDeleteListController {
     setup() {
         super.setup();
-        // To check if a goal already have a template
         addFieldDependencies(this.model.config.activeFields, this.model.config.fields, [
             { name: "template_goal_id", type: "many2one" },
             { name: "child_ids", type: "one2many" },

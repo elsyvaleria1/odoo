@@ -15,13 +15,11 @@ test("onChoiceClicked and selectItem", async () => {
         props: { productTemplate: comboProduct },
     });
 
-    // click selected choice
     comp.onChoiceClicked(0);
     expect(comp.state.showResume).toBeEmpty();
     expect(comp.currentChoiceState.displayAttributesOfItem).toBeEmpty();
     expect(comp.state.selectedChoiceIndex).toBe(0);
 
-    // click next choice without seleting current
     comp.onChoiceClicked(1);
     expect(comp.state.selectedChoiceIndex).toBe(0);
 

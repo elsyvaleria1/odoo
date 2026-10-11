@@ -36,7 +36,6 @@ test("call a specific action with some params and value", async () => {
     expect("[data-action-id='customAction']").toHaveText("MyAction");
     await click("[data-action-id='customAction']");
     await animationFrame();
-    // The function `apply` should be called twice (on hover (for preview), then, on click).
     expect.verifySteps([
         "customAction myParam myValue",
         "customAction myParam myValue",
@@ -78,7 +77,6 @@ test("call a shorthand action and a specific action", async () => {
     await click("[data-action-id='customAction'][data-class-action='my-custom-class']");
     await animationFrame();
     expect(":iframe .test-options-target").toHaveClass("my-custom-class");
-    // The function `apply` should be called twice (on hover (for preview), then, on click).
     expect.verifySteps(["customAction", "customAction"]);
     expect(":iframe .test-options-target").toHaveInnerHTML("c");
 });
@@ -673,8 +671,6 @@ describe("Operation", () => {
         hover("[data-action-id='asyncAction2']");
         hover("[data-action-id='asyncAction3']");
         await runAllTimers();
-        // we check here that the action2 load operation has been cancelled by
-        // the action 3.
         expect.verifySteps(["load asyncAction1", "load asyncAction3"]);
         await animationFrame();
         await contains("[data-action-id='asyncAction3']").click();
@@ -691,9 +687,6 @@ describe("Operation", () => {
             "a-asyncAction3-action1",
         );
 
-        // If the code is not working properly, hovering on another action at
-        // this moment could revert the changes made by asyncAction3 through the
-        // revert of the preview. In order to test this case, we hover action2.
         await hover("[data-action-id='action2']");
         await animationFrame();
         expect(":iframe .test-options-target").toHaveInnerHTML(
@@ -751,9 +744,6 @@ describe("Operation", () => {
             "a-asyncAction3-action1",
         );
 
-        // If the code is not working properly, hovering on another action at
-        // this moment could revert the changes made by asyncAction3 through the
-        // revert of the preview. In order to test this case, we hover action2.
         await hover("[data-action-id='action2']");
         await animationFrame();
         expect(":iframe .test-options-target").toHaveInnerHTML(

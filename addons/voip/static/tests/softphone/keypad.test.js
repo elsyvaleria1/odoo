@@ -183,13 +183,10 @@ test("Search by T9 code works", async () => {
     await start();
     await click(".o_menu_systray [title='Show Softphone']");
     await click(".o-voip-Softphone nav button:contains(Keypad)");
-    // T9 search with no results
     await insertText(".o-voip-Keypad-input", "99999");
     await contains(".o-voip-Keypad .d-flex.flex-column.mx-3", { count: 0 });
-    // T9 search that should find results
     await insertText(".o-voip-Keypad-input", "5646", { replace: true });
     await contains(".o-voip-Keypad button:contains(John Doe)");
-    // T9 search for last name match
     await insertText(".o-voip-Keypad-input", "76484", { replace: true });
     await contains(".o-voip-Keypad button:contains(Jane Smith)");
 });

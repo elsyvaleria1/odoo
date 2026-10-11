@@ -27,7 +27,6 @@ patch(AddIoTBoxFormController.prototype, {
         }
 
         const iotBoxIdentifier = this.newIoTBoxes[0].identifier;
-        // We need a timeout to wait for IoT Box to send its devices unless autoconfigure makes no sense.
         this.interval = setInterval(async () => {
             const connectedDevicesAmount = await this.orm.searchCount("iot.device", [
                 ["iot_id.identifier", "=", iotBoxIdentifier],
@@ -48,7 +47,6 @@ patch(AddIoTBoxFormController.prototype, {
             }
         }, 1000);
 
-        // Set a timeout to stop the polling after 30 seconds
         this.timeout = setTimeout(
             () =>
                 this.actionService.doAction({

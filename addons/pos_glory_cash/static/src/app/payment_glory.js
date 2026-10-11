@@ -32,7 +32,6 @@ export class PaymentGlory extends PaymentInterface {
             case "IDLE": {
                 const isFirstStatus = this.gloryService.state.inventory.length === 0;
                 if (isFirstStatus && this.paymentLine) {
-                    // In this case we have a stale payment
                     this.pos.getOrder().removePaymentline(this.paymentLine);
                 }
                 return;

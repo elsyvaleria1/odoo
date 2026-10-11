@@ -4,19 +4,6 @@ import { definePosLoyaltyModels } from "@pos_loyalty/../tests/unit/data/generate
 
 definePosLoyaltyModels();
 
-/**
- * `comboTotalPrice` / `comboTotalPriceWithoutTax` (point_of_sale, on
- * pos.order.line) exist solely for pos_loyalty: `pointsForPrograms` sums them
- * as the "amount with tax" / "amount without tax" gating every rule's
- * `minimum_amount` and as the base of money-mode points, and `_getCheapestLine`
- * divides them by `qty` to rank lines. Nothing else reads them.
- *
- * Product templates used: 5 = "TEST" (combo parent), 6 = "TEST 2" and
- * 8 = "Wood chair" (leaf children), 9 = "Steel chair" (plain line). Template 7
- * is deliberately avoided: it is itself a combo product, so it acquires its own
- * `combo_line_ids` and would be filtered out of the leaf sum.
- */
-
 const addLine = async (store, order, tmplId, qty, vals = {}, opts = {}) =>
     await store.addLineToOrder(
         {
@@ -26,17 +13,9 @@ const addLine = async (store, order, tmplId, qty, vals = {}, opts = {}) =>
         },
         order,
         { force: true, ...opts },
-        false, // configure: skip the combo configurator dialog
+        false,
     );
 
-/**
- * Builds a combo parent with two leaf children plus one plain (non-combo) line.
- *
- * A refund order is shaped exactly like this in production: ticket_screen
- * creates each line with `qty: -refundDetail.qty` (negative) and then relinks
- * `combo_line_ids` onto the refund's parent line. `isSaleDisallowed` rejects
- * positive-qty lines on a refund order, hence the sign of `qty` here.
- */
 const setupComboOrder = async (
     store,
     { qty = 2, isRefund = false, withPlain = true } = {},
@@ -60,9 +39,6 @@ describe("combo totals — the pos_loyalty-facing pair", () => {
         const store = await setupPosEnv();
         const { parent, children } = await setupComboOrder(store, { qty: 3 });
 
-        // Pre-fix this summed `displayPriceUnitExcl` (= unitPrices, computed as
-        // if qty were 1), so every child with qty > 1 was undercounted -- it
-        // under-gated rule minimum_amounts and under-sized discount bases.
         const lineTotals = children.reduce((s, l) => s + l.prices.total_excluded, 0);
         const unitTotals = children.reduce(
             (s, l) => s + l.unitPrices.total_excluded,
@@ -70,8 +46,6 @@ describe("combo totals — the pos_loyalty-facing pair", () => {
         );
 
         expect(parent.comboTotalPriceWithoutTax).toBe(lineTotals);
-        // Guard the guard: the two bases must actually differ at qty > 1, else
-        // this would pass against the pre-fix code too.
         expect(unitTotals).not.toBe(lineTotals);
         expect(children.every((l) => l.prices.total_excluded !== 0)).toBe(true);
     });
@@ -81,10 +55,6 @@ describe("combo totals — the pos_loyalty-facing pair", () => {
         const { order, parent } = await setupComboOrder(store);
         const config = order.config;
 
-        // Pre-fix this summed `displayPrice`, which branches on
-        // iface_tax_included -- a *display* setting. On a POS configured to show
-        // prices ex-tax, `comboTotalPrice` ("with tax") silently returned
-        // tax-EXCLUDED amounts into pos_loyalty's rule math.
         config.iface_tax_included = "total";
         const withTax = parent.comboTotalPrice;
         const withoutTax = parent.comboTotalPriceWithoutTax;

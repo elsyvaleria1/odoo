@@ -11,7 +11,6 @@ export function insertChart(chartData) {
     const chartType = `odoo_${chartData.metaData.mode}`;
     const definition = {
         metaData: {
-            // Transform the fields object into their string representation (with the fields object' toJSON())
             groupBy: JSON.parse(JSON.stringify(chartData.metaData.groupBy)),
             measure: chartData.metaData.measure,
             order: chartData.metaData.order,

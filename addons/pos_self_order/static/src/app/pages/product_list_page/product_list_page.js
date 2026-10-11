@@ -179,8 +179,6 @@ export class ProductListPage extends Component {
 
         const el = this.subCategoryContainerRef.el;
         const nextSubCategories = this.getSubCategories();
-        // Managing this with state would hide the subcategory items before the container finishes closing,
-        // causing an awkward visual transition.
         if (this.state.subCategories.length > 0 && nextSubCategories.length === 0) {
             el.classList.remove("show");
             const oldSelectedCat = this.selectedCategory;

@@ -37,7 +37,7 @@ export class MassMailingBuilder extends Component {
     get builderProps() {
         const builderProps = Object.assign({}, this.props.builderProps);
         const pluginsToRemove = [
-            "BuilderFontPlugin", // Makes call to Google API (can't be used for emails)
+            "BuilderFontPlugin",
             "SavePlugin",
             "SaveSnippetPlugin",
             "AnchorPlugin",
@@ -61,10 +61,7 @@ export class MassMailingBuilder extends Component {
         );
         const optionalPlugins = [
             ...(this.props.builderProps.config.dynamicPlaceholder
-                ? removePlugins(
-                      DYNAMIC_PLACEHOLDER_PLUGINS,
-                      ["PromptPlugin"], // mass_mailing does not use the dependency banner plugin
-                  )
+                ? removePlugins(DYNAMIC_PLACEHOLDER_PLUGINS, ["PromptPlugin"])
                 : []),
         ];
         builderProps.Plugins = [

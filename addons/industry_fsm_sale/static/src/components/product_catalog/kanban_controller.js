@@ -6,7 +6,6 @@ import { useViewConfig } from "@web/core/view_config_hooks";
 
 export class FSMProductCatalogKanbanController extends ProductCatalogKanbanController {
     static template = "web.KanbanView";
-    // changing the template to keep the o-kanban-button-new button
 
     setup() {
         super.setup();
@@ -26,9 +25,6 @@ export class FSMProductCatalogKanbanController extends ProductCatalogKanbanContr
     onWillStart() {}
 
     async backToTask() {
-        // Restore the last form view from the breadcrumbs if breadcrumbs are available.
-        // If, for some weird reason, the user reloads the page then the breadcrumbs are
-        // lost, and we fall back to the form view ourselves.
         if (this.config.breadcrumbs.length > 1) {
             await this.actionService.restore();
         } else {

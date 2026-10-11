@@ -1,11 +1,3 @@
-// Canonical hash of an offline event, byte-for-byte what the server computes in
-// stock.trip.offline.event._trip_hash_event:
-//   sha256(json.dumps(fields, sort_keys=True, separators=(",", ":"),
-//                     ensure_ascii=False).encode())
-// over the JSON the server parses from what the phone sends. Plain ES module with
-// no Odoo imports: the driver page boots from the service worker cache and
-// tests/js/hash_check.mjs imports it under node.
-
 const HASHED_FIELDS = [
     "client_uuid",
     "event_type",
@@ -54,9 +46,6 @@ function pythonNumber(value) {
     }
     const absolute = Math.abs(value);
     if (Number.isInteger(value) || absolute >= 1e-4) {
-        // Integral: JSON.stringify and Python's int agree (1e21 and above come
-        // back as float "1e+21" on both sides). Non-integral from 1e-4 up: both
-        // write the shortest round-trip digits in fixed notation.
         return JSON.stringify(value);
     }
     const [mantissa, exponent] = value.toExponential().split("e");
@@ -107,7 +96,6 @@ export function hashedFields(event) {
     for (const name of HASHED_FIELDS) {
         fields[name] = event[name] === undefined ? null : event[name];
     }
-    // Python's ``or`` defaults: an empty payload is {} and an empty prev_hash "".
     const payload = event.payload;
     fields.payload = payload && Object.keys(payload).length ? payload : {};
     fields.prev_hash = event.prev_hash || "";

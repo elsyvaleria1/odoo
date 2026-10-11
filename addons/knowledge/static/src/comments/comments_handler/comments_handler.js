@@ -12,7 +12,7 @@ import { CommentBeaconManager } from "../../comments/comment_beacon_manager.js";
 import { KnowledgeCommentsThread, MIN_THREAD_WIDTH } from "../comment/comment.js";
 
 const MAX_THREAD_WIDTH = 400;
-const SMALL_THREAD_WIDTH = 40; // o_knowledge_small_ui
+const SMALL_THREAD_WIDTH = 40;
 
 export class KnowledgeCommentsHandler extends Component {
     static template = "knowledge.KnowledgeCommentsHandler";
@@ -117,7 +117,6 @@ export class KnowledgeCommentsHandler extends Component {
         const contentStyle = getComputedStyle(this.props.contentRef.el);
         const paddingRight = parseInt(contentStyle[keys.paddingRight]) || 0;
 
-        // Manually calculate margin to circumvent zero-margin bug in chromium-based browsers
         const contentRect = this.props.contentRef.el.getBoundingClientRect();
         const parentRect =
             this.props.contentRef.el.parentElement.getBoundingClientRect();

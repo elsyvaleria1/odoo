@@ -65,9 +65,6 @@ export const CSS_SHORTHANDS = {
     ],
     padding: ["padding-top", "padding-right", "padding-bottom", "padding-left"],
 };
-/**
- * Set of all the data attributes relative to the background images.
- */
 const BACKGROUND_IMAGE_ATTRIBUTES = new Set([
     "originalId",
     "originalSrc",
@@ -124,18 +121,11 @@ export function getNumericAndUnit(value) {
  * @returns {boolean}
  */
 export function areCssValuesEqual(value1, value2, cssProp, htmlStyle) {
-    // String comparison first
     if (value1 === value2) {
         return true;
     }
 
-    // In case the values are a size, they might be made of two parts.
-    // TODO this seems completely arbitrary to rely on the presence of '-size'
-    // to do this: should not we just list the right CSS property explicitly
-    // if we want to do this? That would have avoided the CSS variable fix that
-    // had to be made here (the '--' part).
     if (cssProp && cssProp.endsWith("-size") && !cssProp.startsWith("--")) {
-        // Avoid re-splitting each part during their individual comparison.
         const pseudoPartProp = cssProp + "-part";
         const re = /-?[0-9.]+(?:e[+|-]?[0-9]+)?\s*[A-Za-z%-]+|auto/g;
         const parts1 = value1.match(re);
@@ -150,8 +140,6 @@ export function areCssValuesEqual(value1, value2, cssProp, htmlStyle) {
         return true;
     }
 
-    // It could be a CSS variable, in that case the actual value has to be
-    // retrieved before comparing.
     if (isCSSVariable(value1)) {
         value1 = getCSSVariableValue(value1.substring(6, value1.length - 1), htmlStyle);
     }
@@ -162,23 +150,18 @@ export function areCssValuesEqual(value1, value2, cssProp, htmlStyle) {
         return true;
     }
 
-    // They may be colors, normalize then re-compare the resulting string
     const color1 = normalizeCSSColor(value1);
     const color2 = normalizeCSSColor(value2);
     if (color1 === color2) {
         return true;
     }
 
-    // They may be gradients
     const value1IsGradient = isColorGradient(value1);
     const value2IsGradient = isColorGradient(value2);
     if (value1IsGradient !== value2IsGradient) {
         return false;
     }
     if (value1IsGradient) {
-        // Kinda hacky and probably inneficient but probably the easiest way:
-        // applied the value as background-image of two fakes elements and
-        // compare their computed value.
         const temp1El = document.createElement("div");
         temp1El.style.backgroundImage = value1;
         document.body.appendChild(temp1El);
@@ -194,10 +177,6 @@ export function areCssValuesEqual(value1, value2, cssProp, htmlStyle) {
         return value1 === value2;
     }
 
-    // In case the values are meant as box-shadow, this is difficult to compare.
-    // In this case we use the kinda hacky and probably inneficient but probably
-    // easiest way: applying the value as box-shadow of two fakes elements and
-    // compare their computed value.
     if (cssProp === "box-shadow") {
         const temp1El = document.createElement("div");
         temp1El.style.boxShadow = value1;
@@ -214,14 +193,11 @@ export function areCssValuesEqual(value1, value2, cssProp, htmlStyle) {
         return value1 === value2;
     }
 
-    // Convert the second value in the unit of the first one and compare
-    // floating values
     const data = getNumericAndUnit(value1);
     if (!data) {
         return false;
     }
     const numValue1 = data[0];
-    // Zero values don't need unit conversion (0px === 0rem === 0em === 0)
     if (parseFloat(numValue1) === 0) {
         const data2 = getNumericAndUnit(value2);
         if (!data2) {
@@ -343,13 +319,6 @@ export function isBackgroundImageAttribute(attribute) {
  * @returns {boolean}
  */
 export function shouldEditableMediaBeEditable(mediaEl) {
-    // Some sections of the DOM are contenteditable="false" (for
-    // example with the help of the o_not_editable class) but have
-    // inner media that should be editable (the fact the container
-    // is not is to prevent adding text in between those medias).
-    // This case is complex and the solution to support it is not
-    // perfect: we mark those media with a class and check that they
-    // are descendant of a savable.
     return mediaEl.parentElement && mediaEl.parentElement.closest(".o_editable");
 }
 /**
@@ -382,7 +351,6 @@ export function forwardToThumbnail(imgEl) {
     }
 }
 
-// TODO: to remove in master (use the one of html_editor instead)
 /**
  * @param {HTMLImageElement} img
  * @returns {Promise<Boolean>}
@@ -394,14 +362,6 @@ export async function isImageCorsProtected(img) {
     }
     let isCorsProtected = false;
     if (!src.startsWith("/") || /\/web\/image\/\d+-redirect\//.test(src)) {
-        // The `fetch()` used later in the code might fail if the image is
-        // CORS protected. We check upfront if it's the case.
-        // Two possible cases:
-        // 1. the `src` is an absolute URL from another domain.
-        //    For instance, abc.odoo.com vs abc.com which are actually the
-        //    same database behind.
-        // 2. A "attachment-url" which is just a redirect to the real image
-        //    which could be hosted on another website.
         isCorsProtected = await fetch(src, { method: "HEAD" })
             .then(() => false)
             .catch(() => true);
@@ -444,7 +404,6 @@ export function applyNeededCss(
         )
     ) {
         el.style.setProperty(cssProp, cssValue);
-        // If change had no effect then make it important.
         if (
             allowImportant &&
             !areCssValuesEqual(
@@ -467,7 +426,6 @@ export function setBuilderCSSVariables(htmlStyle) {
     for (const style of EDITOR_COLOR_CSS_VARIABLES) {
         let value = getCSSVariableValue(style, htmlStyle);
         if (value.startsWith("'") && value.endsWith("'")) {
-            // Gradient values are recovered within a string.
             value = value.substring(1, value.length - 1);
         }
         styles.push(`--hb-cp-${style}: ${value};`);
@@ -552,7 +510,6 @@ export function getAllUsedColors(el) {
             collectColor(parseBoxShadow(shadowValue).color);
         }
     }
-    // Find data-*color attributes.
     for (const dataColoredEl of selectElements(el, "*")) {
         for (const attributeName of Object.keys(dataColoredEl.dataset)) {
             if (attributeName.endsWith("olor")) {
@@ -560,7 +517,6 @@ export function getAllUsedColors(el) {
             }
         }
     }
-    // Shapes & illustrations.
     const collectUrlColors = (urlString) => {
         const url = new URL(urlString, window.location);
         for (const colorKey of [...url.searchParams.keys()].filter((key) =>

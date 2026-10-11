@@ -54,7 +54,6 @@ export const dateRangeService = {
                     return { ranges, types };
                 })
                 .catch((error) => {
-                    // Clear loading state on error so retry is possible
                     loading = null;
                     throw error;
                 });
@@ -68,5 +67,4 @@ export const dateRangeService = {
     },
 };
 
-// Register the service
 registry.category("services").add("date_range", dateRangeService);

@@ -17,8 +17,6 @@ registry.category("web_tour.tours").add("test_repair_without_product_in_parts", 
             trigger: ".o_field_widget[name=partner_id] input",
             run: "click",
         },
-        // Note: Selecting the partner is only to trigger the compute;
-        // this could be done by modifying any other field.
         {
             content: "Select partner",
             trigger: ".ui-menu-item > a:contains('A Partner')",

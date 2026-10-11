@@ -38,8 +38,6 @@ export class FetchMissingTransactions extends Component {
         } else if (context.default_journal_id) {
             activeIds = context.default_journal_id;
         }
-        // Called through env.services.orm rather than useService: the latter protects
-        // calls, so closing the component leaves the response pending and halts execution.
         const action = await this.orm.call(
             "account.journal",
             "action_view_missing_transaction_wizard",

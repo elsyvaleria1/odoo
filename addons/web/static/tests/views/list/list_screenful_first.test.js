@@ -15,7 +15,6 @@ import {
 } from "@web/../tests/web_test_helpers";
 import { ListRecordRow } from "@web/views/list/list_record_row";
 
-// 36 px is the height the renderer counts a row for
 const ROW = 36;
 const SCREENFUL = 10;
 
@@ -137,7 +136,6 @@ test("a column sized from the text of its rows keeps its width while the rest is
     });
     expect(".o_data_row").toHaveCount(SCREENFUL);
     const widths = queryAll("th").map((th) => queryRect(th).width);
-    // the table carries a class for as long as its widths are being computed
     let computations = 0;
     const observer = new MutationObserver((mutations) => {
         computations += mutations.filter((mutation) =>

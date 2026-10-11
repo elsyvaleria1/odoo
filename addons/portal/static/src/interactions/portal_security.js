@@ -19,7 +19,6 @@ export class IdentityCheckCancelled extends Error {
     }
 }
 
-/** Run a complete protected action, treating dismissal as cancellation, not success. */
 export async function guardedByIdentity(action) {
     try {
         return await action();
@@ -177,7 +176,6 @@ export class PortalSecurity extends Interaction {
             initialValue: ev.currentTarget.dataset.name || "",
             confirmLabel: _t("Save"),
             confirm: async ({ inputEl }) => {
-                // an empty name falls back to the platform and browser
                 const name = inputEl.value.trim() || false;
                 log.lifecycle("rename device", () => ({ deviceId, named: !!name }));
                 await this.waitFor(
@@ -290,7 +288,6 @@ export async function handleCheckIdentity(wrapped, ormService, dialogService) {
                     resolve(result);
                     return true;
                 },
-                // The callback enables the Cancel button; onClose settles the promise.
                 cancel: () => {},
                 onInput: ({ inputEl }) => {
                     inputEl.classList.remove("is-invalid");

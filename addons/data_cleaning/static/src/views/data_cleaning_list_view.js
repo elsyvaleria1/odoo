@@ -4,9 +4,6 @@ import { registry } from "@web/core/registry";
 import { listView } from "@web/views/list";
 
 export class DataCleaningListController extends DataCleaningCommonListController {
-    /**
-     * Validate all the records selected
-     */
     async onValidateClick() {
         const record_ids = await this.model.root.getResIds(true);
         await this.orm.call("data_cleaning.record", "action_validate", [record_ids]);

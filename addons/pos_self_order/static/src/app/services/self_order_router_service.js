@@ -51,8 +51,6 @@ export class SelfOrderRouter extends SignalStore {
 
     back() {
         if (!this.historyPage.length) {
-            // We use the browser history, so if the user arrives on a page with a back button from a link,
-            // we don't know the previous page, so we send them back to the beginning of the feed.
             this.navigate("default");
             return;
         }
@@ -122,7 +120,6 @@ export class SelfOrderRouter extends SignalStore {
         }
     }
 
-    // If the url isn't a valid URL, we assume it's a relative path
     customLink(link) {
         let url;
 

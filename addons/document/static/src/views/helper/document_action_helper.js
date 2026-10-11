@@ -6,8 +6,6 @@ import { useSearchModel } from "@web/search/search_model";
 
 export class DocumentsActionHelper extends Component {
     static template = "document.DocumentsActionHelper";
-    // folderId: the folder shown, so that going from one empty folder to
-    // another renders the help of the new one
     static props = { noContentHelp: t.any(), folderId: t.any() };
     props = useProps(this.constructor.props);
 
@@ -43,7 +41,6 @@ export class DocumentsActionHelper extends Component {
         return markup`<p class="o_view_nocontent_smiling_face">${helpMessage}</p>`;
     }
 
-    /** The alias of the folder shown, when the view shows that folder alone. */
     get mailTo() {
         if (typeof this.selectedFolderId !== "number") {
             return undefined;

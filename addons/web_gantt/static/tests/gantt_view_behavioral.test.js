@@ -56,7 +56,6 @@ import {
     selectRange,
 } from "./web_gantt_test_helpers.js";
 
-// Hard-coded daylight saving dates from 2019
 const DST_DATES = {
     winterToSummer: {
         before: "2019-03-30",
@@ -94,35 +93,30 @@ test("date navigation with timezone (1h)", async () => {
 
     expect(getGridContent().range).toBe("12/01/2018 -> 02/28/2019");
 
-    // switch to day view and check day navigation
     await selectRange("Day");
     await ganttControlsChanges();
 
     expect.verifySteps(["&,start,<,2018-12-21 23:00:00,stop,>,2018-12-18 23:00:00"]);
     expect(getGridContent().range).toBe("Day");
 
-    // switch to week view and check week navigation
     await selectRange("Week");
     await ganttControlsChanges();
 
     expect.verifySteps(["&,start,<,2018-12-29 23:00:00,stop,>,2018-12-08 23:00:00"]);
     expect(getGridContent().range).toBe("Week");
 
-    // switch to month view and check week navigation
     await selectRange("Month");
     await ganttControlsChanges();
 
     expect.verifySteps(["&,start,<,2019-01-31 23:00:00,stop,>,2018-10-31 23:00:00"]);
     expect(getGridContent().range).toBe("Month");
 
-    // switch to quarter view and check week navigation
     await selectRange("Quarter");
     await ganttControlsChanges();
 
     expect.verifySteps(["&,start,<,2019-03-31 23:00:00,stop,>,2018-06-30 23:00:00"]);
     expect(getGridContent().range).toBe("Quarter");
 
-    // switch to year view and check year navigation
     await selectRange("Year");
     await ganttControlsChanges();
 
@@ -296,7 +290,7 @@ test("select cells to plan a task: 1-level grouped", async () => {
     await hoverGridCell("11", "December 2018");
     const { moveTo, drop } = await contains(getCell("11", "December 2018")).drag();
     moveTo(getCell("12", "December 2018"));
-    await runAllTimers(); // Pointer move is subjected to throttleForAnimation in gantt
+    await runAllTimers();
     await drop();
 
     expect.verifySteps(["[dialog] Create"]);
@@ -333,9 +327,8 @@ test("select cells to plan a task: 2-level grouped", async () => {
     await hoverGridCell("11", "December 2018");
     const dragAndDrop1 = await contains(getCell("11", "December 2018")).drag();
     dragAndDrop1.moveTo(getCell("12", "December 2018"));
-    await advanceTime(20); // Pointer move is subjected to throttleForAnimation in gantt
+    await advanceTime(20);
     dragAndDrop1.drop();
-    // nothing happens
     await hoverGridCell("11", "December 2018", "Project 1");
     await advanceTime(20);
     const dragAndDrop2 = await contains(
@@ -351,7 +344,6 @@ test("select cells to plan a task: 2-level grouped", async () => {
 test("hovering a cell with special character", async () => {
     expect.assertions(1);
 
-    // add special character to data
     ResUsers._records[0].name = "User' 1";
 
     await mountGanttView({
@@ -360,8 +352,6 @@ test("hovering a cell with special character", async () => {
         groupBy: ["user_id", "project_id"],
     });
 
-    // hover on first header "User' 1" with data-row-id equal to [{"user_id":[1,"User' 1"]}]
-    // the "'" must be escaped with "\\'" in findSiblings to prevent the selector to crash
     await contains(".o_gantt_row_header").hover();
 
     expect(".o_gantt_row_header:first").toHaveClass("o_gantt_group_hovered", {
@@ -395,7 +385,6 @@ test("open a dialog to add a new task", async () => {
 
     await contains(SELECTORS.addButton + ":visible").click();
 
-    // check that the dialog is opened with prefilled fields
     expect(".modal").toHaveCount(1);
     expect(".o_field_widget[name=start] button").toHaveValue("12/01/2018 00:00:00");
     expect(".o_field_widget[name=stop] button").toHaveValue("01/01/2019 00:00:00");
@@ -459,12 +448,10 @@ test("open a dialog to create/edit a task", async () => {
         groupBy: ["user_id", "project_id", "stage"],
     });
 
-    // open dialog to create a task
     expect(".modal").toHaveCount(0);
     await hoverGridCell("10", "December 2018", "In Progress");
     await clickCell("10", "December 2018", "In Progress");
 
-    // check that the dialog is opened with prefilled fields
     expect(".modal").toHaveCount(1);
     expect(".modal-title").toHaveText("Create");
     await contains(".o_field_widget[name=name] input").edit("Task 8");
@@ -474,11 +461,9 @@ test("open a dialog to create/edit a task", async () => {
     expect(".o_field_widget[name=user_id] input").toHaveValue("User 1");
     expect(".o_field_widget[name=stage] input").toHaveValue("In Progress");
 
-    // create the task
     await contains(".o_form_button_save").click();
     expect(".modal").toHaveCount(0);
 
-    // open dialog to view a task
     await editPill("Task 8");
     expect(".modal").toHaveCount(1);
     expect(".modal-title").toHaveText("Open");
@@ -721,7 +706,6 @@ test("clicking on delete button in edit dialog triggers a confirmation dialog, c
     expect(".o_dialog").toHaveCount(0);
     await editPill("Task 1");
     expect(".o_dialog").toHaveCount(1);
-    // trigger the delete button
     await contains(".o_dialog .o_form_button_remove").click();
     expect(".o_dialog").toHaveCount(2);
 
@@ -747,7 +731,6 @@ test("clicking on delete button in edit dialog triggers a confirmation dialog, c
     expect(".o_dialog").toHaveCount(0);
     await editPill("Task 1");
     expect(".o_dialog").toHaveCount(1);
-    // trigger the delete button
     await contains(".o_dialog .o_form_button_remove").click();
     expect(".o_dialog").toHaveCount(2);
     const button = queryOne(".o_dialog:not(.o_inactive_modal) footer .btn-primary");
@@ -755,7 +738,6 @@ test("clicking on delete button in edit dialog triggers a confirmation dialog, c
     await contains(button).click();
     expect(".o_dialog").toHaveCount(0);
     expect.verifySteps(["unlink"]);
-    // Check that the pill has disappeared
     await expect(editPill("Task 1")).rejects.toThrow();
 });
 
@@ -821,7 +803,6 @@ test("open a dialog to plan a task", async () => {
         arch: '<gantt date_start="start" date_stop="stop" />',
     });
 
-    // click on the plan button
     await hoverGridCell("10", "December 2018");
     await clickCell("10", "December 2018");
     expect(".modal .o_list_view").toHaveCount(1);
@@ -831,7 +812,6 @@ test("open a dialog to plan a task", async () => {
         "Task 43",
     ]);
 
-    // Select the first two tasks
     await contains(".modal .o_list_view tbody tr:nth-child(1) input").click();
     await contains(".modal .o_list_view tbody tr:nth-child(2) input").click();
     await contains(".modal footer .o_select_button").click();
@@ -861,12 +841,10 @@ test("cancel the dialog to plan a task does not write anything", async () => {
 
     const pillCountBefore = document.querySelectorAll(SELECTORS.pill).length;
 
-    // click on the plan button
     await hoverGridCell("10", "December 2018");
     await clickCell("10", "December 2018");
     expect(".modal .o_list_view").toHaveCount(1);
 
-    // Select a task, then cancel instead of confirming
     await contains(".modal .o_list_view tbody tr:nth-child(1) input").click();
     await contains(".modal footer .o_form_button_cancel").click();
 
@@ -908,13 +886,11 @@ test("open a dialog to plan a task (multi-level)", async () => {
         groupBy: ["user_id", "project_id", "stage"],
     });
 
-    // click on the plan button
     await hoverGridCell("10", "December 2018", "To Do");
     await clickCell("10", "December 2018", "To Do");
     expect(".modal .o_list_view").toHaveCount(1);
     expect(".modal .o_list_view .o_data_cell").toHaveText("Task 41");
 
-    // Select the first task
     await contains(".modal .o_list_view tbody tr:nth-child(1) input").click();
     await animationFrame();
     await contains(".modal-footer .o_select_button").click();
@@ -944,7 +920,6 @@ test("expand/collapse rows", async () => {
         { title: "Cancelled" },
     ]);
 
-    // collapse all groups
     await contains(SELECTORS.collapseButton).click();
     expect(SELECTORS.expandButton).toHaveCount(1);
     expect(SELECTORS.collapseButton).toHaveCount(0);
@@ -953,7 +928,6 @@ test("expand/collapse rows", async () => {
         { title: "User 2", isGroup: true },
     ]);
 
-    // expand all groups
     await contains(SELECTORS.expandButton).click();
     expect(SELECTORS.expandButton).toHaveCount(0);
     expect(SELECTORS.collapseButton).toHaveCount(1);
@@ -972,7 +946,6 @@ test("expand/collapse rows", async () => {
         { title: "Cancelled" },
     ]);
 
-    // collapse the first group
     await contains(`${SELECTORS.rowHeader}${SELECTORS.group}:nth-child(1)`).click();
     expect(getGridContent().rows.map((r) => omit(r, "pills"))).toEqual([
         { title: "User 1", isGroup: true },
@@ -986,7 +959,6 @@ test("expand/collapse rows", async () => {
     expect(SELECTORS.expandButton).toHaveCount(1);
     expect(SELECTORS.collapseButton).toHaveCount(0);
 
-    // expand the first group
     await contains(`${SELECTORS.rowHeader}${SELECTORS.group}:nth-child(1)`).click();
     expect(getGridContent().rows.map((r) => omit(r, "pills"))).toEqual([
         { title: "User 1", isGroup: true },
@@ -1027,7 +999,6 @@ test("collapsed rows remain collapsed at reload", async () => {
         { title: "Cancelled" },
     ]);
 
-    // collapse the first group
     await contains(`${SELECTORS.rowHeader}${SELECTORS.group}:nth-child(1)`).click();
     expect(getGridContent().rows.map((r) => omit(r, "pills"))).toEqual([
         { title: "User 1", isGroup: true },
@@ -1039,7 +1010,6 @@ test("collapsed rows remain collapsed at reload", async () => {
         { title: "Cancelled" },
     ]);
 
-    // reload
     await validateSearch();
     expect(getGridContent().rows.map((r) => omit(r, "pills"))).toEqual([
         { title: "User 1", isGroup: true },
@@ -1054,7 +1024,6 @@ test("collapsed rows remain collapsed at reload", async () => {
 
 test("resize a pill", async () => {
     onRpc("write", ({ args }) => {
-        // initial dates -- start: '2018-11-30 18:30:00', stop: '2018-12-31 18:29:59'
         expect.step(args);
     });
     await mountGanttView({
@@ -1073,11 +1042,9 @@ test("resize a pill", async () => {
 
     await contains(getPillWrapper("Task 1")).hover();
 
-    // No start resizer because the start date overflows
     expect(SELECTORS.resizeStartHandle).toHaveCount(0);
     expect(SELECTORS.resizeEndHandle).toHaveCount(1);
 
-    // resize to one cell smaller at end (-1 day)
     let drop = await resizePill(getPillWrapper("Task 1"), "end", -1, false);
     await waitFor(SELECTORS.stopBadge + ":contains(12/30/2018, 7:29 PM (-24 hours))");
     expect(SELECTORS.stopBadge).toHaveClass("text-danger");
@@ -1093,11 +1060,9 @@ test("resize a pill", async () => {
 
     await contains(getPillWrapper("Task 1")).hover();
 
-    // No end resizer because the end date overflows
     expect(SELECTORS.resizeStartHandle).toHaveCount(1);
     expect(SELECTORS.resizeEndHandle).toHaveCount(0);
 
-    // resize to one cell smaller at start (-1 day)
     drop = await resizePill(getPillWrapper("Task 1"), "start", -1, false);
     await waitFor(SELECTORS.startBadge + ":contains(11/29/2018, 7:30 PM (+24 hours))");
     expect(SELECTORS.startBadge).toHaveClass("text-success");
@@ -1150,7 +1115,6 @@ test("action undo: resize a pill", async () => {
     expect(getGridContent().rows).toEqual(initialGridContent);
 
     await contains(getPillWrapper("Task 1")).hover();
-    // resize to one cell smaller at end (-1 day)
     const drop = await resizePill(getPillWrapper("Task 1"), "end", -1, false);
     await drop();
     expect(getGridContent().rows).toEqual([
@@ -1166,7 +1130,6 @@ test("action undo: resize a pill", async () => {
     ]);
     expect(".o_notification_content").toHaveText("Record rescheduled");
 
-    // undo the rescheduling of the pill
     await contains(".o_notification_buttons button i[title='Undo']").click();
     expect(getGridContent().rows).toEqual(initialGridContent, {
         message: "the pill should be back to its initial state",
@@ -1182,7 +1145,6 @@ test("resize pill in year mode", async () => {
         resModel: "tasks",
         arch: '<gantt date_start="start" date_stop="stop" default_range="year" />',
     });
-    // Make sure Task 5 is around the center of the screen to avoid side-scrolling
     await contains(".o_content").scroll({ left: 1550 });
     expect(getPillWrapper("Task 5")).toHaveClass(CLASSES.resizable);
 
@@ -1210,7 +1172,6 @@ test("resize a pill (2)", async () => {
     expect(getPillWrapper("Task 2")).toHaveClass(CLASSES.resizable);
     expect(SELECTORS.resizeHandle).toHaveCount(2);
 
-    // resize to one cell larger
     const drop = await resizePill(getPillWrapper("Task 2"), "end", +1, false);
     await waitFor(SELECTORS.stopBadge + ":contains(12/23/2018, 7:29 AM (+24 hours))");
     expect(SELECTORS.stopBadge).toHaveClass("text-success");
@@ -1252,7 +1213,6 @@ test("resize a pill: invalid result", async () => {
         },
     ]);
 
-    // shift end date towards start date
     await resizePill(getPillWrapper("Task 2"), "end", -1);
 
     expect(".modal").toHaveCount(0);
@@ -1273,7 +1233,6 @@ test("resize a pill: invalid result", async () => {
     );
     await contains(".o_notification_close").click();
 
-    // shift start date towards end date
     await resizePill(getPillWrapper("Task 2"), "start", +1);
 
     expect(".modal").toHaveCount(0);
@@ -1308,8 +1267,6 @@ test("resize a pill: quickly enter the neighbour pill when resize start", async 
 
     const rowsBeforePointerDown = getGridContent().rows;
 
-    // Here we simulate a resize start on Task 4 and quickly enter Task 7
-    // The resize handle should not be added to Task 7
     await pointerDown(SELECTORS.resizeEndHandle);
     await hover(getPillWrapper("Task 7"));
 
@@ -1319,8 +1276,6 @@ test("resize a pill: quickly enter the neighbour pill when resize start", async 
     expect(
         getPillWrapper("Task 7").querySelectorAll(SELECTORS.resizeHandle),
     ).toHaveCount(0);
-    // Task 7's own schedule (and everything else) must be untouched -- only
-    // starting a resize handle on Task 4 happened, nothing was dropped.
     expect(getGridContent().rows).toEqual(rowsBeforePointerDown);
 });
 
@@ -1329,8 +1284,6 @@ test("create a task maintains the domain", async () => {
     await mountGanttView({
         resModel: "tasks",
         arch: '<gantt date_start="start" date_stop="stop" plan="false"></gantt>',
-        // The new task is created with no user_id, so this domain must
-        // keep filtering it out -- the pill count below must stay 3.
         domain: [["user_id", "=", 2]],
     });
     expect(SELECTORS.pill).toHaveCount(3);
@@ -1358,7 +1311,6 @@ test("pill snaps back to its size when the resize write is a no-op", async () =>
 
     const initialPillWidth = getPillWrapper("Task 7").getBoundingClientRect().width;
 
-    // resize to one cell larger (1 day)
     await resizePill(getPillWrapper("Task 7"), "end", +1);
 
     expect(initialPillWidth).toBe(
@@ -1400,7 +1352,6 @@ test("move a pill in the same row (Manual Reschedule)", async () => {
         },
     ]);
 
-    // move a pill in the next cell (+1 day)
     const { moveTo, drop } = await dragPill("Task 7");
     await moveTo({ columnHeader: "21", groupHeader: "December 2018", part: 2 });
     expect(SELECTORS.startBadge).toHaveText("12/21/2018, 1:30 PM");
@@ -1463,7 +1414,6 @@ test("move a pill in the same row (with different timezone)", async () => {
         },
     ]);
 
-    // +1 day -> move beyond the DST switch
     const { moveTo, drop } = await dragPill("Task 8");
     await moveTo({ columnHeader: "31", groupHeader: "March 2019", part: 1 });
     expect(SELECTORS.startBadge).toHaveText("3/31/2019, 6:00 AM");
@@ -1531,7 +1481,6 @@ test("move a pill in another row", async () => {
         },
     ]);
 
-    // move a pill (task 7) in the other row and in the the next cell (+1 day)
     const { drop } = await dragPill("Task 7");
     await drop({ columnHeader: "21", groupHeader: "December 2018", part: 2 });
 
@@ -1606,7 +1555,6 @@ test("undo action: move a pill in another row", async () => {
     ];
     expect(getGridContent().rows).toEqual(initialGridContent);
 
-    // move a pill (task 7) in the other row and in the the next cell (+1 day)
     const { drop } = await dragPill("Task 7");
     await drop({ columnHeader: "21", groupHeader: "December 2018", part: 2 });
 
@@ -1629,7 +1577,6 @@ test("undo action: move a pill in another row", async () => {
     ]);
     expect(".o_notification_content").toHaveText("Record rescheduled");
 
-    // undo the rescheduling of the pill
     await contains(".o_notification_buttons button i[title='Undo']").click();
     expect(getGridContent().rows).toEqual(initialGridContent, {
         message: "the pill should be back to its initial state",
@@ -1655,7 +1602,7 @@ test("copy a pill in another row", async () => {
         resModel: "tasks",
         arch: '<gantt date_start="start" date_stop="stop" />',
         groupBy: ["project_id"],
-        domain: [["id", "in", [1, 7, 9]]], // 9 will be the newly created record
+        domain: [["id", "in", [1, 7, 9]]],
     });
 
     await contains(".o_content").scroll({ left: 500 });
@@ -1685,7 +1632,6 @@ test("copy a pill in another row", async () => {
 
     await keyDown("Control");
 
-    // move a pill (task 7) in the other row and in the the next cell (+1 day)
     const { drop, moveTo } = await dragPill("Task 7");
     await moveTo({ columnHeader: "21", groupHeader: "December 2018", part: 2 });
 
@@ -1748,7 +1694,7 @@ test("undo action: copy a pill in another row", async () => {
         resModel: "tasks",
         arch: '<gantt date_start="start" date_stop="stop" />',
         groupBy: ["project_id"],
-        domain: [["id", "in", [1, 7, 9]]], // 9 will be the newly created record
+        domain: [["id", "in", [1, 7, 9]]],
     });
 
     await contains(".o_content").scroll({ left: 500 });
@@ -1777,7 +1723,6 @@ test("undo action: copy a pill in another row", async () => {
     ];
     expect(getGridContent().rows).toEqual(initialGridContent);
 
-    // move a pill (task 7) in the other row and in the the next cell (+1 day)
     await keyDown("Control");
     const { drop } = await dragPill("Task 7");
     await drop({ columnHeader: "21", groupHeader: "December 2018", part: 2 });
@@ -1811,7 +1756,6 @@ test("undo action: copy a pill in another row", async () => {
     ]);
     expect(".o_notification_content").toHaveText("Record duplicated");
 
-    // undo the copy of the pill
     await contains(".o_notification_buttons button i[title='Undo']").click();
     expect(getGridContent().rows).toEqual(initialGridContent, {
         message: "the pill should be back to its initial state",
@@ -1902,7 +1846,6 @@ test("move a pill in another row in multi-level grouped", async () => {
         },
     ]);
 
-    // move a pill (task 7) in the top-level group (User 2)
     const { drop } = await dragPill("Task 7");
     await drop({
         row: "Cancelled",
@@ -1973,7 +1916,6 @@ test("move a pill in another row in multi-level grouped (many2many case)", async
     });
     await contains(".o_content").scroll({ left: 500 });
 
-    // sanity check
     expect(queryAllTexts(`${SELECTORS.pillWrapper}${SELECTORS.draggable}`)).toEqual([
         "Task 3",
         "Task 2",
@@ -2034,7 +1976,6 @@ test("move a pill in another row in multi-level grouped (many2many case)", async
         },
     ]);
 
-    // move a pill (first task 2) in "Undefined Assignees"
     const { drop } = await dragPill("Task 2", { nth: 1 });
     await drop({
         row: "Undefined Assignees",
@@ -2114,8 +2055,6 @@ test("should not be draggable when disable_drag_drop is set", async () => {
     });
 
     expect(SELECTORS.draggable).toHaveCount(0);
-    // disable_drag_drop only maps to disableDrag, independent of
-    // disableStartResize/disableStopResize -- resize handles must remain.
     await contains(getPillWrapper("Task 7")).hover();
     expect(SELECTORS.resizeHandle).toHaveCount(2);
 });
@@ -2195,19 +2134,10 @@ test("close tooltip when drag pill", async () => {
             ],
         },
     ]);
-    // open popover
     await contains(getPill("Task 4")).click();
     expect(".o_popover").toHaveCount(1);
 
-    // enable the drag feature and move the pill
     const { moveTo } = await dragPill("Task 4");
-    // Starting the drag closes it: `onDragStart` calls `popover.close()`
-    // outright, and has since before this test was written. The old expectation
-    // (still open until the pill moves) passed only because the overlay's DOM
-    // node survived a frame past `close()`; teardown is deterministic now, so
-    // what it actually asserted was the lag, not the behaviour.
-    // toHaveCount(0) queries the live DOM, so a node merely hidden (rather
-    // than actually removed) would still be caught here.
     expect(".o_popover").toHaveCount(0, {
         message: "starting a drag closes the popover",
     });
@@ -2274,7 +2204,7 @@ test("drag&drop on other pill in grouped view", async () => {
     const { drop } = await dragPill("Task 2");
     await drop({ pill: "Task 1" });
 
-    await contains(document.body).click(); // To simulate the full 'pointerup' sequence
+    await contains(document.body).click();
 
     def.resolve();
     await animationFrame();
@@ -2319,83 +2249,27 @@ test("drag&drop on other pill in grouped view", async () => {
 });
 
 test("disable drop of pill on groups by readonly field", async () => {
-    // Group "Work Order" by: color > cost (readonly) > employee > size
-    // Pills can be only be dropped in the same "child groups" (employee & size)
-    // or any group above the highest readonly parent (color)
     await mountGanttView({
         resModel: "workorders",
         arch: '<gantt date_start="start" date_stop="stop" />',
         groupBy: ["color", "cost", "employee", "size"],
     });
 
-    /*  Structure is the following:
-
-        color (1)
-        └── cost (86)
-            ├── employee (Jordan)
-            │   └── size (198) --> Work Order 1
-            └── employee (Michael)
-                └── size (198) --> Work Order 3
-        color (2)
-        └── cost (420)
-            └── employee (Jordan)
-                └── size (183) --> Work Order 2
-
-        Before drag, all but color rows should have the readonly class.
-    */
     expect(
         cssClassPresencePerCellInColumn("o_gantt_readonly", ["16", "December 2018"]),
-    ).toEqual([
-        false, // "color" is not readonly
-        true, // "cost" is readonly
-        true, // "employee"(Jordan) is not readonly but parent "cost" is
-        true, // "size"(198) is not readonly but parent "cost" is
-        true, // "employee"(Michael) is not readonly but parent "cost" is
-        true, // "size"(198) is not readonly but parent "cost" is
-        false, // "color" is not readonly
-        true, // "cost" is readonly
-        true, // "employee" is not readonly but parent "cost" is
-        true, // "size" is not readonly but parent "cost" is
-    ]);
+    ).toEqual([false, true, true, true, true, true, false, true, true, true]);
 
     const { drop, moveTo } = await dragPill("Work Order 1");
     await moveTo({ pill: "Work Order 3" });
-    await advanceTime(20); // Pointer move is subjected to throttleForAnimation in gantt
+    await advanceTime(20);
 
-    // // During drag, the user should be able to drop in
-    // //  - the child groups (employee & size), so rows 3 to 6
-    // //  - the group above the highest readonly parent (color), so rows 1 & 7
     expect(
         cssClassPresencePerCellInColumn("o_gantt_readonly", ["16", "December 2018"]),
-    ).toEqual([
-        false,
-        true,
-        false, // part of child group
-        false, // original row of the pill
-        false, // part of child group
-        false, // part of child group
-        false,
-        true,
-        true, // NOT part of the child group so should remain readonly
-        true, // NOT part of the child group so should remain readonly
-    ]);
+    ).toEqual([false, true, false, false, false, false, false, true, true, true]);
 
     await drop({ pill: "Work Order 3" });
     await advanceTime(20);
 
-    /*  After drop, structure should be the following:
-
-        color (1)
-        └── cost (86)
-            └── employee (Michael)
-                └── size (198) --> Work Order 1 & Work Order 3
-        color (2)
-        └── cost (420)
-            └── employee (Jordan)
-                └── size (183) --> Work Order 2
-
-        Again, all but color rows should have the readonly class
-    */
     expect(
         cssClassPresencePerCellInColumn("o_gantt_readonly", ["16", "December 2018"]),
     ).toEqual([false, true, true, true, false, true, true, true]);
@@ -3066,8 +2940,8 @@ test("focus today with scroll (in range & outside)", async () => {
     );
     let { columnHeaders } = getGridContent();
     expect(columnHeaders).toHaveLength(29);
-    expect(columnHeaders[0].title).toBe("01"); // December
-    expect(columnHeaders.at(-1).title).toBe("29"); // December
+    expect(columnHeaders[0].title).toBe("01");
+    expect(columnHeaders.at(-1).title).toBe("29");
 
     await scroll(".o_content", { left: 800 });
     await animationFrame();
@@ -3075,8 +2949,8 @@ test("focus today with scroll (in range & outside)", async () => {
     expect(".o_gantt_cell.o_gantt_today").toBeVisible();
     columnHeaders = getGridContent().columnHeaders;
     expect(columnHeaders).toHaveLength(33);
-    expect(columnHeaders[0].title).toBe("13"); // December
-    expect(columnHeaders.at(-1).title).toBe("14"); // January
+    expect(columnHeaders[0].title).toBe("13");
+    expect(columnHeaders.at(-1).title).toBe("14");
 
     await focusToday();
     await ganttControlsChanges();
@@ -3084,8 +2958,8 @@ test("focus today with scroll (in range & outside)", async () => {
     expect(".o_gantt_cell.o_gantt_today").toBeVisible();
     columnHeaders = getGridContent().columnHeaders;
     expect(columnHeaders).toHaveLength(32);
-    expect(columnHeaders[0].title).toBe("17"); // December
-    expect(columnHeaders.at(-1).title).toBe("17"); // January
+    expect(columnHeaders[0].title).toBe("17");
+    expect(columnHeaders.at(-1).title).toBe("17");
 
     await scroll(".o_content", { left: 2000 });
     await animationFrame();
@@ -3093,16 +2967,16 @@ test("focus today with scroll (in range & outside)", async () => {
     expect(".o_gantt_cell.o_gantt_today").not.toHaveCount();
     columnHeaders = getGridContent().columnHeaders;
     expect(columnHeaders).toHaveLength(33);
-    expect(columnHeaders[0].title).toBe("05"); // January
-    expect(columnHeaders.at(-1).title).toBe("06"); // February
+    expect(columnHeaders[0].title).toBe("05");
+    expect(columnHeaders.at(-1).title).toBe("06");
 
     await focusToday();
     await ganttControlsChanges();
     expect(".o_gantt_cell.o_gantt_today").toBeVisible();
     columnHeaders = getGridContent().columnHeaders;
     expect(columnHeaders).toHaveLength(32);
-    expect(columnHeaders[0].title).toBe("17"); // December
-    expect(columnHeaders.at(-1).title).toBe("17"); // January
+    expect(columnHeaders[0].title).toBe("17");
+    expect(columnHeaders.at(-1).title).toBe("17");
 });
 
 test("focus today with range change (in range & outside)", async () => {
@@ -3121,8 +2995,8 @@ test("focus today with range change (in range & outside)", async () => {
     let gridContent = getGridContent();
     expect(gridContent.range).toBe("12/01/2018 -> 02/28/2019");
     expect(gridContent.columnHeaders).toHaveLength(29);
-    expect(gridContent.columnHeaders[0].title).toBe("01"); // December
-    expect(gridContent.columnHeaders.at(-1).title).toBe("29"); // December
+    expect(gridContent.columnHeaders[0].title).toBe("01");
+    expect(gridContent.columnHeaders.at(-1).title).toBe("29");
 
     await selectCustomRange({ startDate: "2018-11-15", stopDate: "2019-02-15" });
     expect.verifySteps(["get_gantt_data"]);
@@ -3133,16 +3007,16 @@ test("focus today with range change (in range & outside)", async () => {
     gridContent = getGridContent();
     expect(gridContent.range).toBe("11/15/2018 -> 02/15/2019");
     expect(gridContent.columnHeaders).toHaveLength(32);
-    expect(gridContent.columnHeaders[0].title).toBe("28"); // November
-    expect(gridContent.columnHeaders.at(-1).title).toBe("29"); // December
+    expect(gridContent.columnHeaders[0].title).toBe("28");
+    expect(gridContent.columnHeaders.at(-1).title).toBe("29");
 
     await focusToday();
     await ganttControlsChanges();
     expect(".o_gantt_cell.o_gantt_today").toBeVisible();
     gridContent = getGridContent();
     expect(gridContent.columnHeaders).toHaveLength(32);
-    expect(gridContent.columnHeaders[0].title).toBe("17"); // December
-    expect(gridContent.columnHeaders.at(-1).title).toBe("17"); // January
+    expect(gridContent.columnHeaders[0].title).toBe("17");
+    expect(gridContent.columnHeaders.at(-1).title).toBe("17");
 
     await selectCustomRange({ startDate: "2019-01-01", stopDate: "2019-02-28" });
     expect(getGridContent().range).toBe("01/01/2019 -> 02/28/2019");
@@ -3161,7 +3035,6 @@ test("set start/stop date: should keep focused date", async () => {
         resModel: "tasks",
         arch: '<gantt date_start="start" date_stop="stop"/>',
     });
-    // set focus around 23 January 2019
     await scroll(".o_content", { left: 2000 });
     await animationFrame();
     await selectCustomRange({ startDate: "2018-12-01", stopDate: "2019-05-28" });
@@ -3194,7 +3067,6 @@ test("focus first pill on row header click", async () => {
         resModel: "tasks",
         arch: '<gantt date_start="start" date_stop="stop" default_group_by="user_id"/>',
     });
-    // set focus around 23 January 2019
     await scroll(".o_content", { left: 2000 });
     await animationFrame();
     expect(SELECTORS.pill).toHaveCount(0);
@@ -3336,17 +3208,12 @@ test("date fields: domain", async () => {
 });
 
 test("mixed date and datetime fields: each domain leaf follows its own field", async () => {
-    // The two predicates used to be crossed: the leaf on `start` was serialised
-    // according to `stop`'s type and vice versa, which only agreed with itself
-    // while both fields had the same type.
     expect.assertions(1);
     Tasks._fields.stop = fields.Date();
     onRpc("get_gantt_data", ({ kwargs }) => {
         expect(kwargs.domain).toEqual([
             "&",
-            // datetime field -> datetime bound, in UTC
             ["start", "<", "2019-01-31 23:00:00"],
-            // date field -> date bound, inclusive of its whole first day
             ["stop", ">=", "2018-11-01"],
         ]);
     });
@@ -3391,7 +3258,6 @@ test("date fields: resize a pill", async () => {
     Tasks._records[0].stop = "2018-12-22";
     onRpc("write", ({ args }) => {
         expect(args[0]).toEqual([1]);
-        // initial dates -- start: '"2018-12-20"', stop: '"2018-12-22"'
         expect(args[1]).toEqual({ stop: "2018-12-21" });
     });
     await mountGanttView({
@@ -3433,7 +3299,6 @@ test("date fields: drag a pill", async () => {
     Tasks._records[0].stop = "2018-12-22";
     onRpc("write", ({ args }) => {
         expect(args[0]).toEqual([1]);
-        // initial dates -- start: '"2018-12-20"', stop: '"2018-12-22"'
         expect(args[1]).toEqual({ start: "2018-12-19", stop: "2018-12-21" });
     });
     await mountGanttView({
@@ -3524,7 +3389,6 @@ test("date fields: dialog", async () => {
     });
     expect(".modal").toHaveCount(0);
     await editPill("Task 1");
-    // check that the dialog is opened with prefilled fields
     expect(".modal").toHaveCount(1);
     const modal = queryOne(".modal");
     expect(modal.querySelector(".o_field_widget[name=start] button")).toHaveValue(
@@ -3569,19 +3433,14 @@ test("gantt popover: on close, reload if record changed", async () => {
         },
     ]);
     expect(`.o_popover`).toHaveCount(0);
-    // open gantt popover
     await contains(SELECTORS.pill).click();
     expect(`.o_popover`).toHaveCount(1);
-    // open avatar field popover
     await contains(".popover-body .o_quick_assign", { visible: false }).click();
-    // add User 2 to tags
     await contains(
         ".o-overlay-container .o-autocomplete--dropdown-item:contains('User 2')",
     ).click();
-    // close avatar field popover
     await press("escape");
     await animationFrame();
-    // close gantt popover
     await contains(`.o_popover .popover-footer .o_gantt_popover_close`).click();
     expect(getGridContent().rows).toEqual([
         {

@@ -47,7 +47,7 @@ beforeEach(() => {
 onRpc("has_group", () => true);
 onRpc("get_running_timer", () => ({
     id: 10,
-    start: 5740, // 01:35:40
+    start: 5740,
     project_id: 1,
     name: "Description",
     has_helpdesk_team: true,

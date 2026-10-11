@@ -379,13 +379,11 @@ test("translation dialog should close if field is not there anymore", async () =
     expect(".modal").toHaveCount(1, {
         message: "a translate modal should be visible",
     });
-    // the page behind the dialog is inert: the record changes without the user
     await controller.model.root.update({ int_field: 9 });
     await animationFrame();
     expect("[name=name] input").toHaveCount(0, {
         message: "the field name should be invisible",
     });
-    // the field's unmount closes its dialog, which leaves in the next render
     await animationFrame();
     expect(".modal").toHaveCount(0, {
         message: "a translate modal should not be visible",

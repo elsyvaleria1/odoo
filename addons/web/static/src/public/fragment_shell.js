@@ -13,7 +13,6 @@ import { morph } from "@web/core/utils/dom/morph";
  * }} ShellOptions
  */
 
-// the protocol's request headers (web/controllers/utils.py, http_routing)
 const FRAGMENTS_HEADER = "X-Odoo-Fragments";
 const PARTIAL_NAVIGATION_HEADER = "X-Odoo-Partial-Navigation";
 
@@ -25,21 +24,6 @@ function parsePage(html) {
     return new DOMParser().parseFromString(html, "text/html");
 }
 
-/**
- * In-place navigation and post forms for a page that does not run the public
- * interactions runtime: an app embedded where each request must carry
- * credentials only JavaScript holds (a Telegram mini app's initData), loaded
- * as a standalone bundle of this module and the morph, without owl.
- *
- * Inside `root`, a link to another page of the same origin is fetched with
- * `headers()` and the page's `data-fragment` regions are morphed from it, its
- * URL pushed; a `post` form is posted the same way, and the route answers
- * either fragments (`fragments_or_redirect`) or the page it redirected to;
- * a refusal (JSON `error.message`) goes to `onRefused`. `data-no-fragment`
- * opts a link or form out. The app's own behaviour hangs on `onSwap` and on
- * the events a route sends. Server-rendered HTML is trusted as such: it is
- * this origin's answer to a request this page made.
- */
 export class FragmentShell {
     /**
      * @param {HTMLElement} root
@@ -113,7 +97,6 @@ export class FragmentShell {
             submitter?.getAttribute("formaction") || form.getAttribute("action") || "";
         const url = new URL(action, window.location.href);
         const body = new FormData(form, submitter);
-        // the attribute: a control named "method" shadows form.method
         if ((form.getAttribute("method") || "get").toLowerCase() === "get") {
             url.search = new URLSearchParams(/** @type {any} */ ([...body])).toString();
             this.visit(url.href);
@@ -140,7 +123,6 @@ export class FragmentShell {
         }
         const page = parsePage(await response.text());
         if (!this.hasRegionOf(page)) {
-            // a page of something else: the browser shows it, not the shell
             this.leave(response.url);
             return;
         }

@@ -17,9 +17,6 @@ export class AccountReportCarryoverPopover extends Component {
         this.orm = useService("orm");
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    //
-    //------------------------------------------------------------------------------------------------------------------
     async viewCarryoverLinesAction(expressionId, columnGroupKey) {
         const viewCarryoverLinesAction = await this.orm.call(
             "report.formula.expression",

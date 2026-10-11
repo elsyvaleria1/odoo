@@ -17,9 +17,6 @@ import { Interaction } from "@web/public/interaction";
 
 const log = makeLogger("portal.totp");
 
-/**
- * Replaces specific <field> elements by normal HTML, strip out the rest entirely
- */
 function createFieldNode(f, record) {
     switch (f.getAttribute("name")) {
         case "qrcode": {
@@ -45,14 +42,11 @@ function createFieldNode(f, record) {
             return code;
         }
         case "secret": {
-            // As CopyClipboard wizard is backend only, mimic his behaviour to use it in frontend.
-            // Field
             const secretSpan = document.createElement("span");
             secretSpan.setAttribute("name", "secret");
             secretSpan.setAttribute("class", "o_field_copy_url");
             secretSpan.textContent = record["secret"];
 
-            // Copy Button
             const copySpanIcon = document.createElement("span");
             copySpanIcon.setAttribute("class", "fa-solid fa-paste");
             const copySpanText = document.createElement("span");
@@ -81,7 +75,6 @@ function createFieldNode(f, record) {
             copyButton.appendChild(copySpanIcon);
             copyButton.appendChild(copySpanText);
 
-            // CopyClipboard Div
             const secretDiv = document.createElement("div");
             secretDiv.setAttribute(
                 "class",
@@ -93,12 +86,10 @@ function createFieldNode(f, record) {
             return secretDiv;
         }
         default:
-            // just display the field's data
             return document.createTextNode(record[f.getAttribute("name")] || "");
     }
 }
 
-/** Rebuild XML view nodes as HTML, replacing ORM fields with portal controls. */
 function createViewNode(oldNode, record) {
     switch (oldNode.nodeType) {
         case Node.ELEMENT_NODE: {
@@ -148,7 +139,6 @@ export class TOTPEnable extends Interaction {
             );
 
             if (!data) {
-                // TOTP probably already enabled, just reload page
                 location.reload();
                 return;
             }
@@ -204,12 +194,10 @@ export class TOTPEnable extends Interaction {
                             e.data.message ||
                             _t("Operation failed for unknown reason.");
                         inputEl.classList.add("is-invalid");
-                        // show custom validity error message
                         inputEl.setCustomValidity(errorMessage);
                         inputEl.reportValidity();
                         return false;
                     }
-                    // reloads page, avoid window.location.reload() because it re-posts forms
                     location.reload();
                 },
                 cancel: () => {},

@@ -18,20 +18,8 @@ export const assetsWatchdogService = {
         });
         bus_service.start();
 
-        /**
-         * Displays one notification on user's screen when assets have changed
-         */
         function displayBundleChangedNotification() {
-            // Start the delayed notification on the FIRST change and let it run
-            // to completion. Previously each incoming `bundle_changed` cleared
-            // and rescheduled the timer, so a steady stream of changes (e.g.
-            // repeated asset recompiles) kept pushing the notification back and
-            // it could never appear. A pending timer (id !== null) is left
-            // alone; further changes are ignored until it fires or is closed.
             if (!isNotificationDisplayed && bundleNotifTimerID === null) {
-                // Wrap the notification inside a delay.
-                // The server may be overwhelmed with recomputing assets
-                // We wait until things settle down
                 bundleNotifTimerID = browser.setTimeout(() => {
                     bundleNotifTimerID = null;
                     notification.add(_t("The page appears to be out of date."), {

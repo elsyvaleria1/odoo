@@ -59,7 +59,7 @@ export class TaskGanttRendererCommon extends GanttRenderer {
 
     computeVisibleColumns() {
         super.computeVisibleColumns();
-        this.columnMilestones = {}; // deadlines and milestones by project
+        this.columnMilestones = {};
         for (const column of this.columns) {
             this.columnMilestones[column.index] = {
                 hasDeadLineExceeded: false,
@@ -70,7 +70,6 @@ export class TaskGanttRendererCommon extends GanttRenderer {
                 hasStartDate: false,
             };
         }
-        // Handle start date at the beginning of the current period
         this.columnMilestones[this.columns[0].index].edge = {
             projects: {},
             hasStartDate: false,
@@ -89,7 +88,6 @@ export class TaskGanttRendererCommon extends GanttRenderer {
             const info = this.columnMilestones[column.index];
 
             if (i === 0 && project && column && isAfter(column.stop, project.date)) {
-                // For the first column, start dates have to be displayed at the start of the period
                 projectEntry(info.edge, project).isStartDate = true;
                 info.edge.hasStartDate = true;
                 project = projectStartDates.shift();
@@ -138,10 +136,6 @@ export class TaskGanttRendererCommon extends GanttRenderer {
         return false;
     }
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
     onMilestoneMouseEnter(ev, projects) {
         this.milestonePopover.open(ev.target, {
             displayMilestoneDates: this.model.metaData.scale.id === "year",
@@ -153,10 +147,6 @@ export class TaskGanttRendererCommon extends GanttRenderer {
     onMilestoneMouseLeave() {
         this.milestonePopover.close();
     }
-
-    //--------------------------------------------------------------------------
-    //Task Connectors
-    //--------------------------------------------------------------------------
 
     shouldConnectorBeDashed(sourcePill) {
         if (sourcePill.record.is_closed) {

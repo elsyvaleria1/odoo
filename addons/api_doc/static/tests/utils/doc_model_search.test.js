@@ -32,8 +32,6 @@ describe("simplifyString", () => {
 
 describe("search", () => {
     test("an empty query matches nothing", () => {
-        // Otherwise every model in the registry scores as a match and the
-        // modal renders the whole database.
         expect(search(MODELS, "", ALL)).toEqual([]);
         expect(search(MODELS, "   ", ALL)).toEqual([]);
     });

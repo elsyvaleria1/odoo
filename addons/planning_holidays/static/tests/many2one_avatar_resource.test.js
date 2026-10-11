@@ -13,23 +13,13 @@ describe.current.tags("desktop");
 definePlanningHolidaysModels();
 
 test("many2one_avatar_resource widget in list view with time-off idle", async () => {
-    /* 1. Create data
-           two type of records tested:
-            - 2 planning slots linked to a human resource not linked to a user:
-              the hr employee status should be displayed in avatar card popover
-            - 2 planning slots linked to a human resource linked to a user:
-              the im status of the user should be displayed in avatar card popover
-    */
-
     const { env } = await makeMockServer();
 
-    // partners
     const [lucindaPartnerId, cardenioPartnerID] = env["res.partner"].create([
         { name: "Lucinda" },
         { name: "Cardenio" },
     ]);
 
-    // Users
     const [lucindaUserId, cardenioUserId] = env["res.users"].create([
         {
             name: "Lucinda",
@@ -43,7 +33,6 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
         },
     ]);
 
-    // Resources
     const [resDoro, resFer, resluci, resCar] = env["resource.resource"].create([
         {
             name: "Dorothea",
@@ -65,7 +54,6 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
         },
     ]);
 
-    // Employees
     const employeeDorotheaData = {
         name: "Dorothea",
         hr_icon_display: "presence_holiday_present",
@@ -92,10 +80,8 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
         { ...employeeLucindaData, resource_id: resluci },
         { ...employeeCardenioData, resource_id: resCar },
     ]);
-    // FIXME: Manually trigger recomputation of related fields
     env["resource.resource"]._applyComputesAndValidate();
 
-    // Imitating the server behavior by creating an hr.employee record with the same data and same id
     env["hr.employee"].create([
         employeeDorotheaData,
         employeeFernandoData,
@@ -103,7 +89,6 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
         employeeCardenioData,
     ]);
 
-    // Planning slots
     env["planning.slot"].create([
         {
             display_name: "Planning slot Dorothea",
@@ -157,7 +142,6 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
         </list>`,
     });
 
-    // 1. Clicking on human resource's avatar with no user associated (status: presence_holiday_present)
     await contains(".o_m2o_avatar > img").click();
     await animationFrame();
     expect(".o_card_user_infos span").toHaveText("Dorothea");
@@ -165,7 +149,6 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
         message: "The idle icon of a present employee on leave should be a green plane",
     });
 
-    // 2. Clicking on human resource's avatar with no user associated (status: presence_holiday_absent)
     await contains(".o_m2o_avatar:eq(1) > img").click();
     await animationFrame();
     expect(".o_card_user_infos span").toHaveText("Fernando");
@@ -174,7 +157,6 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
             "The idle icon of an absent employee on leave should be an orange plane",
     });
 
-    // 3. Clicking on human resource's avatar with a user associated (status: leave_online)
     await contains(".o_m2o_avatar:eq(2) > img").click();
     await animationFrame();
     expect(".o_card_user_infos span").toHaveText("Lucinda");
@@ -182,7 +164,6 @@ test("many2one_avatar_resource widget in list view with time-off idle", async ()
         message: "The idle icon of a connected user on leave should be a green plane",
     });
 
-    // 4. Clicking on human resource's avatar with a user associated (status: leave_away)
     await contains(".o_m2o_avatar:eq(3) > img").click();
     await animationFrame();
     expect(".o_card_user_infos span").toHaveText("Cardenio");

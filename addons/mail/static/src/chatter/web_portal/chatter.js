@@ -79,8 +79,6 @@ export class Chatter extends Component {
         provideChildMailContext(this.childMailContext);
 
         onMounted(this._onMounted);
-        // a save reloads the record in place, so the chatter's props do not
-        // change and no update comes: the flag the form raises is the signal
         useEffect(() => {
             if (
                 this.mailContext.chatter?.fetchThreadData &&

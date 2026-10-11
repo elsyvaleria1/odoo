@@ -8,25 +8,6 @@ import { definePlanningModels, planningModels } from "./planning_mock_models.js"
 
 describe.current.tags("desktop");
 
-/* Main Goals of these tests:
-    - Tests the change made in planning to avatar card preview for resource:
-        - Roles appear as tags on the card
-        - Card should be displayed for material resources with at least 2 roles
-    - Test the integration of the card in the Gantt view
-*/
-
-/* 1. Create data
-   4 type of records tested:
-    - Planning slot linked to a material resource with only one role
-        - clicking the icon should not open any popover
-    - Planning slot linked to a material resource with two roles
-        - clicking the icon should open a card popover with resource name and roles
-    - Planning slot linked to a human resource not linked to a user
-        - a card popover should open including the roles of the employee
-    - Planning slot linked to a human resource linked to a user
-        - a card popover should open including the roles of the employee
-*/
-
 class PlanningSlot extends planningModels.PlanningSlot {
     resource_roles = fields.One2many({ relation: "resource.role" });
 
@@ -165,13 +146,11 @@ test("many2one_avatar_resource widget in kanban view", async () => {
 
     expect(".o_m2o_avatar").toHaveCount(4);
 
-    // fa-wrench should be displayed for first two planning slots
     expect(".o_m2o_avatar > span.o_resource_icon > i.fa-wrench").toHaveCount(2, {
         message:
             "material icon should be displayed for the first two gantt rows (material resources)",
     });
 
-    // Third and fourth slots should display employee avatar
     expect(".o_field_many2one_avatar_resource img").toHaveCount(2);
     expect(
         queryFirst(
@@ -190,12 +169,10 @@ test("many2one_avatar_resource widget in kanban view", async () => {
             "There should be the ID 4 in the URL as it is the one of resource 'Pierre'",
     });
 
-    // 1. Clicking on material resource's icon with only one role
     await click(".o_kanban_record:nth-of-type(1) .o_m2o_avatar i");
     await animationFrame();
     expect(".o_avatar_card").toHaveCount(0);
 
-    // 2. Clicking on material resource's icon with two roles
     await click(".o_kanban_record:nth-of-type(2) .o_m2o_avatar i");
     await animationFrame();
     expect(".o_avatar_card").toHaveCount(1);
@@ -207,12 +184,10 @@ test("many2one_avatar_resource widget in kanban view", async () => {
         message: "Roles should be listed in the card",
     });
 
-    // 3. Clicking on human resource's avatar with no user associated
     await click(".o_kanban_record:nth-of-type(3) .o_m2o_avatar img");
     await animationFrame();
     expect(".o_card_user_infos span:first").toHaveText("Marie");
 
-    // 4. Clicking on human resource's avatar with one user associated
     await click(".o_kanban_record:nth-of-type(4) .o_m2o_avatar img");
     await animationFrame();
     expect(".o_card_user_infos span:first").toHaveText("Pierre");
@@ -223,14 +198,14 @@ test("Employee avatar in Gantt view", async () => {
     onRpc("gantt_resource_work_interval", () => [
         {
             1: [
-                ["2022-10-10 06:00:00", "2022-10-10 10:00:00"], //Monday    4h
-                ["2022-10-11 06:00:00", "2022-10-11 10:00:00"], //Tuesday   5h
+                ["2022-10-10 06:00:00", "2022-10-10 10:00:00"],
+                ["2022-10-11 06:00:00", "2022-10-11 10:00:00"],
                 ["2022-10-11 11:00:00", "2022-10-11 12:00:00"],
-                ["2022-10-12 06:00:00", "2022-10-12 10:00:00"], //Wednesday 6h
+                ["2022-10-12 06:00:00", "2022-10-12 10:00:00"],
                 ["2022-10-12 11:00:00", "2022-10-12 13:00:00"],
-                ["2022-10-13 06:00:00", "2022-10-13 10:00:00"], //Thursday  7h
+                ["2022-10-13 06:00:00", "2022-10-13 10:00:00"],
                 ["2022-10-13 11:00:00", "2022-10-13 14:00:00"],
-                ["2022-10-14 06:00:00", "2022-10-14 10:00:00"], //Friday    8h
+                ["2022-10-14 06:00:00", "2022-10-14 10:00:00"],
                 ["2022-10-14 11:00:00", "2022-10-14 15:00:00"],
             ],
         },
@@ -247,14 +222,14 @@ test("Employee avatar in Gantt view", async () => {
                 has_several_roles: false,
                 employee_id: false,
                 work_intervals: [
-                    ["2022-10-10 06:00:00", "2022-10-10 10:00:00"], //Monday    4h
-                    ["2022-10-11 06:00:00", "2022-10-11 10:00:00"], //Tuesday   5h
+                    ["2022-10-10 06:00:00", "2022-10-10 10:00:00"],
+                    ["2022-10-11 06:00:00", "2022-10-11 10:00:00"],
                     ["2022-10-11 11:00:00", "2022-10-11 12:00:00"],
-                    ["2022-10-12 06:00:00", "2022-10-12 10:00:00"], //Wednesday 6h
+                    ["2022-10-12 06:00:00", "2022-10-12 10:00:00"],
                     ["2022-10-12 11:00:00", "2022-10-12 13:00:00"],
-                    ["2022-10-13 06:00:00", "2022-10-13 10:00:00"], //Thursday  7h
+                    ["2022-10-13 06:00:00", "2022-10-13 10:00:00"],
                     ["2022-10-13 11:00:00", "2022-10-13 14:00:00"],
-                    ["2022-10-14 06:00:00", "2022-10-14 10:00:00"], //Friday    8h
+                    ["2022-10-14 06:00:00", "2022-10-14 10:00:00"],
                     ["2022-10-14 11:00:00", "2022-10-14 15:00:00"],
                 ],
             },
@@ -263,7 +238,7 @@ test("Employee avatar in Gantt view", async () => {
                 max_value: 100,
                 resource_type: "material",
                 resource_color: 1,
-                has_several_roles: true, // Testing this full behavior would require a tour
+                has_several_roles: true,
                 employee_id: false,
             },
             3: {
@@ -307,12 +282,10 @@ test("Employee avatar in Gantt view", async () => {
             "avatar of the employee associated to the human resource should be displayed on fourth row",
     });
 
-    // 1. Clicking on material resource's icon with only one role
     await click(".o_avatar .o_resource_icon .fa-wrench");
     await animationFrame();
     expect(".o_avatar_card").toHaveCount(0);
 
-    // 2. Clicking on material resource's icon with two roles
     await click(queryAll(".o_avatar .o_resource_icon .fa-wrench")[1]);
     await animationFrame();
     expect(".o_avatar_card").toHaveCount(1);
@@ -324,7 +297,6 @@ test("Employee avatar in Gantt view", async () => {
         message: "Roles should be listed in the card",
     });
 
-    // 3. Clicking on human resource's avatar with no user associated
     await click(".o_gantt_row_title .o_avatar img");
     await animationFrame();
     expect(".o_card_user_infos span:first").toHaveText("Marie");
@@ -332,7 +304,6 @@ test("Employee avatar in Gantt view", async () => {
         message: "Only one popover resource card should be opened at a time",
     });
 
-    // 4. Clicking on human resource's avatar with one user associated
     await click(queryAll(".o_gantt_row_title .o_avatar img")[1]);
     await animationFrame();
     expect(".o_card_user_infos span:first").toHaveText("Pierre");

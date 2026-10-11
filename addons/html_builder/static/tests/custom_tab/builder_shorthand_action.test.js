@@ -104,7 +104,7 @@ describe("styleAction", () => {
         expect("input").toHaveValue("10");
         expect(".options-container").toBeDisplayed();
         expect(":iframe .test-options-target").toHaveStyle({ width: "10px" });
-        expect(":iframe .test-options-target").toHaveAttribute("style", "width: 10px;"); // no !important
+        expect(":iframe .test-options-target").toHaveAttribute("style", "width: 10px;");
 
         await contains("input").click();
         await fill("1");
@@ -113,7 +113,7 @@ describe("styleAction", () => {
         expect(":iframe .test-options-target").toHaveAttribute(
             "style",
             "width: 101px;",
-        ); // no !important
+        );
 
         await contains("input").edit("");
         expect(":iframe .test-options-target").toHaveAttribute("style", "width: 0px;");

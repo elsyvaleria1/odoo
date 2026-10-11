@@ -84,8 +84,6 @@ export class EmbeddedArticleIndexComponent extends Component {
         const promise = this.fetchAllArticles(resId, showAllChildren);
         const articles = await this.keepLastFetch.add(promise);
         if (firstLoad && this.embeddedState.articles !== undefined) {
-            // Articles were provided by a collaborator before
-            // the first load was finished, discard loaded articles.
             this.state.loading = false;
             return;
         }
@@ -113,8 +111,7 @@ export class EmbeddedArticleIndexComponent extends Component {
         await this.loadArticleIndex({
             showAllChildren: !this.embeddedState.showAllChildren,
         });
-        this.state.key++; // restart the `ArticleIndexList` component to update
-        // the `nest` static option.
+        this.state.key++;
     }
 
     async openTemplatePicker() {

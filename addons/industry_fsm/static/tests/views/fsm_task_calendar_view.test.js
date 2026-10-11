@@ -11,9 +11,6 @@ onRpc("has_access", () => true);
 
 test("Fsm task calendar view", async () => {
     mockDate("2024-01-03 12:00:00", 0);
-    // Set inside the test, not at module scope: every suite sharing this mock
-    // assigns `_views.form`, and at module scope whichever file the bundle
-    // evaluates last decides what every other one renders.
     ProjectTask._views.form = `
         <form>
             <field name="id"/>
@@ -25,7 +22,7 @@ test("Fsm task calendar view", async () => {
     await mountView({
         resModel: "project.task",
         type: "calendar",
-        arch: /* xml */ `
+        arch: `
             <calendar
                 date_start="date_start_effective"
                 date_stop="date_end"

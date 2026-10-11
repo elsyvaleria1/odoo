@@ -24,13 +24,8 @@ export class InsertViewSpreadsheet extends Component {
         this.dialogManager = useService("dialog");
     }
 
-    //-------------------------------------------------------------------------
-    // Handlers
-    //-------------------------------------------------------------------------
-
     async linkInSpreadsheet() {
         const actionToLink = await this.getViewDescription();
-        // do action with action link
         const actionOptions = {
             preProcessingAction: "insertLink",
             preProcessingActionData: actionToLink,
@@ -55,7 +50,6 @@ export class InsertViewSpreadsheet extends Component {
             domain: this.searchModel.domain,
             context,
             modelName: resModel,
-            // prevent navigation to other views as we have a dedicated domain/context
             views: views.map(([, type]) => [false, type]),
         };
         return {

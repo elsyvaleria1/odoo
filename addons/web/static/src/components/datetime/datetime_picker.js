@@ -474,13 +474,9 @@ export class DateTimePicker extends Component {
         showWeekNumbers: t.boolean().optional(true),
         daysOfWeekFormat: t.string().optional("narrow"),
         maxDate: t.or([NULLABLE_DATETIME_PROPERTY, t.literal("today")]).optional(),
-        maxPrecision: t
-            .any() /* [...PRECISION_LEVELS.keys()].map((value) => ({ value })) */
-            .optional("decades"),
+        maxPrecision: t.any().optional("decades"),
         minDate: t.or([NULLABLE_DATETIME_PROPERTY, t.literal("today")]).optional(),
-        minPrecision: t
-            .any() /* [...PRECISION_LEVELS.keys()].map((value) => ({ value })) */
-            .optional("days"),
+        minPrecision: t.any().optional("days"),
         onReset: t.function().optional(),
         onSelect: t.function().optional(),
         onToggleRange: t.function().optional(),
@@ -533,7 +529,6 @@ export class DateTimePicker extends Component {
         return this.isDate ? currentDay(this.zone) : now(this.zone).startOfDay();
     }
 
-    /** Months side by side: several only while a range is picked */
     get monthCount() {
         return this.props.range ? Math.max(1, this.props.monthCount) : 1;
     }

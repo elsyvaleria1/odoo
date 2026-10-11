@@ -19,12 +19,6 @@ patch(TimesheetGridModel.prototype, {
             return additionalGroups;
         }
 
-        /*
-         * The goal of this code is to add records in the grid in order to ease encoding.
-         * We will add entries if there are published 'slots' for the current employee, within a defined timeline
-         * (depending on the scale).
-         */
-
         const validPlanningFields = ["project_id", "employee_id"];
         const validRowFields = [];
         if (sectionField && validPlanningFields.includes(sectionField.name)) {
@@ -73,10 +67,6 @@ patch(TimesheetGridModel.prototype, {
             [],
         );
 
-        /*
-         * Convert timesheet info returned from 'project.project' and 'project.task' queries into the right data
-         * formatting.
-         */
         const prepareAdditionalData = (records) => {
             const additionalData = {};
             for (const record of records) {

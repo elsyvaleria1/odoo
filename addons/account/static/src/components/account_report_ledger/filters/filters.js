@@ -132,7 +132,6 @@ patch(AccountReportFilters.prototype, {
                 )
             ) {
                 listToDisplay.push(mapping.name);
-                // Delete already checked id
                 selectedAccountType = selectedAccountType.filter(
                     (accountType) => !mapping.list.includes(accountType.id),
                 );
@@ -301,7 +300,6 @@ patch(AccountReportFilters.prototype, {
                 action: wasSelected ? "remove" : "add",
                 id: parseInt(journal.id),
             };
-            // Toggle the selected status after the action is set
             journal.selected = !wasSelected;
         } else {
             journal.selected = !journal.selected;
@@ -331,7 +329,7 @@ patch(AccountReportFilters.prototype, {
                     journal.unfolded = !journal.unfolded;
                     inSelectedCompanySection = true;
                 } else if (inSelectedCompanySection) {
-                    break; // Reached another company divider, exit the loop
+                    break;
                 }
             }
             if (inSelectedCompanySection && journal.model === "account.journal") {
@@ -344,7 +342,6 @@ patch(AccountReportFilters.prototype, {
         await this.filterClicked({ optionKey: "tax_unit", optionValue: taxUnit.id });
         this.controller.saveSessionOptions(this.controller.cachedFilterOptions);
 
-        // Restrict the active companies to those impacted by the tax unit; this call forces the reload.
         user.activateCompanies(taxUnit.company_ids);
     },
 
@@ -386,7 +383,6 @@ patch(AccountReportFilters.prototype, {
             ...cachedFilterOptions,
             budgets: [
                 ...cachedFilterOptions.budgets,
-                // Selected by default if we don't have any horizontal group selected
                 { id: createdId, selected: !this.isHorizontalGroupSelected },
             ],
         });

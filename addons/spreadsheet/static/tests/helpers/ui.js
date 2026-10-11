@@ -23,9 +23,6 @@ class Parent extends Component {
  * @returns {Promise<HTMLElement>}
  */
 export async function mountSpreadsheet(model) {
-    // const serviceRegistry = registry.category("services");
-    // serviceRegistry.add("dialog", makeFakeDialogService(), { force: true });
-    // serviceRegistry.add("notification", makeFakeNotificationService(), { force: true });
     await loadChartJS();
     mountWithCleanup(Parent, {
         props: {

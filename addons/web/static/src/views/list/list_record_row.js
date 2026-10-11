@@ -70,7 +70,6 @@ export class ListRecordRow extends Component {
         return this.props.hasOpenFormViewColumn;
     }
 
-    // the row template's actions-cell condition reads this name
     get displayOptionalFields() {
         return this.props.hasActionsColumn;
     }

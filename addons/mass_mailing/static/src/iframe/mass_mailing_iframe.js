@@ -43,13 +43,6 @@ const MASS_MAILING_IFRAME_ASSETS = [
     "mass_mailing.assets_inside_builder_iframe",
 ];
 
-/**
- * The MassMailingIframe will use this modified overlay service that will guarantee:
- * 1. Internal ordering of its different overlays
- * 2. To not mess up with owl's reconciliation of foreach when adding/removing overlays
- * This is a sub-optimal fix to the more general issue of owl displacing nodes that contain
- * an iframe, in which the iframe effectively unloads.
- */
 export function useOverlayServiceOffset() {
     const env = {
         services: useAppContext().services,
@@ -117,7 +110,6 @@ export class MassMailingIframe extends Component {
             if (this.iframeRef.el.contentDocument.readyState === "complete") {
                 this.setupIframe();
             } else {
-                // Browsers like Firefox only make iframe document available after dispatching "load"
                 this.iframeRef.el.addEventListener("load", () => this.setupIframe(), {
                     once: true,
                 });
@@ -134,7 +126,6 @@ export class MassMailingIframe extends Component {
         const iframeResize = () => {
             const iframe = this.iframeRef.el;
             if (this.state.isMobile) {
-                // aspect-ratio of internal screen of /html_builder/static/img/phone.svg
                 iframe.style.height = "668px";
                 iframe.style.width = "367px";
                 return;
@@ -257,10 +248,6 @@ export class MassMailingIframe extends Component {
                 !this.iframeRef.el?.isConnected ||
                 this.iframeRef.el.contentDocument !== contentDocument
             ) {
-                // The iframe was unloaded while its style bundles were still
-                // loading (e.g. the component was destroyed or re-keyed by
-                // the html field): the interrupted loads settle with a
-                // rejection, and there is nothing left to set up.
                 return;
             }
             throw error;
@@ -289,7 +276,6 @@ export class MassMailingIframe extends Component {
             );
             this.fixInlineDynamicPlaceholders(this.iframeRef.el);
         }
-        // Set `ready` symbol for tours
         this.iframeRef.el.setAttribute("is-ready", "true");
         this.iframeRef.el.contentWindow.addEventListener("beforeUnload", () => {
             this.iframeRef.el.removeAttribute("is-ready");
@@ -422,9 +408,6 @@ export class MassMailingIframe extends Component {
         };
     }
 
-    /**
-     * Ensure all links are opened in a new tab.
-     */
     retargetLinks(container) {
         for (const link of container.querySelectorAll("a")) {
             this.retargetLink(link);

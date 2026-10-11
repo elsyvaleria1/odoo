@@ -14,9 +14,6 @@ export class PayrollDashboardPayslipBatch extends Component {
         this.openPayRun = useOpenPayRun();
     }
 
-    /**
-     * Handles clicking on the title
-     */
     onClickTitle() {
         this.actionService.doAction("hr_payroll.action_hr_payslip_run");
     }

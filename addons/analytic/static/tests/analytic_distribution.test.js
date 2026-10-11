@@ -267,30 +267,24 @@ test("analytic field in form view basic features", async () => {
                 </sheet>
             </form>`,
     });
-    // tags
     expect(".o_field_analytic_distribution").toHaveCount(1);
     expect(".badge").toHaveCount(2);
     expect(".badge .o_tag_badge_text:eq(0)").toHaveText("30.3% RD | 69.7% FI");
     expect(".badge .o_tag_badge_text:eq(1)").toHaveText("30.3% Belgium");
 
-    // open popup
     await contains(".o_field_analytic_distribution .o_input_dropdown").click();
     expect(".analytic_distribution_popup").toHaveCount(1);
 
-    // contents of popup
     expect(".analytic_distribution_popup table:eq(0) tr").toHaveCount(4);
     expect(
         ".analytic_distribution_popup table:eq(0) tr:first-of-type #x_plan1_id",
     ).toBeFocused();
 
-    // change percentage
     await contains(
         ".analytic_distribution_popup table:eq(0) tr:first-of-type .o_field_percentage input",
     ).edit("19.7001");
 
-    // mandatory plan is red
     expect("th:contains(Departments) .text-danger:contains(50%)").toHaveCount(1);
-    // close and open popup with keyboard
     await press("Escape");
     await animationFrame();
     expect(".analytic_distribution_popup").toHaveCount(0);
@@ -299,7 +293,6 @@ test("analytic field in form view basic features", async () => {
     await animationFrame();
     expect(".analytic_distribution_popup").toHaveCount(1);
 
-    // add a line
     await contains(
         ".analytic_distribution_popup table:eq(0) .o_field_x2many_list_row_add a",
     ).click();
@@ -307,7 +300,6 @@ test("analytic field in form view basic features", async () => {
         ".analytic_distribution_popup table:eq(0) tr:nth-of-type(3) .o_field_percentage input",
     ).toHaveValue("50");
 
-    // choose an account for the mandatory plan using the keyboard
     await contains(
         ".analytic_distribution_popup table:eq(0) tr:nth-of-type(3) #x_plan2_id",
     ).click();
@@ -316,12 +308,10 @@ test("analytic field in form view basic features", async () => {
     await press("Enter");
     await animationFrame();
 
-    // mandatory plan is green
     expect(
         ".analytic_distribution_popup table:eq(0) th:contains(Departments) .text-success:contains(100%)",
     ).toHaveCount(1);
 
-    // tags
     await contains(".fa-xmark").click();
     expect(".analytic_distribution_popup").toHaveCount(0);
     expect(".badge").toHaveCount(2);
@@ -357,7 +347,6 @@ test("analytic field in multi_edit list view + search more", async () => {
     await contains(".badge:eq(0) .o_tag_badge_text").click();
     expect(".analytic_distribution_popup").toHaveCount(0);
 
-    // select 2 rows
     await contains(".o_data_row:eq(0) .o_list_record_selector input").check();
     await contains(".o_data_row:eq(1) .o_list_record_selector input").check();
     await contains(".o_data_row:eq(0) .badge:eq(0)").click();
@@ -365,7 +354,6 @@ test("analytic field in multi_edit list view + search more", async () => {
     expect(".analytic_distribution_popup").toHaveCount(1);
     expect(".analytic_distribution_popup:not(:has(.text-success))").toHaveCount(1);
 
-    // add a line
     await contains(".analytic_distribution_popup .o_field_x2many_list_row_add").click();
     await contains(
         ".analytic_distribution_popup tr[name='line_2'] #x_plan5_id",
@@ -423,51 +411,46 @@ test("Rounding, value suggestions, keyboard only", async () => {
     await animationFrame();
     expect(".analytic_distribution_popup").toHaveCount(1);
 
-    // department
     await press("Tab");
     await press("ArrowDown");
     await animationFrame();
-    await press("Enter"); // choose the RD account
+    await press("Enter");
     await animationFrame();
-    await press("Tab"); // tab to country
-    await press("Tab"); // tab to percentage
+    await press("Tab");
+    await press("Tab");
     await edit("99.9", { confirm: "tab" });
 
-    // internal
     await animationFrame();
     await press("ArrowDown");
     await animationFrame();
-    await press("Enter"); // choose the Time off account
+    await press("Enter");
     await animationFrame();
-    await press("Tab"); // tab to departments
-    await press("Tab"); // tab to country
-    await press("Tab"); // tab to percentage
+    await press("Tab");
+    await press("Tab");
+    await press("Tab");
     await edit("99.99", { confirm: "tab" });
 
-    // country
     await animationFrame();
-    await press("Tab"); // tab to departments
-    await press("Tab"); // tab to country
+    await press("Tab");
+    await press("Tab");
     await press("ArrowDown");
     await animationFrame();
-    await press("Enter"); // choose the Belgium account
+    await press("Enter");
     await animationFrame();
-    await press("Tab"); // tab to percentage
+    await press("Tab");
     await edit("99.999", { confirm: "tab" });
     await animationFrame();
 
-    // tags
     expect(".badge:contains(99.9% RD)").toHaveCount(1);
     expect(".badge:contains(99.99% Time Off)").toHaveCount(1);
     expect(".badge:contains(100% Belgium)").toHaveCount(1);
 
-    // fill department
-    await press("Tab"); // tab to departments
+    await press("Tab");
     await press("ArrowDown");
     await animationFrame();
     await press("ArrowDown");
     await animationFrame();
-    await press("Enter"); // choose the HR account
+    await press("Enter");
     await animationFrame();
     await press("Tab");
     await press("Tab");
@@ -477,23 +460,20 @@ test("Rounding, value suggestions, keyboard only", async () => {
     expect(".badge:contains('99.9% RD | 0.1% HR')").toHaveCount(1);
     expect(".text-success:contains('100%')").toHaveCount(1);
 
-    // fill country
-    await press("Tab"); // tab to departments
-    await press("Tab"); // tab to country
+    await press("Tab");
+    await press("Tab");
     await press("ArrowDown");
     await animationFrame();
-    await press("Enter"); // choose Belgium again
+    await press("Enter");
     await animationFrame();
-    await press("Tab"); // tab to percentage
+    await press("Tab");
     await animationFrame();
     expect(getActiveElement()).toHaveValue(0.001);
     await edit("0.0006", { confirm: "tab" });
     await animationFrame();
     expect(".badge:contains('Belgium'):not(:contains('%'))").toHaveCount(1);
 
-    // fill internal
     const autocomplete = getActiveElement().parentNode;
-    // choose Operating Costs
     while (
         autocomplete.querySelector("a[aria-selected='true']")?.textContent !==
         "Operating Costs"
@@ -501,9 +481,9 @@ test("Rounding, value suggestions, keyboard only", async () => {
         await press("ArrowDown");
         await animationFrame();
     }
-    await press("Enter"); // validate
+    await press("Enter");
     await animationFrame();
-    await press("Escape"); // close the popup
+    await press("Escape");
     await animationFrame();
     expect(".badge:contains('99.99% Time Off | 0.01% Operating Costs')").toHaveCount(1);
 });

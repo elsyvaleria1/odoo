@@ -6,7 +6,6 @@ import { getService, patchWithCleanup } from "@web/../tests/web_test_helpers";
 describe.current.tags("desktop");
 defineMailModels();
 
-/** Replace idbKeyval by an in-memory database. */
 function mockIdbKeyval() {
     const values = new Map();
     patchWithCleanup(window.idbKeyval, {
@@ -20,7 +19,6 @@ function mockIdbKeyval() {
     });
 }
 
-/** Value saved for the app badge, read from a new connection. */
 async function unreadCounter() {
     const store = new window.idbKeyval.Store(
         "odoo-mail-unread-db",
@@ -30,7 +28,6 @@ async function unreadCounter() {
 }
 
 test("Retries when closed", async () => {
-    // when idb is idle, browser can auto-close it.
     mockIdbKeyval();
     await start();
     const store = getService("mail.store");
@@ -39,7 +36,7 @@ test("Retries when closed", async () => {
         set() {
             if (!open) {
                 expect.step("set:closed");
-                open = true; // simulate open on next retry
+                open = true;
                 return Promise.reject(
                     new Error("IDBDatabase.transaction: Can't start a transaction"),
                 );
@@ -93,7 +90,6 @@ test("No crash on idb unavailable", async () => {
     store.updateAppBadge();
     await animationFrame();
     await expect.waitForSteps(["set", "set"]);
-    // Simulate unavailable idb (e.g. private mode, blocked storage).
     patchWithCleanup(window.idbKeyval, {
         Store: class {
             constructor() {

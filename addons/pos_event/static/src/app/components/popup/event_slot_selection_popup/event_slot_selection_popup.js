@@ -58,11 +58,9 @@ export class EventSlotSelectionPopup extends Component {
     select(ev) {
         this.slotId = parseInt(ev.currentTarget.dataset.slotId);
         const selectedSlot = this.pos.models["event.slot"].get(this.slotId);
-        // Return if not available
         if (!selectedSlot || !this.props.availabilityPerSlot[this.slotId]) {
             return;
         }
-        // Visually select the button and update displayed datetime
         document.querySelectorAll(".o_event_slot_btn").forEach((btn) => {
             btn.classList.replace("btn-primary", "btn-secondary");
         });

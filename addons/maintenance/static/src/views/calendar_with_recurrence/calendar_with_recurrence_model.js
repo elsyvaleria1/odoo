@@ -52,8 +52,6 @@ export class CalendarWithRecurrenceModel extends CalendarModel {
         return records;
     }
     computeRangeDomain(data) {
-        // An order of a plan shows the plan's occurrences long after its own end, so
-        // it stays in range while the plan can still repeat into it.
         const { date_start, date_stop } = this.meta.fieldMapping;
         const { start, end } = data.range;
         return [
@@ -72,7 +70,6 @@ export class CalendarWithRecurrenceModel extends CalendarModel {
         ];
     }
     normalizeRecord(rawRecord) {
-        // Override to set end = start + 1h if date_scheduled_end is False.
         const record = super.normalizeRecord(rawRecord);
         const { duration, start, end } = record;
         if (!isDateOrDateTimeValue(end) && duration) {

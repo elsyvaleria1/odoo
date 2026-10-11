@@ -10,7 +10,6 @@ import { subscribeToTransitionChange } from "../mock/animation.js";
 import { mockLocation } from "../mock/network.js";
 import { getViewPortHeight, getViewPortWidth } from "../mock/window.js";
 
-/** A link on the mocked app host is the router's, not a way out of the page. */
 const EVENT_ACTION_OPTIONS = {
     isAppHost: (/** @type {URL} */ url) => url.host === mockLocation.host,
 };
@@ -194,8 +193,6 @@ export class HootFixtureElement extends HTMLElement {
                 continue;
             }
             this._iframes.set(iframe, waitForIframe(iframe));
-            // a sandboxed or cross-origin frame has no readable document, and
-            // touching its window throws a SecurityError
             if (iframe.contentDocument) {
                 setupEventActions(iframe.contentWindow, EVENT_ACTION_OPTIONS);
             }

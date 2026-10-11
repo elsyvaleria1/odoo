@@ -34,8 +34,6 @@ test("getNumpadButtons", async () => {
     expect(receivedButtonsDisableStatue).toEqual([true, true]);
 
     await productScreen.addProductToOrder(product1);
-    // Animation frame doesn't work here since the debounced function used to recompute
-    // discount is using eventListener, so we use setTimeout instead.
     setTimeout(() => {
         expect(Math.abs(order.discountLines[0].priceIncl).toString()).toBe(
             (order.lines[0].priceIncl * 0.1).toPrecision(2),

@@ -42,9 +42,6 @@ export class ImportDataOptions extends Component {
                 options.push(["import_skip_records", _t("Skip record")]);
             }
             if (this.props.fieldInfo.type === "selection") {
-                // `get_fields` publishes the selection: a Properties sub-column
-                // (`<field>.<property>`) is not a field of the model, so a
-                // fields_get lookup on its name returned undefined and threw.
                 const selection = (this.props.fieldInfo.selection || []).map((opt) => [
                     opt[0],
                     _t("Set to: %s", opt[1]),

@@ -23,7 +23,7 @@ patch(PayrollDashboardPayslipBatch.prototype, {
             fields,
             fieldNames: Object.keys(fields),
             values: {
-                sepa_export: "coucou==\n", //batch.sepa_export,
+                sepa_export: "coucou==\n",
                 sepa_export_filename: "SEPA",
             },
         };

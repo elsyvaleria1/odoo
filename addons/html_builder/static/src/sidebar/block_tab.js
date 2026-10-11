@@ -43,7 +43,6 @@ export class BlockTab extends Component {
         this.popover = useService("popover");
         this.snippetModel = useSnippets(this.props.snippetsName);
         this.blockTabRef = elementRef();
-        // Needed to avoid race condition in tours.
         this.state = proxy({ ongoingInsertion: false });
 
         onMounted(() => {
@@ -87,16 +86,11 @@ export class BlockTab extends Component {
                             onSelect: (snippet) => {
                                 snippetEl = snippet.content.cloneNode(true);
 
-                                // Add the dropzones corresponding to the snippet
-                                // and make them invisible.
                                 const selectors =
                                     this.shared.dropzone.getSelectors(snippetEl);
                                 let dropzoneEls =
                                     this.shared.dropzone.activateDropzones(selectors);
 
-                                // If no dropzone is left after the filter, then
-                                // allow the drop by click inside [data-snippet]
-                                // elements
                                 const filteredDropzoneEls = dropzoneEls.filter(
                                     (dropzoneEl) =>
                                         !dropzoneEl.closest(
@@ -113,9 +107,6 @@ export class BlockTab extends Component {
                                         dropzoneEl.classList.add("invisible"),
                                     );
 
-                                // Find the dropzone closest to the center of the
-                                // viewport and not located in the top quarter of
-                                // the viewport.
                                 const iframeWindow = this.document.defaultView;
                                 const viewPortCenterPoint = {
                                     x: iframeWindow.innerWidth / 2,
@@ -130,7 +121,6 @@ export class BlockTab extends Component {
                                     closest(validDropzoneEls, viewPortCenterPoint) ||
                                     dropzoneEls.at(-1);
 
-                                // Insert the selected snippet.
                                 closestDropzoneEl.after(snippetEl);
                                 this.shared.dropzone.removeDropzones();
                                 return snippetEl;
@@ -168,8 +158,6 @@ export class BlockTab extends Component {
      */
     async onSnippetGroupDrop(snippet, hookEl) {
         this.state.ongoingInsertion = true;
-        // Exclude the snippets that are not allowed to be dropped at the
-        // current position.
         const hookParentEl = hookEl.parentElement;
         this.snippetModel.snippetStructures.forEach((snippet) => {
             const { selectorChildren } = this.shared.dropzone.getSelectors(
@@ -180,7 +168,6 @@ export class BlockTab extends Component {
             );
         });
 
-        // Open the snippet dialog.
         let selectedSnippetEl;
         await new Promise((resolve) => {
             this.snippetModel.openSnippetDialog(
@@ -206,7 +193,6 @@ export class BlockTab extends Component {
         });
 
         if (this.builderContext.editor.isDestroyed) {
-            // the dialog outlived the editor: nothing to insert or restore
             delete this.cancelDragAndDrop;
             return;
         }
@@ -236,11 +222,6 @@ export class BlockTab extends Component {
         }
     }
 
-    // TODO bounce animation on click if empty editable
-
-    /**
-     * Initializes the drag and drop for the snippets in the block tabs.
-     */
     makeSnippetDraggable() {
         let dropzoneEls = [];
         let dragAndDropResolve;
@@ -256,12 +237,6 @@ export class BlockTab extends Component {
                 getScrollingElement(this.document) ||
                 this.editable.querySelector(".o_editable");
             if (!isScrollableY(scrollingElement)) {
-                // `defaultView` is null for a document with no window -- the
-                // preview iframe mid-reload, which is exactly when a drag can
-                // start. `closestScrollableY` already tolerates a nullish
-                // argument, so only this dereference needed guarding; it threw
-                // "reading 'frameElement'" out of onWillStartDrag and took the
-                // whole drag with it.
                 scrollingElement =
                     closestScrollableY(this.document.defaultView?.frameElement) ??
                     scrollingElement;
@@ -288,7 +263,6 @@ export class BlockTab extends Component {
                     .forEach((el) => el.remove());
                 draggedEl.style.position = "fixed";
                 document.body.append(draggedEl);
-                // Center the helper on the thumbnail image.
                 const thumbnailImgEl = element.querySelector(
                     ".o_snippet_thumbnail_img",
                 );
@@ -307,7 +281,6 @@ export class BlockTab extends Component {
                 const restoreDragSavePoint = this.shared.history.makeSavePoint();
                 this.cancelDragAndDrop = () => {
                     this.shared.dropzone.removeDropzones();
-                    // Undo the changes needed to ease the drag and drop.
                     this.dragState.restoreCallbacks?.forEach((restore) => restore());
                     restoreDragSavePoint();
                 };
@@ -319,8 +292,6 @@ export class BlockTab extends Component {
                 this.dragState = {};
                 dropzoneEls = [];
 
-                // Stop marking the elements with mutations as dirty and make
-                // some changes on the page to ease the drag and drop.
                 const restoreCallbacks = [];
                 for (const prepareDrag of this.builderContext.editor.getResource(
                     "on_prepare_drag_handlers",
@@ -336,15 +307,11 @@ export class BlockTab extends Component {
                 snippetEl = snippet.content.cloneNode(true);
                 isSnippetGroup = category === "snippet_groups";
 
-                // Check if the snippet is inline. Add it temporarily to the
-                // page to compute its style and get its `display` property.
                 this.document.body.appendChild(snippetEl);
                 const snippetStyle = window.getComputedStyle(snippetEl);
                 const isInlineSnippet = snippetStyle.display.includes("inline");
                 snippetEl.remove();
 
-                // Color-customize the snippet dynamic SVGs with the current
-                // theme colors.
                 const dynamicSvgEls = [
                     ...snippetEl.querySelectorAll(
                         'img[src^="/html_editor/shape/"], img[src^="/web_editor/shape/"]',
@@ -373,14 +340,12 @@ export class BlockTab extends Component {
                         colorCustomizedURL.pathname + colorCustomizedURL.search;
                 });
 
-                // The dragged element may change while dragging.
                 Object.assign(this.dragState, {
                     draggedEl: snippetEl,
                     snippetEl,
                     snippet,
                 });
 
-                // Add the dropzones.
                 const withGrids =
                     !isSnippetGroup &&
                     (this.builderContext.editor.config.isMobileView(this.editable)
@@ -456,8 +421,6 @@ export class BlockTab extends Component {
                 let currentDropzoneEl = this.dragState.currentDropzoneEl;
                 const isDroppedOver = !!currentDropzoneEl;
 
-                // If the snippet was dropped outside of a dropzone, find the
-                // dropzone that is the nearest to the dropping point.
                 if (!currentDropzoneEl) {
                     const blockTabRect = this.blockTabRef.el.getBoundingClientRect();
                     const helperWidth = helper.getBoundingClientRect().width;
@@ -494,24 +457,16 @@ export class BlockTab extends Component {
                             },
                         );
                     }
-                    // The dragged element may have changed, so get it again.
                     draggedEl = this.dragState.draggedEl;
 
-                    // In order to mark only the concerned elements as dirty,
-                    // remove the element, then replay the drop after
-                    // re-allowing to mark dirty.
                     draggedEl.remove();
 
-                    // Undo the changes needed to ease the drag and drop and
-                    // re-allow to mark dirty.
                     this.dragState.restoreCallbacks.forEach((restore) => restore());
                     this.dragState.restoreCallbacks = null;
 
-                    // Replay the drop.
                     currentDropzoneEl.after(draggedEl);
                     this.shared.dropzone.removeDropzones();
 
-                    // Process the dropped element.
                     if (!isSnippetGroup) {
                         await this.processDroppedSnippet(snippetEl);
                         delete this.cancelDragAndDrop;
@@ -546,7 +501,6 @@ export class BlockTab extends Component {
      */
     async processDroppedSnippet(snippetEl) {
         this.updateDroppedSnippet(snippetEl);
-        // Build the snippet.
         for (const onSnippetDropped of this.builderContext.editor.getResource(
             "on_snippet_dropped_handlers",
         )) {
@@ -554,13 +508,10 @@ export class BlockTab extends Component {
                 snippetEl,
                 dragState: this.dragState,
             });
-            // Cancel everything if the resource asked to.
             if (cancel) {
                 this.cancelDragAndDrop();
                 return;
             }
-            // Update `snippetEl` (and `draggedEl` of `dragState`) if it was
-            // replaced in the handler.
             if (this.dragState.replacedSnippetEl) {
                 if (this.dragState.draggedEl === snippetEl) {
                     this.dragState.draggedEl = this.dragState.replacedSnippetEl;
@@ -580,8 +531,6 @@ export class BlockTab extends Component {
      * @param {HTMLElement} snippetEl
      */
     updateDroppedSnippet(snippetEl) {
-        // If the snippet is "drop in only", remove the attributes that make it
-        // a draggable snippet, so it becomes a simple HTML code.
         if (snippetEl.classList.contains("o_snippet_drop_in_only")) {
             snippetEl.classList.remove("o_snippet_drop_in_only");
             if (snippetEl.classList.length === 0) {

@@ -17,12 +17,6 @@ export const KnowledgeSearchModelMixin = (T) =>
         async load(config) {
             await super.load(config);
             if (config.state && !this.isStateCompleteForEmbeddedView) {
-                // If the config contains an imported state that is not directly
-                // coming from a view that was embedded in Knowledge, the favorite
-                // filters have to be loaded, since they come from the
-                // `data-embedded-props` attribute of the anchor for the
-                // EmbeddedViewComponent. Otherwise, those are already specified in
-                // the state and they should not be duplicated.
                 const activateFavorite =
                     "activateFavorite" in config ? config.activateFavorite : true;
                 if (activateFavorite) {
@@ -30,7 +24,6 @@ export const KnowledgeSearchModelMixin = (T) =>
                         this.irFilters || [],
                     );
                     if (defaultFavoriteId) {
-                        // activate default search items (populate this.query)
                         this._activateDefaultSearchItems(defaultFavoriteId);
                     }
                 }
@@ -70,9 +63,6 @@ export const KnowledgeSearchModelMixin = (T) =>
             this._notify();
         }
 
-        /**
-         * Delete from the embedded view embedded state
-         */
         _deleteIrFilters(searchItem) {
             this.deleteEmbeddedViewFavoriteFilter(searchItem);
         }

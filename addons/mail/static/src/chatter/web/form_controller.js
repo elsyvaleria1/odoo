@@ -56,8 +56,6 @@ patch(FormController.prototype, {
             !this.dialogContext.inDialog &&
             !(this.model.isReady && isSameThread)
         ) {
-            // the chatter's fetches leave with the read of the record rather
-            // than after the form that holds the chatter is shown
             const thread = this.mailStore.Thread.insert({
                 model: this.archInfo.thread_model || nextConfiguration.resModel,
                 id: nextConfiguration.resId,

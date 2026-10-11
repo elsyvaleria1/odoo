@@ -8,31 +8,28 @@ import {
 } from "@web_studio/client_action/view_editor/editors/xml_utils";
 
 const interestingSelector = [
-    ":not(field) sheet", // A hook should be present to add elements in the sheet
-    ":not(field) field:not([data-used-by])", // should be clickable and draggable
-    ":not(field) notebook", // should be able to add pages
-    ":not(field) page", // should be clickable
-    ":not(field) button", // should be clickable
-    ":not(field) label", // should be clickable
-    ":not(field) group", // any group: outer or inner
-    ":not(field) group:not(:has(> group)) > *", // content of inner groups serves as main dropzone
+    ":not(field) sheet",
+    ":not(field) field:not([data-used-by])",
+    ":not(field) notebook",
+    ":not(field) page",
+    ":not(field) button",
+    ":not(field) label",
+    ":not(field) group",
+    ":not(field) group:not(:has(> group)) > *",
     ":not(field) chatter",
     ":not(field) .oe_avatar",
-    ":not(field) widget", // should be clickable
+    ":not(field) widget",
 ].join(", ");
 
 export class FormEditorCompiler extends formView.Compiler {
     compile(key, params = {}) {
         const xml = this.templates[key];
 
-        // One pass to compute and add the xpath for the arch's node location
-        // onto that node.
         for (const el of xml.querySelectorAll(interestingSelector)) {
             const xpath = computeXpath(el);
             el.setAttribute("studioXpath", xpath);
         }
 
-        // done after construction of xpaths
         this.addChatter = true;
         this.chatterData = {
             remove_message_ids: false,
@@ -75,7 +72,7 @@ export class FormEditorCompiler extends formView.Compiler {
             el.after(chatterContainerHook);
         } else {
             const parent = compiled.querySelector(".o-mail-Form-chatter");
-            parent.removeAttribute("t-attf-class"); // avoid class o-aside
+            parent.removeAttribute("t-attf-class");
             parent.removeAttribute("t-if");
         }
 
@@ -86,7 +83,7 @@ export class FormEditorCompiler extends formView.Compiler {
             el.prepend(addButtonAction);
         }
 
-        const fieldStatus = compiled.querySelector(`Field[type="'statusbar'"]`); // change selector at some point
+        const fieldStatus = compiled.querySelector(`Field[type="'statusbar'"]`);
         if (!fieldStatus) {
             const addStatusBar = !compiled.querySelector(".o_form_statusbar");
             const statusBarFieldHook = createElement("StatusBarFieldHook", {
@@ -96,8 +93,6 @@ export class FormEditorCompiler extends formView.Compiler {
             el.prepend(statusBarFieldHook);
         }
 
-        // the button box is included in the control panel, which is not visible in Studio
-        // re-add it to the form view
         const buttonBoxXml = xml.querySelector("div[name='button_box']:not(field div)");
         let buttonBox;
         if (buttonBoxXml) {
@@ -121,11 +116,10 @@ export class FormEditorCompiler extends formView.Compiler {
 
         buttonBox.insertAdjacentElement("afterbegin", buttonHook);
 
-        // Note: the ribon does not allow to remove an existing avatar!
         const title = compiled.querySelector(".oe_title");
         if (title) {
             if (
-                !title.querySelector(":scope > h1 > [isAvatar]") && // check it works with <field class="oe_avatar" ... />
+                !title.querySelector(":scope > h1 > [isAvatar]") &&
                 !title.parentElement.querySelector(":scope > [isAvatar]")
             ) {
                 const avatarHook = createElement("AvatarHook", {
@@ -173,15 +167,12 @@ export class FormEditorCompiler extends formView.Compiler {
             return;
         }
         const nodeType = node.nodeType;
-        // Put a xpath on the currentSlot containing the future compiled element.
-        // Do it early not to be bothered by recursive call to compileNode.
         const currentSlot = params.currentSlot;
         if (nodeType === 1 && currentSlot && !currentSlot.hasAttribute("studioXpath")) {
             const parentElement = node.parentElement;
             if (parentElement && parentElement.tagName === "page") {
                 const xpath = computeXpath(node.parentElement);
                 currentSlot.setAttribute("studioXpath", `"${xpath}"`);
-                // If the page has an OuterGroup as last child, don't add a page studioHook
                 if (!parentElement.querySelector(":scope > group:last-child > group")) {
                     const pageHookProps = {
                         position: "'inside'",
@@ -207,10 +198,9 @@ export class FormEditorCompiler extends formView.Compiler {
             node,
             { ...params, compileInvisibleNodes: true },
             true,
-        ); // always evalInvisible
+        );
 
         if (nodeType === 1) {
-            // Put a xpath on anything of interest.
             if (node.hasAttribute("studioXpath")) {
                 const xpath = node.getAttribute("studioXpath");
                 if (isComponentNode(compiled)) {
@@ -221,8 +211,6 @@ export class FormEditorCompiler extends formView.Compiler {
             }
 
             if (node.tagName === "notebook") {
-                // Since empty pages are not compiled, this compiler has not applied the studioXpath attribute.
-                // We must need to add one as well as the other pages, to make sure we can edit its content properly.
                 const originalChildren = Array.from(node.children).filter(
                     (e) => e.tagName === "page",
                 );
@@ -272,7 +260,7 @@ export class FormEditorCompiler extends formView.Compiler {
                 );
             }
 
-            const name = node.getAttribute("name"); // not sure that part works
+            const name = node.getAttribute("name");
             if (name === "message_ids") {
                 this.chatterData.remove_message_ids = true;
             } else if (name === "message_follower_ids") {

@@ -1,7 +1,5 @@
 "use strict";
 
-// A “chunk” is a sequence of statements of a certain type with only comments
-// and whitespace between.
 function extractChunks(parentNode, isPartOfChunk) {
   const chunks = [];
   let chunk = [];
@@ -70,9 +68,6 @@ function printSortedItems(sortedItems, originalItems, sourceCode) {
     )
     .join(newline + newline);
 
-  // Edge case: If the last import/export (after sorting) ends with a line
-  // comment and there’s code (or a multiline block comment) on the same line,
-  // add a newline so we don’t accidentally comment stuff out.
   const flattened = flatMap(sortedItems, (groups) => [].concat(...groups));
   const lastSortedItem = flattened[flattened.length - 1];
   const lastOriginalItem = originalItems[originalItems.length - 1];
@@ -96,10 +91,6 @@ function printSortedItems(sortedItems, originalItems, sourceCode) {
   return sorted + maybeNewline;
 }
 
-// Wrap the import/export nodes in `passedChunk` in objects with more data about
-// the import/export. Most importantly there’s a `code` property that contains
-// the node as a string, with comments (if any). Finding the corresponding
-// comments is the hard part.
 function getImportExportItems(
   passedChunk,
   sourceCode,
@@ -113,13 +104,6 @@ function getImportExportItems(
         ? node.loc.start.line - 1
         : chunk[nodeIndex - 1].loc.end.line;
 
-    // Get all comments before the import/export, except:
-    //
-    // - Comments on another line for the first import/export.
-    // - Comments that belong to the previous import/export (if any) – that is,
-    //   comments that are on the same line as the previous import/export. But
-    //   multiline block comments always belong to this import/export, not the
-    //   previous.
     const commentsBefore = sourceCode
       .getCommentsBefore(node)
       .filter(
@@ -129,9 +113,6 @@ function getImportExportItems(
           (nodeIndex > 0 || comment.loc.start.line > lastLine),
       );
 
-    // Get all comments after the import/export that are on the same line.
-    // Multiline block comments belong to the _next_ import/export (or the
-    // following code in case of the last import/export).
     const commentsAfter = sourceCode
       .getCommentsAfter(node)
       .filter((comment) => comment.loc.end.line === node.loc.end.line);
@@ -139,16 +120,11 @@ function getImportExportItems(
     const before = printCommentsBefore(node, commentsBefore, sourceCode);
     const after = printCommentsAfter(node, commentsAfter, sourceCode);
 
-    // Print the indentation before the import/export or its first comment, if
-    // any, to support indentation in `<script>` tags.
     const indentation = getIndentation(
       commentsBefore.length > 0 ? commentsBefore[0] : node,
       sourceCode,
     );
 
-    // Print spaces after the import/export or its last comment, if any, to
-    // avoid producing a sort error just because you accidentally added a few
-    // trailing spaces among the imports/exports.
     const trailingSpaces = getTrailingSpaces(
       commentsAfter.length > 0 ? commentsAfter[commentsAfter.length - 1] : node,
       sourceCode,
@@ -182,17 +158,6 @@ function getImportExportItems(
   });
 }
 
-// Parsers think that a semicolon after a statement belongs to that statement.
-// But in a semicolon-free code style it might belong to the next statement:
-//
-//     import x from "x"
-//     ;[].forEach()
-//
-// If the last import/export of a chunk ends with a semicolon, and that
-// semicolon isn’t located on the same line as the `from` string, adjust the
-// node to end at the `from` string instead.
-//
-// In the above example, the import is adjusted to end after `"x"`.
 function handleLastSemicolon(chunk, sourceCode) {
   const lastIndex = chunk.length - 1;
   const lastNode = chunk[lastIndex];
@@ -207,15 +172,12 @@ function handleLastSemicolon(chunk, sourceCode) {
 
   const semicolonBelongsToNode =
     nextToLastToken.loc.end.line === lastToken.loc.start.line ||
-    // If there’s no more code after the last import/export the semicolon has to
-    // belong to the import/export, even if it is not on the same line.
     sourceCode.getTokenAfter(lastToken) == null;
 
   if (semicolonBelongsToNode) {
     return chunk;
   }
 
-  // Preserve the start position, but use the end position of the `from` string.
   const newLastNode = {
     ...lastNode,
     range: [lastNode.range[0], nextToLastToken.range[1]],
@@ -259,8 +221,6 @@ function printWithSortedSpecifiers(node, sourceCode, getSpecifiers) {
 
   const newline = guessNewline(sourceCode);
 
-  // `allTokens[closeBraceIndex - 1]` wouldn’t work because `allTokens` contains
-  // comments and whitespace.
   const hasTrailingComma = isPunctuator(
     sourceCode.getTokenBefore(allTokens[closeBraceIndex]),
     ",",
@@ -270,8 +230,6 @@ function printWithSortedSpecifiers(node, sourceCode, getSpecifiers) {
   const sorted = flatMap(sortedItems, (item, index) => {
     const previous = index === 0 ? undefined : sortedItems[index - 1];
 
-    // Add a newline if the item needs one, unless the previous item (if any)
-    // already ends with a newline.
     const maybeNewline =
       previous != null &&
       needsStartingNewline(item.before) &&
@@ -296,9 +254,6 @@ function printWithSortedSpecifiers(node, sourceCode, getSpecifiers) {
       (token) => !isNewline(token) && !isSpaces(token),
     );
 
-    // Remove whitespace and newlines at the start of `.after` if the item had a
-    // comma before, but now hasn’t to avoid blank lines and excessive
-    // whitespace before `}`.
     const after = !item.hadComma
       ? item.after
       : nonBlankIndex === -1
@@ -324,25 +279,6 @@ function printWithSortedSpecifiers(node, sourceCode, getSpecifiers) {
   ]);
 }
 
-// Turns a list of tokens between the `{` and `}` of an import/export specifiers
-// list into an object with the following properties:
-//
-// - before: Array of tokens – whitespace and comments after the `{` that do not
-//   belong to any specifier.
-// - after: Array of tokens – whitespace and comments before the `}` that do not
-//   belong to any specifier.
-// - items: Array of specifier items.
-//
-// Each specifier item looks like this:
-//
-// - before: Array of tokens – whitespace and comments before the specifier.
-// - after: Array of tokens – whitespace and comments after the specifier.
-// - specifier: Array of tokens – identifiers, whitespace and comments of the
-//   specifier.
-// - hadComma: A Boolean representing if the specifier had a comma originally.
-//
-// We have to do carefully preserve all original whitespace this way in order to
-// be compatible with other stylistic ESLint rules.
 function getSpecifierItems(tokens) {
   const result = {
     before: [],
@@ -359,8 +295,6 @@ function getSpecifierItems(tokens) {
           case "Newline":
             current.before.push(token);
 
-            // All whitespace and comments before the first newline or
-            // identifier belong to the `{`, not the first specifier.
             if (result.before.length === 0 && result.items.length === 0) {
               result.before = current.before;
               current = makeEmptyItem();
@@ -373,10 +307,7 @@ function getSpecifierItems(tokens) {
             current.before.push(token);
             break;
 
-          // We’ve reached an identifier.
           default:
-            // All whitespace and comments before the first newline or
-            // identifier belong to the `{`, not the first specifier.
             if (result.before.length === 0 && result.items.length === 0) {
               result.before = current.before;
               current = makeEmptyItem();
@@ -390,7 +321,6 @@ function getSpecifierItems(tokens) {
       case "specifier":
         switch (token.type) {
           case "Punctuator":
-            // There can only be comma punctuators, but future-proof by checking.
             if (isPunctuator(token, ",")) {
               current.hadComma = true;
               current.state = "after";
@@ -401,8 +331,6 @@ function getSpecifierItems(tokens) {
             /* v8 ignore stop */
             break;
 
-          // When consuming the specifier part, we eat every token until a comma
-          // or to the end, basically.
           default:
             current.specifier.push(token);
         }
@@ -410,8 +338,6 @@ function getSpecifierItems(tokens) {
 
       case "after":
         switch (token.type) {
-          // Only whitespace and comments after a specifier that are on the same
-          // belong to the specifier.
           case "Newline":
             current.after.push(token);
             result.items.push(current);
@@ -424,7 +350,6 @@ function getSpecifierItems(tokens) {
             break;
 
           case "Block":
-            // Multiline block comments belong to the next specifier.
             if (hasNewline(token.code)) {
               result.items.push(current);
               current = makeEmptyItem();
@@ -434,7 +359,6 @@ function getSpecifierItems(tokens) {
             }
             break;
 
-          // We’ve reached another specifier – time to process that one.
           default:
             result.items.push(current);
             current = makeEmptyItem();
@@ -450,22 +374,11 @@ function getSpecifierItems(tokens) {
     }
   }
 
-  // We’ve reached the end of the tokens. Handle what’s currently in `current`.
   switch (current.state) {
-    // If the last specifier has a trailing comma and some of the remaining
-    // whitespace and comments are on the same line we end up here. If so we
-    // want to put that whitespace and comments in `result.after`.
     case "before":
       result.after = current.before;
       break;
 
-    // If the last specifier has no trailing comma we end up here. Move all
-    // trailing comments and whitespace from `.specifier` to `.after`, and
-    // comments and whitespace that don’t belong to the specifier to
-    // `result.after`. The last non-comment and non-whitespace token is usually
-    // an identifier, but in this case it’s a keyword:
-    //
-    //    export { z, d as default } from "a"
     case "specifier": {
       const lastIdentifierIndex = findLastIndex(
         current.specifier,
@@ -475,27 +388,21 @@ function getSpecifierItems(tokens) {
       const specifier = current.specifier.slice(0, lastIdentifierIndex + 1);
       const after = current.specifier.slice(lastIdentifierIndex + 1);
 
-      // If there’s a newline, put everything up to and including (hence the `+
-      // 1`) that newline in the specifiers’s `.after`.
       const newlineIndexRaw = after.findIndex((token2) => isNewline(token2));
       const newlineIndex = newlineIndexRaw === -1 ? -1 : newlineIndexRaw + 1;
 
-      // If there’s a multiline block comment, put everything _before_ that
-      // comment in the specifiers’s `.after`.
       const multilineBlockCommentIndex = after.findIndex(
         (token2) => isBlockComment(token2) && hasNewline(token2.code),
       );
 
       const sliceIndex =
-        // If both a newline and a multiline block comment exists, choose the
-        // earlier one.
         newlineIndex >= 0 && multilineBlockCommentIndex >= 0
           ? Math.min(newlineIndex, multilineBlockCommentIndex)
           : newlineIndex >= 0
             ? newlineIndex
             : multilineBlockCommentIndex >= 0
               ? multilineBlockCommentIndex
-              : // If there are no newlines, move the last whitespace into `result.after`.
+              :
                 endsWithSpaces(after)
                 ? after.length - 1
                 : -1;
@@ -508,9 +415,6 @@ function getSpecifierItems(tokens) {
       break;
     }
 
-    // If the last specifier has a trailing comma and all remaining whitespace
-    // and comments are on the same line we end up here. If so we want to move
-    // the final whitespace to `result.after`.
     case "after":
       if (endsWithSpaces(current.after)) {
         const last = current.after.pop();
@@ -530,7 +434,6 @@ function getSpecifierItems(tokens) {
 
 function makeEmptyItem() {
   return {
-    // "before" | "specifier" | "after"
     state: "before",
     before: [],
     after: [],
@@ -539,9 +442,6 @@ function makeEmptyItem() {
   };
 }
 
-// If a specifier item starts with a line comment or a singleline block comment
-// it needs a newline before that. Otherwise that comment can end up belonging
-// to the _previous_ specifier after sorting.
 function needsStartingNewline(tokens) {
   const before = tokens.filter((token) => !isSpaces(token));
 
@@ -575,18 +475,6 @@ function guessNewline(sourceCode) {
 function parseWhitespace(whitespace) {
   const allItems = whitespace.split(NEWLINE);
 
-  // Remove blank lines. `allItems` contains alternating `spaces` (which can be
-  // the empty string) and `newline` (which is either "\r\n" or "\n"). So in
-  // practice `allItems` grows like this as there are more newlines in
-  // `whitespace`:
-  //
-  //     [spaces]
-  //     [spaces, newline, spaces]
-  //     [spaces, newline, spaces, newline, spaces]
-  //     [spaces, newline, spaces, newline, spaces, newline, spaces]
-  //
-  // If there are 5 or more items we have at least one blank line. If so, keep
-  // the first `spaces`, the first `newline` and the last `spaces`.
   const items =
     allItems.length >= 5
       ? allItems.slice(0, 2).concat(allItems.slice(-1))
@@ -599,7 +487,6 @@ function parseWhitespace(whitespace) {
           ? { type: "Spaces", code: spacesOrNewline }
           : { type: "Newline", code: spacesOrNewline },
       )
-      // Remove empty spaces since it makes debugging easier.
       .filter((token) => token.code !== "")
   );
 }
@@ -608,8 +495,6 @@ function removeBlankLines(whitespace) {
   return printTokens(parseWhitespace(whitespace));
 }
 
-// Returns `sourceCode.getTokens(node)` plus whitespace and comments. All tokens
-// have a `code` property with `sourceCode.getText(token)`.
 function getAllTokens(node, sourceCode) {
   const tokens = sourceCode.getTokens(node);
   const lastTokenIndex = tokens.length - 1;
@@ -643,14 +528,10 @@ function getAllTokens(node, sourceCode) {
   });
 }
 
-// Prints tokens that are enhanced with a `code` property – like those returned
-// by `getAllTokens` and `parseWhitespace`.
 function printTokens(tokens) {
   return tokens.map((token) => token.code).join("");
 }
 
-// `comments` is a list of comments that occur before `node`. Print those and
-// the whitespace between themselves and between `node`.
 function printCommentsBefore(node, comments, sourceCode) {
   const lastIndex = comments.length - 1;
   return comments
@@ -664,8 +545,6 @@ function printCommentsBefore(node, comments, sourceCode) {
     .join("");
 }
 
-// `comments` is a list of comments that occur after `node`. Print those and
-// the whitespace between themselves and between `node`.
 function printCommentsAfter(node, comments, sourceCode) {
   return comments
     .map((comment, index) => {
@@ -709,24 +588,17 @@ function getTrailingSpaces(node, sourceCode) {
 
 function sortImportExportItems(items) {
   return items.slice().sort((itemA, itemB) =>
-    // If both items are side effect imports, keep their original order.
     itemA.isSideEffectImport && itemB.isSideEffectImport
       ? itemA.index - itemB.index
-      : // If one of the items is a side effect import, move it first.
+      :
         itemA.isSideEffectImport
         ? -1
         : itemB.isSideEffectImport
           ? 1
-          : // Compare the `from` part.
+          :
             compare(itemA.source.source, itemB.source.source) ||
-            // The `.source` has been slightly tweaked. To stay fully deterministic,
-            // also sort on the original value.
             compare(itemA.source.originalSource, itemB.source.originalSource) ||
-            // Then put type imports/exports before regular ones.
             compare(itemA.source.kind, itemB.source.kind) ||
-            // Keep the original order if the sources are the same. It’s not worth
-            // trying to compare anything else, and you can use `import/no-duplicates`
-            // to get rid of the problem anyway.
             itemA.index - itemB.index,
   );
 }
@@ -734,30 +606,16 @@ function sortImportExportItems(items) {
 function sortSpecifierItems(items) {
   return items.slice().sort(
     (itemA, itemB) =>
-      // Compare by imported or exported name (external interface name).
-      // import { a as b } from "a"
-      //          ^
-      // export { b as a }
-      //               ^
       compare(
         (itemA.node.imported || itemA.node.exported).name,
         (itemB.node.imported || itemB.node.exported).name,
       ) ||
-      // Then compare by the file-local name.
-      // import { a as b } from "a"
-      //               ^
-      // export { b as a }
-      //          ^
       compare(itemA.node.local.name, itemB.node.local.name) ||
-      // Then put type specifiers before regular ones.
       compare(
         getImportExportKind(itemA.node),
         getImportExportKind(itemB.node),
         /* v8 ignore start */
       ) ||
-      // Keep the original order if the names are the same. It’s not worth
-      // trying to compare anything else, `import {a, a} from "mod"` is a syntax
-      // error anyway (but @babel/eslint-parser kind of supports it).
       itemA.index - itemB.index,
     /* v8 ignore stop */
   );
@@ -804,16 +662,9 @@ function getSource(node) {
   const source = node.source.value;
 
   return {
-    // Sort by directory level rather than by string length.
     source: source
-      // Treat `.` as `./`, `..` as `../`, `../..` as `../../` etc.
       .replace(/^[./]*\.$/, "$&/")
-      // Make `../` sort after `../../` but before `../a` etc.
-      // Why a comma? See the next comment.
       .replace(/^[./]*\/$/, "$&,")
-      // Make `.` and `/` sort before any other punctuation.
-      // The default order is: _ - , x x x . x x x / x x x
-      // We’re changing it to: . / , x x x _ x x x - x x x
       .replace(/[./_-]/g, (char) => {
         switch (char) {
           case ".":
@@ -836,12 +687,9 @@ function getSource(node) {
 }
 
 function getImportExportKind(node) {
-  // `type` and `typeof` imports, as well as `type` exports (there are no
-  // `typeof` exports).
   return node.importKind || node.exportKind || "value";
 }
 
-// Like `Array.prototype.findIndex`, but searches from the end.
 function findLastIndex(array, fn) {
   for (let index = array.length - 1; index >= 0; index--) {
     if (fn(array[index], index, array)) {
@@ -849,19 +697,15 @@ function findLastIndex(array, fn) {
     }
   }
   /* v8 ignore start */
-  // There are currently no usages of `findLastIndex` where nothing is found.
   return -1;
   /* v8 ignore stop */
 }
 
-// Like `Array.prototype.flatMap`, had it been available.
 function flatMap(array, fn) {
   return [].concat(...array.map(fn));
 }
 
 function getSourceCode(context) {
-  // `.getSourceCode()` is deprecated in favor of `.sourceCode`.
-  // We support both for now.
   /* v8 ignore next */
   return context.sourceCode || context.getSourceCode();
 }

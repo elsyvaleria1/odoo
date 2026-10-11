@@ -238,7 +238,6 @@ test("hr.timesheet (list)(timer): unlink timesheet through timesheet_uom_timer w
         message: "The timer stop button should be visible",
     });
 
-    // Stop the timer using the list view (timesheet_uom_timer widget)
     await click(".o_icon_button");
     await animationFrame();
 

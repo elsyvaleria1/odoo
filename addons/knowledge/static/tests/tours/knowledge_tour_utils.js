@@ -85,9 +85,6 @@ function getOffset(element) {
 export const dragAndDropArticle = (source, target) => {
     const elementOffset = getOffset(source);
     const targetOffset = getOffset(target);
-    // If the target is under the element, the cursor needs to be in the upper
-    // part of the target to trigger the move. If it is above, the cursor needs
-    // to be in the bottom part.
     const targetY =
         targetOffset.top +
         (targetOffset.top > elementOffset.top ? target.offsetHeight - 1 : 0);
@@ -102,7 +99,6 @@ export const dragAndDropArticle = (source, target) => {
         }),
     );
 
-    // Initial movement starting the drag sequence
     element.dispatchEvent(
         new PointerEvent("pointermove", {
             bubbles: true,
@@ -112,7 +108,6 @@ export const dragAndDropArticle = (source, target) => {
         }),
     );
 
-    // Timeouts because sidebar onMove is debounced
     setTimeout(() => {
         target.dispatchEvent(
             new PointerEvent("pointermove", {
@@ -156,7 +151,6 @@ export function appendArticleLink(
 ) {
     return [
         {
-            // open the command bar
             trigger: `${htmlFieldContainerSelector} .odoo-editor-editable > p:last ${previousSiblingSelector}, ${htmlFieldContainerSelector} .odoo-editor-editable > div.o-paragraph:last ${previousSiblingSelector}`,
             run: function () {
                 if (previousSiblingSelector) {
@@ -167,7 +161,6 @@ export function appendArticleLink(
             },
         },
         {
-            // click on the /article command
             trigger: ".o-we-powerbox .o-we-command .o-we-command-img.fa-newspaper-o",
             run: "click",
         },
@@ -182,10 +175,6 @@ export function appendArticleLink(
     ];
 }
 
-/**
- * Ensure that the tour does not end on the Knowledge form view by returning to
- * the home menu.
- */
 export function endKnowledgeTour() {
     return [
         ...stepUtils.toggleHomeMenu(),

@@ -1,7 +1,6 @@
 /** @odoo-module native */
 
 export const stepUtils = {
-    // Workcenters' utils.
     openWorkcentersSelector() {
         return [
             {
@@ -35,7 +34,6 @@ export const stepUtils = {
             { trigger: `${target}.active` },
         ];
     },
-    // Employees' utils.
     openEmployeesList() {
         return [
             { trigger: "button.o_edit_operators", run: "click" },
@@ -68,7 +66,6 @@ export const stepUtils = {
         });
         return steps;
     },
-    // Other utils.
     openShopFloor() {
         return [
             {
@@ -81,10 +78,6 @@ export const stepUtils = {
     closeShopFloor() {
         return [
             { trigger: ".o_cp_burger_menu .o_btn_icon", run: "click" },
-            // `.dropdown-menu.show button` matched nothing, for two independent reasons:
-            // `show` belongs to the dropdown's bottom-sheet (mobile) variant only -- the
-            // desktop menu is `o-dropdown--menu dropdown-menu mx-0` -- and a `DropdownItem`
-            // renders a `<span>` unless given an explicit `tag`, never a `<button>`.
             {
                 trigger: ".o-dropdown--menu .o-dropdown-item:contains('Close')",
                 run: "click",

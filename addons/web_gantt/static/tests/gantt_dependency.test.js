@@ -48,7 +48,7 @@ import {
 
 const ganttViewParams = {
     resModel: "project.task",
-    arch: /* xml */ `<gantt date_start="date_start" date_stop="date_deadline" dependency_field="predecessor_ids" color="color" />`,
+    arch: `<gantt date_start="date_start" date_stop="date_deadline" dependency_field="predecessor_ids" color="color" />`,
     groupBy: ["user_ids"],
 };
 
@@ -403,10 +403,9 @@ test("Connectors are correctly computed and rendered when consolidation is activ
 
     await mountGanttView({
         ...ganttViewParams,
-        arch: /* xml */ `<gantt date_start="date_start" date_stop="date_deadline" default_range="month" dependency_field="predecessor_ids" consolidation_max="{'user_ids': 100 }"/>`,
+        arch: `<gantt date_start="date_start" date_stop="date_deadline" default_range="month" dependency_field="predecessor_ids" consolidation_max="{'user_ids': 100 }"/>`,
     });
 
-    // groups have been created of r
     expect(".o_gantt_row_header.o_gantt_group.o_group_open").toHaveCount(4);
 
     function getGroupRow(index) {
@@ -533,8 +532,6 @@ test("Create a connector from the gantt view.", async () => {
     onRpc("write", ({ args, method }) => expect.step([method, args]));
     await mountGanttView(ganttViewParams);
 
-    // Explicitly shows the connector creator wrapper since its "display: none"
-    // disappears on native CSS hover, which cannot be programatically emulated.
     const rightWrapper = queryFirst(SELECTORS.connectorCreatorWrapper);
     rightWrapper.classList.add("d-block");
 
@@ -550,8 +547,6 @@ test("Create a connector from the gantt view: going fast", async () => {
         domain: [["id", "in", [1, 3]]],
     });
 
-    // Explicitly shows the connector creator wrapper since its "display: none"
-    // disappears on native CSS hover, which cannot be programatically emulated.
     const rightWrapper = queryFirst(SELECTORS.connectorCreatorWrapper, {
         root: getPillWrapper("Task 1"),
     });
@@ -562,28 +557,22 @@ test("Create a connector from the gantt view: going fast", async () => {
     });
     const bulletRect = queryRect(connectorBullet);
     const initialPosition = {
-        x: Math.floor(bulletRect.left + bulletRect.width / 2), // floor to avoid sub-pixel positioning
-        y: Math.floor(bulletRect.top + bulletRect.height / 2), // floor to avoid sub-pixel positioning
+        x: Math.floor(bulletRect.left + bulletRect.width / 2),
+        y: Math.floor(bulletRect.top + bulletRect.height / 2),
     };
     await pointerDown(connectorBullet, {
         position: { clientX: initialPosition.x, clientY: initialPosition.y },
     });
 
-    // Here we simulate a fast move, using arbitrary values.
     const currentPosition = {
-        x: Math.floor(initialPosition.x + 123), // floor to avoid sub-pixel positioning
-        y: Math.floor(initialPosition.y + 12), // floor to avoid sub-pixel positioning
+        x: Math.floor(initialPosition.x + 123),
+        y: Math.floor(initialPosition.y + 12),
     };
     await hover(SELECTORS.cellContainer, {
         position: { clientX: currentPosition.x, clientY: currentPosition.y },
     });
-    // The connector position is pushed through `throttleForAnimation`, whose
-    // trailing call lands on the frame AFTER the pointer move — so a single
-    // `animationFrame()` observes the DOM before the connector exists. Wait for
-    // the element itself rather than counting frames.
     await waitFor(getConnectorStroke("new"));
 
-    // Then we check that the connector stroke is correctly positioned.
     expect(getConnectorStroke("new")).toHaveRect({
         top: initialPosition.y,
         right: currentPosition.x,
@@ -593,15 +582,12 @@ test("Create a connector from the gantt view: going fast", async () => {
 });
 
 test("Connectors should be rendered if connected pill is not visible", async () => {
-    // We first need to bump all the ids for users 2, 3 and 4 to make them disappear.
     for (const record of ResUsers._records.slice(1)) {
         record.id += 1000;
     }
     for (const record of ProjectTask._records) {
         record.user_ids = record.user_ids.map((id) => (id > 1 ? id + 1000 : id));
     }
-    // Generate a lot of users so that the connectors are far beyond the visible
-    // viewport, hence generating fake extra pills to render the connectors.
     for (let i = 0; i < 100; i++) {
         const id = 100 + i;
         ResUsers._records.push({ id, name: `User ${id}` });
@@ -623,12 +609,9 @@ test("Connectors should be rendered if connected pill is not visible", async () 
 test("No display of resize handles when creating a connector", async () => {
     await mountGanttView(ganttViewParams);
 
-    // Explicitly shows the connector creator wrapper since its "display: none"
-    // disappears on native CSS hover, which cannot be programatically emulated.
     const rightWrapper = queryFirst(SELECTORS.connectorCreatorWrapper);
     rightWrapper.classList.add("d-block");
 
-    // Creating a connector and hover another pill while dragging it
     const { cancel, moveTo } = await contains(SELECTORS.connectorCreatorBullet, {
         root: rightWrapper,
     }).drag();
@@ -642,12 +625,9 @@ test("No display of resize handles when creating a connector", async () => {
 test("Renderer in connect mode when creating a connector", async () => {
     await mountGanttView(ganttViewParams);
 
-    // Explicitly shows the connector creator wrapper since its "display: none"
-    // disappears on native CSS hover, which cannot be programatically emulated.
     const rightWrapper = queryFirst(SELECTORS.connectorCreatorWrapper);
     rightWrapper.classList.add("d-block");
 
-    // Creating a connector and hover another pill while dragging it
     const { cancel, moveTo } = await contains(SELECTORS.connectorCreatorBullet, {
         root: rightWrapper,
     }).drag();
@@ -661,12 +641,9 @@ test("Renderer in connect mode when creating a connector", async () => {
 test("Connector creators of initial pill are highlighted when creating a connector", async () => {
     await mountGanttView(ganttViewParams);
 
-    // Explicitly shows the connector creator wrapper since its "display: none"
-    // disappears on native CSS hover, which cannot be programatically emulated.
     const rightWrapper = queryFirst`${SELECTORS.pillWrapper} ${SELECTORS.connectorCreatorWrapper}`;
     rightWrapper.classList.add("d-block");
 
-    // Creating a connector and hover another pill while dragging it
     const { cancel, moveTo } = await contains(SELECTORS.connectorCreatorBullet, {
         root: rightWrapper,
     }).drag();
@@ -684,12 +661,10 @@ test("Switch to full-size browser: the connections between pills should be dipla
 
     await mountGanttView(ganttViewParams);
 
-    // Mobile view
     expect("svg.o_gantt_connector").toHaveCount(0, {
         message: "Gantt connectors should not be visible in small/mobile view",
     });
 
-    // Resizing browser to leave mobile view
     await resize({ width: 1366, height: 768 });
     await runAllTimers();
 
@@ -723,12 +698,9 @@ test("Connect two very distant pills", async () => {
     });
     expect(SELECTORS.connector).toHaveCount(0);
 
-    // Explicitly shows the connector creator wrapper since its "display: none"
-    // disappears on native CSS hover, which cannot be programatically emulated.
     const rightWrapper = queryFirst(SELECTORS.connectorCreatorWrapper);
     rightWrapper.classList.add("d-block");
 
-    // Creating a connector and hover another pill while dragging it
     const { drop, moveTo } = await contains(SELECTORS.connectorCreatorBullet, {
         root: rightWrapper,
     }).drag();
@@ -738,9 +710,6 @@ test("Connect two very distant pills", async () => {
     await moveTo({ position: { x: window.innerWidth * 2 } });
     await advanceFrame(200);
 
-    // FIXME: ELEMENT SHOULD BE INTERACTIVE -> test is simulating a situation that
-    // cannot happen. Investigate the issue, remove the following line and the
-    // "broken" tag when fixed.
     queryOne(selector).classList.add("pe-auto");
 
     await drop(selector);

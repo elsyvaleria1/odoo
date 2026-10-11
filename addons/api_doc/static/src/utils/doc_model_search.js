@@ -9,9 +9,6 @@ export function simplifyString(str) {
 }
 
 function stringMatch(query, str) {
-    // Score against the SIMPLIFIED length: the query was simplified before
-    // being compared, so dividing by the raw length scored `res.partner` below
-    // an identical match on `respartner` for no reason a reader could see.
     const simplified = simplifyString(str);
     if (simplified.includes(query)) {
         return query.length / simplified.length;

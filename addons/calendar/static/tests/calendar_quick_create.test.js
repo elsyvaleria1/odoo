@@ -35,8 +35,6 @@ test("More Options forwards the quick create's duration, privacy, location and n
     controller.actionService = {
         doAction: (action, options) => actions.push({ action, options }),
     };
-    // the drag gave 10:00-12:00; the user moved the end to 14:00 and the
-    // server-side compute set duration to 4
     await controller.model.root.update({
         start: parseISO("2016-12-12T10:00:00"),
         stop: parseISO("2016-12-12T14:00:00"),
@@ -51,7 +49,6 @@ test("More Options forwards the quick create's duration, privacy, location and n
     expect(actions[0].options.additionalContext.default_stop).toBe(
         "2016-12-12 14:00:00",
     );
-    // the popover's own fields travel too, not only the drag extent
     const { default_privacy, default_location, default_notes } =
         actions[0].options.additionalContext;
     expect([default_privacy, default_location, String(default_notes)]).toEqual([

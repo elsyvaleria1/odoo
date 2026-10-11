@@ -76,10 +76,6 @@ export class HierarchyKanbanRecord extends KanbanRecord {
         );
     }
 
-    //--------------------------------------------------------------------------
-    // Business
-    //--------------------------------------------------------------------------
-
     /**
      * Helper method that opens the marketing.activity Form dialog with pre-configured trigger_type
      * and parent_id. Used for the various create buttons on the kanban card footers.
@@ -96,10 +92,6 @@ export class HierarchyKanbanRecord extends KanbanRecord {
         this.marketingAutomationContext.onAddMarketingActivity({ context });
     }
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
     /**
      * Allows to switch between the 'graph' and 'filter' tabs of the activity kanban card.
      *
@@ -110,7 +102,7 @@ export class HierarchyKanbanRecord extends KanbanRecord {
 
         this.activeTab = ev.currentTarget.dataset.tabType;
         this.applyTabPanelVisibility();
-        this.props.record.model.notify(); // force chart re-render
+        this.props.record.model.notify();
     }
 
     applyTabPanelVisibility() {
@@ -148,56 +140,6 @@ export class HierarchyKanbanRecord extends KanbanRecord {
 }
 
 export class HierarchyKanbanRenderer extends KanbanRenderer {
-    /**
-     * Overrides the base setup to enable "parent/children" relationship display.
-     *
-     * If we have a records list containing (in that order):
-     * - Child 1 of Parent 1
-     * - Child 2 of Parent 1
-     * - Parent 2
-     * - Child 1 of Parent 2
-     * - Parent 1
-     * - Grand-Child 1 (Parent 1 + Child 1)
-     *
-     * We want it displayed as follows:
-     * Parent 1
-     * --- Child 1 of Parent 1
-     * --- --- Grand-Child 1 (Parent 1 + Child 1)
-     * --- Child 2 of Parent 1
-     * Parent 2
-     * --- Child 1 of Parent 2
-     *
-     * This involves 3 necessary operations.
-     *
-     * 1. Adapt the template
-     * Which is done to introduce the notion of "depth" and wrap children elements X (=depth) times.
-     * This allows to give left padding to the children and display a dotted left-border on those
-     * wrappers to give a sense of 'timeline' to the end user.
-     * Essentially, for every ancestor this element has, we wrap it into one additional DIV.
-     *
-     * This is done by recursively calling a wrapper DIV until we reach the depth of the record.
-     * (See point 3 for depth explanation).
-     *
-     * This can NOT be defined in the base XML arch, as the arch definition should be agnostic of
-     * this JS class implementation details.
-     * (In order to work in studio, be easily extended / migrated, ...)
-     *
-     * 2. Sort records
-     *
-     * Records come sorted based on the "interval_standardized" field only.
-     * We need to sort them from the first ancestor to its children and the children of its children
-     * etc until we reach the appropriate sorting (see example).
-     * This is important as records are going to be displayed "on top of each other", as children
-     * cannot be wrapped within their parent element.
-     *
-     * 3. Compute the record "depth"
-     *
-     * As explained earlier, we need to compute the record depth, which is the number of ancestors
-     * this record has.
-     * For example, our "Grand-Child 1 (Parent 1 / Child 1)" has a depth of 2.
-     *
-     */
-
     static template = "marketing_automation.HierarchyKanbanRenderer";
     static components = {
         ...KanbanRenderer.components,
@@ -229,10 +171,6 @@ export class HierarchyKanbanRenderer extends KanbanRenderer {
         this.props.archInfo.templateDocs["card"] = mainTemplate;
     }
 
-    /**
-     * Simply adds a confirmation prompt when deleting a marketing.activity record that has children
-     * activities. Since the ORM will then perform a cascade deletion of children.
-     */
     deleteRecord(record) {
         const directChildren = this.props.list.records.filter(
             (listRecord) =>
@@ -276,9 +214,6 @@ export class HierarchyKanbanRenderer extends KanbanRenderer {
         return depth;
     }
 
-    /**
-     * See 'setup' docstring for details.
-     */
     _getParentByChildMap(records) {
         const parentMap = {};
         records.forEach((activityRecord) => {
@@ -291,9 +226,6 @@ export class HierarchyKanbanRenderer extends KanbanRenderer {
         return parentMap;
     }
 
-    /**
-     * See 'setup' docstring for details.
-     */
     _getSortedRecordsByHierarchy(records, parentId) {
         return records.flatMap((record) => {
             if (!record.resId) {
@@ -313,16 +245,6 @@ export class HierarchyKanbanRenderer extends KanbanRenderer {
 }
 
 export class HierarchyKanban extends X2ManyField {
-    /**
-     * Overrides the "openRecord" method to overload the save.
-     *
-     * Every time we save a sub-marketing.activity, we want to save the whole marketing.automation
-     * record and form view.
-     *
-     * This allows the end-user to easily chain activities, otherwise he would have to save the
-     * enclosing form view in-between each activity addition.
-     */
-
     static components = {
         ...X2ManyField.components,
         KanbanRenderer: HierarchyKanbanRenderer,

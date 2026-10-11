@@ -67,7 +67,6 @@ async function insertInSpreadsheetAndClickLink(target) {
             this.hoveredCell.hover({ col: 0, row: 0 });
         },
     });
-    // Open search bar menu if it is not already
     if (!target.querySelector(".o_search_bar_menu")) {
         await toggleSearchBarMenu();
     }
@@ -114,18 +113,18 @@ beforeEach(() => {
     const views = {
         "partner,1,list": '<list><field name="foo"/></list>',
         "partner,2,kanban": `<kanban><templates><t t-name="card"><field name="foo"/></t></templates></kanban>`,
-        "partner,view_graph_xml_id,graph": /*xml*/ `
+        "partner,view_graph_xml_id,graph": `
                 <graph>
                     <field name="probability" type="measure"/>
                 </graph>`,
         "partner,4,calendar": `<calendar date_start="date"></calendar>`,
-        "partner,5,pivot": /*xml*/ `
+        "partner,5,pivot": `
                 <pivot>
                     <field name="bar" type="row"/>
                     <field name="probability" type="measure"/>
                 </pivot>`,
         "partner,6,map": `<map></map>`,
-        "partner,false,search": /*xml*/ `
+        "partner,false,search": `
                 <search>
                     <field name="foo"/>
                     <filter name="filter_1" domain="[['name', '=', 'Raoul']]"/>
@@ -149,11 +148,9 @@ test("list view with custom domain and groupby", async function () {
         additionalContext: { search_default_filter_2: 1 },
     });
 
-    // add a domain
     await toggleSearchBarMenu();
     await toggleMenuItem("filter_1");
 
-    // group by name
     await toggleMenuItem("name");
 
     await insertInSpreadsheetAndClickLink(target);
@@ -221,7 +218,6 @@ test("simple graph view", async function () {
 test("graph view with custom chart type and order", async function () {
     const webClient = await openView("graph");
     await contains(".fa-chart-pie").click();
-    // count measure
     await toggleMenu("Measures");
     await toggleMenuItem("Count");
     await insertInSpreadsheetAndClickLink(target);
@@ -250,11 +246,9 @@ test("simple pivot view", async function () {
 test("pivot view with custom group by and measure", async function () {
     const webClient = await openView("pivot");
 
-    // group by name
     await toggleSearchBarMenu();
     await toggleMenuItem("name");
 
-    // add count measure
     await toggleMenu("Measures");
     await toggleMenuItem("Count");
 
@@ -272,8 +266,6 @@ test("pivot view with custom group by and measure", async function () {
     });
 });
 
-// TODO: we don't depend on web_map (or base_setup) so map views are not available.
-// we should probably move this to test_spreadsheet_edition & add a dependency there
 test.skip("map view", async function () {
     const webClient = await openView("map");
     await insertInSpreadsheetAndClickLink(target);

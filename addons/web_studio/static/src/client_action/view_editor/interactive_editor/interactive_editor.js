@@ -79,9 +79,7 @@ export class InteractiveEditor extends Component {
         this.orm = useService("orm");
         this.addDialog = useOwnedDialogs();
         this.notification = useService("notification");
-        /* DagDrop: from sidebar to View, and within the view */
         const getNearestHook = this.getNearestHook.bind(this);
-        // Those are fine because editor defines the t-key
         const prepareForDrag = this.props.editor.prepareForDrag;
         const isValidHook = this.props.editor.isValidHook || (() => true);
         this.addViewStructure = this.props.editor.addViewStructure;
@@ -159,7 +157,7 @@ export class InteractiveEditor extends Component {
                 const droppedData = element.dataset;
 
                 const isNew = element.classList.contains("o_web_studio_component");
-                const structure = isNew ? droppedData.structure : "field"; // only fields can be moved
+                const structure = isNew ? droppedData.structure : "field";
 
                 if (isNew) {
                     this.addStructure(structure, droppedData.drop, {
@@ -189,10 +187,8 @@ export class InteractiveEditor extends Component {
 
             const { targetInfo, tag, attrs } = this.autoClick;
 
-            // First step: locate node in new arch
             let xpathToClick = targetInfo.xpath;
             if (tag) {
-                // We are trying to select a new node of which targetInfo could be its parent
                 if (targetInfo.position !== "inside") {
                     xpathToClick = xpathToClick.split("/").slice(0, -1).join("/");
                 }
@@ -208,7 +204,7 @@ export class InteractiveEditor extends Component {
                     fullXpath,
                     toRaw(this.viewEditorModel).xmlDoc,
                 );
-                this.autoClick = null; // Early reset of that variable
+                this.autoClick = null;
                 if (nodes.length !== 1) {
                     return;
                 }
@@ -216,7 +212,6 @@ export class InteractiveEditor extends Component {
                 xpathToClick = `${xpathToClick}/${tag}[${atPosition}]`;
             }
 
-            // Second step: locate corresponding dom element
             let domEl;
             await waitUntil(() => {
                 domEl = this.props.rendererRef.el?.querySelector(
@@ -417,7 +412,6 @@ export class InteractiveEditor extends Component {
 
         const fieldType = data.fieldType;
         if (fieldType === "selection" && data.widget === "priority") {
-            // should not be translated at the creation
             newNode.field_description.selection = [
                 ["0", "Normal"],
                 ["1", "Low"],

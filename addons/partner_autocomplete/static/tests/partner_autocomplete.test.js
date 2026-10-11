@@ -10,7 +10,6 @@ import {
     onRpc,
 } from "@web/../tests/web_test_helpers";
 
-// Autocomplete has a debounce time of 250 ms on input
 async function editAutocomplete(el, value) {
     await contains(el).edit(value, { confirm: false });
     await advanceTime(250);
@@ -110,8 +109,6 @@ onRpc("res.partner", "enrich_by_duns", ({ args }) => ({
 }));
 onRpc("enrich_company_message_post", () => true);
 
-// the widgets import jsvat on first use; fetch it once before the suite, so
-// no test waits on the network midway
 before(() => import("jsvat"));
 
 test.tags("desktop");
@@ -145,11 +142,9 @@ test("Partner autocomplete : not a company", async () => {
         "[name='parent_id']:first .o-autocomplete .o-autocomplete--dropdown-item.partner_autocomplete_dropdown_many2one",
     ).toHaveCount(3);
 
-    // Click on the first option - "First company"
     await contains(
         "[name='parent_id']:first .o-autocomplete ul li.partner_autocomplete_dropdown_many2one:first",
     ).click();
-    // Check that the fields of the modal have been pre-filled
     const expectedValues = {
         name: "First Company",
         vat: "BE0477472701",
@@ -190,15 +185,12 @@ test("Partner autocomplete : company / name search", async () => {
     });
 
     await editAutocomplete("[name='name'] .dropdown input", "company");
-    // 3 options + 1 for the worldwide option
     expect("[name='name'] .o-autocomplete .o-autocomplete--dropdown-item").toHaveCount(
         4,
     );
 
-    // Click on the first option - "First Company"
     await contains("[name='name'] .o-autocomplete ul li").click();
 
-    // Check that the fields have been filled
     const expectedValues = {
         name: "First Company",
         vat: "BE0477472701",
@@ -241,15 +233,12 @@ test("Partner autocomplete : Company type = Company / VAT search", async () => {
     });
 
     await editAutocomplete("[name='vat'] .dropdown input", "BE0477472701");
-    // 3 options + 1 for the worldwide option
     expect("[name='vat'] .o-autocomplete .o-autocomplete--dropdown-item").toHaveCount(
         4,
     );
 
-    // Click on the first option - "First company"
     await contains("[name='vat'] .o-autocomplete ul li").click();
 
-    // Check that the fields have been filled
     const expectedValues = {
         name: "First Company",
         vat: "BE0477472701",
@@ -332,7 +321,6 @@ test("Display auto complete suggestion for canCreate", async () => {
         </form>`,
     });
     await editAutocomplete("[name='parent_id'] input", "blabla");
-    // create + create & edit + 3 partner suggestions + search worldwide
     expect(
         "[name='parent_id'] .o-autocomplete .o-autocomplete--dropdown-item",
     ).toHaveCount(6);
@@ -347,13 +335,11 @@ test("Partner autocomplete : onChange should not disturb option selection", asyn
     await contains("[name='is_company'] input").click();
     await contains("[name='name'] .dropdown input").click();
     await editAutocomplete("[name='name'] .dropdown input", "company");
-    // 3 options + 1 for the worldwide option
     expect("[name='name'] .o-autocomplete .o-autocomplete--dropdown-item").toHaveCount(
         4,
     );
     await contains(".o-autocomplete--dropdown-item:eq(1)").click();
 
-    // Check that the fields have been filled
     const expectedValues = {
         name: "Second Company",
         vat: "BE0477472701",
@@ -371,9 +357,6 @@ test("Partner autocomplete : onChange should not disturb option selection", asyn
     }
 });
 
-// ---------------------------------------------------------------------------
-// "Search Worldwide" behaviour
-// ---------------------------------------------------------------------------
 async function openCompanyNameSearch() {
     await mountView({ resModel: "res.partner", type: "form" });
     await contains("[name='is_company'] input").click();
@@ -382,8 +365,6 @@ async function openCompanyNameSearch() {
 
 test.tags("desktop");
 test("Search Worldwide is a real option with a valid id, reachable by keyboard", async () => {
-    // Regression: the entry used to be a template-appended <li> whose id was
-    // "..._undefined_undefined" and which arrow-key navigation never reached.
     await openCompanyNameSearch();
     await editAutocomplete("[name='name'] .dropdown input", "company");
 
@@ -401,8 +382,6 @@ test("Search Worldwide is a real option with a valid id, reachable by keyboard",
 });
 
 test("Search Worldwide is offered even when there are no local results", async () => {
-    // Regression (U1): an empty country-scoped result set used to leave the
-    // user with nothing to click, no way to broaden the search.
     onRpc("res.partner", "autocomplete_by_name", () => []);
     await openCompanyNameSearch();
     await editAutocomplete("[name='name'] .dropdown input", "noresultshere");
@@ -410,28 +389,25 @@ test("Search Worldwide is offered even when there are no local results", async (
 });
 
 test("Search Worldwide scope does not leak into the next search", async () => {
-    // Regression (C1): once worldwide, every later search stayed worldwide with
-    // no way back to the country scope.
     const scopes = [];
     onRpc("res.partner", "autocomplete_by_name", ({ args }) => {
-        scopes.push(args[1]); // [value, queryCountryId]
+        scopes.push(args[1]);
         return iapSuggestions;
     });
     await openCompanyNameSearch();
 
     await editAutocomplete("[name='name'] .dropdown input", "company");
-    expect(scopes.at(-1)).toBe(false); // no country set -> scoped
+    expect(scopes.at(-1)).toBe(false);
 
     await contains("[name='name'] .partner_autocomplete_dropdown_worldwide").click();
     await advanceTime(250);
-    expect(scopes.at(-1)).toBe(0); // worldwide
+    expect(scopes.at(-1)).toBe(0);
 
     await editAutocomplete("[name='name'] .dropdown input", "another");
-    expect(scopes.at(-1)).toBe(false); // back to country scope
+    expect(scopes.at(-1)).toBe(false);
 });
 
 test("Suggestion description has no dangling comma when city is missing", async () => {
-    // Regression (C4): a missing city used to render "Name, , Country".
     onRpc("res.partner", "autocomplete_by_name", () => [
         {
             name: "NoCity Co",
@@ -441,7 +417,6 @@ test("Suggestion description has no dangling comma when city is missing", async 
     ]);
     await openCompanyNameSearch();
     await editAutocomplete("[name='name'] .dropdown input", "nocity");
-    // broaden so the country is appended to the description
     await contains("[name='name'] .partner_autocomplete_dropdown_worldwide").click();
     await advanceTime(250);
 
@@ -453,14 +428,10 @@ test("Suggestion description has no dangling comma when city is missing", async 
 });
 
 test("Search Worldwide after an empty local search still queries worldwide", async () => {
-    // Regression (C2): the no-results cache is per-query-string only. Now that the
-    // worldwide row is offered on empty local results (U1), a worldwide search for
-    // the same prefix must not be short-circuited by the country-scoped miss.
     const scopes = [];
     onRpc("res.partner", "autocomplete_by_name", ({ args }) => {
         const [, countryId] = args;
         scopes.push(countryId);
-        // Nothing in the home country, but a hit worldwide.
         return countryId === 0
             ? [{ name: "Worldwide Co", duns: "9", city: "Paris" }]
             : [];
@@ -474,6 +445,6 @@ test("Search Worldwide after an empty local search still queries worldwide", asy
     await contains("[name='name'] .partner_autocomplete_dropdown_worldwide").click();
     await advanceTime(250);
 
-    expect(scopes).toInclude(0); // the worldwide RPC actually fired
+    expect(scopes).toInclude(0);
     expect("[name='name'] .partner_autocomplete_dropdown_char").toHaveCount(1);
 });

@@ -10,7 +10,6 @@ import {
 describe.current.tags("desktop");
 setupVoipTests();
 
-// allow test data to be overridden in other modules
 const settingsData = {
     voip_secret: "super secret password",
     voip_username: "1337",

@@ -9,9 +9,6 @@ import { describe, expect, test } from "@odoo/hoot";
 import { xml } from "@odoo/owl";
 import { contains } from "@web/../tests/web_test_helpers";
 
-// TODO: test composite with each spec: prepare, load
-// TODO: test reloadComposite
-
 describe.current.tags("desktop");
 
 test("can call 2 separate actions with composite action", async () => {
@@ -58,13 +55,13 @@ test("can call 2 separate actions with composite action", async () => {
     await contains("[data-action-id='composite']").click();
     expect(":iframe .s_test").toHaveClass("class1 class2");
     expect.verifySteps([
-        "action1: class1", // preview
-        "action2: class2", // preview
-        "action1: class1", // apply
-        "action2: class2", // apply
+        "action1: class1",
+        "action2: class2",
+        "action1: class1",
+        "action2: class2",
     ]);
     await contains("[data-action-id='composite']").click();
-    expect.verifySteps(["action1: class1", "action2: class2"]); // clean
+    expect.verifySteps(["action1: class1", "action2: class2"]);
 });
 
 test("can call the same action twice with composite action", async () => {
@@ -100,13 +97,13 @@ test("can call the same action twice with composite action", async () => {
     await contains("[data-action-id='composite']").click();
     expect(":iframe .s_test").toHaveClass("class1 class2");
     expect.verifySteps([
-        "action1: class1", // preview
-        "action1: class2", // preview
-        "action1: class1", // apply
-        "action1: class2", // apply
+        "action1: class1",
+        "action1: class2",
+        "action1: class1",
+        "action1: class2",
     ]);
     await contains("[data-action-id='composite']").click();
-    expect.verifySteps(["action1: class1", "action1: class2"]); // clean
+    expect.verifySteps(["action1: class1", "action1: class2"]);
 });
 
 test("composite action's isApplied returns false if no action defined it", async () => {
@@ -139,10 +136,10 @@ test("composite action's isApplied returns false if no action defined it", async
     await contains("[data-action-id='composite']").click();
     expect("[data-action-id='composite']").not.toHaveClass("active");
     expect.verifySteps([
-        "action: class1", // preview
-        "action: class2", // preview
-        "action: class1", // apply
-        "action: class2", // apply
+        "action: class1",
+        "action: class2",
+        "action: class1",
+        "action: class2",
     ]);
 });
 

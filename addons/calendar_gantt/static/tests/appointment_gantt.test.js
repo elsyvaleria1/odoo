@@ -32,19 +32,19 @@ async function mountGanttViewWithStatus(status) {
     Object.assign(CalendarEvent._records[0], {
         appointment_status: status,
         appointment_type_id: 1,
-        start: "2022-01-12 10:00:00", // Late
+        start: "2022-01-12 10:00:00",
         stop: "2022-01-12 10:30:00",
     });
     Object.assign(CalendarEvent._records[1], {
         appointment_status: status,
         appointment_type_id: 1,
-        start: "2022-01-12 11:00:00", // Current
+        start: "2022-01-12 11:00:00",
         stop: "2022-01-12 11:30:00",
     });
     Object.assign(CalendarEvent._records[2], {
         appointment_status: status,
         appointment_type_id: 1,
-        start: "2022-01-12 12:00:00", // Future
+        start: "2022-01-12 12:00:00",
         stop: "2022-01-12 12:30:00",
         partner_ids: [100, 214],
     });
@@ -82,8 +82,7 @@ const STATUS_CLASSNAMES = {
     green: "o_gantt_color_10",
 };
 
-// minimalist version of the appointment gantt view
-CalendarEvent._views.gantt = /* xml */ `
+CalendarEvent._views.gantt = `
     <gantt
         js_class="appointment_booking_gantt"
         date_start="start"
@@ -137,7 +136,6 @@ test("resource timeline filters direct actions without caller context", async ()
             'js_class="appointment_booking_gantt"',
             'js_class="resource_booking_gantt"',
         ),
-        // Scope must survive grouping by staff instead of resources.
         groupBy: ["partner_ids"],
         context: {},
     });
@@ -287,7 +285,6 @@ test("group pill colors", async () => {
     await animationFrame();
     testGroupPillColorsCheckColors();
     await selectGroup("appointment_type_id");
-    // when not grouping by attendees we show "lateness" every time
     expect(
         document.querySelectorAll(".o_appointment_booking_gantt_color_grey"),
     ).toBeEmpty();

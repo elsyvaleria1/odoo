@@ -1,9 +1,4 @@
 /** @odoo-module native */
-/**
- * Regression tests for what a scan is allowed to do to the page.
- *
- * A barcode is untrusted input: it comes off a label somebody else printed.
- */
 
 import { simulateBarCode } from "@barcodes/../tests/barcode_test_helpers";
 import { BarcodeHandlerField } from "@barcodes/barcode_handler_field";
@@ -55,14 +50,10 @@ test("a barcode cannot inject a selector and click unrelated buttons", async () 
             </form>`,
     });
 
-    // `[barcode_trigger=DOIT], [class]` is a *valid* selector, so a try/catch
-    // around querySelectorAll would not have stopped it: it simply matches
-    // more than the trigger it names.
     appContextOf(view).services.barcode.scan("OBTDOIT], [class");
     await animationFrame();
     expect.verifySteps([]);
 
-    // ...and the honest trigger still works.
     appContextOf(view).services.barcode.scan("OBTDOIT");
     await animationFrame();
     expect.verifySteps(["intended"]);
@@ -80,9 +71,6 @@ test("an unmapped OCD command reports itself instead of doing nothing", async ()
         arch: `<form><field name="name"/></form>`,
     });
 
-    // OCDEDIT was mapped to `.o_form_button_edit`, a selector that has matched
-    // nothing since the form view lost its explicit edit mode. Scanning it was
-    // a silent no-op rather than an unknown command.
     appContextOf(view).services.barcode.scan("OCDEDIT");
     await animationFrame();
     expect.verifySteps(["danger:Unknown barcode command"]);
@@ -90,8 +78,6 @@ test("an unmapped OCD command reports itself instead of doing nothing", async ()
 
 test.tags("desktop");
 test("a barcode_handler field ignores scans aimed at another active element", async () => {
-    // Assert on what the record actually holds: entering the handler proves
-    // nothing, since the guard is inside it.
     let field;
     patchWithCleanup(BarcodeHandlerField.prototype, {
         setup() {
@@ -115,8 +101,6 @@ test("a barcode_handler field ignores scans aimed at another active element", as
     await animationFrame();
     expect(stored()).toBe("12345");
 
-    // With a dialog owning the UI, the form behind it must not take the scan
-    // -- it would swallow the barcode and leave the record dirty.
     const dialog = document.createElement("div");
     document.body.appendChild(dialog);
     ui.activateElement(dialog);
@@ -124,7 +108,6 @@ test("a barcode_handler field ignores scans aimed at another active element", as
     await animationFrame();
     expect(stored()).toBe("12345");
 
-    // ...and it takes scans again once the dialog closes.
     ui.deactivateElement(dialog);
     appContextOf(view).services.barcode.scan("13579");
     await animationFrame();
@@ -134,9 +117,6 @@ test("a barcode_handler field ignores scans aimed at another active element", as
 
 test.tags("desktop");
 test("cleanBarcode no longer rewrites scanned content", async () => {
-    // It used to strip /Alt|Shift|Control/g out of the assembled string, so a
-    // product coded "ShiftKnob" scanned as "Knob". Modifier keydowns are now
-    // dropped before they reach the buffer, so there is nothing to strip.
     for (const barcode of ["ShiftKnob", "ControlValve", "Altima", "ALTIMA", "cobalt"]) {
         expect(barcodeService.cleanBarcode(barcode)).toBe(barcode);
     }
@@ -144,9 +124,6 @@ test("cleanBarcode no longer rewrites scanned content", async () => {
 
 test.tags("desktop");
 test("a pager command does not apply to a multi-record view", async () => {
-    // A list's pager reads "1-2 / 2": there is no single record to page to.
-    // The old check asked `pager.innerText.includes("-")`, which conflates the
-    // value with the limit; the value span is now read on its own.
     patchWithCleanup(Macro.prototype, {
         start() {
             expect.step("macro started");

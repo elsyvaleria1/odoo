@@ -45,9 +45,6 @@ export class ListEditorRenderer extends listView.Renderer {
     setup() {
         const viewEditorModel = proxy(useCurrentViewEditorModel());
         this.viewEditorModel = observe(viewEditorModel, () => {
-            // Re-render when showInvisible changes on the viewEditorModel:
-            // onWillRender recomputes allColumns/columns, and our
-            // processAllColumns/getActiveColumns overrides read that value.
             this.render();
         });
         super.setup();
@@ -132,10 +129,6 @@ export class ListEditorRenderer extends listView.Renderer {
         return cols;
     }
 
-    // `columns` and `allColumns` are class fields on the base renderer (own
-    // instance properties, define semantics), so a get/set accessor pair here
-    // would be silently shadowed. Hook into the two computation methods the
-    // base renderer calls in onWillRender instead.
     processAllColumns(allColumns, list) {
         let cols = super.processAllColumns(allColumns, list);
         cols = cols.filter((c) => !c.attrs?.["data-used-by"]);

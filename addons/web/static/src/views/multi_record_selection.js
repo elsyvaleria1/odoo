@@ -186,7 +186,6 @@ export function useLongTouchSelection({ getLongTouchThreshold, onLongTouch }) {
         },
 
         onTouchEnd() {
-            // A due timer may still be queued when the release is delivered.
             self.resetLongTouchTimer();
         },
 

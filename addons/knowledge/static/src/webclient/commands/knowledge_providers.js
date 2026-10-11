@@ -6,7 +6,6 @@ import { user } from "@web/core/user";
 import { highlightText } from "@web/core/utils/dom/html";
 import { DefaultCommandItem, HotkeyCommandItem } from "@web/ui/commands";
 
-// Articles command
 class KnowledgeCommand extends DefaultCommandItem {
     static template = "knowledge.KnowledgeCommandTemplate";
     static props = {
@@ -19,13 +18,11 @@ class KnowledgeCommand extends DefaultCommandItem {
     };
 }
 
-// "Not found, create one" command
 class Knowledge404Command extends DefaultCommandItem {
     static template = "knowledge.Knowledge404CommandTemplate";
     static props = { ...DefaultCommandItem.props, articleName: t.string() };
 }
 
-// Advanced search command
 class KnowledgeExtraCommand extends HotkeyCommandItem {
     static template = "knowledge.KnowledgeExtraCommandTemplate";
 }
@@ -41,7 +38,6 @@ commandSetupRegistry.add("?", {
 const commandProviderRegistry = registry.category("command_provider");
 
 const fn = (hidden) => {
-    // Check if the user has enough rights to create a new article
     const canCreate = () => user.checkAccessRight("knowledge.article", "create");
     let articlesData;
     return async function provide(env, options) {
@@ -56,8 +52,6 @@ const fn = (hidden) => {
         );
         if (!hidden) {
             if (articlesData.length === 0) {
-                // Only display the "create article" command when the user can
-                // create an article and when the user inputs at least 3 characters
                 if (options.searchValue.length > 2 && (await canCreate())) {
                     return [
                         {
@@ -95,7 +89,6 @@ const fn = (hidden) => {
                 }
             }
         }
-        // display the articles
         const result = articlesData.map((article) => ({
             Component: KnowledgeCommand,
             action() {
@@ -127,7 +120,6 @@ const fn = (hidden) => {
             },
         }));
         if (!hidden && !(await user.hasGroup("base.group_portal"))) {
-            // add the "advanced search" command
             result.push({
                 Component: KnowledgeExtraCommand,
                 async action() {

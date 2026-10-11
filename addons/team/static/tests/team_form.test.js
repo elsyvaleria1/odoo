@@ -36,10 +36,6 @@ const ARCH = `<form js_class="team_form">
     </sheet>
 </form>`;
 
-/**
- * Two teams sharing one member, so the mono-membership warning -- and with it
- * the alert carrying the button -- is displayed.
- */
 async function setupSharedMember() {
     const pyEnv = await startServer();
     const partnerId = pyEnv["res.partner"].create({ name: "Maria" });
@@ -54,8 +50,6 @@ async function setupSharedMember() {
 test("team form activate multi-team option via alert", async () => {
     const { pyEnv, teamIds } = await setupSharedMember();
 
-    // Both the administrator check and the parameter write live on the model:
-    // the client names the team, and the server resolves which usages that is.
     onRpc("team.team", "action_activate_multi_membership", ({ args }) => {
         expect.step("action_activate_multi_membership");
         expect(args).toEqual([[teamIds[0]]]);
@@ -66,14 +60,11 @@ test("team form activate multi-team option via alert", async () => {
     await start();
     await openFormView("team.team", teamIds[0], { arch: ARCH });
 
-    // Members list should have Maria which is already in Team2 => Alert should be shown
     await expect(
         ".o_field_widget[name='member_ids'] .o_kanban_record:visible:not(.o-kanban-button-new)",
     ).toHaveText("Maria");
     await contains(".alert:visible", { count: 1 });
 
-    // Clicking the button activates the option; the reload re-reads
-    // is_membership_multi, which is what hides the alert
     await webContains(".alert button[name='team_activate_multi_membership']").click();
     await contains(".alert:visible", { count: 0 });
     expect.verifySteps(["action_activate_multi_membership"]);
@@ -117,11 +108,9 @@ test("team form keeps the alert when activation is refused", async () => {
     await contains(".alert:visible", { count: 1 });
 
     await webContains(".alert button[name='team_activate_multi_membership']").click();
-    // the option is still off, so the alert must survive
     await contains(".alert:visible", { count: 1 });
     expect.verifySteps(["action_activate_multi_membership"]);
 
-    // whatever went wrong is reported, not replaced by boilerplate
     await waitFor(".o_notification");
     expect(queryFirst(".o_notification_content")).toHaveText("Access Denied");
 });

@@ -891,7 +891,6 @@ export class RecordList extends Array {
      * @returns {U[]}
      */
     flatMap(fn) {
-        // Each callback result is flattened once, just like Array.prototype.flatMap.
         return /** @type {U[]} */ (this.map(fn).flat());
     }
     /**

@@ -258,7 +258,6 @@ test("onUpload receives the files that were uploaded, not the ones that were pic
 for (const reject of [false, true]) {
     test(`upload remains busy until its ${reject ? "rejected" : "successful"} consumer finishes`, async () => {
         const linking = new Deferred();
-        // A detached callback rejection must not hide the completion assertion.
         linking.catch(() => {});
         const input = await createFileInput({
             mockPost: () => "[]",

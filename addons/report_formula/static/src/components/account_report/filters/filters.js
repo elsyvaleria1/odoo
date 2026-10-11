@@ -170,9 +170,6 @@ export class AccountReportFilters extends Component {
             return;
         }
 
-        // While editing a date field, hovering another dropdown item makes the hovered one
-        // active instead of the edited one. If the focused element is an input, reselect
-        // its encompassing dropdown item.
         const focusedElement = document.activeElement;
         if (focusedElement.nodeName === "INPUT") {
             for (const navigatorItem of navigator.items) {
@@ -194,7 +191,6 @@ export class AccountReportFilters extends Component {
         if (mode === "view" && periodType) {
             dropdownItem?.setActive();
             if (!isSelected) {
-                // Select the period type on first enter.
                 this.dateFilter.editing = false;
                 this.filterClicked({
                     optionKey: "date.filter",
@@ -202,15 +198,12 @@ export class AccountReportFilters extends Component {
                     reload: true,
                 });
             } else {
-                // Make the input editable on second enter.
                 this.editDateFilter(periodType, inputField);
             }
         } else if (mode === "edit" && periodType) {
-            // Save the edited period and return focus to the dropdown item.
             this.saveDateFilter(periodType, inputField);
             dropdownItem?.setActive();
         } else if (periodType) {
-            // Select the period type and potentially blur an input date field to trigger a save.
             inputField?.blur();
             this.selectDateFilter(periodType, true);
             dropdownItem?.setActive();
@@ -255,7 +248,6 @@ export class AccountReportFilters extends Component {
         return date_to ? deserializeDate(date_to) : null;
     }
 
-    // Setters
     setDate(optionKey, type, date) {
         if (date) {
             this.controller.cachedFilterOptions[optionKey][`date_${type}`] =
@@ -328,9 +320,7 @@ export class AccountReportFilters extends Component {
 
         const specifier = this.controller.cachedFilterOptions.date.filter.split("_")[0];
         const periodType = this.controller.cachedFilterOptions.date.period_type;
-        // In case the period is fiscalyear it will be computed exactly like a year period.
         const period = periodType === "fiscalyear" ? "year" : periodType;
-        // Set the filter value based on the specifier.
         if (Object.prototype.hasOwnProperty.call(filters, period)) {
             filters[period] =
                 this.controller.cachedFilterOptions.date.period ||
@@ -498,13 +488,6 @@ export class AccountReportFilters extends Component {
         return formatValue(dateTo.add({ years: this.dateFilter.year }), "yyyy");
     }
 
-    /**
-     * Must stay consistent with `AccountReturnType._get_period_boundaries` in
-     * `account/models/account_return.py`.
-     */
-    //------------------------------------------------------------------------------------------------------------------
-    // Number of periods
-    //------------------------------------------------------------------------------------------------------------------
     setNumberPeriods(ev) {
         const numberPeriods = ev.target.value;
 
@@ -519,9 +502,6 @@ export class AccountReportFilters extends Component {
         }
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Records
-    //------------------------------------------------------------------------------------------------------------------
     getMultiRecordSelectorProps(resModel, optionKey) {
         return {
             resModel,
@@ -536,9 +516,6 @@ export class AccountReportFilters extends Component {
         };
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Rounding unit
-    //------------------------------------------------------------------------------------------------------------------
     async toggleOptionalColumn(columnId) {
         const hidden = new Set(this.controller.cachedFilterOptions.hidden_columns);
         if (hidden.has(columnId)) {
@@ -556,9 +533,6 @@ export class AccountReportFilters extends Component {
         );
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Generic filters
-    //------------------------------------------------------------------------------------------------------------------
     async filterClicked({ optionKey, optionValue = undefined, reload = false }) {
         if (optionValue !== undefined) {
             await this.controller.updateOption(optionKey, optionValue);
@@ -572,7 +546,6 @@ export class AccountReportFilters extends Component {
     }
 
     async applyFilters(optionKey = null, delay = 500) {
-        // We only call the reload after the delay is finished, to avoid doing 5 calls if you want to click on 5 journals
         if (this.timeout) {
             clearTimeout(this.timeout);
         }
@@ -589,9 +562,6 @@ export class AccountReportFilters extends Component {
         }, delay);
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Custom filters
-    //------------------------------------------------------------------------------------------------------------------
     async filterVariant(reportId) {
         this.controller.saveSessionOptions({
             ...this.controller.cachedFilterOptions,
@@ -599,7 +569,6 @@ export class AccountReportFilters extends Component {
             sections_source_id: reportId,
         });
         const cacheKey = this.controller.getCacheKey(reportId, reportId);
-        // if the variant hasn't been loaded yet, set up the call number
         if (!(cacheKey in this.controller.loadingCallNumberByCacheKey)) {
             this.controller.incrementCallNumber(cacheKey);
         }
@@ -607,7 +576,6 @@ export class AccountReportFilters extends Component {
     }
 
     async toggleHideZeroLines() {
-        // Avoid calling the database when this filter is toggled; as the exact same lines would be returned; just reassign visibility.
         await this.controller.toggleOption("hide_0_lines", false);
 
         this.controller.saveSessionOptions(this.controller.cachedFilterOptions);

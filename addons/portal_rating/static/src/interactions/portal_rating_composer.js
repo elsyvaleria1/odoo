@@ -5,12 +5,6 @@ import { _t } from "@web/core/translation";
 import { user } from "@web/core/user";
 import { Interaction } from "@web/public/interaction";
 
-/**
- * RatingPopupComposer
- *
- * Display the rating average with a static star widget, and open
- * a popup with the portal composer when clicking on it.
- **/
 export class RatingPopupComposer extends Interaction {
     static selector = ".o_rating_popup_composer";
 
@@ -42,9 +36,6 @@ export class RatingPopupComposer extends Interaction {
         this.reloadRatingPopupComposer();
     }
 
-    /**
-     * Destroy existing ratingPopup and insert new ratingPopup widget
-     */
     reloadRatingPopupComposer() {
         const starsEl = this.el.querySelector(".o_rating_popup_composer_stars");
         if (this.options.hide_rating_avg) {
@@ -62,7 +53,6 @@ export class RatingPopupComposer extends Interaction {
             );
         }
 
-        // Append the modal
         const modalEl = this.el.querySelector(".o_rating_popup_composer_modal");
         modalEl.replaceChildren();
         this.renderAt(
@@ -79,10 +69,7 @@ export class RatingPopupComposer extends Interaction {
             this.services["public.interactions"].stopInteractions(this.composerEl);
         }
 
-        // Instantiate the "Portal Composer" widget and insert it into the modal
-        // TODO Exchange options through another mean ?
         const options = PortalComposer.prepareOptions(this.options);
-        // Change the text of send button
         options.send_button_label = options.default_message_id
             ? _t("Update review")
             : _t("Post review");
@@ -90,7 +77,6 @@ export class RatingPopupComposer extends Interaction {
         const locationEl = this.el.querySelector(
             ".o_rating_popup_composer_modal .o_portal_chatter_composer",
         );
-        // TODO maybe always put in this.options - and prepare in setup ???
         if (!locationEl) {
             return;
         }
@@ -102,7 +88,6 @@ export class RatingPopupComposer extends Interaction {
         )[0];
         delete this.env.portalComposerOptions;
         locationEl.remove();
-        // Change the text of the button
         this.el.querySelector(".o_rating_popup_composer_text").textContent =
             options.is_fullscreen
                 ? _t("Review")
@@ -115,7 +100,6 @@ export class RatingPopupComposer extends Interaction {
      * @param {Object} data
      */
     onReloadRatingPopupComposer(data) {
-        // Refresh the internal state of the widget
         this.rating_avg = data["mixin.mail.thread"][0].rating_avg;
         this.rating_count = data["mixin.mail.thread"][0].rating_count;
         this.rating_value = data["rating.rating"]?.[0].rating;

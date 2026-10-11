@@ -521,7 +521,7 @@ function headerCacheScope(headers) {
         return;
     }
     const effective = makeRequestHeaders(headers);
-    effective.delete("Content-Type"); // The transport always overrides this header.
+    effective.delete("Content-Type");
     const entries = [...effective.entries()];
     if (!entries.length) {
         return;
@@ -553,8 +553,6 @@ export function rpc(url, params = {}, settings = {}) {
 rpc._rpc = function (url, params, settings) {
     checkRPCSettings(settings);
     const capturedSettings = copyRPCSettings(settings);
-    // Preserve the JSON property name passed to toJSON, including omission of
-    // params itself. Cache delays and retries must never re-read caller objects.
     const serializedParams = JSON.stringify({ params });
     log.pipeline("snapshot", () => ({ url, codeUnits: serializedParams.length }));
     return dispatchRequest(url, serializedParams, capturedSettings);
@@ -629,9 +627,6 @@ function _rpcCached(url, serializedParams, settings, rpcCache) {
         typeof settings.cache === "boolean" ? {} : { ...settings.cache };
     const headerScope = headerCacheScope(settings.headers);
     if (headerScope !== undefined && cacheSettings.type === "disk") {
-        // Header values can contain credentials. Keep these variants in RAM and
-        // use opaque, never-reused scopes so neither disk keys nor cache logs
-        // carry the headers. Evicting a scope merely makes its old entries cold.
         cacheSettings.type = "ram";
     }
     if (params?.model && cacheSettings.model === undefined) {
@@ -653,10 +648,6 @@ function _rpcCached(url, serializedParams, settings, rpcCache) {
     let innerProm = null;
     /** @type {object | null} */
     let ownRequest = null;
-    // `cache.fetch` answers in the network's place, for a caller that obtains
-    // this call's result by another request: it is stored and revalidated as
-    // if this call had been made. It is told whether the cache already held a
-    // value for it (`RPCCache.holds`), so a revalidation can ask for less
     const fetchResult = cacheSettings.fetch;
     delete cacheSettings.fetch;
     const fallback = (/** @type {object} */ request) => {
@@ -685,7 +676,6 @@ function _rpcCached(url, serializedParams, settings, rpcCache) {
         getKeyOfParsed(url, params) +
         (headerScope === undefined ? "" : `|headers:${headerScope}`);
     const requestKey = `${cacheTable}/${cacheKey}`;
-    // asked before the read, which fills the RAM cache with this very request
     const held = fetchResult && rpcCache.holds(cacheTable, cacheKey);
     const cacheProm = rpcCache.read(cacheTable, cacheKey, fallback, cacheSettings);
     log.logic("cache", () => ({ requestKey, issuedOwnRequest }));
@@ -814,8 +804,6 @@ function _rpcOnce(url, serializedParams, settings) {
         jsonrpc: "2.0",
         method: "call",
     };
-    // Event listeners receive their own parsed data; mutating it cannot alter
-    // the captured wire value or a later retry. Splice only JSON-produced text.
     const data = { ...JSON.parse(serializedParams), ...envelope };
     const { params } = data;
     const serializedEnvelope = JSON.stringify(envelope);
@@ -870,8 +858,6 @@ function _rpcOnce(url, serializedParams, settings) {
     try {
         responsePromise = browser.fetch(url, init);
     } catch (error) {
-        // Wrappers can throw before returning a promise. Route these through
-        // the normal failure path so every emitted request has a response.
         responsePromise = Promise.reject(error);
     }
     responsePromise

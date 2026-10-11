@@ -41,8 +41,6 @@ function useOverlayItems() {
  */
 function provideHostedOverlayScope(hostPluginManager, scope) {
     if (hostPluginManager) {
-        // the item is rendered here but belongs to its caller: its scopes (and
-        // the ones its children look up) are the caller's
         useScope().pluginManager = /** @type {any} */ (hostPluginManager);
     }
     envScope.provide({ [OVERLAY_SYMBOL]: scope });

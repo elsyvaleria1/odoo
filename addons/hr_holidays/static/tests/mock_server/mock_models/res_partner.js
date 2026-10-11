@@ -2,11 +2,6 @@ import { hrModels } from "@hr/../tests/hr_test_helpers";
 import { mailDataHelpers } from "@mail/../tests/mock_server/mail_mock_server";
 import { fields } from "@web/../tests/web_test_helpers";
 
-/**
- * How a presence status reads once the partner is on leave, mirroring
- * `hr_holidays/models/res_partner.py::_compute_presence`. A status absent from
- * this map is left alone, exactly as the `elif` ladder there leaves it.
- */
 const ON_LEAVE_STATUS = {
     away: "leave_away",
     busy: "leave_busy",

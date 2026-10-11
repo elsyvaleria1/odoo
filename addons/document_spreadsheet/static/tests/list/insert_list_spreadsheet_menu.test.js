@@ -58,7 +58,6 @@ test("Can save a list in existing spreadsheet", async () => {
     await spawnListViewForSpreadsheet({
         mockRPC: async function (route, args) {
             if (args.model === "document.document") {
-                /** These two methods are used for the PivotSelectorDialog */
                 if (args.method !== "search_count" && args.method !== "get_views") {
                     expect.step(args.method);
                     switch (args.method) {

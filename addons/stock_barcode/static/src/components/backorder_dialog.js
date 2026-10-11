@@ -15,7 +15,6 @@ export class BackorderDialog extends Component {
     state = proxy({ applying: false });
 
     async _onApply() {
-        // Validating takes a round trip; a second tap would validate twice.
         if (this.state.applying) {
             return;
         }

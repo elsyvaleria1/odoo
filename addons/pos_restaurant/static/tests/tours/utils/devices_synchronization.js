@@ -43,9 +43,6 @@ const getLineData = (product, order, quantity) => ({
     qty: quantity,
 });
 
-// In the point-of-sale code, we consider that synchronization is necessary
-// when the write_date of the local order is smaller than that of the server.
-// To prevent the PoS from ignoring our synchronization.
 const writeOnOrder = async (order, data) => {
     const sec = new Date(order.write_date?.epochMilliseconds).getMilliseconds() + 1010;
     const timeout = Math.ceil(sec - new Date().getMilliseconds(), 0);

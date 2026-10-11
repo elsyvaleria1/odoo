@@ -155,7 +155,6 @@ export class FloorScreen extends Component {
                 const table = this.getPosTable(ctx.element);
                 this.state.potentialLink = { child: table };
                 table.uiState.initialPosition = pick(table, "position_h", "position_v");
-                // This helps when unlinking tables ( to keep the position )
                 table.position_h = table.getX();
                 table.position_v = table.getY();
                 if (table.parent_id) {
@@ -417,7 +416,6 @@ export class FloorScreen extends Component {
             this.state.floorHeight = `${positionV + this.state.floorMapOffset.y}px`;
             this.state.floorWidth = `${positionH + this.state.floorMapOffset.x}px`;
 
-            // Ensure the view scrolls to the same position when switching to edit mode on mobile devices
             if (
                 this.pos.isEditMode &&
                 hasTouch() &&
@@ -434,20 +432,18 @@ export class FloorScreen extends Component {
     _computeFloorMapOffset() {
         const offset = { x: 0, y: 0 };
 
-        // Adjusts the offset to reduce the scrolling area on mobile devices
         if (
             hasTouch() &&
             !this.pos.isEditMode &&
             !this.activeFloor.floor_background_image
         ) {
-            const MIN_OFFSET = 20; // Minimum space between the border and the table
+            const MIN_OFFSET = 20;
 
             const tables = this.activeTables;
             if (!tables?.length) {
                 return offset;
             }
 
-            // Find minimum horizontal and vertical positions
             const { minLeft, minTop } = tables.reduce(
                 (data, table) => ({
                     minLeft: Math.min(data.minLeft, table.position_h),
@@ -472,7 +468,6 @@ export class FloorScreen extends Component {
         if (table) {
             await this.pos.unsetTable();
         }
-        // Set order to null when reaching the floor screen.
         if (
             !(this.pos.getOrder()?.isFilledDirectSale && !this.pos.getOrder().finalized)
         ) {
@@ -485,8 +480,6 @@ export class FloorScreen extends Component {
             : "none";
     }
     getTableHandleOffset(table) {
-        // min(width/2, height/2) is the real border radius
-        // 0.2929 is (1 - cos(45°)) to get in the middle of the border's arc
         return table.shape === "round"
             ? -12 + Math.min(table.width / 2, table.height / 2) * 0.2929
             : -12;
@@ -505,7 +498,6 @@ export class FloorScreen extends Component {
     }
     _computePinchHypo(ev, callbackFunction) {
         const touches = ev.touches;
-        // If two pointers are down, check for pinch gestures
         if (touches.length === 2) {
             const deltaX = touches[0].pageX - touches[1].pageX;
             const deltaY = touches[0].pageY - touches[1].pageY;
@@ -700,7 +692,6 @@ export class FloorScreen extends Component {
         return isNaN(parsedScaleValue) ? 1 : parsedScaleValue;
     }
     setScale(value) {
-        // a scale can't be a negative number
         if (value > 0) {
             this.map.el.style.setProperty("--scale", value);
         }
@@ -773,7 +764,6 @@ export class FloorScreen extends Component {
         });
     }
 
-    // a queued create has no id to select or to dedupe a second click against
     isTableCreationQueued() {
         return this.pos.data.network.unsyncData.some(
             ({ args: [operation] }) =>
@@ -810,7 +800,6 @@ export class FloorScreen extends Component {
         }
         this.state.selectedTableIds = [newTable.id];
 
-        // Ensure the new table is visible
         const margin = 40;
         if (!this._isTableVisible(newTable, margin)) {
             this.scrollTo = {
@@ -1051,7 +1040,6 @@ export class FloorScreen extends Component {
 
             if (response) {
                 for (const id of originalSelectedTableIds) {
-                    //remove order not send to server
                     for (const order of this.pos.getOpenOrders()) {
                         if (order.table_id === id) {
                             this.pos.removeOrder(order, false);
@@ -1074,12 +1062,6 @@ export class FloorScreen extends Component {
             });
         }
 
-        // Value of an object can change inside async function call.
-        //   Which means that in this code block, the value of `state.selectedTableId`
-        //   before the await call can be different after the finishing the await call.
-        // Since we wanted to disable the selected table after deletion, we should be
-        //   setting the selectedTableId to null. However, we only do this if nothing
-        //   else is selected during the rpc call.
         const equalsCheck = (a, b) => JSON.stringify(a) === JSON.stringify(b);
         if (equalsCheck(this.state.selectedTableIds, originalSelectedTableIds)) {
             this.state.selectedTableIds = [];
@@ -1100,7 +1082,6 @@ export class FloorScreen extends Component {
     async uploadImage(event) {
         const file = event.target.files[0];
         if (!file) {
-            // Don't proceed if there are no selected files.
             return;
         }
         if (!file.type.match(/image.*/)) {
@@ -1122,7 +1103,6 @@ export class FloorScreen extends Component {
                         floor_background_image: imageUrl.split(",")[1],
                     },
                 );
-                // A read is added to be sure that we have the same image as the one in backend
                 await this.pos.data.read("restaurant.floor", [this.activeFloor.id]);
                 this.ui.unblock();
             } else {
@@ -1134,8 +1114,6 @@ export class FloorScreen extends Component {
         }
     }
     getChangeCount(table) {
-        // This information in uiState came by websocket
-        // If the table is not synced, we need to count the unsynced orders
         let changeCount = 0;
         const tableOrders = this.pos.models["pos.order"].filter(
             (o) => o.table_id?.id === table.id && !o.finalized,

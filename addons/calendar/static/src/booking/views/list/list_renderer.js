@@ -20,7 +20,6 @@ export class AppointmentBookingListRenderer extends ListRenderer {
             this.isAppointmentManager = await user.hasGroup(
                 "calendar.group_appointment_manager",
             );
-            // Using this context key is a stable workaround, to be improved in master
             this.isResourceView =
                 this.props.list.context.appointment_default_assign_user_attendees ===
                 false;

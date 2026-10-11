@@ -6,10 +6,6 @@ import { useDebugMode } from "@web/core/debug/debug_context";
 import { Domain } from "@web/core/domain";
 import { useService } from "@web/core/utils/hooks";
 
-/**
- * Option Component to enable the user to filter some snippets to a specific subset of ids following
- * a domain.
- */
 export class SnippetVisibilityOption extends BaseOptionComponent {
     static template = "mass_mailing.VisibilityOption";
     static selector = "section";
@@ -51,7 +47,6 @@ export class SnippetVisibilityOption extends BaseOptionComponent {
             domain,
             !this.debug,
         );
-        // Extract subtrees connected by an `&`, Odoo Standard for domain facets
         const trees = !tree.negate && tree.value === "&" ? tree.children : [tree];
         this.state.facets = await Promise.all(
             trees.map((tree) =>

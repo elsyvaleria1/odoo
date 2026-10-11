@@ -104,8 +104,6 @@ test("Can create a geo chart on countries", async function () {
 });
 
 test("Can create a geo chart on US states", async function () {
-    // Ideally we'd want to rely on the records in the mockServer, but the mocked searchRead don't seems to work
-    // with domain [["country_id.code", "=", "US"]] ...
     onRpc("res.country.state", "search_read", () => [
         { name: "California", code: "CA" },
         { name: "Texas", code: "TX" },
@@ -114,7 +112,7 @@ test("Can create a geo chart on US states", async function () {
     const { model } = await createSpreadsheet();
     setCellContent(model, "A2", "California");
     setCellContent(model, "B2", "25");
-    setCellContent(model, "A3", "Texas (US)"); // display_name of res.country.state is postfixed with country code
+    setCellContent(model, "A3", "Texas (US)");
     setCellContent(model, "B3", "50");
 
     const sheetId = model.getters.getActiveSheetId();

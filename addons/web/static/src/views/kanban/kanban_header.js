@@ -80,7 +80,6 @@ export class KanbanHeader extends Component {
         } catch {
             return;
         }
-        // the pointer may have left while the tooltip was loading
         if (tooltip.length && this.titleHovered) {
             this.popover.open(/** @type {HTMLElement} */ (ev.target), { tooltip });
         }

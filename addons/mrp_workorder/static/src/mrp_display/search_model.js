@@ -29,7 +29,6 @@ export class MrpDisplaySearchModel extends SearchModel {
     }
 
     _getIrFilterDescription(params = {}) {
-        // Save workorder filters in favorite context
         const { irFilter, preFavorite } = super._getIrFilterDescription(params);
         if (this.workorders) {
             const activeFilterIds = this.state.workorderFilters.reduce(
@@ -43,7 +42,6 @@ export class MrpDisplaySearchModel extends SearchModel {
     }
 
     toggleSearchItem(searchItemId) {
-        // Retrieve saved workorder filters from context or reset WO filters when enabling/disabling a favorite respectively
         const { type, context } = this.searchItems[searchItemId];
         if (this.workorders && type === "favorite") {
             const { wo_active_filters } = context;
@@ -63,7 +61,7 @@ export class MrpDisplaySearchModel extends SearchModel {
             (si) => si.name === "shop_floor_this_station",
         );
         if (!filter) {
-            return; // Avoid crashing when 'This Station' filter not installed.
+            return;
         }
         filter.domain =
             "['|', ['workorder_ids.workcenter_id.id', 'in', [" +

@@ -25,7 +25,6 @@ export class PasskeyProof extends Component {
         try {
             credential = await passkeyLib.startAuthentication(this.props.options);
         } catch {
-            // the user closed the prompt, or no authenticator answered
             this.state.dismissed = true;
             return;
         } finally {

@@ -51,9 +51,9 @@ describe("replicate changes", () => {
         expect(":iframe .test-1 b").toHaveText("Travel Abroad");
         expect(":iframe .test-2 a").toHaveText("Travel Abroad");
         expect(":iframe .test-3 span").toHaveText("Travel Abroad");
-        expect(":iframe .test-4 a").toHaveInnerHTML("\u{FEFF}Travel Abroad\u{FEFF}"); // link in editable get feff
+        expect(":iframe .test-4 a").toHaveInnerHTML("\u{FEFF}Travel Abroad\u{FEFF}");
 
-        queryOne(":iframe .test-4 a").append("!"); // the feff should not be forwarded
+        queryOne(":iframe .test-4 a").append("!");
         editor.shared.history.addStep();
         expect(":iframe .test-1 b").toHaveText("Travel Abroad!");
         expect(":iframe .test-2 a").toHaveText("Travel Abroad!", { raw: true });
@@ -114,7 +114,6 @@ describe("replicate changes", () => {
         });
         await contains(":iframe .test-1 > span").click();
         await contains("button.btn.dropdown").click();
-        // TODO: remove in 19.0 (The autofocus of select menu does not work well here, we click 2 extra times to ensure we fetch what we need)
         await contains("button.btn.dropdown").click();
         await contains("button.btn.dropdown").click();
         await contains("span.o-dropdown-item.dropdown-item").click();
@@ -188,6 +187,6 @@ describe("replicate changes", () => {
         expect(span1).toHaveClass("o_dirty");
         expect(span2).toHaveClass("o_dirty");
         expect(span3).not.toHaveClass("o_dirty");
-        expect([span2, span3]).toHaveText(span1.textContent); // all the same text
+        expect([span2, span3]).toHaveText(span1.textContent);
     });
 });

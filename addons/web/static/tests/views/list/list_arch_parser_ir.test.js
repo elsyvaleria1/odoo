@@ -67,9 +67,7 @@ test("the list parser consumes the IR and annotates its own copy", () => {
     const parser = new ListArchParser();
     const archInfo = parser.parse(ir, MODELS, "foo");
 
-    // the caller's tree is untouched: the annotations went on the parser's copy
     expect(JSON.stringify(ir)).not.toInclude("field_id");
-    // the header's <field> is not a column: it stays unannotated, as before
     expect(
         archInfo.xmlDoc.querySelector("header field")?.hasAttribute("field_id"),
     ).toBe(false);
@@ -155,7 +153,6 @@ test("the list parser consumes the IR and annotates its own copy", () => {
     expect(archInfo.defaultOrder).toEqual([{ name: "amount", asc: false }]);
     expect(archInfo.openAction).toEqual({ action: "42", type: "object" });
 
-    // the walk's parent map covers every node the parser visited
     expect(parser.parents.size).toBeGreaterThan(10);
 });
 

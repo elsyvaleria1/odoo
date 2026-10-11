@@ -312,7 +312,6 @@ export const strftimeToDateFormat = memoize(function strftimeToDateFormat(format
             continue;
         }
         if (inToken && character === "-") {
-            // %-d: the no-padding flag, spelled with the single letter
             noPadding = true;
             continue;
         }
@@ -532,7 +531,6 @@ export function toLocaleDateTimeString(
 /** @type {Map<string, Intl.NumberFormat>} */
 const durationFormatters = new Map();
 
-/** Seconds per unit in luxon's "casual" conversion: 30-day months, 365-day years. */
 const CASUAL_SECONDS = {
     years: 365 * 86400,
     months: 30 * 86400,

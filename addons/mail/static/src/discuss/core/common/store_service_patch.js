@@ -25,9 +25,6 @@ const storeServicePatch = {
         );
     },
     get onlineMemberStatuses() {
-        // Derived, not a literal: a module that decorates `im_status` registers
-        // the pair once and every reader of a presence word sees it, rather than
-        // each module patching this getter with its own vocabulary.
         return ["bot", ...REACHABLE_IM_STATUSES, ...reachableDecoratedImStatuses()];
     },
     /**

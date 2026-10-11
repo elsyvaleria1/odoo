@@ -12,9 +12,6 @@ patch(FSMProductCatalogKanbanRecord.prototype, {
                     this.productCatalogData.minimumQuantityOnProduct &&
                 quantity < this.productCatalogData.quantity
             ) {
-                // This condition is only triggered when the product was already at the minimum quantity
-                // possible, as stated in the fsm_stock module, then the user inputs a quantity lower
-                // than this limit, in this case we need the record to forcefully update the record.
                 this.props.record.load();
                 this.props.record.model.notify();
             } else {

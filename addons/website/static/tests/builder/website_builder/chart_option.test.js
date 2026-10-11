@@ -6,7 +6,6 @@ import {
     setupWebsiteBuilder,
 } from "@website/../tests/builder/website_helpers";
 
-// OWL 3 leaves an empty style out instead of writing style=""
 function expectNoInlineStyle(selector) {
     expect(queryOne(selector).getAttribute("style") ?? "").toBe("");
 }

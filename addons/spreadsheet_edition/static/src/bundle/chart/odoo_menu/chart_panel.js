@@ -10,10 +10,6 @@ const {
     Section,
 } = spreadsheet.components;
 
-/**
- * Patch the chart configuration panel to add an input to
- * link the chart to an Odoo menu.
- */
 function patchChartPanelWithMenu(PanelComponent) {
     patch(PanelComponent.prototype, {
         get odooMenuId() {

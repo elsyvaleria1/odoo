@@ -39,7 +39,6 @@ import { standardActionServiceProps } from "@web/webclient/actions";
 
 import { CountScreenRFID } from "./count_screen_rfid.js";
 
-// Lets `barcodeGenericHandlers` knows those commands exist so it doesn't warn when scanned.
 COMMANDS["OCDMENU"] = () => {};
 COMMANDS["OCDCANC"] = () => {};
 
@@ -72,12 +71,6 @@ export class BarcodeBlockUI extends Component {
     props = useProps(this.constructor.props);
 }
 
-/**
- * Main Component
- * Gather the line information.
- * Manage the scan and save process.
- */
-
 class MainComponent extends Component {
     static props = { ...standardActionServiceProps };
     static template = "stock_barcode.MainComponent";
@@ -95,10 +88,6 @@ class MainComponent extends Component {
     props = useProps(this.constructor.props);
     render = useRender();
 
-    //--------------------------------------------------------------------------
-    // Lifecycle
-    //--------------------------------------------------------------------------
-
     setup() {
         useBarcodeScreen("native");
         this.orm = useService("orm");
@@ -111,13 +100,6 @@ class MainComponent extends Component {
         const model = this._getModel();
         model.draft = (!this.resId && this.props.action.context.barcode_draft) || null;
         model.newScrapProduct = this.newScrapProduct.bind(this);
-        // Bound here rather than inline in `lineFormViewProps` / `scrapViewProps`:
-        // the template reads those getters as bare `t-props="…"`, so they run
-        // against OWL's per-render context and an arrow created inside them
-        // captures that context as `this`. `toggleBarcodeLines` then wrote its
-        // `this._editedLineParams = undefined` reset to a throwaway object, so
-        // the component never actually cleared the edited line. `setup` runs on
-        // the component, so these callbacks do.
         this._returnToBarcodeLines = () => this.toggleBarcodeLines();
         this._saveLineFormView = (record) => this.saveFormView(record);
         this.model = model;
@@ -126,15 +108,13 @@ class MainComponent extends Component {
         this._scrollBehavior = "smooth";
         this.state = proxy({
             cameraScannedEnabled: false,
-            view: "barcodeLines", // Could be also 'infoFormView', 'packagePage', 'scrapProductPage' or 'productPage'.
+            view: "barcodeLines",
             displayNote: false,
             displayCountRFID: false,
             uiBlocked: false,
             barcodesProcessed: 0,
             barcodesToProcess: 0,
             blockUIMessage: "",
-            // Reassigned, not pushed into: a new array is what re-renders the count
-            // screen, and what its read rate is measured from.
             receivedRFIDs: [],
             totalRFIDs: [],
             readyToToggleCamera: true,
@@ -169,8 +149,6 @@ class MainComponent extends Component {
 
         onWillStart(() => this.onWillStart());
 
-        // Scans only live in `linesToSave` until an explicit save point; leaving through the
-        // browser's back button or the menu used to drop them.
         useSetupAction({
             beforeLeave: () => {
                 log.lifecycle("beforeLeave", {
@@ -192,7 +170,6 @@ class MainComponent extends Component {
         });
     }
 
-    // UI Methods --------------------------------------------------------------
     addBarcodesCountToProcess(count) {
         this.state.barcodesToProcess += count;
         if (this.state.barcodesToProcess > this.state.barcodesProcessed) {
@@ -245,10 +222,6 @@ class MainComponent extends Component {
         }
     }
 
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
     get highlightValidateButton() {
         return this.model.highlightValidateButton;
     }
@@ -285,7 +258,6 @@ class MainComponent extends Component {
         );
     }
 
-    /** The URL follows the record, so a reload reopens it rather than a new draft. */
     _onRecordCreated(resId) {
         this.resId = resId;
         this.props.updateActionState?.({ active_id: resId });
@@ -312,10 +284,6 @@ class MainComponent extends Component {
         return this.state.view === "barcodeLines" && this.model.canBeProcessed;
     }
 
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
-
     _getBarcodeModel() {
         if (this.resModel === "stock.picking") {
             return BarcodePickingModel;
@@ -335,10 +303,6 @@ class MainComponent extends Component {
         const BarcodeModel = this._getBarcodeModel();
         return new BarcodeModel(this.resModel, this.resId, services);
     }
-
-    //--------------------------------------------------------------------------
-    // Camera scanner
-    //--------------------------------------------------------------------------
 
     toggleCameraScanner() {
         if (!this.state.cameraScannedEnabled) {
@@ -375,10 +339,6 @@ class MainComponent extends Component {
             ? "bg-success text-white"
             : "text-primary";
     }
-
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
 
     async cancel() {
         await this.model.save();
@@ -434,8 +394,6 @@ class MainComponent extends Component {
     }
 
     async _onMobileReaderScanned() {
-        // Take the batch before awaiting: reads that arrive while it is processed start
-        // the next batch instead of being wiped with this one.
         const barcodes = this.bufferedBarcodes;
         this.bufferedBarcodes = [];
         this.bufferingTimeout = null;
@@ -471,7 +429,6 @@ class MainComponent extends Component {
     _exit() {
         const { breadcrumbs } = this.viewConfig;
         if (breadcrumbs.length === 1) {
-            // Bring back to the Barcode App home menu when there is no breadcrumb.
             this.action.doAction("stock_barcode.stock_barcode_action_main_menu");
         } else {
             const previousPath = breadcrumbs[breadcrumbs.length - 2].url.split("/");
@@ -479,9 +436,6 @@ class MainComponent extends Component {
             if (isNaN(previousPath[previousPath.length - 1])) {
                 this.viewConfig.historyBack();
             } else {
-                // If previous controller path's last part is a number, it will
-                // open the current record form view (happens after a refresh of
-                // the web browser.) Avoid that by calling browser's history back.
                 history.back();
             }
         }
@@ -492,11 +446,9 @@ class MainComponent extends Component {
             return;
         }
         const clientAction = document.querySelector(".o_barcode_client_action");
-        // Resets the animation (in case it still going).
         clientAction.style.animation = "none";
-        clientAction.offsetHeight; // Trigger reflow.
+        clientAction.offsetHeight;
         clientAction.style.animation = null;
-        // Adds the CSS class linked to the keyframes animation `white-flash`.
         clientAction.classList.add("o_white_flash");
     }
 
@@ -521,10 +473,6 @@ class MainComponent extends Component {
         this.state.view = view;
     }
 
-    /**
-     * A stopped camera is ready to be started again: leaving `readyToToggleCamera` false
-     * (a camera stopped before it reported ready) kept the button styled as disabled.
-     */
     _stopCamera() {
         this.state.cameraScannedEnabled = false;
         this.state.readyToToggleCamera = true;
@@ -541,7 +489,6 @@ class MainComponent extends Component {
     }
 
     async toggleInformation() {
-        // Leaving the line or scrap form this way dropped its unsaved edits.
         if (this.model.formViewId && !this.isEditingInForm) {
             if (this.state.view === "infoFormView") {
                 this.changeView("barcodeLines");
@@ -565,7 +512,6 @@ class MainComponent extends Component {
     _getHeaderHeight() {
         const header = document.querySelector(".o_barcode_header");
         const navbar = document.querySelector(".o_main_navbar");
-        // Computes the real header's height (the navbar is present if the page was refreshed).
         return navbar ? navbar.offsetHeight + header.offsetHeight : header.offsetHeight;
     }
 
@@ -574,12 +520,10 @@ class MainComponent extends Component {
             this._scrollBehavior = "auto";
             return;
         }
-        // Tries to scroll to selected subline.
         let selectedLine = document.querySelector(
             ".o_sublines .o_barcode_line.o_highlight",
         );
         const isSubline = Boolean(selectedLine);
-        // If no selected subline, tries to scroll to selected line.
         if (!selectedLine) {
             selectedLine = document.querySelector(".o_barcode_line.o_highlight");
         }
@@ -595,13 +539,10 @@ class MainComponent extends Component {
                 .closest(".o_barcode_location_group")
                 .querySelector(".o_barcode_location_line");
         }
-        // Scrolls either to the selected line, either to the location line.
         const targetElement =
             selectedLine || (locationLine && locationLine.parentElement);
 
         if (targetElement) {
-            // If a line is selected, checks if this line is on the top of the
-            // page, and if it's not, scrolls until the line is on top.
             const elRect = targetElement.getBoundingClientRect();
             const page = document.querySelector(".o_barcode_lines");
             const headerHeight = this._getHeaderHeight();
@@ -670,7 +611,6 @@ class MainComponent extends Component {
         await this.model.ensureRecord();
         if (line) {
             const virtualId = line.virtual_id;
-            // Updates the line id if it's missing, in order to open the line form view.
             if (!line.id && virtualId) {
                 line = this.model.pageLines.find((l) => l.dummy_id === virtualId);
             }

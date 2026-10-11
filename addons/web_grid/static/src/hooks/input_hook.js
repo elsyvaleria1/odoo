@@ -4,27 +4,13 @@ import { getActiveHotkey } from "@web/core/browser/hotkeys";
 import { useLayoutEffect } from "@web/core/utils/layout_effect";
 
 export function useInputHook(params) {
-    // useRef unconditionally: an owl hook called on some renders and not
-    // others is a hook whose position in the component's hook list moves.
     const ownRef = params.ref;
     const inputRef = params.ref || ownRef;
 
-    /*
-     * A field is dirty if it is no longer sync with the model
-     * More specifically, a field is no longer dirty after it has *tried* to update the value in the model.
-     * An invalid value will therefore not be dirty even if the model will not actually store the invalid value.
-     */
     let isDirty = false;
 
-    /**
-     * The last value that has been committed to the model.
-     * Not changed in case of invalid field value.
-     */
     let lastSetValue = null;
 
-    /**
-     * When a user types, we need to set the field as dirty.
-     */
     function onInput(ev) {
         isDirty = ev.target.value !== lastSetValue;
         if (params.setDirty) {
@@ -32,10 +18,6 @@ export function useInputHook(params) {
         }
     }
 
-    /**
-     * On blur, we consider the field no longer dirty, even if it were to be invalid.
-     * However, if the field is invalid, the new value will not be committed to the model.
-     */
     function onChange(ev) {
         if (isDirty) {
             isDirty = false;
@@ -93,12 +75,6 @@ export function useInputHook(params) {
         () => [inputRef.el],
     );
 
-    /**
-     * Sometimes, a patch can happen with possible a new value for the field
-     * If the user was typing a new value (isDirty) or the field is still invalid,
-     * we need to do nothing.
-     * If it is not such a case, we update the field with the new value.
-     */
     useLayoutEffect(() => {
         const isInvalid = params.isInvalid ? params.isInvalid() : false;
         if (inputRef.el && !isDirty && !isInvalid) {
@@ -114,9 +90,6 @@ export function useInputHook(params) {
         return urgent;
     }
 
-    /**
-     * Roughly the same as onChange, but called at more specific / critical times.
-     */
     async function commitChanges(urgent) {
         if (!inputRef.el) {
             return;
@@ -144,7 +117,7 @@ export function useInputHook(params) {
                 return;
             }
 
-            const result = params.commitChanges(val); // means change has been committed
+            const result = params.commitChanges(val);
             if (result) {
                 lastSetValue = inputRef.el.value;
                 if (params.setDirty) {

@@ -8,8 +8,6 @@ import { getSuggestToggleState } from "../utils.js";
 export class PurchaseStockProductCatalogSearchModel extends ProductCatalogSearchModel {
     setup() {
         super.setup(...arguments);
-        // The total arrives from its own RPC after the kanban has reloaded and
-        // the panel has rendered, so the panel has to observe it.
         this.suggest = proxy({
             numberOfDays: 0,
             basedOn: null,

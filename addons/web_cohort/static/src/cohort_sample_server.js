@@ -97,7 +97,7 @@ function _mockGetCohortData(params) {
                 value: remainingValue,
                 churn_value,
                 percentage,
-                period: column, // used as a t-key but we don't care about value itself
+                period: column,
             });
         }
         const keepRow = columns.some((c) => c.percentage !== "");

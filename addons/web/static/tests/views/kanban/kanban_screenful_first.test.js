@@ -21,7 +21,6 @@ import {
     KanbanRenderer,
 } from "@web/views/kanban/kanban_renderer";
 
-// what the renderer counts for a card it has never measured
 const PITCH = 48;
 const CARD_WIDTH = 200;
 
@@ -85,10 +84,7 @@ async function untilBuilt() {
     }
 }
 
-beforeEach(() =>
-    // wide enough for the desktop layout, where the content element scrolls
-    resize({ width: 5 * CARD_WIDTH, height: 5 * PITCH }),
-);
+beforeEach(() => resize({ width: 5 * CARD_WIDTH, height: 5 * PITCH }));
 
 test.tags("desktop");
 test("cards never measured are counted at their smallest: one screen of them is built first", async () => {

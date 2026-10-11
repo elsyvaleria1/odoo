@@ -24,7 +24,6 @@ import { PromoteStudioAutomationDialog } from "@web/webclient/promote_studio/pro
 
 const log = makeLogger("document.hooks");
 
-/** Read by the views' own logic (details panel, action menus, drag and drop), whatever the arch shows. */
 export const DOCUMENTS_VIEW_REQUIRED_FIELDS = [
     "lock_uid",
     "is_locked_by_other",
@@ -52,10 +51,6 @@ export const DOCUMENTS_VIEW_REQUIRED_FIELDS = [
     "access_via_link",
 ];
 
-/**
- * Reload the search panel and the records of a documents view, in that order.
- * The one spelling behind the RELOAD bus event and the cog items.
- */
 export async function reloadDocumentsView(env) {
     await env.model._notifyChange();
 }
@@ -158,7 +153,6 @@ export function useDocumentView(component, helpers) {
             },
         });
 
-    // the base controller saves and restores the scroll; this adds the selection
     useSetupAction({
         getGlobalState: () => ({
             sharedSelection: component.model.exportSelection(),
@@ -201,7 +195,6 @@ export function useDocumentView(component, helpers) {
             }),
         onClickAddFolder: () => {
             const currentFolder = env.searchModel.getSelectedFolderId();
-            // All, Recent, Shared and Trash cannot hold a folder: it goes to My Drive
             const parentFolder =
                 currentFolder &&
                 ![UserFolder.RECENT, UserFolder.SHARED, UserFolder.TRASH].includes(
@@ -245,18 +238,12 @@ function useDocumentsViewFilePreviewer(
 
     const documentsViewEl = () =>
         component.rootRef?.el?.querySelector(".o_documents_view");
-    /** The files of the preview this view shows, if it shows one. */
     let shownFiles = null;
-    /** Whether the document the service says is previewed is one of ours. */
     const previewsOurs = () =>
         Boolean(shownFiles) &&
         shownFiles.includes(
             toRaw(documentService.rightPanelReactive.previewedDocument),
         );
-    /**
-     * Closes this view's preview. The details panel stays on the document
-     * last shown, and the keyboard goes back to its card or row.
-     */
     const closePreview = () => {
         if (!shownFiles) {
             return;
@@ -279,7 +266,6 @@ function useDocumentsViewFilePreviewer(
     const open = async ({ documents, mainDocument, isPdfSplit, embeddedActions }) => {
         const openPdfSplitter = (documents) => {
             let newDocumentIds = [];
-            // originals every page was deleted from (none split)
             const emptiedIds = new Set();
             component.dialogService.add(
                 PdfManager,
@@ -315,10 +301,6 @@ function useDocumentsViewFilePreviewer(
                         if (!newDocumentIds.length && !emptiedIds.size) {
                             return;
                         }
-                        // an original is archived by the split itself when the
-                        // splitter asked for it, and one every page was deleted
-                        // from goes to the trash: neither is unlinked, which
-                        // would purge it past the trash
                         log.logic("pdfSplitterClosed", {
                             created: newDocumentIds,
                             trashed: [...emptiedIds],
@@ -359,8 +341,6 @@ function useDocumentsViewFilePreviewer(
             (file) => file.record.resId === (mainDocument || documents[0]).resId,
         );
         shownFiles = documentsRecords;
-        // published before the viewer renders, which then follows its own
-        // next and previous
         documentService.setPreviewedDocument(selectedDocument);
         setPreviewStore({
             files: documentsRecords,
@@ -374,8 +354,6 @@ function useDocumentsViewFilePreviewer(
         component.onOpenDocumentsPreview(ev.detail);
     });
     useBus(bus, DocumentsViewEvent.CLOSE_PREVIEW, closePreview);
-    // the previewed document is the service's, the preview the view's: a view
-    // left with its preview open (Back, a menu) takes that preview with it
     onWillDestroy(() => {
         log.lifecycle("previewer destroyed", () => ({
             controller: component.constructor.name,
@@ -399,7 +377,6 @@ function useDocumentsViewFileUpload(component, env) {
     const fileUpload = useService("file_upload");
     const documentService = useService("document.document");
 
-    // the upload bus carries every upload of the app: chatter files, tracebacks...
     const isDocumentUpload = (upload) =>
         Boolean(upload.data?.get?.(DOCUMENT_UPLOAD_MARKER));
 
@@ -407,9 +384,6 @@ function useDocumentsViewFileUpload(component, env) {
         reloadDocumentsView(env),
     );
 
-    // uploads finishing together (every cloud file is an upload of its own)
-    // load the view once and leave all their documents selected, instead of
-    // each reloading it and replacing the others' selection
     const uploadedIds = new Set();
     const showUploaded = useDebounced(async () => {
         const ids = [...uploadedIds];
@@ -439,7 +413,6 @@ function useDocumentsViewFileUpload(component, env) {
 
     const uploadFiles = async ({ files, accessToken, context }) => {
         const selectedFolderId = env.searchModel.getSelectedFolderId();
-        // All and Recent hold no files of their own: an upload there lands in My Drive
         const selectedUserFolderId = [false, UserFolder.RECENT].includes(
             selectedFolderId,
         )

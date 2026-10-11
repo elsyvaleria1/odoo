@@ -21,8 +21,6 @@ export function onWaterfallOdooChartItemClick(getters, chart) {
         const showSubtotals = chart.showSubTotals;
         const { datasets, labels } = chartData;
 
-        // DataSource datasets are all merged in a single dataset in waterfall charts (with possibly subtotals)
-        // We need to transform back the chartJS index to the DataSource index
         let datasetIndex = 0;
         let index = chartJsItem.index;
         for (const dataset of datasets) {
@@ -41,7 +39,6 @@ export function onWaterfallOdooChartItemClick(getters, chart) {
             name += ` / ${dataset.label}`;
         }
         let domain = dataset.domains[index];
-        // Subtotal domain
         if (!domain) {
             const datasetItemDomain = dataset.domains[0];
             const firstGroupBy = chart.dataSource.groupBy[0];
@@ -111,7 +108,7 @@ function navigateInOdooMenuOnClick(getters, chart, getDomainFromChartItem) {
             return;
         }
         if (event.type === "click" || isChartJSMiddleClick(event)) {
-            event.native.preventDefault(); // Prevent other click actions
+            event.native.preventDefault();
         } else {
             return;
         }
@@ -189,12 +186,6 @@ export async function navigateToOdooMenu(
     await actionService.doAction(menu.actionID, { newWindow });
 }
 
-/**
- * Check if the even is a middle mouse click or ctrl+click
- *
- * ChartJS doesn't receive a click event when the user middle clicks on a chart, so we use the mouseup event instead.
- *
- */
 export function isChartJSMiddleClick(event) {
     return (
         (event.type === "click" &&

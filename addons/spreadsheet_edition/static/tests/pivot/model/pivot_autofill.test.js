@@ -25,10 +25,6 @@ const { toCartesian, toZone } = spreadsheet.helpers;
 describe.current.tags("headless");
 defineSpreadsheetModels();
 
-/**
- * Get the computed value that would be autofilled starting from the given xc.
- * The starting xc should contains a Pivot formula
- */
 function getPivotAutofillValue(model, xc, { direction, steps }) {
     const content = getCellFormula(model, xc);
     const column = ["left", "right"].includes(direction);
@@ -39,7 +35,6 @@ function getPivotAutofillValue(model, xc, { direction, steps }) {
 test("Autofill pivot values", async function () {
     const { model } = await createSpreadsheetWithPivot({ pivotType: "static" });
 
-    // From value to value
     expect(getPivotAutofillValue(model, "C3", { direction: "bottom", steps: 1 })).toBe(
         getCellFormula(model, "C4"),
     );
@@ -61,7 +56,6 @@ test("Autofill pivot values", async function () {
     expect(getPivotAutofillValue(model, "C3", { direction: "right", steps: 4 })).toBe(
         "",
     );
-    // From value to header
     expect(getPivotAutofillValue(model, "B4", { direction: "left", steps: 1 })).toBe(
         getCellFormula(model, "A4"),
     );
@@ -74,7 +68,6 @@ test("Autofill pivot values", async function () {
     expect(getPivotAutofillValue(model, "B4", { direction: "top", steps: 3 })).toBe(
         getCellFormula(model, "B1"),
     );
-    // From header to header
     expect(getPivotAutofillValue(model, "B3", { direction: "right", steps: 1 })).toBe(
         getCellFormula(model, "C3"),
     );
@@ -100,7 +93,6 @@ test("Autofill pivot values", async function () {
         "",
     );
     expect(getPivotAutofillValue(model, "A4", { direction: "top", steps: 3 })).toBe("");
-    // From header to value
     expect(getPivotAutofillValue(model, "B2", { direction: "bottom", steps: 1 })).toBe(
         getCellFormula(model, "B3"),
     );
@@ -119,7 +111,6 @@ test("Autofill pivot values", async function () {
     expect(getPivotAutofillValue(model, "A3", { direction: "right", steps: 6 })).toBe(
         "",
     );
-    // From total row header to value
     expect(getPivotAutofillValue(model, "A5", { direction: "right", steps: 1 })).toBe(
         getCellFormula(model, "B5"),
     );
@@ -134,7 +125,6 @@ test("Autofill with pivot positions", async function () {
     expect(getPivotAutofillValue(model, "C3", { direction: "left", steps: 1 })).toBe(
         `=PIVOT.VALUE(1,"probability","#bar",1,"#foo",0)`,
     );
-    /** Would be negative => just copy the value */
     expect(getPivotAutofillValue(model, "C3", { direction: "left", steps: 2 })).toBe(
         `=PIVOT.VALUE(1,"probability","#bar",1,"#foo",1)`,
     );
@@ -147,7 +137,6 @@ test("Autofill with pivot positions", async function () {
     expect(getPivotAutofillValue(model, "C3", { direction: "top", steps: 1 })).toBe(
         `=PIVOT.VALUE(1,"probability","#bar",0,"#foo",1)`,
     );
-    /** Would be negative => just copy the value */
     expect(getPivotAutofillValue(model, "C3", { direction: "top", steps: 2 })).toBe(
         `=PIVOT.VALUE(1,"probability","#bar",1,"#foo",1)`,
     );
@@ -209,7 +198,7 @@ test("Autofill non-odoo pivot should copy the formula", function () {
 
 test("Can autofill positional col headers horizontally", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id"  type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -229,7 +218,7 @@ test("Can autofill positional col headers horizontally", async () => {
 
 test("Can autofill positional row headers vertically", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="tag_ids" type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -254,7 +243,7 @@ test("Can autofill positional row headers vertically", async () => {
 
 test("Can autofill positional col horizontally", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id"  type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -274,7 +263,7 @@ test("Can autofill positional col horizontally", async () => {
 
 test("Can autofill positional row vertically", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="tag_ids" type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -318,7 +307,7 @@ test("Autofill last column cells vertically by targeting col headers", async fun
 
 test("Autofill pivot values with date in rows", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -346,7 +335,7 @@ test("Autofill pivot values with date in rows", async function () {
 
 test("Autofill pivot values with date in cols", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="row"/>
                     <field name="date" interval="day" type="col"/>
@@ -384,7 +373,7 @@ test("Autofill pivot values with date in cols", async function () {
 
 test("Autofill pivot values with date in cols and multiple cols", async (assert) => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" interval="month" type="col"/>
                     <field name="product_id" type="col"/>
@@ -406,7 +395,7 @@ test("Autofill pivot values with date in cols and multiple cols", async (assert)
 
 test("Autofill pivot values with date (day)", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" interval="day" type="row"/>
@@ -427,7 +416,7 @@ test("Autofill pivot values with date (day)", async function () {
 
 test("Autofill pivot values with date (week) 2020 has 53 weeks", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" interval="week" type="row"/>
                     <field name="probability" type="measure"/>
@@ -445,7 +434,7 @@ test("Autofill pivot values with date (week) 2020 has 53 weeks", async function 
 
 test("Autofill empty pivot date value", async function () {
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
                 <pivot>
                     <field name="date" interval="year" type="row"/>
                     <field name="probability" type="measure"/>
@@ -479,7 +468,7 @@ test("Autofill empty pivot date value", async function () {
 
 test("Autofill past bound pivot date value", async function () {
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
                 <pivot>
                     <field name="date" interval="year" type="row"/>
                     <field name="probability" type="measure"/>
@@ -521,7 +510,7 @@ test("Autofill past bound pivot date value", async function () {
 
 test("Autofill pivot values with date (month)", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -539,7 +528,7 @@ test("Autofill pivot values with date (month)", async function () {
 
 test("Autofill pivot values with date (quarter)", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" interval="quarter" type="row"/>
@@ -557,7 +546,7 @@ test("Autofill pivot values with date (quarter)", async function () {
 
 test("Autofill pivot values with date (year)", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" interval="year" type="row"/>
@@ -575,7 +564,7 @@ test("Autofill pivot values with date (year)", async function () {
 
 test("Autofill pivot values with date (no defined interval)", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" type="row"/>
@@ -590,7 +579,7 @@ test("Autofill pivot values with date (no defined interval)", async function () 
 
 test("Tooltip of pivot formulas", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" interval="year" type="row"/>
@@ -627,7 +616,7 @@ test("Tooltip of pivot formulas", async function () {
 
 test("Tooltip of pivot formulas with 2 measures", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="name" type="col"/>
                     <field name="date" interval="year" type="row"/>
@@ -650,7 +639,7 @@ test("Tooltip of pivot formulas with 2 measures", async function () {
 
 test("Tooltip of empty pivot formula is empty", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="name" type="col"/>
                     <field name="date" interval="year" type="row"/>
@@ -666,7 +655,7 @@ test("Tooltip of empty pivot formula is empty", async function () {
 
 test("Autofill content which contains pivots but which is not a pivot", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="foo" type="col"/>
                     <field name="date" interval="year" type="row"/>
@@ -725,7 +714,7 @@ test("Autofill pivot formula with missing pivotId", async function () {
 
 test("Can autofill col headers horizontally", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="tag_ids" type="col"/>
                     <field name="date" interval="year" type="row"/>
@@ -755,7 +744,7 @@ test("Can autofill col headers horizontally", async () => {
 
 test("Can autofill col headers vertically", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="tag_ids" type="col"/>
                     <field name="date" interval="year" type="row"/>
@@ -800,7 +789,7 @@ test("Can autofill col headers vertically", async () => {
 
 test("Can autofill row headers horizontally", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="tag_ids" type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -843,7 +832,7 @@ test("Can autofill row headers horizontally", async () => {
 
 test("Can autofill row headers vertically", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="tag_ids" type="col"/>
                     <field name="date" interval="month" type="row"/>
@@ -885,7 +874,7 @@ test("Can autofill row headers vertically", async () => {
 
 test("Can autofill with month string parent group header and value", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" interval="month" type="row"/>
                 <field name="product_id"  type="row"/>
@@ -923,7 +912,7 @@ test("Can autofill with month string parent group header and value", async () =>
 
 test("Cannot autofill with invalid parent group header and value", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
             <pivot>
                 <field name="date" interval="month" type="row"/>
                 <field name="product_id"  type="row"/>
@@ -949,7 +938,7 @@ test("Cannot autofill with invalid parent group header and value", async () => {
 
 test("Autofill pivot keeps format but neither style nor border", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" type="col"/>
                     <field name="product_id"  type="row"/>
@@ -958,7 +947,6 @@ test("Autofill pivot keeps format but neither style nor border", async function 
         pivotType: "static",
     });
 
-    // Change the format, style and borders of E3
     const sheetId = model.getters.getActiveSheetId();
     const { col, row } = toCartesian("E3");
     const border = {
@@ -969,10 +957,8 @@ test("Autofill pivot keeps format but neither style nor border", async function 
     setCellFormat(model, "E3", "#,##0.0");
     model.dispatch("SET_BORDER", { sheetId, col, row, border });
 
-    // Change the format of E4
     setCellFormat(model, "E4", "#,##0.000");
 
-    // Check that the format, style and border of E3 have been correctly applied
     autofill(model, "E3", "E4");
     const startingCell = getCell(model, "E3");
     expect(startingCell.style).toEqual(style);
@@ -981,7 +967,6 @@ test("Autofill pivot keeps format but neither style nor border", async function 
     );
     expect(startingCell.format).toBe("#,##0.0");
 
-    // Check that the format of E3 has been correctly applied to E4 but not the style nor the border
     const filledCell = getCell(model, "E4");
     expect(filledCell.style).toBe(undefined);
     expect(model.getters.getCellBorder({ sheetId, col, row: row + 1 })).toEqual({});
@@ -990,7 +975,7 @@ test("Autofill pivot keeps format but neither style nor border", async function 
 
 test("Can autofill pivot horizontally with column grouped by date", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" interval="month" type="col"/>
                     <field name="product_id"  type="row"/>
@@ -998,7 +983,6 @@ test("Can autofill pivot horizontally with column grouped by date", async () => 
                 </pivot>`,
         pivotType: "static",
     });
-    // Headers
     setCellContent(
         model,
         "B1",
@@ -1013,7 +997,6 @@ test("Can autofill pivot horizontally with column grouped by date", async () => 
         "",
     );
 
-    // Values
     setCellContent(
         model,
         "B1",
@@ -1031,7 +1014,7 @@ test("Can autofill pivot horizontally with column grouped by date", async () => 
 
 test("Can autofill pivot with collapsed dimensions", async () => {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="date" interval="year" type="row"/>
                     <field name="date" interval="month" type="row"/>
@@ -1093,7 +1076,6 @@ test("Can autofill pivot with custom groups", async () => {
     });
     await waitForDataLoaded(model);
 
-    // Autofill headers
     setCellContent(model, "E1", `=PIVOT.HEADER(1,"GroupedProducts","xphone,xpad")`);
     selectCell(model, "E1");
     model.dispatch("AUTOFILL_SELECT", { col: 5, row: 0 });
@@ -1109,7 +1091,6 @@ test("Can autofill pivot with custom groups", async () => {
     expect(getCell(model, "D1").content).toBe(`=PIVOT.HEADER(1,"GroupedProducts",201)`);
     expect(getCell(model, "C1").content).toBe(`=PIVOT.HEADER(1,"GroupedProducts",200)`);
 
-    // Autofill values
     setCellContent(model, "A1", `=PIVOT.HEADER(1,"GroupedProducts","xphone,xpad")`);
     selectCell(model, "A1");
     model.dispatch("AUTOFILL_SELECT", { col: 0, row: 4 });
@@ -1128,7 +1109,6 @@ test("Can autofill pivot with custom groups", async () => {
         `=PIVOT.VALUE(1,"probability:sum","GroupedProducts","xphone,xpad")`,
     );
 
-    // Autofill from "None" header
     setCellContent(model, "A1", `=PIVOT.HEADER(1, "GroupedProducts",false)`);
     selectCell(model, "A1");
     model.dispatch("AUTOFILL_SELECT", { col: 0, row: 4 });

@@ -24,10 +24,6 @@ export class StreamPostCommentLinkedin extends StreamPostComment {
         super._onLoadReplies();
     }
 
-    //--------
-    // Getters
-    //--------
-
     get authorPictureSrc() {
         return this.comment.from.picture;
     }

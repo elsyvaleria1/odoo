@@ -56,7 +56,6 @@ export class AccountReportController {
             mainReportOptions["report_id"],
         );
 
-        // We need the options to be set and saved in order for the loading to work properly
         this.options = mainReportOptions;
         this.reportOptionsMap[cacheKey] = mainReportOptions;
         this.incrementCallNumber(cacheKey);
@@ -128,7 +127,6 @@ export class AccountReportController {
             this.data = informationMap;
             this.displayReportAsyncLoadingWarning();
 
-            // If there is a specific order for lines in the options, we want to use it by default
             if (this.areLinesOrdered()) {
                 await this.sortLines();
             }
@@ -139,7 +137,6 @@ export class AccountReportController {
     }
 
     async displayLoadingSymbolWhenTakingTooLong(longWaitBeforeLoadAnimation) {
-        // Wait for 200 ms at least to prevent the loading animation from flickering if the report loads quickly.
         const waitingTime = longWaitBeforeLoadAnimation ? 500 : 200;
         await new Promise((resolve) => setTimeout(resolve, waitingTime));
 
@@ -149,7 +146,6 @@ export class AccountReportController {
     }
 
     async displayReportAsyncLoadingWarning() {
-        // Wait for 200 ms to prevent the warning banner from flickering if the report loads quickly.
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         if (this.asyncDataLoading) {
@@ -167,8 +163,6 @@ export class AccountReportController {
             cached: Object.keys(this.reportOptionsMap).length,
         }));
 
-        // Invalidate the cached options and data of every section supporting this filter, so they get
-        // reloaded (on access or by the preloading) with the new value and stay consistent.
         for (const [cacheKey, cachedOptionsPromise] of Object.entries(
             this.reportOptionsMap,
         )) {
@@ -180,11 +174,9 @@ export class AccountReportController {
             }
         }
 
-        this.saveSessionOptions(newOptions); // The new options will be loaded from the session. Saving them now ensures the new filter is taken into account.
+        this.saveSessionOptions(newOptions);
         await this.displayReport(newOptions["report_id"]);
 
-        // The sections just invalidated above have to be preloaded again, and
-        // preLoadClosedSections stops itself once it has nothing left to do.
         this.preLoadClosedSections();
     }
 
@@ -195,7 +187,6 @@ export class AccountReportController {
 
         let pendingSection = null;
         for (const section of this.options["sections"]) {
-            // Preload the first non-loaded section we find amongst this report's sections.
             const cacheKey = this.getCacheKey(
                 this.options["sections_source_id"],
                 section.id,
@@ -205,15 +196,10 @@ export class AccountReportController {
                 !this.reportInformationMap[cacheKey]
             ) {
                 pendingSection = section;
-                // Stop iterating and schedule next call. We don't go on in the loop in case the cache is reset and we need to restart preloading.
                 break;
             }
         }
 
-        // Nothing left to preload: stop rather than rearm. 21 of the 22 shipped reports
-        // declare no section at all, so rearming meant an idle timer ticking once a
-        // second for as long as the report stayed open, with nothing to do when it fired.
-        // Whoever empties reportInformationMap must call this again -- see updateOption().
         if (!pendingSection) {
             return;
         }
@@ -228,8 +214,8 @@ export class AccountReportController {
     }
 
     async loadReport(reportId, preloading = false) {
-        const options = await this.loadReportOptions(reportId, preloading, false); // This also sets the promise in the cache
-        const reportToDisplayId = options["report_id"]; // Might be different from reportId, in case the report to open uses sections
+        const options = await this.loadReportOptions(reportId, preloading, false);
+        const reportToDisplayId = options["report_id"];
 
         const cacheKey = this.getCacheKey(
             options["sections_source_id"],
@@ -306,13 +292,9 @@ export class AccountReportController {
         loadOptions["is_opening_report"] = isOpeningReport;
 
         if (!this.reportOptionsMap[cacheKey]) {
-            // The options for this section are not loaded nor loading. Let's load them !
-
             if (preloading) {
                 loadOptions["selected_section_id"] = reportId;
             } else {
-                // Reopen the last opened section by default. Regular caching can't do it, as composite
-                // reports' options are never cached (they always reroute).
                 if (this.lastOpenedSectionByReport[reportId]) {
                     loadOptions["selected_section_id"] =
                         this.lastOpenedSectionByReport[reportId];
@@ -328,17 +310,13 @@ export class AccountReportController {
                 },
             );
 
-            // Wait for the result, and check the report hasn't been rerouted to a section or variant; fix the cache if it has
             const reportOptions = await this.reportOptionsMap[cacheKey];
 
-            // In case of a reroute, also set the cached options into the reroute target's key
             const loadedOptionsCacheKey = this.getCacheKey(
                 reportOptions["sections_source_id"],
                 reportOptions["report_id"],
             );
             if (loadedOptionsCacheKey !== cacheKey) {
-                // Drop the rerouting report from the cache, else reloading the cached options would redo
-                // the reroute and such reports could never be opened directly.
                 delete this.reportOptionsMap[cacheKey];
                 this.reportOptionsMap[loadedOptionsCacheKey] = reportOptions;
 
@@ -351,9 +329,6 @@ export class AccountReportController {
         return this.reportOptionsMap[cacheKey];
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Generic data getters
-    //------------------------------------------------------------------------------------------------------------------
     get buttons() {
         return this.cachedFilterOptions.buttons;
     }
@@ -402,9 +377,6 @@ export class AccountReportController {
         return this.data.report;
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Generic data setters
-    //------------------------------------------------------------------------------------------------------------------
     set columnGroupsTotals(value) {
         this.data.column_groups_totals = value;
     }
@@ -418,9 +390,6 @@ export class AccountReportController {
         this.data.lines_order = value;
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Helpers
-    //------------------------------------------------------------------------------------------------------------------
     get needsColumnPercentComparison() {
         return this.options.column_percent_comparison === "growth";
     }
@@ -437,9 +406,6 @@ export class AccountReportController {
         return Boolean(this.options.show_debug_column);
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Options
-    //------------------------------------------------------------------------------------------------------------------
     async _updateOption(
         operationType,
         optionPath,
@@ -511,12 +477,7 @@ export class AccountReportController {
         this.displayReport(reportId);
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Session options
-    //------------------------------------------------------------------------------------------------------------------
     sessionOptionsID() {
-        // Keyed by action report (the report targeted by the original action) so that navigating back to
-        // it restores the section/variant last opened in this http session.
         return `report.formula:${this.actionReportId}:${user.defaultCompany.id}`;
     }
 
@@ -535,9 +496,6 @@ export class AccountReportController {
         return JSON.parse(browser.sessionStorage.getItem(this.sessionOptionsID()));
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Lines
-    //------------------------------------------------------------------------------------------------------------------
     lineHasDebugData(lineIndex) {
         return "debug_popup_data" in this.lines[lineIndex];
     }
@@ -609,9 +567,6 @@ export class AccountReportController {
         }
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Unfolded/Folded lines
-    //------------------------------------------------------------------------------------------------------------------
     async unfoldLoadedLine(lineIndex) {
         const lineId = this.lines[lineIndex].id;
         let nextLineIndex = lineIndex + 1;
@@ -650,7 +605,6 @@ export class AccountReportController {
                 this.lines[totalIndex].visible = true;
             }
 
-            // Update options
             this.options.unfolded_lines.push(
                 ...newLines.filter((line) => line.unfolded).map(({ id }) => id),
             );
@@ -666,7 +620,6 @@ export class AccountReportController {
                 update: "always",
                 callback: (result, hasChanged) => {
                     if (hasChanged) {
-                        // Remove previously cached lines.
                         let nextIndex = lineIndex + 1;
                         while (
                             this.isNextLineChild(nextIndex, this.lines[lineIndex].id)
@@ -720,19 +673,13 @@ export class AccountReportController {
      */
     updateLinesOrderIndexes(lineIndex, newLines, replaceLine) {
         let unfoldedLineIndex;
-        // When replacing (as 'replaceLineWith' does), the new lines take the place of the line at
-        // unfoldedLineIndex instead of being inserted after it.
         const offset = replaceLine ? 0 : 1;
-        // lineOrderValue is the index of the line before the report was sorted.
         for (const [lineOrderIndex, lineOrderValue] of Object.entries(
             this.linesOrder,
         )) {
-            // Lines with an index bigger than the unfolded one shift by the number of lines added.
-            // A deleteCount of 1 means one line is replaced, so the shift is one less than usual.
             if (lineOrderValue > lineIndex) {
                 this.linesOrder[lineOrderIndex] += newLines.length - replaceLine;
             }
-            // The unfolded line is found, providing a reference for adding children in the 'linesOrder' array.
             if (lineOrderValue === lineIndex) {
                 unfoldedLineIndex = parseInt(lineOrderIndex);
             }
@@ -769,7 +716,6 @@ export class AccountReportController {
         this.setLineVisibility(this.lines.slice(lineIndex + 1, lastLineIndex));
         targetLine.unfolded = true;
 
-        // Update options
         if (!this.options.unfolded_lines.includes(targetLine.id)) {
             this.options.unfolded_lines.push(targetLine.id);
         }
@@ -794,7 +740,6 @@ export class AccountReportController {
 
         targetLine.unfolded = false;
 
-        // Update options
         this.options.unfolded_lines = this.options.unfolded_lines.filter(
             (unfoldedLineID) => !foldedLinesIDs.has(unfoldedLineID),
         );
@@ -802,9 +747,6 @@ export class AccountReportController {
         this.saveSessionOptions(this.options);
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Ordered lines
-    //------------------------------------------------------------------------------------------------------------------
     linesCurrentOrderByColumn(columnIndex) {
         if (this.areLinesOrderedByColumn(columnIndex)) {
             return this.options.order_column.direction;
@@ -863,10 +805,6 @@ export class AccountReportController {
         );
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Visibility
-    //------------------------------------------------------------------------------------------------------------------
-
     /**
      * Define which of the provided lines should be visible, depending on what is folded.
      *
@@ -883,7 +821,6 @@ export class AccountReportController {
             }
         });
 
-        // If the hide 0 lines is activated we will go through the lines to set the visibility.
         if (this.options.hide_0_lines) {
             this.hideZeroLines(linesToAssign);
         }
@@ -914,29 +851,22 @@ export class AccountReportController {
                             column.is_zero),
                 );
 
-            // If the line has no visible children and all the columns are equals to zero then the line needs to be hidden
             if (!hasVisibleChildren.has(line.id) && isZero) {
                 line.visible = false;
             }
 
-            // A line that stays visible marks its parent as having a visible child, so the parent is
-            // kept visible when it is reached later in the reversed traversal.
             if (line.parent_id && line.visible) {
                 hasVisibleChildren.add(line.parent_id);
             }
         });
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Server calls
-    //------------------------------------------------------------------------------------------------------------------
     buttonAction(ev, button) {
         log.logic("buttonAction", () => ({
             name: button.name,
             action: button.action,
             param: button.action_param,
         }));
-        // Might be overridden to add specific functionality to a button, for instance adding context to a call.
         this.reportAction(
             ev,
             button.error_action || button.action,
@@ -952,13 +882,11 @@ export class AccountReportController {
         callOnSectionsSource = false,
         actionContext = null,
     ) {
-        // 'ev' might be 'undefined' if event is not triggered from a button/anchor
         ev?.preventDefault();
         ev?.stopPropagation();
 
         let actionOptions = this.cachedFilterOptions;
         if (callOnSectionsSource) {
-            // When calling the sections source, we want to keep track of all unfolded lines of all sections
             const allUnfoldedLines = this.cachedFilterOptions.sections.length
                 ? []
                 : [...this.cachedFilterOptions["unfolded_lines"]];

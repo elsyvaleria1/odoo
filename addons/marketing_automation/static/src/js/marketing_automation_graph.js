@@ -9,9 +9,6 @@ import { useLayoutEffect } from "@web/core/utils/layout_effect";
 import { standardFieldProps } from "@web/fields/standard_field_props";
 const fieldRegistry = registry.category("fields");
 
-/**
- * Inspired from the GraphView
- */
 export class MarketingActivityGraph extends Component {
     static template = "marketing_automation.MarketingActivityGraph";
     static props = { ...standardFieldProps };
@@ -36,14 +33,6 @@ export class MarketingActivityGraph extends Component {
         }
     }
 
-    //--------------------------------------------------------------------------
-    // Business
-    //--------------------------------------------------------------------------
-
-    /**
-     * Instantiates a Chart (Chart.js lib) to render the graph according to
-     * the current config.
-     */
     renderChart() {
         if (this.chart) {
             this.chart.destroy();
@@ -55,8 +44,8 @@ export class MarketingActivityGraph extends Component {
     getChartConfig() {
         const chartData = JSON.parse(this.props.record.data[this.props.name]);
         if (colorScheme.isDark) {
-            chartData[0].color = "#6afb81"; // Success
-            chartData[1].color = "#fb6a6a"; // Danger
+            chartData[0].color = "#6afb81";
+            chartData[1].color = "#fb6a6a";
         }
 
         const datasets = chartData.map((group) => {

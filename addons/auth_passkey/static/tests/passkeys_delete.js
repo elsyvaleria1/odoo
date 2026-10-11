@@ -71,7 +71,6 @@ registry.category("web_tour.tours").add("passkeys_tour_delete", {
             run: "click",
         },
         {
-            // The HR module causes the switch to security tab to trigger on the old DOM, before the new one is loaded
             content: "Make sure the Preferences tab is open",
             trigger: 'label:contains("Email Signature")',
         },

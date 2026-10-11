@@ -25,7 +25,6 @@ describe("pos.order - loyalty", () => {
         line1.update({ is_reward_line: true });
         line2.update({ is_reward_line: false, refunded_orderline_id: 123 });
 
-        // Verify getOrderlines method
         const orderedLines = order.getOrderlines();
 
         expect(orderedLines[0]).toBe(line2);
@@ -34,13 +33,11 @@ describe("pos.order - loyalty", () => {
         expect(orderedLines[1].is_reward_line).toBe(true);
         expect(order.getLastOrderline()).toBe(line2);
 
-        // Verify _get_reward_lines method
         const rewardLines = order._get_reward_lines();
 
         expect(rewardLines).toEqual([line1]);
         expect(rewardLines[0].is_reward_line).toBe(true);
 
-        // Verify _get_regular_order_lines
         const regularLine = await addProductLineToOrder(store, order);
 
         expect(order.getOrderlines().length).toBe(3);
@@ -94,7 +91,6 @@ describe("pos.order - loyalty", () => {
         const models = store.models;
         const order = store.addNewOrder();
 
-        // Get loyalty program #1 - type = "ewallet"
         const program = models["loyalty.program"].get(1);
 
         expect(order._programIsApplicable(program)).toBe(true);
@@ -110,7 +106,6 @@ describe("pos.order - loyalty", () => {
         const models = store.models;
         const order = store.addNewOrder();
 
-        // Get loyalty card #1 which program_id = 1 (loyalty)
         const card = models["loyalty.card"].get(1);
 
         order.uiState.couponPointChanges = {
@@ -135,7 +130,6 @@ describe("pos.order - loyalty", () => {
         const models = store.models;
         const order = store.addNewOrder();
 
-        // Get loyalty program #3 - type = "gift_card"
         const giftProgram = models["loyalty.program"].get(3);
 
         const line = await addProductLineToOrder(store, order, {
@@ -169,7 +163,6 @@ describe("pos.order - loyalty", () => {
             price_unit: 5,
         });
 
-        // Get loyalty reward #1 - type = "discount"
         const reward = models["loyalty.reward"].get(1);
 
         const result = order._getDiscountableOnOrder(reward);
@@ -182,7 +175,6 @@ describe("pos.order - loyalty", () => {
 
         const order = await getFilledOrder(store);
 
-        // Get loyalty rule #1 - which program_id = 1 (loyalty)
         const rule = models["loyalty.rule"].get(1);
 
         expect(order.getOrderlines().length).toBe(2);
@@ -198,7 +190,6 @@ describe("pos.order - loyalty", () => {
             qty: 5,
         });
 
-        // Get loyalty program #2 - type = "ewallet"
         const program = models["loyalty.program"].get(2);
 
         expect(order._canGenerateRewards(program, 50, 50)).toBe(true);
@@ -228,9 +219,7 @@ describe("pos.order - loyalty", () => {
         const models = store.models;
         const order = store.addNewOrder();
 
-        // Get loyalty reward #1 - type = "discount"
         const reward = models["loyalty.reward"].get(1);
-        // Get loyalty card #1 - which program_id = 1 (loyalty)
         const coupon = models["loyalty.card"].get(1);
 
         const rewardLine = await addProductLineToOrder(store, order, {
@@ -262,7 +251,6 @@ describe("pos.order - loyalty", () => {
         const models = store.models;
         const order = store.addNewOrder();
 
-        // Get loyalty program #3 - type = "gift_card"
         const giftProgram = models["loyalty.program"].get(3);
 
         const result = order.isSaleDisallowed(
@@ -293,7 +281,6 @@ describe("pos.order - loyalty", () => {
         expect(remainingKeys.length).toBe(1);
         expect(order.uiState.couponPointChanges[remainingKeys[0]].program_id).toBe(2);
 
-        // Verify getLoyaltyPoints method
         order.uiState.couponPointChanges = {
             1: {
                 coupon_id: 1,

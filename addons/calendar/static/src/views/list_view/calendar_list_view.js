@@ -23,10 +23,6 @@ export class CalendarListModel extends listView.Model {
                 "get_selected_calendars_partner_ids",
                 [[user.userId], filters["user"]],
             );
-            // Filter attendees to be shown if 'everybody' filter isn't active.
-            // `params.domain` is the search model's own (possibly frozen in
-            // debug mode, always memoized) domain array -- build a new one
-            // instead of mutating it in place.
             if (!filters["all"]) {
                 params.domain = [
                     ...params.domain,
@@ -45,7 +41,6 @@ export const CalendarListView = {
 };
 
 function _mockGetCalendarPartnerIds(params) {
-    /* Mock function for when there aren't records to be shown. */
     return [];
 }
 

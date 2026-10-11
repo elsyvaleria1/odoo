@@ -4,7 +4,6 @@ import { _t } from "@web/core/translation";
 import { patch } from "@web/core/utils/patch";
 
 patch(QualityCheck.prototype, {
-    /** override the quality check click behavior to get measurement from an IoT device */
     async clicked() {
         const { iotBoxId, deviceIdentifier } = this.iotDevice;
         if (this.type !== "measure" || !iotBoxId || !deviceIdentifier) {

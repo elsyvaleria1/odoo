@@ -24,7 +24,6 @@ async function openSplitter() {
         },
         async _loadAssets() {},
         _openPdf(url) {
-            // pdf.js 6 shape: a document has no destroy(), its loading task has
             const loadingTask = { destroy() {} };
             const pdf = {
                 url,

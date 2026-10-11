@@ -6,8 +6,6 @@ import { _t } from "@web/core/translation";
 import { patch } from "@web/core/utils/patch";
 
 patch(PaymentForm.prototype, {
-    // #=== DOM MANIPULATION ===#
-
     /**
      * Update the payment context to set the flow to 'direct'.
      *
@@ -33,14 +31,11 @@ patch(PaymentForm.prototype, {
         }
 
         if (flow === "token") {
-            return; // No need to update the flow for tokens.
+            return;
         }
 
-        // Overwrite the flow of the select payment method.
         this._setPaymentFlow("direct");
     },
-
-    // #=== PAYMENT FLOW ===#
 
     async _processDirectFlow(
         providerCode,
@@ -85,7 +80,6 @@ patch(PaymentForm.prototype, {
                     response["razorpay_order_id"] &&
                     response["razorpay_signature"]
                 ) {
-                    // The payment reached a final state; redirect to the status page.
                     window.location = "/payment/status";
                 }
             },

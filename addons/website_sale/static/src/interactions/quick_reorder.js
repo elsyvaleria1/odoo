@@ -29,7 +29,6 @@ export class QuickReorder extends Interaction {
         const priceUnit = parseFloat(qtyInput.dataset.priceUnit);
         const digits = parseInt(qtyInput.dataset.currencyDigits, 10);
         const qty = parseInt(qtyInput.value, 10) || 0;
-        // a disabled default button also keeps Enter from submitting the line
         qtyInput
             .closest(".o_wsale_quick_reorder_line")
             .querySelector(".o_wsale_quick_reorder_product_button").disabled = qty <= 0;

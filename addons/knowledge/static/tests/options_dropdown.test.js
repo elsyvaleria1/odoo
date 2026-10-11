@@ -75,7 +75,7 @@ async function mountTopbar(articleId) {
         ],
     });
     await mountView({
-        arch: /* xml */ `
+        arch: `
             <form js_class="knowledge_article_view_form">
                 <widget name="knowledge_topbar"/>
             </form>
@@ -136,7 +136,6 @@ test("Options Dropdown layout for a readonly article", async () => {
     });
     await mountTopbar(articleId);
     await openOptionsDropdown();
-    // user with read permission can only copy and export the article and see create and edit info
     assertOptionsDropdown({ isInternalUser: true });
     expect(
         ".o_knowledge_options_dropdown div.text-muted:contains('Last Edited')",
@@ -144,12 +143,11 @@ test("Options Dropdown layout for a readonly article", async () => {
 });
 
 test("Options Dropdown layout for a portal user", async () => {
-    patchWithCleanup(user, { hasGroup: (group) => group !== "base.group_user" }); // portal user
+    patchWithCleanup(user, { hasGroup: (group) => group !== "base.group_user" });
     const mockServer = await makeMockServer();
     const articleId = mockServer.env["knowledge.article"].create({});
     await mountTopbar(articleId);
     await openOptionsDropdown();
-    // some options are not shown for portal users
     expect(".o_knowledge_options_dropdown .dropdown-item").toHaveCount(6);
     assertOptionsDropdown({ canWrite: true, isInternalUser: false });
     expect(
@@ -187,9 +185,7 @@ test("Add/Remove Cover", async () => {
     await openOptionsDropdown();
     expect(".dropdown-item:contains('Remove Cover')").toHaveCount(0);
     await click(".dropdown-item:contains('Add Cover')");
-    // request failed (eg. unsplash key missing), should fallback to cover selector
     await waitFor(".o_select_media_dialog");
-    // search should be populated with article name
     expect(".o_select_media_dialog input.o_we_search").toHaveValue("Bloups");
 });
 
@@ -197,9 +193,8 @@ test("Add Properties", async () => {
     const mockServer = await makeMockServer();
     const parentId = mockServer.env["knowledge.article"].create({ name: "p" });
     mockServer.env["knowledge.article"].create({ name: "c", parent_id: parentId });
-    localStorage.setItem("knowledge.unfolded.ids", parentId); // show article in sidebar
+    localStorage.setItem("knowledge.unfolded.ids", parentId);
     await mountTopbar(parentId);
-    // add properties button should be disabled on root articles
     await openOptionsDropdown();
     expect(".dropdown-item:contains('Add Properties')").toHaveClass(
         "o_disabled_option",
@@ -209,20 +204,17 @@ test("Add Properties", async () => {
     }
     await click(".o_article_name:contains('c')");
     await waitFor(".o_article_active .o_article_name:contains('c')");
-    // add properties shouldn't be disabled anymore
     await openOptionsDropdown();
     expect(".dropdown-item:contains('Add Properties')").not.toHaveClass(
         "o_disabled_option",
     );
     await click(".dropdown-item:contains('Add Properties')");
     await waitForOptionsDropdownClose();
-    // add properties button shouldn't be shown anymore
     await openOptionsDropdown();
     expect(".dropdown-item:contains('Add Properties')").toHaveCount(0);
     if (getMockEnv().isSmall) {
         await click(".o_bottom_sheet_backdrop");
     }
-    // add properties button should be shown after closing the properties (no property created)
     await click(".o_knowledge_header .btn-properties");
     await openOptionsDropdown();
     expect(".dropdown-item:contains('Add Properties')").not.toHaveClass(
@@ -237,16 +229,13 @@ test("Toggle lock", async () => {
     await openOptionsDropdown();
     await click(".dropdown-item:contains('Lock Content')");
     await waitForOptionsDropdownClose();
-    // lock icon should be shown in the topbar
     expect(".o_knowledge_header i.fa-lock").toHaveCount(1);
     await openOptionsDropdown();
-    // The article is now Locked
     assertOptionsDropdown({ isInternalUser: true, canWrite: true, isLocked: true });
     await click(".dropdown-item:contains('Unlock')");
     await waitForOptionsDropdownClose();
     expect(".o_knowledge_header i.fa-lock").toHaveCount(0);
     await openOptionsDropdown();
-    // hidden options should be shown again
     assertOptionsDropdown({ isInternalUser: true, canWrite: true });
 });
 
@@ -309,7 +298,6 @@ test("Open Version History", async () => {
     });
     await mountTopbar(articleId);
     await openOptionsDropdown();
-    // button to open version history should not be shown as there is no history
     expect(".dropdown-item:contains('Open Version History')").toHaveCount(0);
     await click(".dropdown-toggle");
     await animationFrame();
@@ -332,7 +320,6 @@ test("Send Article to Trash", async () => {
             }
         },
     });
-    // redirect is mocked, record will be reloaded to test the topbar with the trashed article
     patchWithCleanup(OptionsDropdown.prototype, {
         async sendToTrash() {
             await super.sendToTrash();
@@ -346,14 +333,11 @@ test("Send Article to Trash", async () => {
     await click(".dropdown-item:contains('Send to Trash')");
     await waitForOptionsDropdownClose();
     await waitForSteps(["redirect"]);
-    // redirect was mocked, test topbar with trashed article
     await openOptionsDropdown();
-    // options dropdown should only contain the restore button
     expect(".o_knowledge_options_dropdown .dropdown-item").toHaveCount(1);
     await click(".dropdown-item:contains('Restore from Trash')");
     await waitFor(".o-overlay-container:not(:has(.o_knowledge_options_dropdown))");
     await openOptionsDropdown();
-    // options dropdown should be the default again
     assertOptionsDropdown({ isInternalUser: true, canWrite: true });
 });
 
@@ -370,9 +354,9 @@ test("Toggle Properties Panel (desktop)", async () => {
         { name: "child1", parent_id: parentId, article_properties: [{ abc123: "a" }] },
         { name: "child2", parent_id: parentId, article_properties: [{}] },
     ]);
-    localStorage.setItem("knowledge.unfolded.ids", parentId); // show children in sidebar
+    localStorage.setItem("knowledge.unfolded.ids", parentId);
     await mountView({
-        arch: /* xml */ `
+        arch: `
             <form js_class="knowledge_article_view_form">
                 <widget name="knowledge_topbar"/>
                 <div class="row h-100 m-3">
@@ -385,41 +369,34 @@ test("Toggle Properties Panel (desktop)", async () => {
         type: "form",
     });
     await waitFor(".o_knowledge_form_view");
-    // properties panel and toggle button are not shown for root articles
     expect(".o_knowledge_header .btn-properties").toHaveCount(0);
     expect(".o_widget_knowledge_properties_panel").not.toBeVisible();
     expect(".o_field_properties").toHaveCount(0);
-    // when opening an article with article properties, panel should be open
     await click(".o_article_name:contains('child1')");
     await waitFor(".o_article_active .o_article_name:contains('child1')");
     await animationFrame();
     expect(".o_widget_knowledge_properties_panel").toBeVisible();
     expect(".o_field_properties").toHaveCount(1);
     expect(".o_knowledge_header .btn-properties").toHaveClass("active");
-    // close the properties panel
     await click(".o_knowledge_header .btn-properties");
     await animationFrame();
     expect(".o_widget_knowledge_properties_panel").not.toBeVisible();
     expect(".o_field_properties").toHaveCount(0);
     expect(".o_knowledge_header .btn-properties").not.toHaveClass("active");
-    // reopen the properties panel
     await click(".o_knowledge_header .btn-properties");
     await animationFrame();
     expect(".o_widget_knowledge_properties_panel").toBeVisible();
     expect(".o_property_field").toHaveCount(1);
     expect(".o_knowledge_header .btn-properties").toHaveClass("active");
-    // when opening an article whose parent has properties definitions, panel should remain open
     await click(".o_article_name:contains('child2')");
     await waitFor(".o_article_active .o_article_name:contains('child2')");
     await animationFrame();
     expect(".o_widget_knowledge_properties_panel").toBeVisible();
     expect(".o_field_properties").toHaveCount(1);
     expect(".o_knowledge_header .btn-properties").toHaveClass("active");
-    // remove parent's properties definition
     mockServer.env["knowledge.article"].write(parentId, {
         article_properties_definition: [],
     });
-    // when opening a child whose parent doesn't have properties definitions, panel should close
     await click(".o_article_name:contains('child1')");
     await waitFor(".o_article_active .o_article_name:contains('child1')");
     await animationFrame();
@@ -441,7 +418,7 @@ test("Toggle Properties Panel (Mobile)", async () => {
         { name: "child1", parent_id: parentId, article_properties: [{ abc123: "a" }] },
         { name: "child2", parent_id: parentId, article_properties: [{}] },
     ]);
-    localStorage.setItem("knowledge.unfolded.ids", parentId); // show children in sidebar
+    localStorage.setItem("knowledge.unfolded.ids", parentId);
     patchWithCleanup(knowledgeTopbar, {
         fieldDependencies: [
             ...knowledgeTopbar.fieldDependencies.map((dependency) => ({
@@ -455,7 +432,7 @@ test("Toggle Properties Panel (Mobile)", async () => {
     });
 
     await mountView({
-        arch: /* xml */ `
+        arch: `
             <form js_class="knowledge_article_view_form">
                 <widget name="knowledge_topbar"/>
                 <div class="row h-100 m-3">
@@ -468,13 +445,11 @@ test("Toggle Properties Panel (Mobile)", async () => {
         type: "form",
     });
     await waitFor(".o_knowledge_form_view");
-    // open an article with properties should not open the panel on mobile
     await click(".o_article_name:contains('child1')");
     await waitFor(".o_article_active .o_article_name:contains('child1')");
     await animationFrame();
     expect(".o_widget_knowledge_properties_panel").not.toBeVisible();
     expect(".o_field_properties").toHaveCount(0);
-    // open the properties panel
     await openOptionsDropdown();
     expect(".dropdown-item:contains('Add Properties')").toHaveCount(0);
     expect(".dropdown-item:contains('Show Properties')").toHaveCount(1);
@@ -487,18 +462,15 @@ test("Toggle Properties Panel (Mobile)", async () => {
     expect(".dropdown-item:contains('Add Properties')").toHaveCount(0);
     expect(".dropdown-item:contains('Show Properties')").toHaveCount(0);
     expect(".dropdown-item:contains('Hide Properties')").toHaveCount(1);
-    // panel should remain open when opening an article with properties while the panel is opened
     await click(".o_article_name:contains('child2')");
     await waitFor(".o_article_active .o_article_name:contains('child2')");
     await animationFrame();
     expect(".o_widget_knowledge_properties_panel").toBeVisible();
     expect(".o_field_properties").toHaveCount(1);
     expect(".o_knowledge_header .btn-properties").toHaveClass("active");
-    // remove parent's properties definition
     mockServer.env["knowledge.article"].write(parentId, {
         article_properties_definition: [],
     });
-    // panel should close when opening an article without properties while the panel is opened
     await click(".o_article_name:contains('child1')");
     await waitFor(".o_article_active .o_article_name:contains('child1')");
     await animationFrame();

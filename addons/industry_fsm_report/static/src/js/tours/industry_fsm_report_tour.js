@@ -1,7 +1,4 @@
 /** @odoo-module native */
-/**
- * Adapt the step that is specific to the work details when the `worksheet` module is not installed.
- */
 
 import "@industry_fsm/js/tours/industry_fsm_tour";
 

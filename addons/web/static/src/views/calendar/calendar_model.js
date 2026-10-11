@@ -209,7 +209,6 @@ export class CalendarModel extends Model {
     }
     /** @param {Object} [params] */
     async load(params = {}) {
-        // Concurrent loads share meta; only published metadata is a rollback point.
         this.publishedMeta ??= { ...this.meta };
         Object.assign(this.meta, params);
         if (!this.meta.date) {
@@ -817,8 +816,6 @@ export class CalendarModel extends Model {
         const maxDelay = group?.[aggregate];
         let floor = start.subtract({ hours: delayHours(maxDelay) });
         if (all_day && this.dateStartType !== "date") {
-            // an all-day record reads its stored UTC start as a local date, so it can
-            // be drawn up to a day after that start
             floor = floor.subtract({ days: 1 });
         }
         log.logic("dateDelayFloor", () => ({
@@ -862,7 +859,6 @@ export class CalendarModel extends Model {
     async loadRecords(data) {
         const rawRecords = await this.fetchRecords(data);
         const { date_stop, date_delay } = this.meta.fieldMapping;
-        // the duration floor is only a bound: a shorter record can still end before the range
         const rangeStart = !date_stop && date_delay ? data.range?.start : undefined;
         const records = {};
         const endedBeforeRange = [];

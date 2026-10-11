@@ -4,10 +4,6 @@ import { Notebook } from "@web/components/notebook";
 import { useService } from "@web/core/utils/hooks";
 import { Dialog } from "@web/ui/dialog";
 
-/**
- * This component will display a campaign template picker.
- * User will be able to select a template
- */
 export class CampaignTemplatePickerDialog extends Component {
     static template = "marketing_automation.CampaignTemplatePickerDialog";
     static components = {
@@ -28,18 +24,15 @@ export class CampaignTemplatePickerDialog extends Component {
         this.notebookPages = [];
 
         onWillStart(async () => {
-            // Fetch campaign template data, in a set of template groups containing a set of templates
             const templateGroups = await this.orm.call(
                 "marketing.campaign",
                 "get_campaign_templates_info",
                 [],
             );
 
-            // Set default active template to the first template in the first group
             const firstGroup = Object.keys(templateGroups)[0];
             this.setActive(Object.keys(templateGroups[firstGroup].templates)[0]);
 
-            // Use templateGroups set to populate the pages used by the notebook
             for (const [groupId, groupValues] of Object.entries(templateGroups)) {
                 this.notebookPages.push({
                     Component: CampaignTemplatePickerSheet,
@@ -55,9 +48,6 @@ export class CampaignTemplatePickerDialog extends Component {
         });
     }
 
-    /**
-     * On template selection, use active template name to perform an action generating the template
-     */
     async onLoadTemplate() {
         const action = await this.orm.call(
             "marketing.campaign",
@@ -71,9 +61,6 @@ export class CampaignTemplatePickerDialog extends Component {
         this.props.close();
     }
 
-    /**
-     * Set active template
-     */
     setActive(templateName) {
         this.activeTemplate.name = templateName;
     }

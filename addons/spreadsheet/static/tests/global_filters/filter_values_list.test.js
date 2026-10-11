@@ -384,12 +384,10 @@ test("clearing a filter value preserves the operator", async function () {
     await mountFilterValuesList(env, { model });
     await contains(".o-filter-values select").select("starts with");
 
-    // remove the only value
     await contains(".o-filter-values .o-filter-item .o_tag .o_delete").click();
     expect(".o-filter-values .o-filter-item .o_tag").toHaveCount(0);
     expect(".o-filter-values select").toHaveValue("starts with");
 
-    // add a value back
     await contains(".o-filter-values .o-filter-item .o-autocomplete input").edit("foo");
     await contains(".o-filter-values .o-filter-item .o-autocomplete input").press(
         "Enter",

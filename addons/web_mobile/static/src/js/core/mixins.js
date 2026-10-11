@@ -60,15 +60,11 @@ export const accountMethodsForMobile = {
 
 export async function updateAccountOnMobileDevice() {
     const updated = accountMethodsForMobile.updateAccount();
-    // Crapy workaround for unupdatable Odoo Mobile App iOS (Thanks Apple :@)
     if (!isIosApp()) {
         await updated;
     }
 }
 
-/**
- * Trigger the update of the user's account details on the mobile app.
- */
 accountMethodsForMobile.updateAccount();
 
 export default {

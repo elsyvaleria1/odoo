@@ -96,16 +96,12 @@ export const parseStringToXml = (str) => parser.parseFromString(str, "text/xml")
 const serializer = new XMLSerializer();
 export const serializeXmlToString = (xml) => serializer.serializeToString(xml);
 
-// This function should be used in Compilers to apply the "invisible" modifiers on
-// the compiled templates's nodes
 export function applyInvisible(invisible, compiled, params) {
-    // Just return the node if it is always Visible
     if (!invisible || invisible === "False" || invisible === "0") {
         return compiled;
     }
 
     let isVisileExpr;
-    // If invisible is dynamic, pass a props or apply the studio class.
     if (invisible !== "True" && invisible !== "1") {
         const recordExpr = params.recordExpr || "__comp__.props.record";
         isVisileExpr = `!__comp__.evaluateBooleanExpr(${JSON.stringify(
@@ -128,7 +124,6 @@ export function applyInvisible(invisible, compiled, params) {
         }
     }
 
-    // Finally, put a t-if on the node that accounts for the parameter in the config.
     const studioShowExpr = `__comp__.viewEditorModel.showInvisible`;
     isVisileExpr = isVisileExpr
         ? `(${isVisileExpr} or ${studioShowExpr})`

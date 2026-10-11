@@ -302,7 +302,7 @@ test("Value of relation filter", () => {
 
     result = setGlobalFilterValueWithoutReload(model, {
         id: "1",
-        value: { operator: "in", ids: "current_user" }, // TODO check this
+        value: { operator: "in", ids: "current_user" },
     });
     expect(result.isSuccessful).toBe(false);
     expect(result.reasons).toEqual(["InvalidValueTypeCombination"]);

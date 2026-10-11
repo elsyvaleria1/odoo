@@ -100,11 +100,6 @@ registry.category("web_tour.tours").add("survey_tour_test_survey_form_triggers",
             run: "click",
         },
         {
-            // Matched by descent, not by child position: the form compiler
-            // prepends an o_form_sheet_scroll_sentinel div to every
-            // o_form_sheet_bg, so ":first-child" is that sentinel and an
-            // alert can never be it. These four steps had been unmatchable
-            // ever since, asserting nothing about the warning they name.
             content: "Check that an alert is shown",
             trigger:
                 ".modal .o_form_sheet_bg > .alert-warning:contains('positioned before some or all of its triggers')",
@@ -181,7 +176,6 @@ registry.category("web_tour.tours").add("survey_tour_test_survey_form_triggers",
         {
             trigger: "body:not(:has(.modal))",
         },
-        // Move question 1 below question 3,
         {
             content: "Move Question 1 back below Question 3",
             trigger:
@@ -232,7 +226,6 @@ registry.category("web_tour.tours").add("survey_tour_test_survey_form_triggers",
                 "div[name=question_and_page_ids] table tr:eq(3) div[name=sequence]",
             run: "drag_and_drop(div[name=question_and_page_ids] table tr:eq(1))",
         },
-        // Deleting trigger answers or whole question gracefully remove the trigger automatically
         {
             content: "Open Question 2 again",
             trigger: "tr.o_data_row td:contains('Question 2')",
@@ -318,7 +311,7 @@ function saveAndNew() {
         {
             content: "Wait for the dialog to render new question form",
             trigger:
-                ".modal div[name=suggested_answer_ids] .o_list_table tbody tr:first-child:not(.o_data_row)", // empty answers list
+                ".modal div[name=suggested_answer_ids] .o_list_table tbody tr:first-child:not(.o_data_row)",
         },
     ];
 }

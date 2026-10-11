@@ -7,11 +7,6 @@ import { elementRef } from "@web/core/utils/element_ref";
 import { useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/fields/standard_field_props";
 
-/**
- * Widget to edit the JSON schema sent to the LLM provider.
- *
- * See https://json-schema.org/understanding-json-schema/reference
- */
 export class AiJsonSchema extends Component {
     static template = "ai.AiJsonSchema";
     static props = { ...standardFieldProps };
@@ -23,7 +18,6 @@ export class AiJsonSchema extends Component {
         this.notification = useService("notification");
         this.state = proxy({
             technical_mode: false,
-            // There's no order in the arguments, so we try to not move them when editing
             orderArguments: Object.keys(this.value?.properties || {}).sort(),
         });
         useAutoresize(this.textareaEl);

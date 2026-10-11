@@ -36,10 +36,6 @@ export function patchBrowserLocation() {
             get: () => originalValue,
         });
     }
-    // A real window.open puts the test page in the background, and Chrome
-    // throttles a background page's timers to one wake-up per second for the
-    // rest of the run: every test after the popup then pays seconds per
-    // awaited timer. A test that asserts on the call patches open itself.
     browserModule.browser.open = () => ({
         closed: false,
         focus() {},
@@ -49,11 +45,6 @@ export function patchBrowserLocation() {
     });
 }
 
-/**
- * A deadline taken from `browser.performance.now()` is waited for with
- * `browser.setTimeout`: both read HOOT's clock, or the real time a loaded
- * machine spends between two awaits moves the deadline under the test.
- */
 export function patchBrowserPerformance() {
     const { loader } = /** @type {any} */ (window).odoo;
     const browserModule = loader.modules.get("@web/core/browser/browser");

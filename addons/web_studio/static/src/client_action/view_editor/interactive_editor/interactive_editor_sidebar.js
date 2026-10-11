@@ -52,7 +52,6 @@ export class InteractiveEditorSidebar extends Component {
             this.editorModel.resetSidebar();
         });
         onWillUpdateProps(() => {
-            // This component takes slots: it is always re-rendered
             const editorModel = this.editorModel;
             if (editorModel.sidebarTab === "properties" && !editorModel.activeNode) {
                 editorModel.resetSidebar();
@@ -83,8 +82,6 @@ export class InteractiveEditorSidebar extends Component {
 
     onTabClicked(tab) {
         if (tab === "properties" && !this.editorModel.activeNodeXpath) {
-            // a late page update of a render that showed a node since
-            // deselected: the properties page has nothing to show
             return;
         }
         if (tab !== "properties") {

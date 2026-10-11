@@ -14,10 +14,6 @@ import { handleBeforeUnload } from "@web/views/view_utils";
 
 const log = makeLogger("hr_payroll.todo_list");
 
-/**
- * This component is actually a dumbed down list view for our notes.
- */
-
 export class PayrollDashboardTodo extends Component {
     static template = "hr_payroll.TodoList";
     static components = {
@@ -64,9 +60,6 @@ export class PayrollDashboardTodo extends Component {
         });
     }
 
-    /**
-     * Creates a note.
-     */
     async createNoteForm() {
         const result = await this.orm.create("hr.payroll.note", [
             {
@@ -137,9 +130,6 @@ export class PayrollDashboardTodo extends Component {
         this.bufferedText = ev.target.value;
     }
 
-    /**
-     * When the input loses focus, save the changes
-     */
     handleBlur() {
         this._applyNoteRename();
     }
@@ -159,9 +149,6 @@ export class PayrollDashboardTodo extends Component {
         }
     }
 
-    /**
-     * Renames the active note with the text saved in the buffer
-     */
     async _applyNoteRename() {
         const value = this.bufferedText.trim();
         const record = this.state.records.find(
@@ -182,9 +169,6 @@ export class PayrollDashboardTodo extends Component {
         this.state.isEditingNoteName = false;
     }
 
-    /**
-     * Handler when delete button is clicked
-     */
     async onNoteDelete() {
         const message = _t(
             "Are you sure you want to delete this note? All content will be definitely lost.",
@@ -207,17 +191,11 @@ export class PayrollDashboardTodo extends Component {
         this.state.activeNoteId = this.state.records.length && this.state.records[0].id;
     }
 
-    /**
-     * Handles the click on the create note button
-     */
     async onClickCreateNote() {
         await this.saveNote();
         this.createNoteForm();
     }
 
-    /**
-     * Save the current note, has to be trigger before switching note.
-     */
     async saveNote() {
         if (this.editedNote) {
             await this.editedNote.save();

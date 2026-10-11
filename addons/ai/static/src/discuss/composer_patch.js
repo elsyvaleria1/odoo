@@ -5,7 +5,7 @@ import { patch } from "@web/core/utils/patch";
 patch(Composer.prototype, {
     saveContent() {
         if (this.thread?.channel_type === "ai_chat") {
-            return; // no point in saving the content in an AI chat since chats are independent
+            return;
         }
         super.saveContent();
     },

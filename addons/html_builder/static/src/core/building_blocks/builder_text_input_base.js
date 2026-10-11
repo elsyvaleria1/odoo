@@ -5,8 +5,6 @@ import { useForwardRefToParent } from "@web/core/utils/hooks";
 
 import { useActionInfo } from "../utils.js";
 
-// Props given to the builder input components that are then passed to the
-// BuilderTextInputBase.
 export const textInputBasePassthroughProps = {
     action: t.string().optional(),
     placeholder: t.string().optional(),

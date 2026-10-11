@@ -24,7 +24,6 @@ export async function prepareWebClientForSpreadsheet() {
         { sequence: 5 },
     );
 
-    // Transforming the canvas into an image might crash in Hoot since the canvas has a size of 0x0 on some test setup
     patchWithCleanup(AbstractSpreadsheetAction.prototype, {
         onSpreadsheetLeftUpdateVals() {
             return { display_thumbnail: "someBase64Image" };

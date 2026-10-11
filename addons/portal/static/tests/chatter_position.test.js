@@ -44,7 +44,6 @@ async function preparePosition() {
     patchWithCleanup(Chatter, {
         template: xml`<div t-ref="this.rootRef"><div class="test-top" t-ref="this.topRef" style="padding-top: 20px"/></div>`,
     });
-    // Keep the real component setup/effect; omit unrelated thread loading/rendering.
     patchWithCleanup(Chatter.prototype, { _onMounted() {}, load() {} });
     class Parent extends Component {
         static props = {};

@@ -8,7 +8,7 @@ import { IotActionButton } from "./iot_action_button/iot_action_button.js";
 export class IotMeasureWidget extends IotActionButton {
     setup() {
         super.setup();
-        this.onClick(); // Send a first action to set the `session_id`
+        this.onClick();
         onWillUnmount(() => (this._isMeasuring = false));
     }
 
@@ -55,7 +55,7 @@ export class IotMeasureWidget extends IotActionButton {
     }
 
     async onSuccess(data) {
-        const measure = data.result ? data.result : data.value; // compatibility w/ newer IoT Boxes
+        const measure = data.result ? data.result : data.value;
         if (!measure) {
             return this.notifyFailure();
         }

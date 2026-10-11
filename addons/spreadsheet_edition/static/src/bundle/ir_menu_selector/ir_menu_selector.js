@@ -102,16 +102,9 @@ export class IrMenuSelectorDialog extends Component {
         this.selectedMenu = proxy({
             id: undefined,
         });
-        // Clicking anywhere will close the link editor menu. It should be
-        // prevented otherwise the chain of event would be broken.
-        // A solution would be to listen all clicks coming from this dialog and stop
-        // their propagation.
-        // However, the autocomplete dropdown of the Many2OneField widget is *not*
-        // a child of this component. It's actually a direct child of "body" ¯\_(ツ)_/¯
-        // The following external listener handles this.
         useListener(document.body, "click", (ev) => {
             ev.stopPropagation();
-            ev.preventDefault(); // stop jumping to odoo home page
+            ev.preventDefault();
         });
     }
     _onConfirm() {

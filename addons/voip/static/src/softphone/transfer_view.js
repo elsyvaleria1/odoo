@@ -11,7 +11,7 @@ export class TransferView extends Component {
         state: t.object(),
         onClickTransferContact: t.function(),
         onClickTransferPhone: t.function(),
-    }; // TODO: type
+    };
     static template = "voip.TransferView";
     props = useProps(this.constructor.props);
 

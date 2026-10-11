@@ -441,7 +441,6 @@ export class ViewCompiler {
         if (node.hasAttribute("t-translation")) {
             node.removeAttribute("t-translation");
         }
-        // an arch may still say t-esc, which OWL 3 only compiles as a deprecated alias of t-out
         if (node.hasAttribute("t-esc")) {
             node.setAttribute(
                 "t-out",

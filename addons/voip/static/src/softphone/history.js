@@ -13,9 +13,6 @@ import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";
 import { useDebounced } from "@web/core/utils/timing";
 
-/**
- * List of your most recent calls.
- */
 export class History extends Component {
     static components = tabComponents;
     static props = { extraClass: t.string().optional("") };
@@ -55,9 +52,6 @@ export class History extends Component {
         });
     }
 
-    /**
-     * Get the locale list of calls, filtered by search terms if available.
-     */
     get filteredCalls() {
         const calls = Object.values(this.voip.calls);
         const searchTerms = this.state.searchInputValue.trim();

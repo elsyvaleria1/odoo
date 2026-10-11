@@ -17,14 +17,12 @@ export class BarcodeInput extends Component {
             barcode: "",
         });
         this.barcodeManual = elementRef();
-        // Autofocus processing was blocked because a document already has a focused element.
         onMounted(() => {
             this.barcodeManual.el?.focus();
         });
     }
 
     submit() {
-        // Typed by hand, so it can carry the stray whitespace a scanner would not.
         const barcode = this.state.barcode.trim();
         if (barcode) {
             this.props.onSubmit(barcode);

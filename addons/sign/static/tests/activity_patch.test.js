@@ -41,7 +41,7 @@ test("list activity widget: sign button in dropdown", async () => {
         </list>`,
     });
     expect(".o-mail-ListActivity-summary").toHaveText("Sign a new contract");
-    await contains(".o-mail-ActivityButton").click(); // open the popover
+    await contains(".o-mail-ActivityButton").click();
     expect(".o-mail-ActivityListPopoverItem-markAsDone").toHaveCount(0);
     expect(".o-mail-ActivityListPopoverItem-requestSign").toHaveCount(1);
 });

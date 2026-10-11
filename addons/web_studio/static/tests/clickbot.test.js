@@ -24,14 +24,7 @@ test("clickbot clickeverywhere test", async () => {
 
     onRpc("grid_unavailability", () => ({}));
 
-    // "grid" stands in for ANY view type studio cannot edit. The real
-    // implementation lives in web_grid, which is OUTSIDE web_studio's
-    // dependency closure, so the module-scoped run never loads it — register
-    // a minimal stand-in (with a control panel, so the clickbot can keep
-    // switching views and testing filters) when the key is absent.
     if (!registry.category("views").contains("grid")) {
-        // the clickbot looks the search-bar menu up INSIDE the control
-        // panel, where every real view's layout puts it (layout-actions)
         class StubGridController extends Component {
             static template = xml`
                 <div class="o_grid_view">
@@ -45,8 +38,6 @@ test("clickbot clickeverywhere test", async () => {
             static props = null;
             props = useProps(this.constructor.props);
         }
-        // the view descriptor schema is closed: only keys the framework
-        // reads register (web 63ba6658f144)
         registry.category("views").add("grid", {
             type: "grid",
             Controller: StubGridController,

@@ -51,7 +51,6 @@ describe("GeoengineArchParser", () => {
 
     describe("Attribute Extraction", () => {
         test("_extractPaginationAttributes() extracts limit and countLimit", () => {
-            // the parser reads the view IR: a node's attrs record is the input
             const result = parser._extractPaginationAttributes({
                 limit: "80",
                 count_limit: "1000",

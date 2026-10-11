@@ -86,7 +86,6 @@ test("concurrent range switches return in inverse order", async () => {
     expect(content.range).toBe("12/01/2018 -> 02/28/2019");
     expect(model.data.records).toHaveLength(6);
 
-    // switch to 'week' range (this rpc will be delayed)
     const firstReloadProm = new Deferred();
     reloadProm = firstReloadProm;
     await selectRange("Week");
@@ -97,7 +96,6 @@ test("concurrent range switches return in inverse order", async () => {
     expect(content.range).toBe("Week");
     expect(model.data.records).toHaveLength(6);
 
-    // switch to 'year' range
     reloadProm = null;
     await selectRange("Year");
     await ganttControlsChanges();
@@ -161,7 +159,6 @@ test("concurrent range switches return with gantt unavailabilities", async () =>
         "--Gantt__DayOff-background-color",
     ]);
 
-    // switch to 'week' range (this rpc will be delayed)
     const firstReloadProm = new Deferred();
     reloadProm = firstReloadProm;
     await selectRange("Week");
@@ -176,7 +173,6 @@ test("concurrent range switches return with gantt unavailabilities", async () =>
         "--Gantt__DayOff-background-color",
     ]);
 
-    // switch to 'year' range
     reloadProm = null;
     await selectRange("Year");
     await ganttControlsChanges();
@@ -265,7 +261,6 @@ test("concurrent pill resize and groupBy change", async () => {
         },
     ]);
 
-    // resize "Task 2" to 1 cell smaller (-1 day) ; this RPC will be delayed
     awaitWriteDef = true;
     await resizePill(getPillWrapper("Task 2"), "end", -1);
 
@@ -339,11 +334,9 @@ test("concurrent pill resizes return in inverse order", async () => {
         domain: [["id", "=", 2]],
     });
 
-    // resize to 1 cell smaller (-1 day) ; this RPC will be delayed
     awaitWriteDef = true;
     await resizePill(getPillWrapper("Task 2"), "end", -1);
 
-    // resize to two cells larger (+2 days) ; no delay
     awaitWriteDef = false;
     await resizePill(getPillWrapper("Task 2"), "end", +2);
 
@@ -358,9 +351,6 @@ test("concurrent pill resizes return in inverse order", async () => {
         ["write", [[2], { stop: "2018-12-24 06:29:59" }]],
         ["get_gantt_data", []],
     ]);
-    // the mutex serializes the two reschedules in call order, so the second
-    // (later-issued) write is the one that ends up displayed, even though its
-    // RPC was not the one held back by writeDef.
     expect(getGridContent().rows).toEqual([
         {
             pills: [

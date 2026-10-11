@@ -37,11 +37,6 @@ export class SurveySessionChart extends Interaction {
         const ctx = canvas.getContext("2d");
         this.chart = new Chart(ctx, this.buildChartConfiguration());
         this.registerCleanup(() => this.chart.destroy());
-        // survey_session_manage waits for us to start.
-        // If we are ready before survey_session_manage, this is signaled
-        // by the presence of the class `chart_is_ready` (see dynamicContent).
-        // If survey_session_manage is ready before us, it will wait for this
-        //  signal on the bus.
         this.env.bus.trigger("SURVEY:CHART_INTERACTION_STARTED");
     }
 
@@ -78,7 +73,6 @@ export class SurveySessionChart extends Interaction {
                 this.processQuestionStatistics(questionStatistics);
         }
         if (this.chart) {
-            // only a single dataset for our bar charts
             const chartData = this.chart.data.datasets[0].data;
             for (let i = 0; i < chartData.length; i++) {
                 const value = this.showInputs ? this.questionStatistics[i].count : 0;
@@ -206,8 +200,6 @@ export class SurveySessionChart extends Interaction {
                     beforeInit: function (chart) {
                         const nbrCol = chart.data.labels.length;
                         const minRatio = 0.4;
-                        // Numbers of maximum characters per line to print based on the number of columns and default ratio for the font size
-                        // Between 1 and 2 -> 35, 3 and 4 -> 30, 5 and 6 -> 30, ...
                         const charPerLineBreakpoints = [
                             [1, 2, 35, minRatio],
                             [3, 4, 30, minRatio],
@@ -230,7 +222,6 @@ export class SurveySessionChart extends Interaction {
                             },
                         );
 
-                        // Adapt font size if the number of characters per line is under the maximum
                         if (charPerLine < 35) {
                             const allWords = chart.data.labels.reduce(
                                 (accumulator, words) =>
@@ -248,12 +239,10 @@ export class SurveySessionChart extends Interaction {
                         }
 
                         chart.data.labels.forEach(function (label, index, labelsList) {
-                            // Split all the words of the label
                             const words = label.split(" ");
                             const resultLines = [];
                             let currentLine = [];
                             for (let i = 0; i < words.length; i++) {
-                                // Chop down words that do not fit on a single line, add each part on its own line.
                                 let word = words[i];
                                 while (word.length > charPerLine) {
                                     resultLines.push(
@@ -263,7 +252,6 @@ export class SurveySessionChart extends Interaction {
                                 }
                                 currentLine.push(word);
 
-                                // Continue to add words in the line if there is enough space and if there is at least one more word to add
                                 const nextWord =
                                     i + 1 < words.length ? words[i + 1] : null;
                                 if (nextWord) {
@@ -273,7 +261,6 @@ export class SurveySessionChart extends Interaction {
                                         continue;
                                     }
                                 }
-                                // Add the constructed line and reset the variable for the next line
                                 const newLabelLine = currentLine.join(" ");
                                 resultLines.push(newLabelLine);
                                 currentLine = [];
@@ -286,17 +273,10 @@ export class SurveySessionChart extends Interaction {
         };
     }
 
-    /**
-     * Returns the label of the associated survey.question.answer.
-     */
     extractChartLabels() {
         return this.questionStatistics.map((point) => point.text);
     }
 
-    /**
-     * We simply return an array of zeros as initial value.
-     * The chart will update afterwards as attendees add their user inputs.
-     */
     extractChartData() {
         return Array(this.questionStatistics.length).fill(0);
     }
@@ -319,7 +299,6 @@ export class SurveySessionChart extends Interaction {
             !this.isValidAnswer(metaData.dataIndex)
                 ? "0.2"
                 : "0.8";
-        // If metaData.dataIndex is greater than SESSION_CHART_COLORS.length, it should start from the beginning
         const rgb = getPaletteColor(metaData.dataIndex, SESSION_CHART_COLORS);
         return `rgba(${rgb},${opacity})`;
     }

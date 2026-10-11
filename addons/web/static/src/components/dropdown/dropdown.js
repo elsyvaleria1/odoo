@@ -43,8 +43,6 @@ const MENU_BOTTOM_SHEET_CLASSES = "o-dropdown--menu dropdown-menu show";
 const MENU_INLINE_CLASSES = "o-dropdown--menu dropdown-menu mx-0";
 const MENU_SUBMENU_CLASS = "o-dropdown--menu-submenu";
 
-// ARIA allows aria-expanded only on a role that exposes that state: a generic wrapper used as
-// the toggle (the search bar's field, whose input is the combobox) must not carry it.
 const EXPANDABLE_TARGET = [
     "button",
     "a[href]",
@@ -211,8 +209,6 @@ export class Dropdown extends Component {
         onMounted(() => this.onStateChanged(this.state));
         const disposeEffect = effect(
             (state) => {
-                // the read keeps the subscription; before the mount there is no
-                // popover to open or close, onMounted takes the state from there
                 const { isOpen } = state;
                 if (status(this) === "mounted") {
                     this.onStateChanged({ isOpen });
@@ -254,9 +250,6 @@ export class Dropdown extends Component {
     }
 
     get isBottomSheet() {
-        // decided when the menu opens and kept while it is open: a navigation
-        // key turns the modality to keyboard, and swapping the sheet for an
-        // inline menu then would replace the content the user is in
         if (this.openedAsBottomSheet !== undefined) {
             return this.openedAsBottomSheet;
         }
@@ -475,11 +468,6 @@ export class Dropdown extends Component {
         this.popover.open(this.target, props);
     }
 
-    /**
-     * The popover is opened once with its props; every later render of the
-     * dropdown hands it the slots and items of that render through the
-     * objects it already holds, so the open menu follows the parent.
-     */
     syncPopoverContent() {
         const slots = this.props.slots || {};
         for (const name of Object.keys(this.popoverSlots)) {

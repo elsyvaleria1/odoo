@@ -13,7 +13,6 @@ test("columns and sub-columns of a half-day grid", () => {
     const g = new GridGeometry(dt("2019-01-01T00:00"), DAY_HALF);
     expect(g.columnIndexFromDate(dt("2019-01-01T00:00"))).toBe(0);
     expect(g.columnIndexFromDate(dt("2019-01-04T00:00"))).toBe(3);
-    // Grid line 1 is column 0's first half, line 3 column 1's first half.
     expect(g.columnIndexFromColNumber(1)).toBe(0);
     expect(g.columnIndexFromColNumber(2)).toBe(0);
     expect(g.columnIndexFromColNumber(3)).toBe(1);
@@ -21,11 +20,9 @@ test("columns and sub-columns of a half-day grid", () => {
     const sub = g.subColumnFromColNumber(4);
     expect(toISO(sub.start)).toBe(toISO(dt("2019-01-02T12:00")));
     expect(toISO(sub.stop)).toBe(toISO(dt("2019-01-02T23:59:59")));
-    // A record from the 2nd at noon to the 4th at 06:00 spans lines 4 -> 7.
     expect(
         g.gridColumnFromDates(dt("2019-01-02T12:00"), dt("2019-01-04T06:00")),
     ).toEqual([4, 8]);
-    // A stop exactly on a boundary does not reach into the next sub-column.
     expect(
         g.gridColumnFromDates(dt("2019-01-02T00:00"), dt("2019-01-02T12:00")),
     ).toEqual([3, 4]);
@@ -47,7 +44,6 @@ test("sub-column edges: a start rounds down, a stop rounds up", () => {
 
 test("a DST day with no midnight still yields whole columns", () => {
     mockTimeZone("Europe/Brussels");
-    // Range starting before the spring-forward night; 2019-03-31 02:00 -> 03:00.
     const g = new GridGeometry(dt("2019-03-29T00:00"), DAY_HALF);
     const [first, last] = g.gridColumnFromDates(
         dt("2019-03-31T10:00"),
@@ -55,8 +51,6 @@ test("a DST day with no midnight still yields whole columns", () => {
     );
     expect(Number.isInteger(first)).toBe(true);
     expect(Number.isInteger(last)).toBe(true);
-    // 29th, 30th, 31st -> column 2, morning half; the 1st at 10:00 ends in
-    // column 3's first half, so the pill reaches line 8.
     expect([first, last]).toEqual([5, 8]);
 });
 

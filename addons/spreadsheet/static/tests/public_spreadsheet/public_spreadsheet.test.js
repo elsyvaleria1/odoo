@@ -10,8 +10,6 @@ import { contains, mockService } from "@web/../tests/web_test_helpers";
 defineSpreadsheetModels();
 
 let data;
-// Inside the hook, not at module scope: a module-scope mock is the last
-// imported file's for every suite in the bundle.
 beforeEach(() => {
     mockService("http", {
         get: (route, params) => {

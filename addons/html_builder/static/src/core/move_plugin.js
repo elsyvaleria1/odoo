@@ -51,7 +51,6 @@ export class MovePlugin extends Plugin {
         this.isEditableRTL = this.config.isEditableRTL;
         this.isBackendRTL = localization.direction === "rtl";
 
-        // Compute the selectors.
         const verticalSelector = [];
         const verticalExclude = [];
         const horizontalSelector = [];
@@ -86,10 +85,6 @@ export class MovePlugin extends Plugin {
         this.noScrollSelector =
             noScrollSelector.length > 0 ? noScrollSelector.join(", ") : false;
 
-        // Needed for compatibility (with already dropped snippets).
-        // For each row, check if all its columns are either mobile ordered or
-        // not. If they are not consistent, then remove the mobile orders from
-        // all of them, to avoid issues.
         const rowEls = this.editable.querySelectorAll(".row");
         for (const rowEl of rowEls) {
             const columnEls = [...rowEl.children];
@@ -129,7 +124,6 @@ export class MovePlugin extends Plugin {
         const { marginLeft, marginRight } = getComputedStyle(el);
         const totalWidth =
             columnRect.width + parseFloat(marginLeft) + parseFloat(marginRight);
-        // Allow a small margin to cope with rounding.
         return totalWidth >= rowRect.width - 1;
     }
 
@@ -201,8 +195,6 @@ export class MovePlugin extends Plugin {
         if (!this.isMovable(originalEl)) {
             return;
         }
-        // If there is a mobile order, the clone must have an order different
-        // than the existing ones.
         const hasMobileOrder = !!originalEl.style.order;
         if (hasMobileOrder) {
             const siblingEls = [...originalEl.parentNode.children];
@@ -215,8 +207,6 @@ export class MovePlugin extends Plugin {
         if (!this.isMovable(toRemoveEl)) {
             return;
         }
-        // If there is a mobile order, the gap created by the removed element
-        // must be filled in.
         const mobileOrder = toRemoveEl.style.order;
         if (mobileOrder) {
             fillRemovedItemGap(toRemoveEl.parentElement, parseInt(mobileOrder));
@@ -229,15 +219,12 @@ export class MovePlugin extends Plugin {
         }
         const parentEl = droppedEl.parentElement;
 
-        // If the dropped element has a mobile order and if it was dropped in
-        // another snippet, fill the gap left in the starting snippet.
         const mobileOrder = droppedEl.style.order;
         const { startParentEl } = dragState;
         if (mobileOrder && parentEl !== startParentEl) {
             fillRemovedItemGap(startParentEl, parseInt(mobileOrder));
         }
 
-        // Remove all the mobile orders in the new snippet.
         removeMobileOrders(parentEl.children, this.config.mobileBreakpoint);
     }
 
@@ -250,9 +237,6 @@ export class MovePlugin extends Plugin {
                 el !== this.overlayTarget &&
                 window.getComputedStyle(el).display !== "none",
         );
-        // The arrows are not displayed if:
-        // - the target has no visible siblings
-        // - the target is a grid item and is not in mobile view
         return !visibleSiblingEl || (isGridItem && !isMobile);
     }
 
@@ -267,10 +251,6 @@ export class MovePlugin extends Plugin {
         const parentEl = this.overlayTarget.parentNode;
         const siblingEls = parentEl.children;
 
-        // If the target is a column, the ordering in mobile view is independent
-        // from the desktop view. If we are in mobile view, we first add the
-        // mobile order if there is none yet. In the case where we are not in
-        // mobile view, the mobile order is reset.
         const isColumn = parentEl.classList.contains("row");
         if (isMobile && isColumn && !hasMobileOrder) {
             addMobileOrders(siblingEls, this.config.mobileBreakpoint);
@@ -285,19 +265,16 @@ export class MovePlugin extends Plugin {
             direction,
         );
         if (hasMobileOrder) {
-            // Swap the mobile orders.
             const currentOrder = this.overlayTarget.style.order;
             this.overlayTarget.style.order = siblingEl.style.order;
             siblingEl.style.order = currentOrder;
         } else {
-            // Swap the DOM elements.
             siblingEl.insertAdjacentElement(
                 direction === "prev" ? "beforebegin" : "afterend",
                 this.overlayTarget,
             );
         }
 
-        // Scroll to the element.
         if (!this.noScroll && !isElementInViewport(this.overlayTarget)) {
             const { top, height } = this.overlayTarget.getBoundingClientRect();
             const viewportHeight = this.document.defaultView.innerHeight;

@@ -5,10 +5,6 @@ import { ActionButton } from "@voip/softphone/action_button";
 import { ContactInfo } from "@voip/softphone/contact_info";
 import { useService } from "@web/core/utils/hooks";
 
-/**
- * Incoming call screen. Displays information about the caller, along with a
- * series of actions, and buttons to accept or reject the call.
- */
 export class CallInvitation extends Component {
     static components = { ActionButton, ContactInfo };
     static props = { call: t.instanceOf(Call) };

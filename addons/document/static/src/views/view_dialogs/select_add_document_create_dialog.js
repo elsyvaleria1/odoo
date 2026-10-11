@@ -9,20 +9,13 @@ import { SelectCreateDialog } from "@web/views/view_dialogs";
 
 const log = makeLogger("document.add_documents");
 
-/**
- * Picks documents to attach, or to paste as links. What happens to them is
- * the caller's: a chatter composer, a mail wizard, an HTML field.
- */
 export class SelectAddDocumentCreateDialog extends SelectCreateDialog {
     static template = "document.SelectAddDocumentCreateDialog";
     static props = {
         ...SelectCreateDialog.props,
-        /** absent where nothing can be attached yet (an unsaved record) */
         onAddAttachments: t.function().optional(),
         onPasteLinks: t.function(),
-        /** where the attachment copies are made: resModel, resId */
         attachTo: t.object().optional(),
-        /** the links are for visitors: a document must be shared by link */
         linksArePublic: t.boolean().optional(false),
     };
 

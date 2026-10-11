@@ -1,9 +1,6 @@
 // @ts-check
 /** @odoo-module native */
 
-/* Every sentence the dialog shows about an incident. The server sends ids
- * only; this is the one file the translators touch. */
-
 import { _t } from "@web/core/translation";
 
 /** @param {string} id */
@@ -16,7 +13,6 @@ export function stepLabel(id) {
         case "resolved":
             return _t("Fixed");
         default:
-            // A step this client has not been taught: the id beats a blank row.
             return id;
     }
 }

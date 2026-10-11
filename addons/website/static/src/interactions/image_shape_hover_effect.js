@@ -186,7 +186,6 @@ export class ImageShapeHoverEffect extends Interaction {
             const svg = this.getOutgoingSvg();
             await new Promise((resolve) => this.setImgSrc(svg, resolve));
             if (!this.isDestroyed && version === this.sourceVersion) {
-                // Editor mode restores the original after the reverse animation.
                 await this.afterMouseLeave?.(svg, version);
             }
         });

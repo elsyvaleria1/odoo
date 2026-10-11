@@ -27,7 +27,6 @@ export class AttendeeCalendarCommonPopover extends CalendarCommonPopover {
     }
 
     async onWillStart() {
-        // Show status dropdown if user is in attendees list
         if (this.isEventEditable) {
             const stateSelections = await this.orm.call(
                 this.props.model.resModel,

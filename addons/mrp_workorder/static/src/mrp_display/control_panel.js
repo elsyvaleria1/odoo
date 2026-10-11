@@ -42,10 +42,6 @@ export class ControlPanelButtons extends Component {
 
         const resizeObserver = new ResizeObserver(() => this.updateOverflow());
         onMounted(() => {
-            // Observe unconditionally: `ui.isSmall` is only read here once, at
-            // mount, but a later resize/rotation can flip it without a remount
-            // -- if we didn't start observing now, overflow would never be
-            // (re)computed for this instance once that happens.
             resizeObserver.observe(this.workcentersContainer.el);
             if (this.ui.isSmall) {
                 return;
@@ -55,7 +51,6 @@ export class ControlPanelButtons extends Component {
         });
         onWillDestroy(() => resizeObserver.disconnect());
 
-        // A workcenter added or removed after mount changes what has to fit.
         useLayoutEffect(
             () => {
                 if (!this.ui.isSmall) {
@@ -134,10 +129,6 @@ export class ControlPanelButtons extends Component {
         }
     }
 
-    /**
-     * Decide, from the remembered widths, the first button that no longer fits
-     * on the bar. Everything from that index on is rendered in the dropdown.
-     */
     updateOverflow() {
         const container = this.workcentersContainer.el;
         if (!container) {

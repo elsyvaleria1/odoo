@@ -70,7 +70,6 @@ const ARCH = `
         </field>
     </form>`;
 
-/** Counts the parent-section maps the renderer derived: a derived map is a new object. */
 function countParentSectionMaps() {
     const counter = { maps: 0 };
     patchWithCleanup(SectionAndNoteListRenderer.prototype, {
@@ -169,8 +168,6 @@ test("inserting into an earlier section derives parents for insertion and resequ
     await animationFrame();
 
     expect(".o_data_row").toHaveCount(7);
-    // addNewRecordAtIndex first appends under sec2, then moves the new line
-    // into sec1. Both layouts have a different parent for the inserted line.
     expect(counter.maps).toBe(2);
 });
 

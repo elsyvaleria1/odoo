@@ -47,7 +47,6 @@ export class KnowledgeCoverSelector extends ImageSelector {
     };
     setup() {
         super.setup();
-        // Search for images matching the article name when opening the dialog.
         this.unsplashService = useService("unsplash");
         this.state.needle = this.props.searchTerm;
         this.searchUnsplash(this.state.needle);
@@ -153,9 +152,6 @@ export class KnowledgeCoverDialog extends Component {
         this.modalRef = useChildRef();
     }
 
-    /**
-     * Update the article's cover.
-     */
     save(coverId) {
         this.props.save(coverId);
         this.props.close();

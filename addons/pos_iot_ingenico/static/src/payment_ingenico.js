@@ -9,7 +9,6 @@ export class PaymentIngenico extends PaymentInterfaceIot {
         const paymentLine = this.pos.getOrder().getPaymentlineByUuid(uuid);
         return {
             messageType: "Transaction",
-            // The last 13 characters of the uuid is a 52-bit integer, fits in the Number data type.
             TransactionID: parseInt(uuid.replace(/-/g, "").slice(19, 32), 16),
             cid: uuid,
             amount: Math.round(paymentLine.amount * 100),

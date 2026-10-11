@@ -47,28 +47,28 @@ test("Iban Widget full flow", async () => {
             </form>`,
     });
     await contains("td.o_iban_cell");
-    await contains(".o_iban", { count: 0 }); // "Shouldn't display any validation icon while not editing a specific line"
+    await contains(".o_iban", { count: 0 });
     await click("td.o_iban_cell");
     await contains(".o_iban_input_with_validator");
-    await contains(".o_iban", { count: 0 }); // "Shouldn't display any validation icon while iban is empty"
+    await contains(".o_iban", { count: 0 });
     await insertText(".o_iban_input_with_validator", invalidIban, { replace: true });
-    await contains(".o_iban", { count: 0 }); // "Shouldn't change its state of display before edition is finished"
+    await contains(".o_iban", { count: 0 });
     await advanceTime(DELAY);
-    await contains(".o_iban"); // "Should contain a validation icon 400ms after edition"
-    await contains("i.fa-solid.fa-times.o_iban_fail"); // "The validation icon should be the failed one"
-    await contains("i.fa-solid.fa-check.o_iban", { count: 0 }); // "The validation icon shouldn't be the successful one"
+    await contains(".o_iban");
+    await contains("i.fa-solid.fa-times.o_iban_fail");
+    await contains("i.fa-solid.fa-check.o_iban", { count: 0 });
     await click(".o_form_button_save");
-    await contains(".o_iban", { count: 0 }); // "Shouldn't display any validation while not editing"
+    await contains(".o_iban", { count: 0 });
     await click("td.o_iban_cell");
     await contains(".o_iban_input_with_validator");
     await advanceTime(DELAY);
-    await contains("i.fa-solid.fa-times.o_iban_fail"); // "The validation icon should be present while clicking on an already filled IBAN"
+    await contains("i.fa-solid.fa-times.o_iban_fail");
     await insertText(".o_iban_cell .o_input", validIban, { replace: true });
-    await contains("i.fa-solid.fa-times.o_iban_fail"); // "The validation icon shouldn't change during the edition"
+    await contains("i.fa-solid.fa-times.o_iban_fail");
     await advanceTime(DELAY);
-    await contains(".o_iban"); // "Should contain a validation icon 400ms after edition"
-    await contains("i.fa-solid.fa-check.o_iban"); // "The validation icon should be the successful one"
-    await contains("i.fa-solid.fa-times.o_iban_fail", { count: 0 }); // "The validation icon shouldn't be the failed one"
+    await contains(".o_iban");
+    await contains("i.fa-solid.fa-check.o_iban");
+    await contains("i.fa-solid.fa-times.o_iban_fail", { count: 0 });
     await click(".o_form_button_save");
-    await contains(".o_iban", { count: 0 }); // "Shouldn't display any validation while not editing"
+    await contains(".o_iban", { count: 0 });
 });

@@ -633,8 +633,6 @@ export class CommandPalette extends Component {
     /** @param {Event} ev */
     onWindowMouseDown(ev) {
         const target = /** @type {Node} */ (ev.target);
-        // a click in an overlay stacked above the palette (the report of a
-        // failed search) is not a click outside it
         if (
             this.root.el &&
             !this.root.el.contains(target) &&

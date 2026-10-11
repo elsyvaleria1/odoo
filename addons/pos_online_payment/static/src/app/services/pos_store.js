@@ -6,10 +6,6 @@ patch(PosStore.prototype, {
     async setup() {
         await super.setup(...arguments);
         this.data.connectWebSocket("ONLINE_PAYMENTS_NOTIFICATION", async ({ id }) => {
-            // The bus communication is only protected by the name of the channel.
-            // Therefore, no sensitive information is sent through it, only a
-            // notification to invite the local browser to do a safe RPC to
-            // the server to check the new state of the order.
             if (this.getOrder()?.id === id) {
                 this.updateOnlinePaymentsDataWithServer(this.getOrder(), false);
             }
@@ -51,7 +47,6 @@ patch(PosStore.prototype, {
         }
         if ("paid_order" in opData) {
             opData.isPaid = true;
-            // only one line will have the `online_payment_resolver` method
             order.payment_ids.forEach((line) => line.onlinePaymentResolver?.(true));
             return opData;
         } else {
@@ -114,7 +109,6 @@ patch(PosStore.prototype, {
             }
         }
         if (newDoneOnlinePayment || opData["modified_payment_lines"]) {
-            // only one line will have the `online_payment_resolver` method
             order.payment_ids.forEach((line) => line.onlinePaymentResolver?.());
         }
 

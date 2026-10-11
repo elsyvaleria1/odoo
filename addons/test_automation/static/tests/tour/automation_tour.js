@@ -117,10 +117,6 @@ registry.category("web_tour.tours").add("test_automation_on_tag_added", {
         {
             trigger: ".o_select_menu_menu",
             run() {
-                // Compare as a set, not an ordered list: the tour's contract is
-                // *which* triggers a model offers, not the order the selection
-                // happens to be declared in. Pinning the order made adding a
-                // trigger (this fork's "Manual trigger") a tour failure.
                 const options = [
                     ...this.anchor.querySelectorAll(".o_select_menu_item"),
                 ].map((el) => el.textContent);
@@ -364,9 +360,6 @@ registry.category("web_tour.tours").add("test_kanban_automation_view_create_acti
             trigger:
                 "div[name='action_server_ids']:contains(Create Contact with name NameX)",
             async run() {
-                // Font Awesome 6 class for the object_create action icon; this
-                // module's widget template moved off the FA4 names
-                // (fa-plus-square, fa-user-times, fa-clock-o, ...) wholesale.
                 assertEqual(
                     document.querySelectorAll(".fa-solid.fa-square-plus").length,
                     1,
@@ -482,10 +475,6 @@ registry.category("web_tour.tours").add("test_form_view_model_id", {
                         .join(", "),
                     "Values Updated, Timing Conditions, Custom, External",
                 );
-                // Compare as a set, not an ordered list: the tour's contract is
-                // *which* triggers a model offers, not the order the selection
-                // happens to be declared in. Pinning the order made adding a
-                // trigger (this fork's "Manual trigger") a tour failure.
                 assertEqual(
                     Array.from(this.anchor.querySelectorAll(".o_select_menu_item"))
                         .map((el) => el.textContent)
@@ -521,9 +510,6 @@ registry.category("web_tour.tours").add("test_form_view_model_id", {
             run: "click",
         },
         {
-            // The widget reads the model's fields over RPC and offers nothing
-            // until they land, so wait for a trigger only this model has before
-            // reading the whole list.
             content: "wait for the menu to reflect the new model",
             trigger: ".o_select_menu_item:contains(Stage is set to)",
         },
@@ -536,10 +522,6 @@ registry.category("web_tour.tours").add("test_form_view_model_id", {
                         .join(", "),
                     "Values Updated, Timing Conditions, Custom, External",
                 );
-                // Compare as a set, not an ordered list: the tour's contract is
-                // *which* triggers a model offers, not the order the selection
-                // happens to be declared in. Pinning the order made adding a
-                // trigger (this fork's "Manual trigger") a tour failure.
                 assertEqual(
                     Array.from(this.anchor.querySelectorAll(".o_select_menu_item"))
                         .map((el) => el.textContent)
@@ -605,10 +587,6 @@ registry.category("web_tour.tours").add("test_form_view_custom_reference_field",
             trigger:
                 ".o_field_widget[name='trg_field_ref'] .o-autocomplete--dropdown-menu:not(:has(.o_loading))",
             run() {
-                // Assert the record is offered, not the dropdown's chrome:
-                // "Search more..." only appears once the results exceed the
-                // display limit, so pinning it made the assertion depend on how
-                // many stages happen to exist in the database.
                 assertEqual(this.anchor.innerText.includes("test stage"), true);
             },
         },
@@ -633,8 +611,6 @@ registry.category("web_tour.tours").add("test_form_view_custom_reference_field",
             trigger:
                 ".o_field_widget[name='trg_field_ref'] .o-autocomplete--dropdown-menu:not(:has(.o_loading))",
             run() {
-                // See the "test stage" assertion above: "Search more..." is a
-                // function of how many records exist, not of this behaviour.
                 assertEqual(this.anchor.innerText.includes("test tag"), true);
             },
         },
@@ -686,7 +662,6 @@ registry.category("web_tour.tours").add("test_form_view_mail_triggers", {
             run: "click",
         },
         {
-            // Wait for the group this model adds, for the same reason.
             content: "wait for the menu to reflect the threaded model",
             trigger: ".o_select_menu_group:contains(Email Events)",
         },
@@ -759,8 +734,6 @@ function openWorkflowTab() {
             run: "click",
         },
         {
-            // The canvas sits low in a long form; opening its tab brings it
-            // into view, or a pointer aimed at a port there lands on nothing.
             content: "the canvas came into view with its tab",
             trigger: ".o_workflow_canvas_paper .o_flow_editor_node",
             run() {
@@ -845,8 +818,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas", {
             content: "the step names reached the canvas",
             trigger: ".o_workflow_canvas_step_header:contains(first)",
             run() {
-                // Every step accepts an input, so the editor finds no source node
-                // and would call all three unreachable if the flag were left on.
                 assertEqual(
                     document.querySelectorAll(".o_flow_editor_node_disconnected")
                         .length,
@@ -890,9 +861,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas_edit", {
                 ".o_workflow_canvas_toolbar button:contains(Remove connection)[disabled]",
         },
         {
-            // The hitbox path, not the group: it carries a 12px transparent
-            // stroke, so it has a box a tour can call visible where a straight
-            // horizontal edge's own 1.5px path does not.
             content: "select a connection",
             trigger: ".o_workflow_canvas_link .o_flow_editor_connection_hitbox",
             run: "click",
@@ -909,12 +877,8 @@ registry.category("web_tour.tours").add("test_workflow_canvas_edit", {
         },
         {
             content: "and the canvas redrew itself with exactly that one",
-            // Triggering on the host, not on the link: a tour trigger requires a
-            // *visible* element, and a horizontal edge is only as tall as its
-            // stroke. querySelectorAll inside run() does not care.
             trigger: ".o_workflow_canvas_paper > div",
             run() {
-                // The widget's own classes: one per connection, one per step.
                 assertEqual(
                     document.querySelectorAll(
                         ".o_workflow_canvas_paper .o_workflow_canvas_link",
@@ -927,7 +891,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas_edit", {
                     ).length,
                     3,
                 );
-                // One canvas, not the old one with a new one stacked on it.
                 assertEqual(
                     document.querySelectorAll(".o_workflow_canvas_paper > div").length,
                     1,
@@ -944,9 +907,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas_remove_step", {
             content: "wait for the graph",
             trigger: ".o_workflow_canvas_paper .o_workflow_canvas_link",
             run() {
-                // "second" is the middle step, so removing it removes both
-                // edges: the cascade on workflow.edge's node fields, and the
-                // editor's follow-up disconnect for each of them.
                 assertEqual(
                     document.querySelectorAll(
                         ".o_workflow_canvas_paper .o_workflow_canvas_link",
@@ -1026,8 +986,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas_remove_last_step",
             run: "click",
         },
         {
-            // The editor is swapped for the widget's own guidance, which says
-            // what to do next where the editor's generic "No nodes" does not.
             content: "the canvas gives way to the empty-workflow message",
             trigger: ".o_workflow_canvas:contains(This automation has no steps yet)",
             run() {
@@ -1067,8 +1025,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas_drag", {
             },
         },
         {
-            // The step's own body, which is what a real pointer lands on; the
-            // editor's drag handler sits on the article above it.
             content: "drag it onto the second one",
             trigger: ".o_workflow_canvas_paper .o_workflow_canvas_node:first",
             async run(helpers) {
@@ -1102,9 +1058,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas_resize", {
                 window.__wfSize = document
                     .querySelectorAll(".o_workflow_canvas_paper .o_flow_editor_node")[0]
                     .getAttribute("style");
-                // The lowest output port's hit area reaches into this corner,
-                // so whichever of the two wins here decides whether a pointer
-                // resizes the step or starts drawing a connection from it.
                 const handle = document.querySelector(
                     ".o_flow_editor_node .o_flow_editor_node_resize_handle",
                 );
@@ -1124,22 +1077,12 @@ registry.category("web_tour.tours").add("test_workflow_canvas_resize", {
             },
         },
         {
-            // Onto the second step, which the fixture placed down and to the
-            // right: the resize reads the pointer rather than what sits under
-            // it, so the far step is just a coordinate to aim at.
             content: "drag the first step's resize handle away from itself",
             trigger: ".o_flow_editor_node:first .o_flow_editor_node_resize_handle",
             async run(helpers) {
-                // Hover first: drag_and_drop presses at the pointer's CURRENT
-                // position and only then travels to the trigger, so without
-                // this the gesture starts wherever the last step left the
-                // pointer -- which was below the handle, making the drag read
-                // as a shrink and pinning the step to its minimum height.
                 await helpers.hover(
                     ".o_flow_editor_node:first .o_flow_editor_node_resize_handle",
                 );
-                // And an explicit drop point inside the far step: the bare form
-                // drops one pixel ABOVE its top edge, which is also upward.
                 await helpers.drag_and_drop(".o_flow_editor_node:last", {
                     position: { top: 40, left: 60 },
                     relative: true,
@@ -1248,12 +1191,6 @@ registry.category("web_tour.tours").add("test_workflow_canvas_connect", {
             trigger: ".o_workflow_canvas_toolbar:contains(3 steps, 1 connections)",
         },
         {
-            // drag_and_drop always starts from the trigger element -- the helper
-            // reads `this.anchor` and ignores any source passed in options -- so
-            // the trigger must be the port we are dragging FROM.
-            // Port to port: the editor resolves the drop with elementFromPoint
-            // and accepts it only over an input port, so dropping on the step's
-            // body would connect nothing.
             content: "drag a connection from the last step to the first",
             trigger:
                 ".o_flow_editor_node:last .o_flow_editor_port_output[data-port-id='on_success']",

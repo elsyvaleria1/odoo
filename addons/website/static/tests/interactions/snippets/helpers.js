@@ -33,8 +33,6 @@ export async function setupTest(core, wrapwrap) {
     core.interactions[0].interaction.scrollingElement = wrapwrap;
     defineStyle(`.hidden { display: none !important; }`);
     defineStyle(`.h20 { height: 20px; }`);
-    // The unit bundle does not include website.scss. Fixed-header geometry
-    // needs the positioning rule that the public-site bundle supplies.
     defineStyle(
         `.o_header_fixed.o_header_affixed { position: fixed; inset: 0 0 auto 0; }`,
     );

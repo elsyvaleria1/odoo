@@ -12,7 +12,6 @@ patch(ProductScreen.prototype, {
         });
     },
     async _onCouponScan(code) {
-        // IMPROVEMENT: Ability to understand if the scanned code is to be paid or to be redeemed.
         const res = await this.pos.activateCode(code.base_code);
         if (res !== true) {
             this.notification.add(res, { type: "danger" });

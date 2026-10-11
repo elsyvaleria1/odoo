@@ -78,7 +78,6 @@ test("Jump to an existing thread from the cell menu", async () => {
     const sheetId = model.getters.getActiveSheetId();
     await createThread(model, pyEnv, { sheetId, ...toCartesian("B2") }, ["wave"]);
     const action = await getActionMenu(cellMenuRegistry, ["insert_comment"], env);
-    // invisible on cell with a thread
     model.selection.selectCell(1, 1);
     expect(action.isVisible(env)).toBe(true);
 });

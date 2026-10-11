@@ -69,8 +69,6 @@ describe("bridge source generation", () => {
         );
         expect(mod.alpha).toBe(1);
 
-        // a later registration of another namespace under the same name must
-        // not be copied into a bridge that already resolved
         odoo.loader.registerNativeModules({ [spec]: { alpha: 2 } });
         expect(mod.alpha).toBe(1);
     });

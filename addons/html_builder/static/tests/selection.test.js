@@ -28,7 +28,6 @@ test("selection should be were clicked, even when clicking away from popover", a
     thereEl.addEventListener(
         "pointerdown",
         () => {
-            // Simulate change of selection when clicking inside iframe
             editor.shared.selection.setSelection({
                 anchorNode: thereEl,
                 anchorOffset: 0,

@@ -42,15 +42,8 @@ export async function mountRoomBookingView(useBus) {
     let notifyView;
     if (useBus) {
         const { env: pyEnv } = await makeMockServer();
-        // Logout to use the bus service as a public user
         logout();
-        // Subscription to the bus will be done by the component in `mount`.
-        // We need to wait for the subscription to be done before sending notifications.
         const busSubscriptionPromise = waitUntilSubscribe("room_bus_test");
-        /**
-         * Send a notification to the view through the bus and wait for the notification to
-         * be received.
-         */
         notifyView = async (notificationType, bookings) => {
             notificationType = "room#1/" + notificationType;
             await busSubscriptionPromise;

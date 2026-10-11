@@ -36,7 +36,6 @@ export class CapTable extends Component {
                 this.props.action.context?.active_ids || [],
             ]);
             if (Object.keys(res["partner_holder_data"]).length === 0) {
-                // no data, then use sample data
                 res = this.sampleData.getSampleData();
                 this.isSample = true;
             }

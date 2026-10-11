@@ -68,12 +68,9 @@ export class DocumentsOperationConfirmation extends Component {
             documents: this.props.record.data.document_ids.records.length,
             dirty: this.props.record.dirty,
         }));
-        // unconditionally: a destination changed after a cancelled warning
-        // lives only in the record until saved, a clean record saves nothing
         if (!(await this.props.record.save())) {
             return;
         }
-        // a move changing access is refused and reported, then made once accepted
         const confirmed = await this.documentService.moveConfirmingAccess(
             (context) =>
                 this.orm.call(

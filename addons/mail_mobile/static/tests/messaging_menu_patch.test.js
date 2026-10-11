@@ -15,8 +15,6 @@ describe.current.tags("desktop");
 defineMailModels();
 
 test("'backbutton' event should close messaging menu", async () => {
-    // simulate the feature is available on the current device
-    // component must and will be destroyed before the overrideBackButton is unpatched
     patchWithCleanup(methods, {
         overrideBackButton() {},
     });
@@ -24,15 +22,12 @@ test("'backbutton' event should close messaging menu", async () => {
     await openMessagingMenu();
 
     await contains(".o-mail-MessagingMenu");
-    // simulate 'backbutton' event triggered by the mobile app
     const backButtonEvent = new Event("backbutton");
     document.dispatchEvent(backButtonEvent);
     await contains(".o-mail-MessagingMenu", { count: 0 });
 });
 
 test("[technical] messaging menu should properly override the back button", async () => {
-    // simulate the feature is available on the current device
-    // component must and will be destroyed before the overrideBackButton is unpatched
     let overrideBackButton = false;
     patchWithCleanup(methods, {
         overrideBackButton({ enabled }) {

@@ -12,7 +12,6 @@ export class SurveyImageZoomer extends Interaction {
         ".o_survey_img_zoom_image": {
             "t-on-wheel": this.onImageScroll,
             "t-att-style": () => ({
-                // !important is needed to prevent default 'no-transform' on smaller screens.
                 transform: `scale(${this.zoomImageScale}) !important`,
             }),
         },
@@ -34,10 +33,6 @@ export class SurveyImageZoomer extends Interaction {
         fadeIn(this.el, this.fadeInOutDelay);
     }
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
     /**
      * Zoom in/out image on scrolling
      * @param {WheelEvent} ev
@@ -51,10 +46,6 @@ export class SurveyImageZoomer extends Interaction {
         }
     }
 
-    /**
-     * Allow user to close by clicking anywhere (mobile...). Destroying the modal
-     * without using 'hide' would leave a modal-open in the view.
-     */
     async onZoomerClick() {
         await this.waitFor(fadeOut(this.el, this.fadeInOutDelay));
         this.el.remove();
@@ -74,7 +65,6 @@ export class SurveyImageZoomer extends Interaction {
         const bodyHeight = body.clientHeight;
         const newZoomImageScale = this.zoomImageScale + zoomStepNumber * 0.1;
         if (newZoomImageScale <= 0.2) {
-            // Prevent the user from de-zooming too much
             return;
         }
         if (
@@ -82,8 +72,6 @@ export class SurveyImageZoomer extends Interaction {
             (imageWidth * newZoomImageScale > bodyWidth ||
                 imageHeight * newZoomImageScale > bodyHeight)
         ) {
-            // Prevent to user to further zoom in as the new image would becomes too large or too high for the screen.
-            // Dezooming is still allowed to bring back image into frame (use case: resizing screen).
             return;
         }
         this.zoomImageScale = newZoomImageScale;

@@ -31,10 +31,6 @@ export class EmbeddedClipboardComponent extends Component {
         this.copyToClipboardButtonRef = useChildRef();
     }
 
-    //--------------------------------------------------------------------------
-    // HANDLERS
-    //--------------------------------------------------------------------------
-
     async onClickCopyToClipboard() {
         const selection = document.getSelection();
         selection.removeAllRanges();
@@ -42,10 +38,6 @@ export class EmbeddedClipboardComponent extends Component {
         range.selectNodeContents(this.descendants.clipboardContent);
         selection.addRange(range);
         if (document.execCommand("copy")) {
-            // Nor the original `clipboard.write` function nor the polyfill
-            // written in `clipboard.js` does trigger the `clipboard_plugin`
-            // `copy` handler, therefore `execCommand` should be called here so
-            // that html content is properly handled within the editor.
             this.popover.open(this.copyToClipboardButtonRef.el, {
                 tooltip: _t("Content copied to clipboard."),
             });

@@ -40,8 +40,7 @@ export class PaymentButton extends Interaction {
     _canSubmit() {
         const paymentForm = document.querySelector("#o_payment_form");
         if (!paymentForm) {
-            // Payment form is not present.
-            return true; // Ignore the check.
+            return true;
         }
         return (
             document.querySelectorAll('input[name="o_payment_radio"]:checked')

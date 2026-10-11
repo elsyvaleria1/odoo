@@ -7,11 +7,6 @@ import {
 import { htmlReplace } from "@web/core/utils/dom/html";
 import { patch } from "@web/core/utils/patch";
 
-/*
- * Add Youtube #hashtag support.
- * Replace all occurrences of `#hashtag` by a HTML link to a search of the hashtag
- * on the media website
- */
 patch(SocialPostFormatterMixinBase, {
     _formatPost(value) {
         value = super._formatPost(...arguments);
@@ -20,7 +15,6 @@ patch(SocialPostFormatterMixinBase, {
                 value,
                 SocialPostFormatterRegex.REGEX_HASHTAG,
                 (_, before, hashtag) => {
-                    // markup: the regex safely captures `before` and `hashtag`
                     before = markup(before);
                     hashtag = markup(hashtag);
                     return markup`${before}<a href='https://www.youtube.com/results?search_query=%23${encodeURIComponent(

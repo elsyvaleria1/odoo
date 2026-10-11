@@ -37,12 +37,6 @@ registry.category("iot_device_messages").add("fiscal_data_module", {
     messages: FDM_MESSAGES,
     defaultMessage: _t("Fiscal Data Module is connected and operational"),
 
-    /**
-     * The blackbox reports a failure in its response body rather than in
-     * `status`, so an event that reads as a success has to be re-read before
-     * anything acts on it. "000" is operational and "102" is a repeat of a
-     * request it already handled, so neither is an error.
-     */
     normalize(event) {
         const fullErrorCode = event.message ?? event.result?.error?.errorCode;
         const errorCode = fullErrorCode?.substring(0, 3);

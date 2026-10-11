@@ -97,11 +97,6 @@ const DATE_OPTIONS = [
     },
 ];
 
-/**
- * This component is used to select a date filter value.
- * It allows the user to select a month, quarter, year, or a custom date range.
- * It also provides options for relative periods like "last 7 days".
- */
 export class DateFilterDropdown extends Component {
     static template = "spreadsheet.DateFilterDropdown";
     static components = { DropdownItem, DateTimeInput };
@@ -116,9 +111,6 @@ export class DateFilterDropdown extends Component {
         );
     }
 
-    /**
-     * Computes the default selected values based on the current date.
-     */
     _computeDefaultSelectedValues() {
         const currentDay = today();
         this.selectedValues = {
@@ -133,10 +125,6 @@ export class DateFilterDropdown extends Component {
         };
     }
 
-    /**
-     * Updates the default selected values based on the current value.
-     * This method is called whenever the component's props are updated.
-     */
     _applyCurrentValueToSelectedValues(value) {
         this._setRangeToCurrentValue(value);
         switch (value?.type) {
@@ -212,7 +200,6 @@ export class DateFilterDropdown extends Component {
             case "range": {
                 const { from, to } = this.selectedValues.range;
                 if (from && to) {
-                    // Ensure 'to' is after 'from'
                     if (compareDates(deserializeDate(from), deserializeDate(to)) > 0) {
                         this.selectedValues.range.to = from;
                         this.selectedValues.range.from = to;

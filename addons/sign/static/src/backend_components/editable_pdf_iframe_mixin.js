@@ -175,11 +175,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
         onResizeItem(signItem, change, end = false) {
             this.setCanvasVisibility("hidden");
             this.helperLines.show(signItem.el);
-            /**
-             * Apply the changes only if they respect the minimum width/height.
-             * The minimum width is 1% of the page width
-             * The minimum height is 1% of the page height
-             */
             if (change.width >= 0.01 && change.height >= 0.01) {
                 const signItemIds =
                     signItem.data.type === "radio"
@@ -260,9 +255,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             return signItem;
         }
 
-        /**
-         * Handles the selection events of multiple sign elements
-         */
         startMultiElementsSelect() {
             this.animationFrameId = null;
             this.root.addEventListener("mouseup", (e) => this.onMouseUp(e));
@@ -288,10 +280,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             if (isInSelectedElement) {
                 return;
             }
-            /**
-             * Only allow drawing the selection rectangle in empty spaces
-             * where the cursor is auto and the left button is pressed.
-             */
             const cursorStyle = window.getComputedStyle(e.target)["cursor"];
             const cursorButton = e.button;
             if (cursorButton !== 0 || cursorStyle !== "auto") {
@@ -301,10 +289,8 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             e.preventDefault();
             this.resetSelection();
 
-            // Disable text selection while dragging to create selection rectangle
             this.viewerContainer.style.userSelect = "none";
 
-            // Start the selection rectangle drawing process
             this.startPos = this.mousePosition;
             this.isDragging = true;
             this.updateSelectionRect();
@@ -348,27 +334,19 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             }
         }
 
-        /**
-         * Handles the mouse up event if dragging is in progress
-         * It stops the selection rectangle drawing process
-         * It updates the list of selected elements and clears the canvas
-         */
         onMouseUp() {
             if (this.isDragging) {
-                // Enable text selection again
                 this.viewerContainer.style.userSelect = "";
 
                 this.updateSelectedElementsList();
                 this.isDragging = false;
                 this.clearCanvas();
 
-                // Stop the animation frame if it is in progress
                 if (this.animationFrameId) {
                     cancelAnimationFrame(this.animationFrameId);
                     this.animationFrameId = null;
                 }
 
-                // Stop the auto scroll if it is in progress
                 if (this.autoScroll) {
                     this.autoScroll.stopScrolling();
                     this.autoScroll = null;
@@ -376,10 +354,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             }
         }
 
-        /**
-         * Clears the canvas
-         * It sets the zIndex back to 1
-         */
         clearCanvas() {
             const canvas = this.getCanvas();
             canvas.style.zIndex = 1;
@@ -387,9 +361,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
 
-        /**
-         * Recursively updates the selection rectangle until the mouse is released
-         */
         updateSelectionRect() {
             if (this.isDragging) {
                 this.clearCanvas();
@@ -402,11 +373,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             }
         }
 
-        /**
-         * Resets the selection
-         * It removes the multi_selected class from the selected elements and get them unfocused.
-         * It clears the multiDragState and empty the selectedElements list.
-         */
         resetSelection() {
             this.selectedElements?.forEach((element) => {
                 element.el.classList.remove("multi_selected");
@@ -416,10 +382,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.multiDragState = null;
         }
 
-        /**
-         * Draws the selection rectangle on the canvas layer
-         * The zIndex is set to a high value to make it visible above other elements
-         */
         drawSelectionRect() {
             this.clearCanvas();
             const canvas = this.getCanvas();
@@ -436,9 +398,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             ctx.strokeRect(this.startPos.x, this.startPos.y, width, height);
         }
 
-        /**
-         * Returns the selection rectangle
-         */
         getSelectionRect() {
             const x = Math.min(this.startPos.x, this.mousePosition.x);
             const y = Math.min(this.startPos.y, this.mousePosition.y);
@@ -472,7 +431,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             const elemRect = element.getBoundingClientRect();
             const containerRect = this.viewerContainer.getBoundingClientRect();
             const { scrollTop, scrollLeft } = this.viewerContainer;
-            // Convert element coordinates to be relative to the container including scroll position
             const elem = {
                 left: elemRect.left - containerRect.left + scrollLeft,
                 top: elemRect.top - containerRect.top + scrollTop,
@@ -482,18 +440,12 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             return this.doRectanglesIntersect(elem, selectionRect);
         }
 
-        /**
-         * Updates the list of selected elements based on the current selection rectangle
-         * The list is updated by adding the sign elements that intersect the selection rectangle
-         */
         updateSelectedElementsList() {
             const signElements = this.root.querySelectorAll(".o_sign_sign_item");
             const selectionRect = this.getSelectionRect();
             signElements?.forEach((element) => {
                 const { id } = element.dataset;
                 const signItem = this.getSignItemById(id);
-                /* Only add elements to selection if they intersect with the selection rectangle
-                and are not already in the selection list */
                 if (
                     this.getElementIntersectsSelection(element, selectionRect) &&
                     !this.selectedElements?.some((item) => item.data.id === id)
@@ -503,7 +455,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 }
             });
 
-            // Focus at least the first selected element to ensure keyboard events work.
             if (this.selectedElements.length > 0) {
                 this.selectedElements[0].el.focus();
             }
@@ -525,7 +476,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 const pageRect = pageElement.getBoundingClientRect();
                 const viewerRect = viewerContainer.getBoundingClientRect();
 
-                // Convert page position to be relative to the viewer container
                 const pageLeft =
                     pageRect.left - viewerRect.left + viewerContainer.scrollLeft;
                 const pageTop =
@@ -555,11 +505,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             return { page: -1 };
         }
 
-        /**
-         * Handles the copy event for multiple sign items
-         * It copies the selected elements to the clipboard
-         * It shows a notification to the user
-         */
         onCopyItems() {
             if (!this.selectedElements) {
                 return;
@@ -571,26 +516,16 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.notification.add(_t("Sign Items Copied"), { type: "success" });
         }
 
-        /**
-         * Handles the paste event
-         * It creates new radio sets and maps old IDs to new ones
-         * It gets the position data of the mouse with respect to the viewer container to
-         * determine the target page and position for the pasted items
-         * It adjusts the base position of the copied items to ensure they stay within the page bounds
-         */
         async onPasteItems() {
-            // Get the target page and position to paste the items
             const {
                 page: targetPage,
                 posX: baseX,
                 posY: baseY,
             } = this.getPositionData(this.mousePosition.x, this.mousePosition.y);
-            // If the target page is not found, return
             if (targetPage === -1) {
                 return;
             }
 
-            // Create new radio sets and map old IDs to new ones
             const radioSetIdMapping = new Map();
             const uniqueRadioSets = new Set(
                 this.copiedItems
@@ -607,7 +542,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                     radio_item_ids: [],
                 };
             }
-            // Find smallest box that contains all copied items
             const bounds = this.copiedItems.reduce(
                 (acc, item) => {
                     acc.minX = Math.min(acc.minX, item.posX);
@@ -622,9 +556,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             const boxWidth = bounds.maxX - bounds.minX;
             const boxHeight = bounds.maxY - bounds.minY;
 
-            /* Adjust the base paste positions to ensure all items stay within the page. The
-            center of the bounding box can be at most 1 - boxWidth/2 from the left edge.
-            and at most 1 - boxHeight/2 from the top edge. */
             const adjustedBaseX = Math.min(
                 Math.max(baseX, boxWidth / 2),
                 1 - boxWidth / 2,
@@ -634,15 +565,12 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 1 - boxHeight / 2,
             );
 
-            // Calculate offset to move items as a group to the adjusted position
             const centerOffsetX = adjustedBaseX - (bounds.minX + boxWidth / 2);
             const centerOffsetY = adjustedBaseY - (bounds.minY + boxHeight / 2);
 
-            // Create new items with adjusted positioning
             for (const data of this.copiedItems) {
                 const newItemData = { ...data };
                 const id = generateRandomId();
-                // Apply the calculated offset to maintain relative positions
                 const newPosX = data.posX + centerOffsetX;
                 const newPosY = data.posY + centerOffsetY;
 
@@ -653,14 +581,12 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                     posY: newPosY,
                     updated: true,
                 });
-                // Handle special case for radio buttons to maintain grouping
                 if (data.type === "radio") {
                     const newRadioSetId = radioSetIdMapping.get(data.radio_set_id);
                     newItemData.radio_set_id = newRadioSetId;
                     this.radioSets[newRadioSetId].radio_item_ids.push(id);
                 }
 
-                // Add the new item to the page and render it
                 this.signItems[targetPage][id] = {
                     data: newItemData,
                     el: this.renderSignItem(
@@ -672,7 +598,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             this.setTemplateChanged();
             this.refreshSignItems();
 
-            // Slightly offset the mouse position for subsequent paste operations
             this.mousePosition.x += 10;
             this.mousePosition.y += 10;
         }
@@ -780,8 +705,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 (item) => item.el === signElement,
             );
 
-            /* If the sign element is picked up and there are multiple selected elements,
-            then start multi-drag */
             if (isSelectedItemDrag && this.selectedElements.length > 1) {
                 this.startMultiDrag(e);
             } else {
@@ -794,7 +717,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
          * @param {MouseEvent} e - The mouse drag event
          */
         startMultiDrag(e) {
-            // Store initial state for all selected items
             this.multiDragState = {
                 items: this.selectedElements.map((signItem) => {
                     const ItemRect = signItem.el.getBoundingClientRect();
@@ -810,7 +732,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 }),
             };
 
-            // Create composite drag image container
             const dragContainer = document.createElement("div");
             Object.assign(dragContainer.style, {
                 position: "fixed",
@@ -819,7 +740,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 opacity: "0.8",
             });
 
-            // Get the bounding box of all selected elements
             const bounds = this.selectedElements.reduce(
                 (acc, item) => {
                     const rect = item.el.getBoundingClientRect();
@@ -832,11 +752,9 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity },
             );
 
-            // Set container dimensions
             dragContainer.style.width = `${bounds.right - bounds.left}px`;
             dragContainer.style.height = `${bounds.bottom - bounds.top}px`;
 
-            // Create clones of selected elements
             this.selectedElements.forEach((item) => {
                 const itemRect = item.el.getBoundingClientRect();
                 const clone = item.el.cloneNode(true);
@@ -852,13 +770,10 @@ export const EditablePDFIframeMixin = (pdfClass) =>
 
             document.body.appendChild(dragContainer);
 
-            // Calculate offset from cursor to container top-left corner
             const cursorOffsetX = e.clientX - bounds.left;
             const cursorOffsetY = e.clientY - bounds.top;
             e.dataTransfer.setDragImage(dragContainer, cursorOffsetX, cursorOffsetY);
 
-            // Clean up the temporary drag image container after drag starts
-            // and hide the original elements
             requestAnimationFrame(() => {
                 document.body.removeChild(dragContainer);
                 this.selectedElements.forEach(
@@ -886,7 +801,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             e.dataTransfer.setData("page", page.dataset.pageNumber);
             e.dataTransfer.setData("id", signElement.dataset.id);
 
-            // Align drag image with cursor, save offsets for subtracting them on onDrop.
             const rect = signElement.getBoundingClientRect();
             const offsetX = e.clientX - rect.left;
             const offsetY = e.clientY - rect.top;
@@ -894,7 +808,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             e.dataTransfer.setData("offsetX", offsetX);
             e.dataTransfer.setData("offsetY", offsetY);
 
-            // workaround to hide element while keeping the drag image visible
             requestAnimationFrame(() => {
                 if (signElement) {
                     signElement.style.visibility = "hidden";
@@ -916,8 +829,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
          */
         onDragEnd(e) {
             this.scrollCleanup();
-            // Make sign item visible again after dragging ends. It is a mandatory step when
-            // moving items out of bounds since in that flow the items don't get re-rendered.
             if (this.selectedElements) {
                 this.selectedElements.forEach(
                     (item) => (item.el.style.visibility = "visible"),
@@ -963,7 +874,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 this.ghostSignItem,
                 this.helperLines,
             );
-            // workaround to set original element to hidden while keeping the cloned element visible
             requestAnimationFrame(() => {
                 if (this.ghostSignItem) {
                     this.ghostSignItem.style.visibility = "hidden";
@@ -1082,7 +992,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 return;
             }
 
-            // First check if all items can be properly dropped
             const dropPositions = [];
             let allItemsCanBeDropped = true;
 
@@ -1097,10 +1006,8 @@ export const EditablePDFIframeMixin = (pdfClass) =>
                 const itemX = mouseX - item.offsetX;
                 const itemY = mouseY - item.offsetY;
 
-                // Determine exact page and position
                 const positionData = this.getPositionData(itemX, itemY, width, height);
 
-                // If any item would be dropped outside a valid page area, no drop is allowed
                 if (positionData.page === -1) {
                     allItemsCanBeDropped = false;
                 }
@@ -1112,7 +1019,6 @@ export const EditablePDFIframeMixin = (pdfClass) =>
             });
 
             if (allItemsCanBeDropped) {
-                // Update all items' positions
                 dropPositions.forEach(({ item, positionData }) => {
                     const signItem = item.signItem;
                     const initialPage = item.pageNumber;

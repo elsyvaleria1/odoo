@@ -39,7 +39,6 @@ export class IconCreatorDialog extends Component {
         const appId = this.props.appId;
         let iconValue;
         if (this.editedAppData.type !== type) {
-            // different type
             if (this.editedAppData.type === "base64") {
                 iconValue = this.editedAppData.uploaded_attachment_id;
             } else {
@@ -47,7 +46,6 @@ export class IconCreatorDialog extends Component {
                 iconValue = [iconClass, color, backgroundColor];
             }
         } else if (this.editedAppData.type === "custom_icon") {
-            // custom icon changed
             const { iconClass, color, backgroundColor } = this.editedAppData;
             if (
                 this.initialAppData.iconClass !== iconClass ||
@@ -57,7 +55,6 @@ export class IconCreatorDialog extends Component {
                 iconValue = [iconClass, color, backgroundColor];
             }
         } else if (this.editedAppData.uploaded_attachment_id) {
-            // new attachment
             iconValue = this.editedAppData.uploaded_attachment_id;
         }
 

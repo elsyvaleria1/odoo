@@ -34,8 +34,6 @@ registry.category("web_tour.tours").add("PosHrTour", {
             NumberPopup.enterValue("1"),
             NumberPopup.isShown("••••"),
             Dialog.confirm(),
-            // after trying to close the number popup, the error popup should be shown
-            // successfully confirming the dialog would imply that the error popup is actually shown
             PosHr.clickLoginButton(),
             SelectionPopup.has("Pos Employee1", { run: "click" }),
 
@@ -57,14 +55,11 @@ registry.category("web_tour.tours").add("PosHrTour", {
             Dialog.confirm(),
             ProductScreen.isShown(),
 
-            // Create orders and check if the ticket list has the right employee for each order
-            // order for employee 2
             ProductScreen.addOrderline("Desk Pad", "1"),
             ProductScreen.totalAmountIs("1.98"),
             Chrome.clickOrders(),
             TicketScreen.nthRowContains(1, "Pos Employee2", false),
 
-            // order for employee 1
             PosHr.clickLockButton(),
             Chrome.clickBtn("Unlock Register"),
             PosHr.login("Pos Employee1", "2580"),
@@ -75,11 +70,9 @@ registry.category("web_tour.tours").add("PosHrTour", {
             TicketScreen.nthRowContains(1, "Pos Employee2", false),
             TicketScreen.nthRowContains(2, "Pos Employee1", false),
 
-            // Cash in/out should be accessible for all users.
             Chrome.clickMenuOption("Cash In/Out"),
             Dialog.discard(),
 
-            // order for admin
             PosHr.clickCashierName(),
             SelectionPopup.has("Mitchell Admin", { run: "click" }),
             Chrome.createFloatingOrder(),
@@ -88,7 +81,6 @@ registry.category("web_tour.tours").add("PosHrTour", {
             Chrome.clickOrders(),
             TicketScreen.nthRowContains(3, "Mitchell Admin", false),
 
-            // Close register should be accessible by the admin user.
             Chrome.clickMenuOption("Close Register"),
             Dialog.is("Closing Register"),
         ].flat(),
@@ -228,7 +220,7 @@ registry.category("web_tour.tours").add("test_cashier_changed_in_receipt", {
             PosHr.clickCashierName(),
             SelectionPopup.has("Test Employee 3", { run: "click" }),
             PaymentScreen.clickValidate(),
-            ReceiptScreen.cashierNameExists("Test"), // Test Employee 3 (Take the first word)
+            ReceiptScreen.cashierNameExists("Test"),
             ReceiptScreen.clickNextOrder(),
         ].flat(),
 });
@@ -265,29 +257,24 @@ registry.category("web_tour.tours").add("test_cost_and_margin_visibility", {
 registry.category("web_tour.tours").add("pos_hr_go_backend_closed_registered", {
     steps: () =>
         [
-            // Admin --> 403: not the one that opened the session
             Chrome.clickBtn("Backend"),
             SelectionPopup.has("Mitchell Admin", { run: "click" }),
             PosHr.loginScreenIsShown(),
 
-            // Employee with user --> 403
             Chrome.clickBtn("Backend"),
             SelectionPopup.has("Pos Employee1", { run: "click" }),
             PosHr.enterPin("2580"),
             PosHr.loginScreenIsShown(),
 
-            // Employee without user --> 403
             Chrome.clickBtn("Backend"),
             SelectionPopup.has("Test Employee 3", { run: "click" }),
             PosHr.loginScreenIsShown(),
 
-            // Manager without user --> 403
             Chrome.clickBtn("Backend"),
             SelectionPopup.has("Test Manager 2", { run: "click" }),
             PosHr.enterPin("5652"),
             PosHr.loginScreenIsShown(),
 
-            // Manager that opened the session --> access granted
             Chrome.clickBtn("Backend"),
             SelectionPopup.has("Test Manager 1", { run: "click" }),
             PosHr.enterPin("5651").map((step, index, array) => {
@@ -312,33 +299,28 @@ registry.category("web_tour.tours").add("pos_hr_go_backend_opened_registered", {
             Chrome.clickBtn("Open Register"),
             PosHr.clickLoginButton(),
 
-            // Admin --> 403: not the one that opened the session
             SelectionPopup.has("Mitchell Admin", { run: "click" }),
             Chrome.clickBtn("Open Register"),
             Chrome.existMenuOption("Close Register"),
             Chrome.notExistMenuOption("Backend"),
 
-            // Employee with user --> 403
             PosHr.clickCashierName(),
             SelectionPopup.has("Pos Employee1", { run: "click" }),
             PosHr.enterPin("2580"),
             Chrome.notExistMenuOption("Close Register"),
             Chrome.notExistMenuOption("Backend"),
 
-            // Employee without user --> 403
             PosHr.clickCashierName(),
             SelectionPopup.has("Test Employee 3", { run: "click" }),
             Chrome.notExistMenuOption("Close Register"),
             Chrome.notExistMenuOption("Backend"),
 
-            // Manager without user --> 403
             PosHr.clickCashierName(),
             SelectionPopup.has("Test Manager 2", { run: "click" }),
             PosHr.enterPin("5652"),
             Chrome.existMenuOption("Close Register"),
             Chrome.notExistMenuOption("Backend"),
 
-            // Manager that opened the session --> access granted
             PosHr.clickCashierName(),
             SelectionPopup.has("Test Manager 1", { run: "click" }),
             PosHr.enterPin("5651"),
@@ -355,12 +337,10 @@ registry
                 Chrome.clickBtn("Unlock Register"),
                 PosHr.clickLoginButton(),
 
-                // Employee, connected user
                 SelectionPopup.has("Pos Employee1", { run: "click" }),
                 PosHr.enterPin("2580"),
                 Chrome.existMenuOption("Backend"),
 
-                // Manager that opened the session, not connected user
                 PosHr.clickCashierName(),
                 SelectionPopup.has("Test Manager 1", { run: "click" }),
                 PosHr.enterPin("5651"),
@@ -403,7 +383,6 @@ registry
     .add("test_scan_employee_barcode_with_pos_hr_disabled", {
         steps: () =>
             [
-                // scan a barcode with 041 as prefix for cashiers
                 scan_barcode("041123"),
                 Chrome.clickBtn("Open Register"),
                 ProductScreen.isShown(),

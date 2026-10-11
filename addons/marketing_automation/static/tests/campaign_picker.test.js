@@ -172,10 +172,8 @@ onRpc("has_group", () => true);
 onRpc("get_action_marketing_campaign_from_template", (request) => {
     expect.step("get_template");
 
-    // ensure that the passed argument is the expected template
     expect(request.args[0]).toBe("welcome");
 
-    // return an action (which is expected by the tested component)
     return {
         name: "marketing_campaign_action_view",
         type: "ir.actions.act_window",
@@ -193,7 +191,6 @@ test("Marketing Campaign Form - Remove activity", async function () {
         arch: marketingCampaignViews.form,
         resId: 2,
     });
-    // Check that only one grandchildren is displayed
     expect(
         ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body_wrapper > .o_ma_body_wrapper > .o_ma_body",
     ).toHaveCount(1);
@@ -203,43 +200,33 @@ test("Marketing Campaign Form - Remove activity", async function () {
         ),
     );
     await animationFrame();
-    // Check that the grandchildren activity is removed
     expect(
         ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body_wrapper > .o_ma_body_wrapper > .o_ma_body",
     ).toHaveCount(0);
-    // Check that we have two parent activities
     expect(
         ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body",
     ).toHaveCount(2);
-    // Check that we have 3 children activities
     expect(
         ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body_wrapper > .o_ma_body",
     ).toHaveCount(3);
-    // Delete the first parent
     await click(
         queryAll(
             ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body .fa-trash-can",
         )[0],
     );
     await animationFrame();
-    queryOne(".modal.o_technical_modal"); // ensure confirmation modal has been opened
-    await click(queryOne("button:contains('Delete')")); // confirm the deletion
+    queryOne(".modal.o_technical_modal");
+    await click(queryOne("button:contains('Delete')"));
     await animationFrame();
-    // Check that a single parent remains
     expect(
         ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body",
     ).toHaveCount(1);
-    // Check that we still have 2 children activities (1 child remove with the parent)
     expect(
         ".o_ma_hierarchy_container .o_kanban_renderer > .o_kanban_record:not(.o_kanban_ghost):not(:empty) > .o_ma_body_wrapper > .o_ma_body",
     ).toHaveCount(2);
 });
 
-/**
- * Check that the modal opens for the kanban view
- */
 test("Marketing Campaign Template Picker - Kanban override", async function () {
-    // Check that the controller is overriden for the kanban view
     await mountView({
         resModel: "marketing.campaign",
         type: "kanban",
@@ -247,17 +234,13 @@ test("Marketing Campaign Template Picker - Kanban override", async function () {
     });
     await click("button.o-kanban-button-new");
     await animationFrame();
-    queryOne(".modal.o_technical_modal"); // ensure modal has been opened
-    await click(queryOne("button.o_ma_campaign_picker_discard")); // close modal
+    queryOne(".modal.o_technical_modal");
+    await click(queryOne("button.o_ma_campaign_picker_discard"));
     await animationFrame();
-    expect(".modal.o_technical_modal").toHaveCount(0); // ensure modal has been closed
+    expect(".modal.o_technical_modal").toHaveCount(0);
 });
 
-/**
- * Check that the modal opens for the list view
- */
 test("Marketing Campaign Template Picker - List override", async function () {
-    // Check that the controller is overriden for the list view
     await mountView({
         resModel: "marketing.campaign",
         type: "list",
@@ -265,15 +248,12 @@ test("Marketing Campaign Template Picker - List override", async function () {
     });
     await click("button.o_list_button_add");
     await animationFrame();
-    queryOne(".modal.o_technical_modal"); // ensure modal has been opened
-    await click(queryOne("button.o_ma_campaign_picker_discard")); // close modal
+    queryOne(".modal.o_technical_modal");
+    await click(queryOne("button.o_ma_campaign_picker_discard"));
     await animationFrame();
-    expect(".modal.o_technical_modal").toHaveCount(0); // ensure modal has been closed
+    expect(".modal.o_technical_modal").toHaveCount(0);
 });
 
-/**
- * Check that the modal opens for the form view
- */
 test("Marketing Campaign Template Picker - Form override", async function () {
     await mountView({
         resModel: "marketing.campaign",
@@ -282,26 +262,20 @@ test("Marketing Campaign Template Picker - Form override", async function () {
     });
     await click("button.o_form_button_create");
     await animationFrame();
-    queryOne(".modal.o_technical_modal"); // ensure modal has been opened
-    await click(queryOne("button.o_ma_campaign_picker_discard")); // close modal
+    queryOne(".modal.o_technical_modal");
+    await click(queryOne("button.o_ma_campaign_picker_discard"));
     await animationFrame();
-    expect(".modal.o_technical_modal").toHaveCount(0); // ensure modal has been closed
+    expect(".modal.o_technical_modal").toHaveCount(0);
 });
 
-/**
- * Check that the modal functions as expected
- */
 test("Marketing Campaign Template Picker - Template picker", async function () {
-    // Mount web client (displayed view must not be a form) and open the modal
     await mountWithCleanup(WebClient);
     await animationFrame();
     await getService("action").doAction("marketing_campaign_action_view");
     expect("button.o_form_button_create").toHaveCount(0);
     await click("button.o-kanban-button-new");
     await animationFrame();
-    // modal is open
 
-    // check that template cards have content
     expect(
         ".o_ma_campaign_picker_active h3.card-title:contains('Start from scratch')",
     ).toHaveCount(1);
@@ -309,7 +283,6 @@ test("Marketing Campaign Template Picker - Template picker", async function () {
         ".o_ma_campaign_picker_active p.card-text:contains('average person eats 3')",
     ).toHaveCount(1);
 
-    // check that there can be only one "active card"
     const [card_from_scratch, card_hot_contacts] = queryAll(
         "div.card.o_ma_campaign_picker_card",
     );
@@ -318,7 +291,6 @@ test("Marketing Campaign Template Picker - Template picker", async function () {
     await animationFrame();
     expect(card_from_scratch).not.toHaveClass("o_ma_campaign_picker_active");
     expect(card_hot_contacts).toHaveClass("o_ma_campaign_picker_active");
-    // get to the next page
     await click(queryAll(".o_ma_campaign_template_picker_dialog a.nav-link")[1]);
     await animationFrame();
     const card_welcome_flow = queryFirst("div.card.o_ma_campaign_picker_card");
@@ -326,21 +298,17 @@ test("Marketing Campaign Template Picker - Template picker", async function () {
     await animationFrame();
     expect(card_welcome_flow).toHaveClass("o_ma_campaign_picker_active");
 
-    // go back to the first page and ensure all cards are unselected
     await click(queryAll(".o_ma_campaign_template_picker_dialog a.nav-link")[0]);
     await animationFrame();
     for (const templateCard of queryAll("div.card.o_ma_campaign_picker_card")) {
         expect(templateCard).not.toHaveClass("o_ma_campaign_picker_active");
     }
 
-    // load the template
     expect.verifySteps([]);
     await click(queryOne("button.o_ma_campaign_picker_create"));
     await animationFrame();
-    // check that the template is loaded
     expect.verifySteps(["get_template"]);
 
-    // we should now be in a form view
     expect("button.o_form_button_create").not.toHaveCount(0);
     await animationFrame();
 });

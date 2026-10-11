@@ -7,7 +7,6 @@ import { Domain } from "@web/core/domain";
 export class PivotOdooCorePlugin extends OdooCorePlugin {
     handle(cmd) {
         switch (cmd.type) {
-            // this command is deprecated. use UPDATE_PIVOT instead
             case "UPDATE_ODOO_PIVOT_DOMAIN":
                 this.dispatch("UPDATE_PIVOT", {
                     pivotId: cmd.pivotId,

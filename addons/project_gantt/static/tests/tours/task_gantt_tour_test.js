@@ -1,6 +1,3 @@
-/**
- * Add custom steps to go to map and gantt view in Project app
- */
 import "@project/../tests/tours/project_tour";
 
 import { registry } from "@web/core/registry";

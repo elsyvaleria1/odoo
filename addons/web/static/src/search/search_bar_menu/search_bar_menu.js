@@ -98,9 +98,6 @@ export class SearchBarMenu extends Component {
         };
         onWillStart(refreshRegistryItems);
         onWillDestroy(() => keepLast.cancel());
-        // the registry predicates read the search model, not this component's
-        // props (a parent's slot object is new on every render), so they are
-        // re-asked when the model changes and not per keystroke in the bar
         useBus(this._searchModel, SearchModelEvent.UPDATE, () => {
             this.state.searchModelUpdates++;
             return refreshRegistryItems();

@@ -6,8 +6,6 @@ import { stepUtils } from "./tour_step_utils.js";
 
 registry.category("web_tour.tours").add("test_shop_floor", {
     steps: () => [
-        // SHOP FLOOR CONFIGURATION
-        // Select the workcenter the first time we enter in shopfloor.
         ...stepUtils.openWorkcentersSelector(),
         ...stepUtils.addWorkcenterToDisplay("Jungle"),
         ...stepUtils.addWorkcenterToDisplay("Savannah"),
@@ -19,7 +17,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
                 helper.assertSearchFacets([{ value: "MO Ready" }]);
             },
         },
-        // Select two employees: one by scanning her badge ID and one by clicking on him.
         ...stepUtils.openEmployeesList(),
         {
             content: "Scan Abbie Seedy's badge",
@@ -28,7 +25,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
         },
         { trigger: ".o_mrp_operatos_dialog li[name='Abbie Seedy'].active" },
         ...stepUtils.addEmployee("Billy Demo"),
-        // Confirm the employees' selection.
         { trigger: ".modal-footer button.btn-primary", run: "click" },
         { trigger: ".o_mrp_employees_panel li:contains(Billy Demo)", run: "click" },
         {
@@ -42,7 +38,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
             run: "click",
         },
 
-        // PROCESS FIRST WORKORDER
         {
             trigger: '.o_work_centers_container button.active:contains("Savannah")',
             run() {
@@ -70,12 +65,9 @@ registry.category("web_tour.tours").add("test_shop_floor", {
         },
         {
             content: "Register production check",
-            // The header click started the work order, so its first check is current
-            // and its button is the primary one.
             trigger: ".o_mrp_record_line:contains('Register Production') .btn-primary",
             run: "click",
         },
-        // Handle wizard.mrp.production.update.serial wizard
         {
             content: "Register production: Giraffe",
             trigger: ".o_workorder_bar_content:contains('Generate Lot') .btn-primary",
@@ -85,11 +77,9 @@ registry.category("web_tour.tours").add("test_shop_floor", {
             trigger: ".btn-primary:contains('Validate')",
             run: "click",
         },
-        // Produced product's lot should be displayed and "Register Production" should be crossed.
         { trigger: ".text-decoration-line-through:contains('Register Production')" },
         { trigger: ".o_line_value:contains('0000001')" },
 
-        // Check the instruction then mark it as read.
         { trigger: ".o_mrp_record_line:nth-child(2) .fa-info", run: "click" },
         {
             trigger: ".o_tablet_popups.o_worksheet_modal .o_tablet_instruction_note",
@@ -171,7 +161,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
                 ".o_work_center_btn:contains('Savannah) .o_tabular_nums:contains('0')",
         },
 
-        // PROCESS SECOND WORKORDER
         ...stepUtils.clickOnWorkcenterButton("Jungle"),
         {
             trigger: ".o_mrp_display_record:not(.o_demo)",
@@ -260,8 +249,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
         },
         { trigger: ".o_nocontent_help" },
 
-        // CREATE NEW MO
-        // Leave Shop Floor to create a new MO from the Manufacturing app.
         ...stepUtils.closeShopFloor(),
         {
             content: "Switch to Manufacturing",
@@ -319,7 +306,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
             },
         },
         ...stepUtils.closeShopFloor(),
-        // After using to Shopfloor smart button on MO, should ave active WC as overview
         { trigger: ".o_menuitem[href='/odoo/shop-floor']", run: "click" },
         {
             trigger: ".o_work_centers",
@@ -332,7 +318,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
                 ]);
             },
         },
-        // Leave Shop Floor before to end the tour.
         ...stepUtils.closeShopFloor(),
         { trigger: ".o_apps" },
     ],
@@ -340,7 +325,6 @@ registry.category("web_tour.tours").add("test_shop_floor", {
 
 registry.category("web_tour.tours").add("test_shop_floor_auto_select_workcenter", {
     steps: () => [
-        // Select 3 available Work Centers.
         ...stepUtils.openWorkcentersSelector(),
         ...stepUtils.addWorkcenterToDisplay("Preparation Table 1"),
         ...stepUtils.addWorkcenterToDisplay("Preparation Table 2"),
@@ -358,7 +342,6 @@ registry.category("web_tour.tours").add("test_shop_floor_auto_select_workcenter"
                 ]);
             },
         },
-        // Exit the Shop Floor and re-open it: WC buttons should be the same.
         ...stepUtils.closeShopFloor(),
         { trigger: ".o_menuitem[href='/odoo/shop-floor']", run: "click" },
         {
@@ -373,14 +356,12 @@ registry.category("web_tour.tours").add("test_shop_floor_auto_select_workcenter"
                 ]);
             },
         },
-        // Finally check selectedWorkCenter preserved when coming back to Shop Floor via breadcrumbs
         ...stepUtils.clickOnWorkcenterButton("Furnace"),
         {
             trigger: ".o_mrp_display_record .card-footer button.o_btn_icon",
             run: "click",
         },
         { trigger: 'button[name="openMO"]', run: "click" },
-        // In the MO form view, click the breadcrumb “Shop Floor”, to go back to ShopFloor
         { trigger: ".o_breadcrumb a:contains('Shop Floor')", run: "click" },
         {
             content: "Check the active Work-Center is Furnace",
@@ -395,7 +376,6 @@ registry.category("web_tour.tours").add("test_shop_floor_auto_select_workcenter"
                 ]);
             },
         },
-        // Exit the Shop Floor and open it from a WO form view.
         ...stepUtils.closeShopFloor(),
         { trigger: ".o_menuitem[href='/odoo/work-centers']", run: "click" },
         {
@@ -405,7 +385,6 @@ registry.category("web_tour.tours").add("test_shop_floor_auto_select_workcenter"
         { trigger: "a[data-menu-xmlid='mrp.menu_mrp_workorder_todo']", run: "click" },
         { trigger: "[name='workcenter_id'][data-tooltip='Furnace']", run: "click" },
         { trigger: "button[name='action_view_mes']", run: "click" },
-        // Check whatever was selected, when we come from a WO form view, only its WC is displayed.
         {
             trigger: ".o_action.o_mrp_display",
             run: () => {
@@ -419,24 +398,20 @@ registry.category("web_tour.tours").add("test_shop_floor_auto_select_workcenter"
 
 registry.category("web_tour.tours").add("test_shop_floor_my_wo_filter_with_pin_user", {
     steps: () => [
-        // Select the right workcenter.
         ...stepUtils.openWorkcentersSelector(),
         ...stepUtils.addWorkcenterToDisplay("Winter's Workshop"),
         ...stepUtils.confirmWorkcentersSelection(),
-        // Open the employee panel and add both employees.
         { trigger: 'button.o_work_center_btn:contains("Winter\'s Workshop")' },
         ...stepUtils.openEmployeesList(),
         ...stepUtils.addEmployee("John Snow"),
         ...stepUtils.addEmployee("Queen Elsa"),
         { trigger: ".modal-footer button.btn-primary", run: "click" },
-        // Select the first one => The employee is selected.
         {
             trigger:
                 ".o_mrp_employees_panel li:contains('John Snow'):not(.o_admin_user)",
             run: "click",
         },
         { trigger: ".o_mrp_employees_panel li:contains('John Snow').o_admin_user" },
-        // Select the second one => Her PIN code must be entered before to be selected.
         {
             trigger:
                 ".o_mrp_employees_panel li:contains('Queen Elsa'):not(.o_admin_user)",
@@ -461,7 +436,6 @@ registry.category("web_tour.tours").add("test_shop_floor_my_wo_filter_with_pin_u
 
         { trigger: ".o_mrp_display_record:contains('TWH/MO/00002').o_active" },
         ...stepUtils.clickOnWorkcenterButton("My WO"),
-        // Check the right WO is displayed.
         {
             trigger:
                 ".o_mrp_display_content:not(:has(.o_mrp_display_record:contains(TWH/MO/00001)))",
@@ -485,7 +459,6 @@ registry.category("web_tour.tours").add("test_shop_floor_my_wo_filter_with_pin_u
                 });
             },
         },
-        // Select the second employee and check only the right WO is shown.
         { trigger: ".o_mrp_employees_panel li:contains(Queen Elsa)", run: "click" },
         ...stepUtils.enterPIN("41213"),
         { trigger: ".o_admin_user:contains(Queen Elsa)" },
@@ -511,7 +484,6 @@ registry.category("web_tour.tours").add("test_shop_floor_my_wo_filter_with_pin_u
                 });
             },
         },
-        // Select again the first employee and check again only its WO is displayed.
         { trigger: ".o_mrp_employees_panel li:contains(John Snow)", run: "click" },
         { trigger: ".o_admin_user:contains(John Snow)" },
         {
@@ -588,7 +560,6 @@ registry
     .category("web_tour.tours")
     .add("test_partial_backorder_with_multiple_operations", {
         steps: () => [
-            // Make sure workcenter is available.
             ...stepUtils.openWorkcentersSelector(),
             ...stepUtils.addWorkcenterToDisplay("Assembly Line"),
             ...stepUtils.confirmWorkcentersSelection(),
@@ -783,7 +754,6 @@ registry
                 trigger: ".o_mrp_display_record:has(.card-title:contains(SMO1-002))",
                 run() {},
             },
-            // Process the operations for SMO2 in reverse order and consume more than expected
             {
                 trigger:
                     ".o_mrp_display_record:has(.card-title:contains(SMO2)) .o_mrp_record_line:contains(Register Production) button.fa-plus",
@@ -872,23 +842,18 @@ registry
 
 registry.category("web_tour.tours").add("test_operator_assigned_to_all_work_orders", {
     steps: () => [
-        // Select workcenter for the station
         ...stepUtils.openWorkcentersSelector(),
         ...stepUtils.addWorkcenterToDisplay("Workcenter1"),
         ...stepUtils.confirmWorkcentersSelection(),
-        //Open the employee panel, select Anita Olivier, close the selector
         ...stepUtils.openEmployeesList(),
         ...stepUtils.addEmployee("Anita Olivier"),
         { trigger: ".modal-footer button.btn-primary", run: "click" },
-        // Select Anita Olivier in the side panel
         { trigger: ".o_mrp_employees_panel li:contains(Anita Olivier)", run: "click" },
         {
             trigger: ".o_mrp_employees_panel li:contains(Anita Olivier).o_admin_user",
             run() {},
         },
-        // Switch to Workcenter1
         ...stepUtils.clickOnWorkcenterButton("Workcenter1"),
-        // Complete both operations
         {
             trigger:
                 ".o_mrp_display_record:has(.card-header:contains(OP1)) button:contains(Mark as Done)",
@@ -908,7 +873,6 @@ registry.category("web_tour.tours").add("test_automatic_backorder_no_redirect", 
         ...stepUtils.openWorkcentersSelector(),
         ...stepUtils.addWorkcenterToDisplay("Workcenter1"),
         ...stepUtils.confirmWorkcentersSelection(),
-        // Switch to Workcenter1
         ...stepUtils.clickOnWorkcenterButton("Workcenter1"),
         {
             trigger:
@@ -1088,8 +1052,6 @@ registry.category("web_tour.tours").add("test_add_component_from_shop_floor", {
         },
         {
             content: "Await for the Component to be added",
-            // The catalog line's remove button is `fa-trash-can` (product_catalog/order_line),
-            // the FontAwesome 6+ name. `fa-trash` is the FA4/5 spelling and matches nothing.
             trigger:
                 ".modal-content .o_kanban_record:contains('Product 1') .fa-trash-can",
         },

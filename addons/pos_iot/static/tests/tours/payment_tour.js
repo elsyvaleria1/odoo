@@ -66,7 +66,6 @@ registry.category("web_tour.tours").add("payment_terminals_tour", {
                 run: "click",
                 expectUnloadPage: true,
             },
-            // PART 1: Pay exactly the price of order. Should automatically go to receipt screen.
             {
                 content: "confirm dialog",
                 trigger: ".modal .modal-footer .btn-primary:contains(Open Register)",

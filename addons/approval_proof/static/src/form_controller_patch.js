@@ -3,7 +3,6 @@ import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import { FormController } from "@web/views/form";
 
-// the button a decision is taken with, and the method that takes it with a proof
 const PROVEN_BUTTONS = {
     "approval.request": { action_approve: ["approve", "action_approve_with_proof"] },
     "wizard.approval.request.decide": {

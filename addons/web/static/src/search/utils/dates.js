@@ -308,7 +308,6 @@ export function getMonthPeriodOptions(referenceMoment, optionsParams) {
     return [...Array(endMonth - startMonth + 1).keys()]
         .map((i) => {
             const monthOffset = startMonth + i;
-            // one month count: a Temporal duration cannot mix signs
             const date = referenceMoment.add({
                 months: monthOffset + 12 * clamp(0, startYear, endYear),
             });

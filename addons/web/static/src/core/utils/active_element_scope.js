@@ -50,10 +50,6 @@ export function useOwnedActiveElement() {
     return scope;
 }
 
-// a component that renders a dialog mounts after that dialog took the
-// active element (children mount first): the element it was mounted in
-// is its scope while that element stands, exactly as a scope captured at
-// registration would be. An active element a child takes later is not.
 /** @returns {() => Document | HTMLElement} */
 export function useActiveElementScope() {
     const node = /** @type {any} */ (useScope());

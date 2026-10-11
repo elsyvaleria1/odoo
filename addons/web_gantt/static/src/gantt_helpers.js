@@ -138,7 +138,6 @@ export function getCellColor(cellPart, subSlotUnavailabilities, isToday) {
         return null;
     }
     if (sum === cellPart) {
-        // Every sub-slot is off: one flat colour, not a gradient of one stop.
         return `background-color:${getCellPartColor(1, isToday)}`;
     }
     const colors = subSlotUnavailabilities.map((d) => getCellPartColor(d, isToday));
@@ -228,7 +227,6 @@ export function getClosestCell(ctx, rowId) {
         const selector = rowId
             ? `.o_gantt_cells .o_gantt_cell:not(.o_drag_hover)[data-row-id='${CSS.escape(rowId)}']`
             : `.o_gantt_cells .o_gantt_cell:not(.o_drag_hover)`;
-        // Nothing to be closest to when the row has no unfolded cell left.
         cell = getClosest(ref.el.querySelectorAll(selector), pointer) || null;
         part = cell ? getHoveredCellPart(cell, pointer.x, scale.cellPart, rtl) : 0;
     }
@@ -338,7 +336,6 @@ function getBadgeText(date, diff, scale, withDate = false) {
     let text;
     switch (time) {
         case "minute":
-            // A time alone reads wrong once the drag crosses midnight.
             text = toLocaleString(date, withDate ? DATETIME_SHORT : TIME_SIMPLE);
             break;
         case "hour":
@@ -387,12 +384,8 @@ export function getBadges(
     return { startBadge, stopBadge };
 }
 
-// Resizable hook handles
-
 const HANDLE_CLASS_START = "o_handle_start";
 const HANDLE_CLASS_END = "o_handle_end";
-
-// Draggable hooks
 
 export const useGanttConnectorDraggable = makeDraggableHook({
     name: "useGanttConnectorDraggable",
@@ -495,7 +488,7 @@ export const useGanttDraggable = makeDraggableHook({
         const isDifferentPart = part !== current.cell.part;
 
         if (cell && !cell.matches(cellSelector)) {
-            cell = null; // Not a cell
+            cell = null;
         }
         if (cell && cell.classList.contains("o_gantt_cell_folded")) {
             return;
@@ -505,14 +498,12 @@ export const useGanttDraggable = makeDraggableHook({
         current.cell.part = part;
 
         if (cell) {
-            // Recompute cell style if in a different cell
             if (isDifferentCell) {
                 const style = getComputedStyle(cell);
                 current.cell.gridRow = style.getPropertyValue("grid-row");
                 current.cell.gridColumnStart =
                     getColumnStart(style) + current.gridColumnOffset;
             }
-            // Assign new grid coordinates if in different cell or different cell part
             if (isDifferentCell || isDifferentPart) {
                 const { pillSpan } = current;
                 const { gridRow, gridColumnStart: start } = current.cell;
@@ -542,7 +533,6 @@ export const useGanttDraggable = makeDraggableHook({
             current.cell.col = null;
         }
 
-        // Attach or remove cell ghost
         if (isDifferentCell) {
             if (cell) {
                 cell.after(current.cellGhost);
@@ -663,14 +653,11 @@ export const useGanttResizable = makeDraggableHook({
         showHandles: [Function],
     },
     onComputeParams({ ctx, params, addCleanup, addEffectCleanup, getRect }) {
-        // Scoped to this hook instance so two simultaneously-mounted gantt
-        // views don't fight over the same DOM nodes.
         const handles = {
             start: document.createElement("div"),
             end: document.createElement("div"),
         };
 
-        /** Pill currently showing the handles, or null. */
         let handlesPill = null;
 
         const showHandlesOn = (pill) => {
@@ -709,11 +696,6 @@ export const useGanttResizable = makeDraggableHook({
             }
         };
 
-        // Delegated on the grid instead of bound per pill. This effect is keyed on
-        // param VALUES, so it does not re-run when a re-render replaces the pills —
-        // and it can even run while none exist yet: switching the gantt range bound
-        // zero elements and never rebound, so hovering a pill afterwards showed no
-        // resize handles at all.
         const onGridPointerOver = (ev) => {
             if (ctx.dragging || ctx.willDrag) {
                 return;
@@ -725,8 +707,6 @@ export const useGanttResizable = makeDraggableHook({
             showHandlesOn(pill);
         };
 
-        // ``pointerout`` also fires when moving onto a descendant (a handle is a
-        // child of the pill), hence the containment check.
         const onGridPointerOut = (ev) => {
             if (!handlesPill || ev.target.closest?.(params.elements) !== handlesPill) {
                 return;
@@ -756,12 +736,9 @@ export const useGanttResizable = makeDraggableHook({
         handles.end.className = `${params.handles} ${HANDLE_CLASS_END}`;
         handles.end.style.cursor = `${params.rtl ? "w" : "e"}-resize`;
 
-        // Override "full" and "element" selectors: we want the draggable feature
-        // to apply to the handles
         ctx.pillSelector = ctx.elementSelector;
         ctx.fullSelector = ctx.elementSelector = `.${params.handles}`;
 
-        // Force the handles to stay in place
         ctx.followCursor = false;
     },
     onDragStart({ ctx, addStyle }) {
@@ -935,7 +912,6 @@ export const useGanttSelectable = makeDraggableHook({
     },
     onDragStart({ ctx, removeClass }) {
         const { current } = ctx;
-        // Useless on cells, annoying on pills
         removeClass(current.element, "o_dragged");
         return getResult(current);
     },
@@ -957,7 +933,6 @@ export const useGanttSelectable = makeDraggableHook({
         return getResult(current);
     },
     onDragEnd() {
-        // Needed in order to be used in hook caller
         return {};
     },
 });

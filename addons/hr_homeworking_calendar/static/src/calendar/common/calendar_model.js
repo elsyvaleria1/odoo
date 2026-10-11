@@ -29,8 +29,6 @@ patch(AttendeeCalendarModel.prototype, {
             filters[filters.length - 1].type === "all" &&
             filters[filters.length - 1].active
         ) {
-            // Object keys are strings; every other producer of an attendee id
-            // here yields a number, and the guard below compares against one.
             attendeeIds = Object.keys(this.partnerColorMap).map(Number);
         } else {
             attendeeIds = (filters || [])
@@ -51,10 +49,6 @@ patch(AttendeeCalendarModel.prototype, {
 
     async loadWorkLocations(data) {
         const res = await this.fetchEventLocation(data);
-        // More than one employee is a multi calendar whoever they belong to.
-        // Asking only whether somebody ELSE appears answers "no" for a user with
-        // an employee in each of two companies, and the single-calendar branch
-        // keeps one event per day, so all but one of them silently disappear.
         this.multiCalendar =
             Object.keys(res).length > 1 ||
             Object.values(res).some((location) => location.user_id !== user.userId);
@@ -87,9 +81,6 @@ patch(AttendeeCalendarModel.prototype, {
                     ? employee.exceptions[dayISO]
                     : employee[`${dayName}_location_id`];
                 if (this.multiCalendar) {
-                    // Every day in the range gets an entry even when nobody has a
-                    // location that day: the header reads `Object.keys()` on it
-                    // without a guard, so a missing day is a TypeError there.
                     events[dayISO] ??= {};
                     const locationType = workLocationData?.location_type;
                     if (!locationType) {

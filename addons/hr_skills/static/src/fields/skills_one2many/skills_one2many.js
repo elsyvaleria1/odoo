@@ -36,11 +36,6 @@ export class SkillsListRenderer extends CommonSkillsListRenderer {
         return root.data.employee_id?.id || false;
     }
 
-    /**
-     * The history report carries its own record rules (HR users see everyone,
-     * a manager their subordinates), so asking it directly answers both "may I
-     * open it" and "is there anything to see" in one query.
-     */
     async countHistoryRows() {
         if (this.props.list.context.no_timeline || !this.employeeId) {
             return 0;

@@ -32,7 +32,6 @@ export class MediaVideo extends Interaction {
             },
             "t-on-hide.bs.modal": (event) => {
                 const version = this.popupOpenVersion;
-                // A later listener can cancel this close during bubbling.
                 this.waitFor().then(
                     this.bindDeferred(() => {
                         if (
@@ -44,7 +43,6 @@ export class MediaVideo extends Interaction {
                         }
                         this.autoplayRequest = null;
                         if (this.iframeEl) {
-                            // Opening restores the configured source through the service.
                             delete this.iframeEl.dataset.nocookieSrc;
                             this.iframeEl.src = "";
                             log.lifecycle(
@@ -61,7 +59,6 @@ export class MediaVideo extends Interaction {
                     return;
                 }
                 this.cookiesAccepted = true;
-                // Cookie interactions restore URLs during the same dispatch.
                 this.waitFor().then(this.bindDeferred(this.activateAutoplay));
             },
         },

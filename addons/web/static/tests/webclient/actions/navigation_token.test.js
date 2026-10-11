@@ -129,6 +129,5 @@ test("already-stale settlement consumes a source rejection", async () => {
     await expect(stale.settle(Promise.reject(new Error("source")))).rejects.toThrow(
         SupersededError,
     );
-    // HOOT's unhandled rejection collector must remain empty after settlement.
     await new Promise((resolve) => setTimeout(resolve, 0));
 });

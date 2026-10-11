@@ -8,7 +8,6 @@ import { useViewConfig } from "@web/core/view_config_hooks";
 import { useViewModel } from "@web/model/model";
 import { standardWidgetProps } from "@web/views/widgets";
 
-/** The actions a list row offers on its document, as icons. */
 export class DocumentsListActionWidget extends Component {
     static props = { ...standardWidgetProps };
     static template = "document.DocumentsListActionWidget";
@@ -40,8 +39,6 @@ export class DocumentsListActionWidget extends Component {
             {
                 documentService: this.documentService,
                 model: this.model,
-                // a row's change is its own, unless the row is a folder,
-                // which the search panel lists too
                 reload: () =>
                     this.props.record.data.type === "folder"
                         ? this.model._notifyChange()

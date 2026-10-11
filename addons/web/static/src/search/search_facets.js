@@ -157,9 +157,6 @@ export function getFacets({
         if (tooltip) {
             facet.tooltip = tooltip;
         }
-        // A groupby facet never becomes a domain-editable chip, even when its
-        // filter carries a domain: editing it as a custom filter would drop
-        // the groupby half of the item.
         if (hasItemDomain && type !== "groupBy") {
             facet.domain = computeQueryGroupDomain(
                 group,

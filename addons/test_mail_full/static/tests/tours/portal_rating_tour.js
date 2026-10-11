@@ -5,7 +5,6 @@ const ratingCardSelector = ".o_website_rating_card_container";
 registry.category("web_tour.tours").add("portal_rating_tour", {
     steps: () => [
         {
-            // Ensure that the rating data has been fetched before making a negative assertion for rating cards.
             trigger:
                 "#chatterRoot:shadow .o-mail-Message-body:text(Message without rating)",
         },
@@ -37,7 +36,6 @@ registry.category("web_tour.tours").add("portal_display_rating_tour", {
 registry.category("web_tour.tours").add("portal_not_display_rating_tour", {
     steps: () => [
         {
-            // Ensure that the rating data has been fetched before making a negative assertion for rating cards.
             trigger:
                 "#chatterRoot:shadow .o-mail-Message-body:text(Message with rating)",
         },

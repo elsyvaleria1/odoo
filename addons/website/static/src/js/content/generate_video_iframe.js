@@ -53,7 +53,6 @@ export function generateVideoIframe(parentEl, manageIframeSrcFct) {
         customSrcManager: !!manageIframeSrcFct,
     }));
     if (isVideoInClosedPopup(parentEl)) {
-        // A consent event must not load a popup that has never been opened.
         iframeEl.setAttribute("src", "about:blank");
         log.lifecycle("video source deferred until popup opening");
     } else {

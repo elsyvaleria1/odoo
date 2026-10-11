@@ -80,7 +80,6 @@ export class BuilderNumberInput extends Component {
                 /(?<savedValue>[\d.e+-]+)(?<savedUnit>\w*)/,
             ).groups;
             if (savedUnit || this.props.saveUnit) {
-                // Convert value from saveUnit to unit
                 value = convertNumericToUnit(
                     parseFloat(savedValue),
                     savedUnit || this.props.saveUnit,
@@ -88,7 +87,6 @@ export class BuilderNumberInput extends Component {
                     getHtmlStyle(this.builderContext.getEditingElement().ownerDocument),
                 );
             }
-            // Put *at most* 3 decimal digits
             return parseFloat(parseFloat(value).toFixed(3)).toString();
         });
     }
@@ -112,7 +110,6 @@ export class BuilderNumberInput extends Component {
             return displayValue;
         }
         displayValue = displayValue.replace(/,/g, ".");
-        // Only accept 0-9, dot, - sign and space if multiple values are allowed
         if (this.props.composable) {
             displayValue = displayValue
                 .trim()
@@ -121,13 +118,10 @@ export class BuilderNumberInput extends Component {
         } else {
             displayValue = displayValue
                 .trim()
-                // Remove any space after a "-" to accept "- 10" as "-10"
                 .replace(/-\s*/g, "-")
                 .split(" ")[0]
                 .replace(/[^0-9.-]/g, "")
-                // Only keep "-" if it is at the start
                 .replace(/(?<!^)-/g, "")
-                // Only keep the first "."
                 .replace(
                     /^([^.]*)\.?(.*)/,
                     (_, a, b) => a + (b ? "." + b.replace(/\./g, "") : ""),
@@ -144,7 +138,6 @@ export class BuilderNumberInput extends Component {
             const saveUnit = this.props.saveUnit;
             const applyWithUnit = this.props.applyWithUnit;
             if (unit && saveUnit) {
-                // Convert value from unit to saveUnit
                 value = convertNumericToUnit(
                     value,
                     unit,

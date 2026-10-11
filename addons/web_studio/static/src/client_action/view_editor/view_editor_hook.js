@@ -22,17 +22,12 @@ export function useViewEditorModel(viewRef, { initialState }) {
         config: useViewConfig(),
     };
 
-    /* Services */
     const services = Object.fromEntries(
         ["orm", "ui", "notification"].map((sName) => [sName, useService(sName)]),
     );
-    // Capture studio's state as a new Object. This is due to concurrency
-    // issues because we are an action, and rendering may be caused by other things (reactives)
     services.studio = { ...env.services.studio };
     services.dialog = { add: useOwnedDialogs() };
 
-    /* Coordination */
-    // Communicates with editorMenu, provides standard server calls
     const editionFlow = proxy(env.editionFlow);
     useEditorBreadcrumbs({ name: viewTypeToString(services.studio.editedViewType) });
 

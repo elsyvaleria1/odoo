@@ -6,7 +6,6 @@ patch(PosOrder.prototype, {
         return this.lines.flatMap((line) => line.event_registration_ids);
     },
     getLinesToCompute() {
-        // Override to ensure orderline price of event tickets are not recomputed
         return super.getLinesToCompute().filter((line) => !line.event_ticket_id);
     },
 });

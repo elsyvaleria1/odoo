@@ -112,8 +112,6 @@ export class KanbanEditorCompiler extends KanbanCompiler {
     compileCard(node, params) {
         const mainNode = node.querySelector("main");
         if (!mainNode) {
-            // to ease the addition of studio hooks in the UI, we make sure the kanban card contains a <main> node,
-            // which wraps the content of the card, even if the original template didn't compile this node
             const mainEl = this.wrapNodesInMain(node);
             setElementXpath(mainEl, "kanban");
             node.append(mainEl);
@@ -138,7 +136,6 @@ export class KanbanEditorCompiler extends KanbanCompiler {
         if (!el.hasAttribute("widget")) {
             compiled.classList.add("o-web-studio-editor--element-clickable");
 
-            // Set empty class
             const nameExpr = toStringExpression(el.getAttribute("name"));
             const recordValueExpr = `__comp__.props.record.data[${nameExpr}]`;
             const isEmptyExpr = `__comp__.isFieldValueEmpty(${recordValueExpr})`;
@@ -166,7 +163,6 @@ export class KanbanEditorCompiler extends KanbanCompiler {
             (e) => !e.getAttribute("t-out"),
         );
         for (const child of otherNodes) {
-            // add a visual indication around structuring elements of the main element
             child.classList.add("o_inner_section");
             child.classList.add("o-web-studio-editor--element-clickable");
         }
@@ -176,15 +172,11 @@ export class KanbanEditorCompiler extends KanbanCompiler {
                     ["t-if", "t-elif", "t-else"].includes(e),
                 ).length
             ) {
-                // Don't append a studio hook if a condition is on the tag itself
-                // otherwise it may cause inconsistencies in the arch itself
-                // ie `<field t-elif="someConditon" /><field name="newField" /><t t-else=""/>` would be invalid
                 continue;
             }
             this.addStudioHook(
                 child,
                 "field",
-                // for inline display, the studio hook must be a span to keep the current look
                 child.tagName === "span" ? "kanbanInline" : "defaultTemplate",
                 { structures: `'field'`, wrap: true },
             );
@@ -231,7 +223,6 @@ export class KanbanEditorCompiler extends KanbanCompiler {
                 compiled.appendChild(footerHook);
             }
         }
-        // Propagate the xpath to the compiled template for most nodes.
         if (node.nodeType === 1 && compiled && !compiled.attributes.studioXpath) {
             setElementXpath(compiled, node.getAttribute("studioXpath"));
         }

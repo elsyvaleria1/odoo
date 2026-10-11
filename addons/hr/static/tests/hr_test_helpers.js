@@ -14,12 +14,6 @@ import { ResPartner } from "./mock_server/mock_models/res_partner.js";
 import { ResUsers } from "./mock_server/mock_models/res_users.js";
 
 export function defineHrModels() {
-    // hrModels spreads mailModels, so hr's suites speak to mail's store; the
-    // routes that serve it are registered separately and only on request (see
-    // registerMailMockRoutes). Without this call /mail/action reaches no
-    // handler, and a request that asked to resolve itself -- getChat's
-    // /discuss/get_or_create_chat -- comes back in a payload carrying no
-    // DataResponse, so the chat window never opens.
     registerMailMockRoutes();
     defineParams({ suite: "hr" }, "replace");
     onRpc("get_formview_action", function getFormviewAction({ args, model }) {
@@ -31,8 +25,6 @@ export function defineHrModels() {
         };
     });
     onRpc("get_avatar_card_data", function getAvatarCardData({ args }) {
-        // The mock employee stores its channels as work_email/work_phone; on
-        // the server they are the party's email and phone.
         const fieldNames = [
             ...new Set([
                 ...(args[1] || []),

@@ -3,15 +3,6 @@ import { describe, expect, test } from "@odoo/hoot";
 import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { browser } from "@web/core/browser/browser";
 
-/**
- * The client half of the campaign instrumentation -- TEMPORARY, goes with it.
- *
- * Two invariants, and the first is why this file exists: the switch is DEFAULT OFF,
- * so every line the campaign adds to a user's console is a line somebody asked for.
- * The Python half is held by `tests/test_campaign_instrumentation.py`; nothing held
- * this one, which meant "it is off unless you ask" was a claim in a document.
- */
-
 describe.current.tags("headless");
 
 function captureConsole() {
@@ -24,8 +15,6 @@ function captureConsole() {
 }
 
 function askFor(value) {
-    // The switch is read once and memoised, so each test needs its own module
-    // state: the URL is the only input the trace module re-reads per resolution.
     patchWithCleanup(browser, {
         location: {
             ...browser.location,

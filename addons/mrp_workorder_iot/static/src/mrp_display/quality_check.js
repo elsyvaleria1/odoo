@@ -25,7 +25,6 @@ patch(QualityCheck.prototype, {
             deviceIdentifier: this.props.record.data.identifier,
         };
     },
-    /** override the quality check click behavior to capture image from an IoT camera */
     async clicked() {
         const { iotBoxId, deviceIdentifier } = this.iotDevice;
         if (this.type !== "picture" || !iotBoxId || !deviceIdentifier) {

@@ -37,7 +37,6 @@ export class Frontdesk extends Component {
         this.frontdeskUrl = `/frontdesk/${this.props.id}/${this.token}`;
         onWillStart(this.onWillStart);
         if (this.props.isMobile) {
-            // Retrieve the saved component from sessionStorage
             const savedComponent = sessionStorage.getItem("currentComponent");
             if (savedComponent) {
                 const component = registry
@@ -46,7 +45,6 @@ export class Frontdesk extends Component {
                 this.state.currentComponent = component;
             }
             window.addEventListener("beforeunload", () => {
-                // Before the page refresh, save the current component to sessionStorage
                 sessionStorage.setItem(
                     "currentComponent",
                     this.state.currentComponent.name,
@@ -58,16 +56,14 @@ export class Frontdesk extends Component {
     async onWillStart() {
         this.frontdeskData = await rpc(`${this.frontdeskUrl}/get_frontdesk_data`);
         this.station = this.frontdeskData.station[0];
-        // markup: description is coming from HTML field on frontdesk.frontdesk
         this.station.description = this.station.description
             ? markup(this.station.description)
             : "";
     }
 
-    /* This method updates the plannedVisitors */
     updatePlannedVisitors() {
         this._getPlannedVisitors();
-        this.intervalId = setInterval(() => this._getPlannedVisitors(), 600000); // 10 minutes
+        this.intervalId = setInterval(() => this._getPlannedVisitors(), 600000);
     }
 
     /**
@@ -80,12 +76,10 @@ export class Frontdesk extends Component {
             `${this.frontdeskUrl}/get_planned_visitors`,
         );
         for (const visitor of this.state.plannedVisitors) {
-            // markup: message is coming from HTML field on frontdesk.visitor
             visitor.message = visitor.message ? markup(visitor.message) : "";
         }
     }
 
-    /* This method creates the visitor in the backend through rpc call */
     async createVisitor() {
         const result = await rpc(`${this.frontdeskUrl}/prepare_visitor_data`, {
             name: this.visitorData.visitorName,
@@ -98,7 +92,6 @@ export class Frontdesk extends Component {
     }
 
     onClose() {
-        // Check if the device is mobile or not and show the screen accordingly
         !this.props.isMobile
             ? this.showScreen("WelcomePage")
             : this.showScreen("VisitorForm");
@@ -123,12 +116,10 @@ export class Frontdesk extends Component {
         this.state.currentComponent = component;
     }
 
-    /* This method clears the interval for updatePlannedVisitors */
     clearUpdatePlannedVisitors() {
         clearInterval(this.intervalId);
     }
 
-    /* Reset the data */
     resetData() {
         this.hostData = null;
         this.visitorData = null;
@@ -184,10 +175,6 @@ export class Frontdesk extends Component {
     setDrink(boolean) {
         this.isDrinkSelected = boolean;
     }
-
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
 
     get frontdeskProps() {
         let props = {};

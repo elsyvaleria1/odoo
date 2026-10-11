@@ -19,12 +19,10 @@ export class PaymentPostProcessing extends Interaction {
         this.updateTimeout();
         this.waitForTimeout(async () => {
             try {
-                // Fetch the post-processing values from the server.
                 const postProcessingValues = await this.waitFor(
                     rpc("/payment/status/poll", { csrf_token: odoo.csrf_token }),
                 );
 
-                // Redirect the user to the landing route if the transaction reached a final state.
                 const { provider_code, state, landing_route } = postProcessingValues;
                 if (PaymentPostProcessing.getFinalStates(provider_code).has(state)) {
                     window.location = landing_route;

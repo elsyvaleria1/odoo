@@ -984,8 +984,6 @@ test("check rainbowManMessage", async () => {
 });
 
 test("the rainbow man shows the message a database tour carries", async () => {
-    // a tour stored in web_tour.tour sends its rainbow_man_message with its
-    // steps; the start options then carry none
     onRpc("web_tour.tour", "get_tour_json_by_name", () => ({
         name: "db_rainbow_tour",
         steps: [{ trigger: ".button0", run: "click" }],

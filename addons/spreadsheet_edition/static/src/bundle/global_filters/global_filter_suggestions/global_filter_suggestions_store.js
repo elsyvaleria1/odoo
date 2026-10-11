@@ -57,13 +57,13 @@ export class GlobalFilterSuggestionsStore extends SpreadsheetStore {
                 for (const dataSourceId of matcher.getIds(this.getters)) {
                     const model = matcher.getModel(this.getters, dataSourceId);
                     const fields = matcher.getFields(this.getters, dataSourceId);
-                    const matchingField = matchingFields[model]?.values().next().value; // get the only value in the set.
+                    const matchingField = matchingFields[model]?.values().next().value;
                     fieldMatching[model] = {
                         chain: matchingField,
                         type: fields[matchingField]?.type,
                     };
                     filterLabel =
-                        searchFiltersPerModels[model][matchingField].description; // last one wins
+                        searchFiltersPerModels[model][matchingField].description;
                 }
             }
             suggestions.push({
@@ -131,7 +131,6 @@ export class GlobalFilterSuggestionsStore extends SpreadsheetStore {
         const numberOfDataSourceModels = Object.keys(searchFiltersPerModels).length;
         const validRelations = [];
         for (const relation in relationsToDataSources) {
-            // all data sources must have one and only one search field matching the relation
             const matchingDataSourceModels = Object.keys(
                 relationsToDataSources[relation],
             );
@@ -153,10 +152,6 @@ export class GlobalFilterSuggestionsStore extends SpreadsheetStore {
     }
 }
 
-/**
- * Store loading the search filters from search views.
- * It is used as a global store to act as a cache for the search filters.
- */
 class SearchFiltersStore extends SpreadsheetStore {
     constructor(get) {
         super(get);
@@ -194,26 +189,20 @@ class SearchFiltersStore extends SpreadsheetStore {
      * @returns {Promise<Record<string, object>>}
      */
     async _getRelationalFiltersFromArch(model, arch) {
-        const blackList = [
-            // from mixin.mail.activity, present in many search views but not really useful for reporting and prevents from
-            // matching other res.users fields when there are more than one
-            "activity_user_id",
-            "activity_type_id", // also from mixin.mail.activity, not useful for reporting
-        ];
+        const blackList = ["activity_user_id", "activity_type_id"];
         const fields = await this.env.services.field.loadFields(model);
         const parsedArch = new SearchArchParser({ arch }, fields, {}).parse();
-        const relationalFilters = parsedArch.preSearchItems.flat().filter(
-            (item) =>
-                !blackList.includes(item.fieldName) &&
-                item.type === "field" &&
-                ["many2one", "many2many", "one2many"].includes(item.fieldType) &&
-                // if there's a filter domain, it must at least match the field itself.
-                // Otherwise the domain targets related fields `order_line_ids.product_id` for example,
-                // and it would require a specific handling
-                (!item.filterDomain ||
-                    item.filterDomain.includes(`'${item.fieldName}'`) ||
-                    item.filterDomain.includes(`"${item.fieldName}"`)),
-        );
+        const relationalFilters = parsedArch.preSearchItems
+            .flat()
+            .filter(
+                (item) =>
+                    !blackList.includes(item.fieldName) &&
+                    item.type === "field" &&
+                    ["many2one", "many2many", "one2many"].includes(item.fieldType) &&
+                    (!item.filterDomain ||
+                        item.filterDomain.includes(`'${item.fieldName}'`) ||
+                        item.filterDomain.includes(`"${item.fieldName}"`)),
+            );
         const result = {};
         for (const filter of relationalFilters) {
             result[filter.fieldName] = filter;

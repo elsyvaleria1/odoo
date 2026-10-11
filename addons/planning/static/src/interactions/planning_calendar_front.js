@@ -1,7 +1,5 @@
 /** @odoo-module native */
 
-/** @module @planning/interactions/planning_calendar_front - Public portal calendar showing an employee's planning shifts (FullCalendar) */
-
 import {
     DATE_SHORT,
     fromJSDate,
@@ -16,9 +14,6 @@ import { _t } from "@web/core/translation";
 import { Modal, Popover, Toast } from "@web/libs/bootstrap";
 import { Interaction } from "@web/public/interaction";
 
-/**
- * Helper to show/hide an element and its previous sibling label.
- */
 function setFieldVisibility(el, visible) {
     el.style.display = visible ? "" : "none";
     if (el.previousElementSibling) {
@@ -41,7 +36,6 @@ export class PlanningCalendarFront extends Interaction {
                 new Toast(toastEl).show();
             }
         }
-        // The calendar is displayed if there are slots (open or not)
         const noData = document.querySelector(".no_data");
         if (noData?.getAttribute("value")) {
             return;
@@ -53,7 +47,6 @@ export class PlanningCalendarFront extends Interaction {
                 .getAttribute("value"),
         );
         const locale = document.querySelector(".locale").getAttribute("value");
-        // initialise popovers
         const popoverEls = document.querySelectorAll('[data-bs-toggle="popover"]');
         const popovers = [];
         for (const el of popoverEls) {
@@ -61,7 +54,6 @@ export class PlanningCalendarFront extends Interaction {
             popovers.push(popover);
             this.registerCleanup(() => popover.dispose());
         }
-        // dismiss popovers when clicking outside of them
         this.addListener(document.body, "click", (e) => {
             let shouldHide = true;
             let parent = e.target;
@@ -82,7 +74,6 @@ export class PlanningCalendarFront extends Interaction {
                 }
             }
         });
-        // dismiss other popovers when opening a popover
         this.addListener(popoverEls, "click", (ev) => {
             for (const p of popovers) {
                 if (p._element !== ev.currentTarget) {
@@ -90,7 +81,6 @@ export class PlanningCalendarFront extends Interaction {
                 }
             }
         });
-        // default date: first event of either assigned slots or open shifts
         const defaultStartValue = document
             .querySelector(".default_start")
             .getAttribute("value");
@@ -126,7 +116,6 @@ export class PlanningCalendarFront extends Interaction {
             );
         }
         this.calendar = new FullCalendar.Calendar(this.calendarElement, {
-            // Settings
             locale: locale,
             initialView: defaultView,
             navLinks: true,
@@ -155,7 +144,6 @@ export class PlanningCalendarFront extends Interaction {
             slotMinTime: minTime,
             slotMaxTime: maxTime,
             headerToolbar: calendarHeaders,
-            // Data
             events: employeeSlotsFcData,
             eventClick: this.eventFunction.bind(this),
             buttons: {

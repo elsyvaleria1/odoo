@@ -126,10 +126,6 @@ export class PlanningGanttModel extends GanttModel {
         return super._processProgressBars(progressBars);
     }
 
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
     /**
      * @returns {Object}
      */
@@ -248,10 +244,6 @@ export class PlanningGanttModel extends GanttModel {
         return result;
     }
 
-    //--------------------------------------------------------------------------
-    // Protected
-    //--------------------------------------------------------------------------
-
     /**
      * Check if the given groupedBy includes fields for which an empty fake group will be created
      *
@@ -296,15 +288,7 @@ export class PlanningGanttModel extends GanttModel {
         const { groupedBy, groups, parentGroup } = params;
         if (!this.hideOpenShift) {
             if (parentGroup.length === 0) {
-                // _generateRows is a recursive function.
-                // Here, we are generating top level rows.
                 if (this._allowCreateEmptyGroups(groupedBy)) {
-                    // The group with false values for every groupby can be absent from
-                    // groups (= groups returned by formatted_read_group).
-                    // Here we add the fake group {} in groups in any case (this simulates the group
-                    // with false values mentionned above).
-                    // This will force the creation of some rows with resId = false
-                    // (e.g. 'Open Shifts') from top level to bottom level.
                     groups.push({});
                 }
                 if (this._allowedEmptyGroups(groupedBy)) {
@@ -312,18 +296,11 @@ export class PlanningGanttModel extends GanttModel {
                 }
             }
             if (params.addOpenShifts && groupedBy.length === 1) {
-                // Here we are generating some rows on last level under a common
-                // "parent" (if any: first level can be last level).
-                // We make sure that a row with resId = false for
-                // the unique groupby in groupedBy and same "parent" will be
-                // added by adding a suitable fake group to the groups (a subset
-                // of the groups returned by formatted_read_group).
                 const fakeGroup = Object.assign({}, ...parentGroup);
                 groups.push(fakeGroup);
             }
         }
         const rows = super._generateRows(...arguments);
-        // keep empty row to the head and sort the other rows alphabetically
         if (rows.length > 1) {
             rows.sort((a, b) => {
                 if (a.resId && !b.resId) {
@@ -357,8 +334,6 @@ export class PlanningGanttModel extends GanttModel {
      * @override
      */
     _getInitialRangeParams() {
-        // take parameters from url if set https://example.com/web?date_start=2020-11-08
-        // this is used by the mail of planning.planning
         const urlState = router.current;
         if (urlState.date_start) {
             const focusDate = deserializeDateTime(urlState.date_start);

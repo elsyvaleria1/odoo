@@ -14,8 +14,6 @@ export function makePdfPageStoreData() {
         numberOfPages: 0,
         focusedPage: undefined,
         lastSelectedPage: undefined,
-        // grouping the user made, which a rebuild of the groups would lose;
-        // the groups a file comes in are not
         userGrouped: false,
     };
 }
@@ -125,7 +123,6 @@ export class PdfPageStore {
     }
     /** @returns {Object} a copy of the grouping and selection, for restore() */
     snapshot() {
-        // raw: a reactive proxy cannot be cloned; a plain object is its own raw
         const { pages, groupData, groupIds, numberOfPages, userGrouped } = toRaw(
             this.data,
         );
@@ -219,12 +216,6 @@ export class PdfPageStore {
             }
         }
     }
-    /**
-     * What "split" does to the selection. With the focus on an unselected
-     * page, it toggles the separator before that page. Otherwise it toggles
-     * the separators between adjacent selected pages: all of them are removed
-     * when every one is present, and the missing ones are added otherwise.
-     */
     toggleSelectionSeparators() {
         const sortedPageIds = this.sortedPageIds;
         const focused = this.data.pages[this.data.focusedPage];
@@ -246,9 +237,6 @@ export class PdfPageStore {
                 this.data.pages[sortedPageIds[index + 1]].isSelected,
         );
         const gather = joints.every((pageId) => this.isLastPageOfGroup(pageId));
-        // each toggle moves only the pages up to the next joint: splits from
-        // the last joint back, merges from the first on (the other way round,
-        // every page after a joint moves at each joint)
         const toToggle = joints.filter(
             (pageId) => this.isLastPageOfGroup(pageId) === gather,
         );
@@ -268,8 +256,6 @@ export class PdfPageStore {
             return;
         }
         this.clearGroups();
-        // one pass: each run of blank or non-blank pages is a group, a page
-        // not measured counting as not blank
         let docCount = 1;
         let run = [];
         let runIsBlank = false;
@@ -373,8 +359,6 @@ export class PdfPageStore {
         if (!targetGroup || !this.data.pages[pageId]) {
             return false;
         }
-        // the dragged page takes the target's place: forward in the group it
-        // lands after it (the last place included), otherwise before it
         const index = targetGroup.pageIds.indexOf(targetPageId);
         return this.addPage(pageId, targetPage.groupId, { index });
     }

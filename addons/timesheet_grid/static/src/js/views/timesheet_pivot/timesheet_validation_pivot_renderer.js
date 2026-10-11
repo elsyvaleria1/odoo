@@ -22,10 +22,6 @@ export class TimesheetValidationPivotRenderer extends PivotRenderer {
         this.displayValidateButtonPrimary = timesheetCount === 1;
     }
 
-    //----------------------------------------------------------------------
-    // Handlers
-    //----------------------------------------------------------------------
-
     /**
      * @param {MouseEvent} ev
      */
@@ -43,7 +39,6 @@ export class TimesheetValidationPivotRenderer extends PivotRenderer {
         await this.notificationService.add(result.params.message, {
             type: result.params.type,
         });
-        //reload the table content
         await this.model.load(this.model.searchParams);
         this.model.notify();
     }

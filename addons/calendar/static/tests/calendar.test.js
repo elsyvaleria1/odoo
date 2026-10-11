@@ -49,7 +49,7 @@ test("Many2ManyAttendee: basic rendering", async () => {
         type: "form",
         resModel: "calendar.event",
         resId: serverData.eventId,
-        arch: /*xml*/ `
+        arch: `
             <form>
                 <field name="partner_ids" widget="many2manyattendee"/>
             </form>
@@ -82,7 +82,7 @@ test("Many2ManyAttendee: remove own attendee", async () => {
         type: "form",
         resModel: "calendar.event",
         resId: serverData.eventId,
-        arch: /*xml*/ `
+        arch: `
             <form>
                 <field name="partner_ids" widget="many2manyattendee"/>
             </form>
@@ -90,7 +90,6 @@ test("Many2ManyAttendee: remove own attendee", async () => {
     });
     expect(".o_field_widget[name='partner_ids'] .o_tag").toHaveCount(2);
 
-    // Attendee must be able to uninvite itself from the event.
     await contains(".o_field_widget[name='partner_ids'] .o_delete", {
         visible: false,
     }).click();

@@ -36,31 +36,18 @@ registry.category("web_tour.tours").add("google_analytics_view_item", {
             content: "wait until `_getCombinationInfo()` rpc is done",
             trigger: "body[view-event-id]",
             timeout: 25000,
-            // Clear the attribute so that the wait further down can only be
-            // satisfied by a *new* view event. Stashing the current id in a
-            // module variable and interpolating it into that trigger does not
-            // work: `steps()` is invoked once, eagerly, before any step runs,
-            // so the template literal captures `undefined` and the trigger
-            // degrades to `body[view-event-id]:not([view-event-id="undefined"])`
-            // — which the id set right here already satisfies.
             run: () => {
                 document.body.removeAttribute("view-event-id");
             },
         },
         {
             content: "select another variant",
-            // Pick the non-default "Pink" value by name rather than "whatever
-            // radio follows the active one": that adjacency depends on the
-            // admin-editable `product_template_value_ids` sequence, not on a
-            // stable hook.
             trigger:
                 'ul.js_add_cart_variants input[data-value-name="Pink"]:not(:visible)',
             run: "click",
         },
         {
             content: "wait until `_getCombinationInfo()` rpc is done (2)",
-            // The attribute was removed above, so it can only be back if a new
-            // view event was generated for the variant selected in between.
             trigger: "body[view-event-id]",
             timeout: 25000,
         },

@@ -7,7 +7,6 @@ export class AppointmentBookingGanttModel extends GanttModel {
      * @override
      */
     load(searchParams) {
-        // Ask the server for every bookable resource/staff row, not only the busy ones
         return super.load({
             ...searchParams,
             context: {
@@ -79,7 +78,7 @@ export class AppointmentBookingGanttModel extends GanttModel {
             this.metaData.groupedBy &&
             this.metaData.groupedBy[0] === "partner_ids" &&
             schedule.partner_ids &&
-            data.partner_ids[0] !== schedule.originId // attendee_ids will be messed up without this check
+            data.partner_ids[0] !== schedule.originId
         ) {
             return {
                 ...data,
@@ -123,8 +122,6 @@ export class AppointmentBookingGanttModel extends GanttModel {
     }
 }
 
-// Resource-only filtering belongs to the resource timeline, so direct action
-// links and regrouping keep the same scope without relying on action context.
 export class AppointmentResourceBookingGanttModel extends AppointmentBookingGanttModel {
     _getDomain(metaData) {
         return Domain.and([

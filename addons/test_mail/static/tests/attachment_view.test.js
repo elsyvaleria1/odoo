@@ -33,7 +33,6 @@ beforeEach(() => {
             }
             const originalWrite = doc.write;
             doc.write = (content) => {
-                // This avoids duplicating the test script in the popoutWindow
                 const sanitizedContent = content.replace(
                     /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
                     "",
@@ -49,8 +48,6 @@ beforeEach(() => {
     };
 });
 
-// Inside the hook, not at module scope: a patch applied at import stays on
-// for every suite in the bundle, not only this file's.
 beforeEach(() => {
     patchWithCleanup(browser, {
         open: () => {
@@ -81,11 +78,6 @@ async function popoutClick(selector) {
 }
 
 test("Attachment view popout controls test", async () => {
-    /*
-     * This test makes sure that the attachment view controls are working in the following cases:
-     * - Inside the popout window
-     * - After closing the popout window
-     */
     const pyEnv = await startServer();
     const recordId = pyEnv["mail.test.simple.main.attachment"].create({
         display_name: "first partner",
@@ -169,32 +161,21 @@ test("Chatter main attachment: can change from non-viewable to viewable", async 
     await start();
     await openFormView("mail.test.simple.main.attachment", recordId);
 
-    // Add a PDF file
     const pdfFile = new File([new Uint8Array(1)], "text.pdf", {
         type: "application/pdf",
     });
-    // Gate on the chatter being ready before dragging onto it: until the
-    // attachment uploader is wired the dragenter registers no dropzone at all,
-    // and the drop below then has nothing to target. Same gate as mail's own
-    // "chatter: drop attachments".
     await contains("button[aria-label='Attach files']:enabled");
     await dragenterFiles(".o-mail-Chatter", [pdfFile]);
-    // Wait for the dropzone to render before dropping onto it: `dragenterFiles`
-    // does not await the render it triggers, so `dropFiles` raced it and failed
-    // to find `.o-Dropzone` about half the time. Same idiom as mail's own
-    // "chatter: drop attachments".
     await contains(".o-Dropzone");
     await dropFiles(".o-Dropzone", [pdfFile]);
     await contains(".o_attachment_preview");
-    await contains(".o-mail-Attachment > iframe", { count: 0 }); // The viewer tries to display the text file not the PDF
+    await contains(".o-mail-Attachment > iframe", { count: 0 });
 
-    // Switch to the PDF file in the viewer
     await click(".o_move_next");
-    await contains(".o-mail-Attachment > iframe"); // There should be iframe for PDF viewer
+    await contains(".o-mail-Attachment > iframe");
 });
 
 test.skip("Attachment view / chatter popout across multiple records test", async () => {
-    // skip because test has race conditions: https://runbot.odoo.com/odoo/runbot.build.error/109795
     const pyEnv = await startServer();
     const recordIds = pyEnv["mail.test.simple.main.attachment"].create([
         {
@@ -235,11 +216,6 @@ test.skip("Attachment view / chatter popout across multiple records test", async
     });
 
     async function navigateRecords() {
-        /**
-         * It should be called on the first record of recordIds
-         * The popout window should be open
-         * It navigates recordIds as 0 -> 1 -> 2 -> 0 -> 2
-         */
         await animationFrame();
         expect(".o_attachment_preview").not.toBeVisible();
         await popoutContains("img");

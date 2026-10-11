@@ -27,8 +27,6 @@ export class TextFilterValue extends Component {
         useLayoutEffect(
             () => {
                 if (this.props.options.length && this.inputRef.el) {
-                    // if there are options restricting the possible values,
-                    // we prevent the user from typing free-text by setting the maxlength to 0
                     this.inputRef.el.setAttribute("maxlength", 0);
                 } else {
                     this.inputRef.el.removeAttribute("maxlength");

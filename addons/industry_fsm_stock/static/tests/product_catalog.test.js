@@ -76,7 +76,7 @@ test("check disabling of decrease/remove buttons when quantity of product is equ
     await click(
         ".o_kanban_record:nth-of-type(3) .o_product_catalog_quantity button:has(i.fa-minus)",
     );
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
 
     expect(
         ".o_kanban_record:nth-of-type(3) .o_product_catalog_quantity button:has(i.fa-minus)[disabled]",
@@ -123,7 +123,7 @@ test("check quantity not decreasable below minimumQuantityOnProduct", async () =
     await contains(
         ".o_kanban_record:nth-child(3) .o_product_catalog_quantity .o_input",
     ).edit(1);
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
 
     expect(
         ".o_kanban_record:nth-child(3) .o_product_catalog_quantity .o_input",

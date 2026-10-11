@@ -7,10 +7,6 @@ import { QualitySpreadsheetPlugin } from "./quality_spreadsheet_plugin.js";
 
 const { corePluginRegistry } = registries;
 
-/**
- * Adds the spreadsheet quality check plugins and menus
- * and removes them when the action is left
- */
 export function useSpreadsheetQualityControlExtension() {
     addQualitySpreadsheetExtensionWithCleanUp(onWillUnmount);
 }

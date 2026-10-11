@@ -274,10 +274,8 @@ test("BuilderButton: no activation on preview", async () => {
         message: "b1 should be set on the element by default",
     });
 
-    // Open the builder select
     await contains("button.o-hb-select-toggle").click();
 
-    // Hover the builder button while the builder select is still open
     const builderButtonEl = queryOne("button[data-class-action=b2]");
     manuallyDispatchProgrammaticEvent(builderButtonEl, "pointerenter");
     await waitForEndOfOperation();
@@ -288,7 +286,6 @@ test("BuilderButton: no activation on preview", async () => {
         message: "It should preview b2",
     });
 
-    // Close the builder select
     await press(["Esc"]);
     await waitForEndOfOperation();
     expect(builderButtonEl).not.toHaveClass("active", {

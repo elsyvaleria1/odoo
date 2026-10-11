@@ -286,7 +286,6 @@ export class ClosePosPopup extends Component {
             endClose({ stoppedAt: "closingControlState", error: error?.message });
             throw error;
         }
-        // data.call reports a null result as true
         const refused = refusal?.successful === false;
         log.logic("[session:close] closing control state", () => ({
             session: this.pos.session.id,
@@ -386,7 +385,6 @@ export class ClosePosPopup extends Component {
             redirect: response.redirect,
             openOrders: response.open_order_ids?.length,
         }));
-        // only a refusal over open orders has orders to review or cancel
         if (!response.open_order_ids) {
             this.dialog.add(
                 AlertDialog,

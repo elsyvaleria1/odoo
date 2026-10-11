@@ -192,7 +192,6 @@ export class FormRenderer extends Component {
         /** @type {any} */ _notebookId,
         /** @type {any} */ _page,
     ) {
-        // flush the edits still pending in the fields before the page leaves them
         await this.props.record.model.askChanges();
         return true;
     }

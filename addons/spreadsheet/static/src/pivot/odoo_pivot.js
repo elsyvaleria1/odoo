@@ -125,7 +125,6 @@ export class OdooPivot {
             deepEquals(actualDefinition.customFields, nextDefinition.customFields)
         ) {
             if (deepEquals(actualDefinition.measures, nextDefinition.measures)) {
-                // Nothing change for the table structure, no need to reload the data
                 return;
             }
             if (
@@ -291,11 +290,9 @@ export class OdooPivot {
             if (isPositional) {
                 const table = this.getExpandedTableStructure();
                 // @ts-ignore: That's a VERY ugly hack to make sure the table is computed and sorted (which is needed for
-                // positional arguments), calling a method from the CHILD class PivotPresentationLayer...
                 this.sortTableStructure(table);
                 const previousDomain = [
                     ...domain,
-                    // Need to keep the "#"
                     {
                         field: nameWithGranularity,
                         value: stringArgs[i + 1],
@@ -470,10 +467,6 @@ export class OdooPivot {
         return { value, format };
     }
 
-    //--------------------------------------------------------------------------
-    // Odoo specific
-    //--------------------------------------------------------------------------
-
     /**
      * @param {string} groupFieldString
      */
@@ -514,10 +507,6 @@ export class OdooPivot {
         return model;
     }
 
-    //--------------------------------------------------------------------------
-    // Loader
-    //--------------------------------------------------------------------------
-
     get lastUpdate() {
         return this.loader.lastUpdate;
     }
@@ -535,7 +524,6 @@ export class OdooPivot {
     }
 
     async _loadRelationalFieldsDefinitions() {
-        // Relational dimensions are fields with a relation to another model
         const related = this.coreDefinition.rows
             .concat(this.coreDefinition.columns)
             .filter(
@@ -560,7 +548,6 @@ export class OdooPivot {
      * @private
      */
     async _loadPropertiesDefinitions() {
-        // properties are fake fields with the shape "<property_field>.<uuid>"
         const orm = this.odooDataProvider.orm;
         const properties = this.coreDefinition.rows
             .concat(this.coreDefinition.columns)
@@ -586,10 +573,6 @@ export class OdooPivot {
         );
     }
 
-    //--------------------------------------------------------------------------
-    // Global filters
-    //--------------------------------------------------------------------------
-
     /**
      *
      * @param {string} globalFilterDomain
@@ -604,8 +587,6 @@ export class OdooPivot {
         }
         this.domainWithGlobalFilters = domain;
         if (!this.loader.hasEverBeenLoaded()) {
-            // if the data source has never been loaded, there's no point
-            // at reloading it now.
             return;
         }
         this.load({ reload: true });
@@ -723,9 +704,7 @@ pivotRegistry.add("ODOO", {
         ((MEASURES_TYPES.includes(field.type) && field.aggregator) ||
             field.type === "many2one") &&
         field.name !== "id" &&
-        !field.name.includes(".") && // relational field path are not supported as measures (e.g. 'company_id.partner_id')
-        // a related field without a column aggregates through the join: the
-        // server says so with `groupable`, `store` only says where it lives
+        !field.name.includes(".") &&
         (field.store || field.groupable),
     isGroupable: (field) => field.groupable,
     canHaveCustomGroup: (field) =>

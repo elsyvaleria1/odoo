@@ -99,9 +99,6 @@ export class Dialog extends Component {
                     return;
                 }
                 const release = inertOutside(inertAnchorOf(el));
-                // a dialog acting on the page it covers (the command palette
-                // running a command) hands it back first: an inert field cannot
-                // take focus
                 this.data.releasePage = release;
                 return release;
             },

@@ -11,10 +11,6 @@ export class CompositeActionPlugin extends Plugin {
     resources = {
         builder_actions: {
             CompositeAction,
-            // Do not use with actions that need a custom reload.
-            // TODO: a class approach to actions would be able to solve that
-            // limitation and would also remove the need to split
-            // `composite` and `reloadComposite`.
             ReloadCompositeAction,
         },
     };
@@ -52,11 +48,8 @@ export class CompositeAction extends BuilderAction {
                 results.push(action.getPriority(actionDescr));
             }
         }
-        // TODO: should this be the max or a sum?
         return Math.max(0, ...results);
     }
-    // We arbitrarily keep the result of the 1st action, as we
-    // obviously cannot return more than one value.
     getValue({ editingElement, params: { mainParam: actions } }) {
         let actionGetValue;
         const actionDef = actions.find((actionDef) => {
@@ -101,10 +94,6 @@ export class CompositeAction extends BuilderAction {
                     value,
                 });
                 loadActions.push(actionDef.action);
-                // We can't use Promise.all as unrelated loads could have
-                // overriding impacts (like updating/creating the same file)
-                // In such cases, this approach allows to define the order
-                // of actions and ensures predictable load results.
                 loadResults.push(await action.load(actionDescr));
             }
         }

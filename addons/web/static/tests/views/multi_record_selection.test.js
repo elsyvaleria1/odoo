@@ -209,7 +209,6 @@ test("release cancels an overdue long-touch callback that has not run", async ()
     const host = await mountLongTouchHost(() => touched++);
     const start = Date.now();
     host.longTouch.onTouchStart();
-    // A busy event loop can deliver touchend before an already due timer.
     patchWithCleanup(Date, { now: () => start + LONG_TOUCH_THRESHOLD + 1 });
     host.longTouch.onTouchEnd();
     await advanceTime(LONG_TOUCH_THRESHOLD * 2);

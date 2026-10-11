@@ -24,7 +24,6 @@ async function startWithBus(html) {
     let subscriber = () => {};
     mockService("bus_service", {
         subscribe: (type, callback) => {
-            // other services listen on the bus too
             if (type === "fragment.invalidated") {
                 expect.step(`subscribe ${type}`);
                 subscriber = callback;

@@ -249,8 +249,6 @@ test("a restored optimistic write keeps its flag and shows what the server appli
 test("a restored write the server had already committed does not bring back its stale value", async () => {
     const store = await setupPosEnv();
     const { record } = await queueOptimisticWriteAndReload(store, "Queued");
-    // the first attempt committed; another till renamed it since, and the
-    // reload brought that name; the replay is answered from the stored result
     await store.data.orm.write("pos.category", [record.id], { name: "Other till" });
     record.update({ name: "Other till" });
     patchWithCleanup(store.data.orm, { write: async () => true });
@@ -274,7 +272,6 @@ test("an in-session replay of a write that had committed shows what the server h
     };
     await store.data.write("pos.category", [record.id], { name: "Queued" });
     store.data.orm.write = write;
-    // another till renamed it since; the replay is answered from the stored result
     await store.data.orm.write("pos.category", [record.id], { name: "Other till" });
     patchWithCleanup(store.data.orm, { write: async () => true });
 

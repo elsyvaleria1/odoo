@@ -211,23 +211,12 @@ export function ringLayout(nodes, edges = [], breathingRoom = 0) {
     return positions;
 }
 
-// Rough metrics for a rendered edge label. Estimated rather than measured: the
-// text is not in the DOM when placement is decided, and a pass that laid every
-// label out, measured it and moved it would flash the first arrangement.
-// Slightly generous is the safe direction -- it spreads labels that would have
-// just fitted, and never leaves one sitting on a node.
 const LABEL_CHAR_WIDTH = 6.2;
 const LABEL_HEIGHT = 15;
 const LABEL_PADDING = 6;
 
-// Gap kept between a label and the node box it sits beside.
 const LABEL_GAP = 10;
 
-// How far along the link the search may walk from its preferred spot, and how
-// far to either side of the link it may push. The offsets reach past a node's
-// half-height on purpose: on a short link a long wording cannot fit between the
-// two boxes at all -- "grows crop together with" is 160px against a corridor of
-// 82 -- so beside the link is the only place left.
 const LABEL_STEPS = [0, -0.08, 0.08, -0.16, 0.16, -0.26, 0.26, -0.36, 0.36];
 const LABEL_OFFSETS = [0, -16, 16, -30, 30, -46, 46, -62, 62, -80, 80];
 
@@ -245,24 +234,12 @@ function boxesHit(one, other) {
     );
 }
 
-// How far a node box reaches from its centre in a given direction. A link
-// leaving horizontally clears the box after 85px and one leaving vertically
-// after 20, so a single number would be wrong nearly everywhere.
 function halfExtentAlong(dx, dy) {
     const alongX = Math.abs(dx) ? NODE_WIDTH / 2 / Math.abs(dx) : Infinity;
     const alongY = Math.abs(dy) ? NODE_HEIGHT / 2 / Math.abs(dy) : Infinity;
     return Math.min(alongX, alongY);
 }
 
-// The segment a label may actually sit on.
-//
-// A JointJS link is drawn from the SOURCE BOX'S BOUNDARY to the target's, not
-// centre to centre, and `distance` is a ratio of that drawn path. Measuring the
-// centre-to-centre segment instead put every label systematically wrong -- with
-// 170px-wide boxes 210px apart the drawn path is 40px long, so the same ratio
-// lands about 22px off, which is the difference between beside a node and on
-// top of it. The search reported no collisions while four labels visibly sat on
-// nodes, because it was placing them on a segment the renderer never draws.
 function drawnSegment(from, to) {
     const span = Math.hypot(to.x - from.x, to.y - from.y) || 1;
     const unit = { x: (to.x - from.x) / span, y: (to.y - from.y) / span };
@@ -273,12 +250,6 @@ function drawnSegment(from, to) {
     return { start, end, length, normal: { x: -unit.y, y: unit.x } };
 }
 
-// Toward the end of the link further from the focus, just clear of the box
-// there. Expressed against the DRAWN path, so it means the same thing whatever
-// the boxes do to the link's visible length.
-//
-// Which end is outer cannot be read off source/target -- a symmetric tie is
-// stored once from whichever end recorded it -- so degree decides.
 function preferredDistance(edge, degreeById, segment, size) {
     const source = degreeById.get(edge.source) ?? 0;
     const target = degreeById.get(edge.target) ?? 0;
@@ -286,22 +257,12 @@ function preferredDistance(edge, degreeById, segment, size) {
         return 0.5;
     }
     const clear = (LABEL_GAP + size.width / 2) / segment.length;
-    // When the label is wider than the corridor between the two boxes, no point
-    // on the path clears either of them and favouring an end is actively
-    // harmful: it parks the label hard against that box, where the offset then
-    // has to fight the whole node. The middle is the furthest from both, so it
-    // needs the least pushing aside. This is the common case, not the corner --
-    // two 170px boxes 204px apart leave 30px of path for a 155px wording.
     if (clear > 0.5) {
         return 0.5;
     }
     return source < target ? 1 - clear : clear;
 }
 
-// Where a placement actually puts a label. Exported so a checker or a test
-// asks the layout where a label is rather than re-deriving it -- the geometry
-// that has to match is JointJS's, and the browser probe in the suite is what
-// holds THAT honest.
 export function labelAnchor(from, to, { distance, offset }) {
     const segment = drawnSegment(from, to);
     return {
@@ -386,9 +347,6 @@ export function labelPlacements(nodes, edges, positions) {
     return placements;
 }
 
-// How far the drawing reaches from the focus in each direction, taking the
-// larger side. The focus is the layout's origin, so a box of twice this,
-// centred on the origin, contains everything AND is centred on the focus.
 export function halfExtentAround(positions) {
     let x = NODE_WIDTH / 2;
     let y = NODE_HEIGHT / 2;
@@ -399,9 +357,6 @@ export function halfExtentAround(positions) {
     return { x, y };
 }
 
-// How much extra room to demand between node boxes when the labels do not fit
-// at the natural spacing. Tried in order and abandoned as soon as the labels
-// come out clean, so a diagram only pays for the room it needs.
 const BREATHING_ROOM = [0, 30, 60, 90];
 
 function countLabelCollisions(nodes, edges, positions, placements) {
@@ -433,17 +388,6 @@ function countLabelCollisions(nodes, edges, positions, placements) {
     return found;
 }
 
-// Lay the network out, and give the labels somewhere to go.
-//
-// The ring radius is grown until no two NODE boxes collide, which says nothing
-// about the wording hanging off each link. On a six-way fan that leaves a drawn
-// path of about 8px between two 170px boxes, and no position on it clears both
-// -- every offset that escapes the focus lands on a neighbour. So when the
-// labels cannot be placed cleanly the rings are widened and the whole thing is
-// laid out again, one step at a time, stopping the moment it comes out clean.
-//
-// Widening costs size, and size costs the fit scale, which is why it is a last
-// resort rather than a constant: the fans that do not need it pay nothing.
 export function layoutNetwork(nodes, edges = []) {
     let best = null;
     for (const breathingRoom of BREATHING_ROOM) {

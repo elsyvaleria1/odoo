@@ -20,11 +20,6 @@ export const documentsClientThumbnailService = {
         const mutex = new Mutex();
         const queued = new Set();
 
-        // Storing the thumbnail is a write on the document, and the route
-        // enforces that. A viewer that tried anyway would fail silently and
-        // retry on every page load forever, because the status only leaves
-        // "client_generated" once the write lands -- so the client does not
-        // attempt what the server will refuse.
         const canStore = (record) => record.data.user_permission === "edit";
 
         const makeThumbnail = async (record) => {
@@ -42,8 +37,6 @@ export const documentsClientThumbnailService = {
                     THUMBNAIL_WIDTH,
                     THUMBNAIL_HEIGHT,
                 ));
-                // pdf.js did not load: says nothing about this file, which a
-                // "false" thumbnail would mark broken for everyone for good
                 if (!pdfEnabled) {
                     return;
                 }
@@ -94,11 +87,6 @@ export const documentsClientThumbnailService = {
                                     resId: record.resId,
                                     error: String(error),
                                 }));
-                                // Thumbnails are cosmetic and generated in the
-                                // background, and `mutex.exec` hands back a promise
-                                // nobody holds -- an escaping rejection would reach
-                                // the webclient's global error dialog. The status is
-                                // left untouched so the next load retries.
                             } finally {
                                 end({ resId: record.resId });
                                 queued.delete(record.resId);
@@ -114,11 +102,6 @@ export const documentsClientThumbnailService = {
         return getPdfThumbnail(record, width, height);
     },
     async _getLoadedImage(record) {
-        // /web/content, not /documents/content: the latter logs a view in
-        // the document's access log (which also feeds the Recent folder) for
-        // what is a background thumbnail. /web/content logs nothing and
-        // applies the same content gate (ir.binary) under the record rules;
-        // only an editor, who can read the record, builds a thumbnail.
         const response = await fetch(
             `/web/content/document.document/${record.resId}/raw`,
         );

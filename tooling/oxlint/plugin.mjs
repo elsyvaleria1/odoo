@@ -1,10 +1,3 @@
-// Rules oxlint does not ship natively, loaded through its `jsPlugins`.
-//
-// `no-restricted-syntax` takes ESLint's option shape unchanged — a bare
-// selector string, or `{ selector, message }` — so a selector moves between
-// the two linters verbatim. oxlint dispatches esquery selectors to plugin
-// visitors itself; this rule only maps each one to its report.
-
 const noRestrictedSyntax = {
     meta: {
         type: "suggestion",

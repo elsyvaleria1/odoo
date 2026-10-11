@@ -70,8 +70,6 @@ class PageUrlField extends UrlField {
     }
 
     parse(value) {
-        // Re-add the leading slash for saving, because url field is required
-        // and thus doesn't accept an empty string.
         return `/${value.trim().replace(/^\/+/, "")}`;
     }
 }

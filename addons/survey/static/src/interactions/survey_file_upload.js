@@ -27,12 +27,6 @@ export class SurveyFileUpload extends Interaction {
         this.answerToken = formEl?.dataset.answerToken;
     }
 
-    /**
-     * The file is uploaded as soon as it is chosen, and only the resulting
-     * attachment id travels with the answer. Submitting the bytes alongside the
-     * rest of the page would mean the whole JSON-RPC payload carries them, and
-     * a failed upload would fail the page rather than the question.
-     */
     async onFileSelected(ev) {
         const file = ev.currentTarget.files?.[0];
         delete this.el.dataset.attachmentId;

@@ -10,10 +10,6 @@ export const MAX_UTTERANCE_S = 15;
 export const END_OF_SPEECH_S = 0.8;
 const MAX_PROMPT_PHRASES = 50;
 
-/**
- * One utterance: it ends at the first pause after speech, when it runs too
- * long, or when the caller stops it, and it is sent whole.
- */
 export class UtteranceRecorder extends ChunkRecorder {
     /** @param {(chunk: import("@speech/live_capture/chunk_recorder").Chunk) => void} onChunk */
     constructor(onChunk) {

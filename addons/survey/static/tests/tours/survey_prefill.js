@@ -4,29 +4,24 @@ registry.category("web_tour.tours").add("test_survey_prefill", {
     url: "/survey/start/b137640d-14d4-4748-9ef6-344caaaaaae",
     steps: () => [
         {
-            // Page-1
             trigger: 'button.btn.btn-primary.btn-lg:contains("Start Survey")',
             run: "click",
         },
         {
-            // Question: Where do you live?
             trigger: 'div.js_question-wrapper:contains("Where do you live?") input',
             run: "edit Grand-Rosiere",
         },
         {
-            // Question: When is your date of birth?
             trigger:
                 'div.js_question-wrapper:contains("When is your date of birth?") input',
             run: "edit 05/05/1980",
         },
         {
-            // Question: How frequently do you buy products online?
             trigger:
                 'div.js_question-wrapper:contains("How frequently do you buy products online?") label:contains("Once a week")',
             run: "click",
         },
         {
-            // Question: How many times did you order products on our website?
             trigger:
                 'div.js_question-wrapper:contains("How many times did you order products on our website?") input',
             run: "edit 42",
@@ -36,9 +31,7 @@ registry.category("web_tour.tours").add("test_survey_prefill", {
             trigger: 'button[value="next"]',
             run: "click",
         },
-        // Page-2
         {
-            // Question: Which of the following words would you use to describe our products?
             content:
                 "Answer Which of the following words would you use to describe our products (High Quality)",
             trigger:
@@ -100,7 +93,6 @@ registry.category("web_tour.tours").add("test_survey_prefill", {
             run: "click",
         },
         {
-            // Go back to previous page
             content: "Click on the previous page name in the breadcrumb",
             trigger: "ol.breadcrumb a:first",
             run: "click",

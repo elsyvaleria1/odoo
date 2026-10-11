@@ -86,12 +86,6 @@ export function areColsCustomized(columnEls, isMobile, mobileBreakpoint) {
     const colRegex = new RegExp(`(?:^|\\s+)col-${resolutionModifier}(\\d{1,2})(?!\\S)`);
     const colSize = parseInt(columnEls[0].className.match(colRegex)?.[1] || 12);
 
-    // Cases where we know the columns sizes and/or offsets are NOT custom:
-    // - if all columns have an equal size AND
-    //     - if there are no offsets OR
-    //     - if, with 5 columns, there is exactly one offset-1 and it's on
-    //       the 1st item
-    // Any other case is custom.
     const allColsSizesEqual = [...columnEls].every(
         (columnEl) =>
             parseInt(columnEl.className.match(colRegex)?.[1] || 12) === colSize,

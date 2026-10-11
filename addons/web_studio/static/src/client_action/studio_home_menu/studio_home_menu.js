@@ -63,10 +63,6 @@ export class StudioHomeMenu extends HomeMenu {
         });
     }
 
-    //--------------------------------------------------------------------------
-    // Getters
-    //--------------------------------------------------------------------------
-
     get displayedApps() {
         return [...super.displayedApps, NEW_APP_BUTTON];
     }
@@ -78,10 +74,6 @@ export class StudioHomeMenu extends HomeMenu {
     get canEditLayout() {
         return false;
     }
-
-    //--------------------------------------------------------------------------
-    // Protected
-    //--------------------------------------------------------------------------
 
     async _openMenu(menu) {
         if (menu.isNewAppButton) {
@@ -108,10 +100,6 @@ export class StudioHomeMenu extends HomeMenu {
     _enableAppsSorting() {
         return false;
     }
-
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
 
     /**
      * @param {Object} app

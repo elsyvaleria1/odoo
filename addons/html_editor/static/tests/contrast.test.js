@@ -159,10 +159,6 @@ describe("in the editor", () => {
         });
     });
 
-    // Upstream pins the exact colour its palette classes resolve to. Ours is
-    // the fork's palette, so what is asserted here is the mechanism: a class
-    // still carries the author's colour, so the adjustment has to outrank it
-    // with `!important`, and none of it may survive the save.
     test("should override a color class with an important style and drop it on save", async () => {
         const { el, editor } = await setupEditor(
             '<p><font class="bg-o-color-5">abc<font class="text-o-color-5">[def]</font></font></p>',

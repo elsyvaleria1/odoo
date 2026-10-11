@@ -143,8 +143,6 @@ test("receives collaborative messages when action is restored", async function (
             },
         ],
     };
-    // simulate a collaborative revision by pushing the revision
-    // to the websocket bus.
     getService("bus_service").notify({
         id: spreadsheetId,
         type: "spreadsheet",

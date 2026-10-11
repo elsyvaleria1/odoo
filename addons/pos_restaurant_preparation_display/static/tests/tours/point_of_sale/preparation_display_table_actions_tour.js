@@ -25,9 +25,6 @@ const addOrderlines = (productNames, quantity) => {
     return steps.flat();
 };
 
-// The numpad reaches the selected line only once the number buffer flushes, which
-// it does on a timer (the barcode inter-key delay), so the next line is selected
-// only after the new quantity shows on this one.
 const updateOrderlines = (productNames, previousQuantity, newQuantity) => {
     const steps = [];
     productNames.forEach((productName) => {
@@ -44,7 +41,6 @@ registry.category("web_tour.tours").add("table_action_transfer", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // ----- Order ----- //
             FloorScreen.clickTable("4"),
             addOrderlines(["Coca-Cola", "Water", "Minute Maid", "Fanta"], "3"),
             ProductScreen.clickOrderButton(),
@@ -58,22 +54,18 @@ registry.category("web_tour.tours").add("table_action_transfer", {
             updateOrderlines(["Fanta"], "6", "3"),
             ProductScreen.clickOrderButton(),
 
-            // Transfer Table 4 to Table 5
             FloorScreen.clickTable("4"),
             ProductScreen.clickControlButton("Transfer"),
             FloorScreen.clickTable("5"),
             wait(100),
 
-            // ----- Action 1 ----- //
             updateOrderlines(["Coca-Cola"], "3", "1"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 2 ----- //
             FloorScreen.clickTable("5"),
             updateOrderlines(["Coca-Cola", "Water"], "1", "6"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 3 ----- //
             FloorScreen.clickTable("5"),
             updateOrderlines(["Coca-Cola", "Water", "Minute Maid"], "6", "3"),
             ProductScreen.clickOrderButton(),
@@ -87,7 +79,6 @@ registry.category("web_tour.tours").add("table_action_merge", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // ----- Order 1 ----- //
             FloorScreen.clickTable("4"),
             addOrderlines(["Coca-Cola", "Water", "Minute Maid", "Fanta"], "3"),
             ProductScreen.clickOrderButton(),
@@ -101,7 +92,6 @@ registry.category("web_tour.tours").add("table_action_merge", {
             updateOrderlines(["Fanta"], "6", "3"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Order 2 ----- //
             FloorScreen.clickTable("5"),
             addOrderlines(["Espresso", "Cocktail", "Beer", "Champagne"], "3"),
             ProductScreen.clickOrderButton(),
@@ -115,22 +105,18 @@ registry.category("web_tour.tours").add("table_action_merge", {
             updateOrderlines(["Champagne"], "6", "3"),
             ProductScreen.clickOrderButton(),
 
-            // Merge Table 5 into Table 4
             FloorScreen.clickTable("5"),
             ProductScreen.clickControlButton("Merge"),
             FloorScreen.clickTable("4"),
             wait(100),
 
-            // ----- Action 1 ----- //
             updateOrderlines(["Coca-Cola", "Espresso"], "3", "1"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 2 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(["Coca-Cola", "Water", "Espresso", "Cocktail"], "1", "6"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 3 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(
                 ["Coca-Cola", "Water", "Minute Maid", "Espresso", "Cocktail", "Beer"],
@@ -148,7 +134,6 @@ registry.category("web_tour.tours").add("table_action_link", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // ----- Order 1 ----- //
             FloorScreen.clickTable("4"),
             addOrderlines(["Coca-Cola", "Water", "Minute Maid", "Fanta"], "3"),
             ProductScreen.clickOrderButton(),
@@ -162,7 +147,6 @@ registry.category("web_tour.tours").add("table_action_link", {
             updateOrderlines(["Fanta"], "6", "3"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Order 2 ----- //
             FloorScreen.clickTable("5"),
             addOrderlines(["Espresso", "Cocktail", "Beer", "Champagne"], "3"),
             ProductScreen.clickOrderButton(),
@@ -176,21 +160,17 @@ registry.category("web_tour.tours").add("table_action_link", {
             updateOrderlines(["Champagne"], "6", "3"),
             ProductScreen.clickOrderButton(),
 
-            // Link Table 5 into Table 4
             FloorScreen.linkTables("5", "4"),
             wait(100),
 
-            // ----- Action 1 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(["Coca-Cola", "Espresso"], "3", "1"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 2 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(["Coca-Cola", "Water", "Espresso", "Cocktail"], "1", "6"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 3 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(
                 ["Coca-Cola", "Water", "Minute Maid", "Espresso", "Cocktail", "Beer"],
@@ -208,7 +188,6 @@ registry.category("web_tour.tours").add("table_action_unlink", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // ----- Order 1 ----- //
             FloorScreen.clickTable("4"),
             addOrderlines(["Coca-Cola", "Water", "Minute Maid", "Fanta"], "3"),
             ProductScreen.clickOrderButton(),
@@ -222,7 +201,6 @@ registry.category("web_tour.tours").add("table_action_unlink", {
             updateOrderlines(["Fanta"], "6", "3"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Order 2 ----- //
             FloorScreen.clickTable("5"),
             addOrderlines(["Espresso", "Cocktail", "Beer", "Champagne"], "3"),
             ProductScreen.clickOrderButton(),
@@ -236,21 +214,17 @@ registry.category("web_tour.tours").add("table_action_unlink", {
             updateOrderlines(["Champagne"], "6", "3"),
             ProductScreen.clickOrderButton(),
 
-            // Link Table 5 into Table 4
             FloorScreen.linkTables("5", "4"),
             wait(100),
 
-            // ----- Action 1 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(["Coca-Cola", "Espresso"], "3", "1"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 2 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(["Coca-Cola", "Water", "Espresso", "Cocktail"], "1", "6"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 3 ----- //
             FloorScreen.clickTable("4"),
             updateOrderlines(
                 ["Coca-Cola", "Water", "Minute Maid", "Espresso", "Cocktail", "Beer"],
@@ -259,22 +233,19 @@ registry.category("web_tour.tours").add("table_action_unlink", {
             ),
             ProductScreen.clickOrderButton(),
 
-            // Unlink Table 5 from Table 4
             FloorScreen.unlinkTables("5", "4"),
             wait(100),
 
-            // ----- Action 4 ----- //
             FloorScreen.clickTable("4"),
-            updateOrderlines(["Beer"], "-3", "0"), // <-- reset quantity after unlink
+            updateOrderlines(["Beer"], "-3", "0"),
             updateOrderlines(["Coca-Cola", "Water"], "3", "5"),
             ProductScreen.clickOrderButton(),
             FloorScreen.clickTable("4"),
             updateOrderlines(["Water"], "5", "1"),
             ProductScreen.clickOrderButton(),
 
-            // ----- Action 5 ----- //
             FloorScreen.clickTable("5"),
-            updateOrderlines(["Beer"], "6", "3"), // <-- reset quantity after unlink
+            updateOrderlines(["Beer"], "6", "3"),
             updateOrderlines(["Espresso", "Champagne"], "3", "5"),
             ProductScreen.clickOrderButton(),
             FloorScreen.clickTable("5"),

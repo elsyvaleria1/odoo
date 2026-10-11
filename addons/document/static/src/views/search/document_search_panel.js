@@ -118,7 +118,6 @@ export class DocumentsSearchPanel extends SearchPanel {
     async onFolderDrop({ element, parent, next }) {
         const draggingFolderId = toFolderValueId(element.dataset.valueId);
         const parentFolderId = parent ? toFolderValueId(parent.dataset.valueId) : false;
-        // a root entry (MY, COMPANY) holds no sequence to sort against
         const nextId = next ? toFolderValueId(next.dataset.valueId) : false;
         const beforeFolderId = typeof nextId === "number" ? nextId : false;
         if (
@@ -129,8 +128,6 @@ export class DocumentsSearchPanel extends SearchPanel {
         ) {
             return;
         }
-        // the company root takes folders from managers only; a folder under
-        // it is judged by its own permission, server side
         if (
             parentFolderId === UserFolder.COMPANY &&
             !this.documentService.userIsDocumentManager
@@ -196,8 +193,6 @@ export class DocumentsSearchPanel extends SearchPanel {
                 isShortcut &&
                 !this.searchModel.getFolderById(folder.shortcut_document_id[0])
             ) {
-                // the target left the tree: trashed, where there is a trash to
-                // show, else out of this panel's scope
                 if (this.searchModel.getFolderById(UserFolder.TRASH)) {
                     return this.searchModel.toggleCategoryValue(
                         category.id,

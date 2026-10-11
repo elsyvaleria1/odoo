@@ -169,7 +169,7 @@ test("click just after drop is redispatched in next operation", async () => {
         },
     });
     await setupHTMLBuilder("", {
-        styleContent: /*css*/ `
+        styleContent: `
             .o_loading_screen {
                 position: absolute;
                 inset: 0;
@@ -179,8 +179,6 @@ test("click just after drop is redispatched in next operation", async () => {
             }`,
     });
 
-    // TODO: the next lines replicate website's `insertCategorySnippet` helper.
-    // It should be moved to html_builder.
     await contains(
         ".o-snippets-menu #snippet_groups .o_snippet_thumbnail_area",
     ).click();
@@ -194,15 +192,15 @@ test("click just after drop is redispatched in next operation", async () => {
         ".o_add_snippet_dialog .o_add_snippet_iframe:iframe .o_snippet_preview_wrap",
     ).click();
     await animationFrame();
-    expect.verifySteps(["next should intercept"]); // On snippet selected
+    expect.verifySteps(["next should intercept"]);
 
     await waitFor(":iframe .o_loading_screen");
     await click(":iframe", { position: { x: 200, y: 50 }, relative: true });
-    expect.verifySteps(["next"]); // On click
+    expect.verifySteps(["next"]);
     await nextDef;
-    expect.verifySteps(["updateContainers"]); // End of drop, on addStep()
+    expect.verifySteps(["updateContainers"]);
     await animationFrame();
-    expect.verifySteps(["onClick", "next", "updateContainers"]); // On click redispatched
+    expect.verifySteps(["onClick", "next", "updateContainers"]);
     await animationFrame();
     expect(".o-snippets-tabs .o-hb-tab.active").toHaveText("Style");
 });

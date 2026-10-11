@@ -49,10 +49,6 @@ class InsertEmbeddedViewMenu extends Component {
      *                        to store this view as an embedded view.
      */
     extractCurrentViewEmbedTemplateProps() {
-        /**
-         * Note: If you change the embedded view props (i.e: context key, etc.),
-         * do not forget to update the related python tests.
-         */
         const viewProps = {
             context: this.getViewContext(),
             displayName: this.config.getDisplayName(),
@@ -63,19 +59,10 @@ class InsertEmbeddedViewMenu extends Component {
             viewProps.actionXmlId = xmlId;
             return { embeddedProps: { viewProps } };
         }
-        /**
-         * Recover the original action (before the service pre-processing). The
-         * raw action is needed because it will be pre-processed again as a
-         * "different" action, after being stripped of its id, in Knowledge.
-         * If there is no original action, it means that the action is not
-         * serializable, therefore it cannot be stored in the body of an
-         * article.
-         */
         const originalAction =
             this.actionService.currentController?.action?._originalAction;
         if (originalAction) {
             const action = JSON.parse(originalAction);
-            // remove action help as it won't be used
             delete action.help;
             viewProps.actWindow = action;
             return { embeddedProps: { viewProps } };
@@ -90,19 +77,16 @@ class InsertEmbeddedViewMenu extends Component {
     getViewContext() {
         const context = {};
         if (this.searchModel) {
-            // Store the context of the search model:
             Object.assign(
                 context,
                 omit(this.searchModel.context, ...Object.keys(user.context)),
             );
-            // Store the state of the search model:
             Object.assign(context, {
                 knowledge_search_model_state: JSON.stringify(
                     this.searchModel.exportState(),
                 ),
             });
         }
-        // Store the "local context" of the view:
         const fns = this.actionCallbacks.__getContext__.callbacks;
         const localContext = Object.assign({}, ...fns.map((fn) => fn()));
         const extraContext = {};

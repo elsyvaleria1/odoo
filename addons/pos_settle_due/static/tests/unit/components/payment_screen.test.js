@@ -28,7 +28,7 @@ test("validateOrder -> depositOrder", async () => {
     const partner = store.models["res.partner"].get(3);
     const cash = store.models["pos.payment.method"].get(1);
     order.setPartner(partner);
-    const payLaterMethod = store.models["pos.payment.method"].get(3); // customer account
+    const payLaterMethod = store.models["pos.payment.method"].get(3);
     const paymentLine = order.addPaymentline(cash);
     paymentLine.data.amount = 50;
     const screen = await mountWithCleanup(PaymentScreen, {

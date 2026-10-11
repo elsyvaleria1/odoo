@@ -20,9 +20,6 @@ export class FieldSyncClipboardHandler extends AbstractCellClipboardHandler {
         return fieldSyncs;
     }
 
-    /**
-     * Paste the clipboard content in the given target
-     */
     paste(target, fieldSyncs, options) {
         if (options?.pasteOption) {
             return;

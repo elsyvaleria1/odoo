@@ -6,7 +6,6 @@ patch(OrderPaymentValidation.prototype, {
         if (!this.pos.config.set_tip_after_payment || this.order.is_tipped) {
             return super.nextPage;
         }
-        // Take the first payment method as the main payment.
         const mainPayment = this.order.payment_ids[0];
         if (mainPayment && mainPayment.canBeAdjusted()) {
             return {
@@ -20,7 +19,6 @@ patch(OrderPaymentValidation.prototype, {
     },
     async afterOrderValidation(suggestToSync = true) {
         const changedTables = this.order?.table_id?.children?.map((table) => table.id);
-        // After the order has been validated the tables have no reason to be merged anymore.
         if (changedTables?.length) {
             this.pos.data.write("restaurant.table", changedTables, { parent_id: null });
         }

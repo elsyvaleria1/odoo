@@ -14,10 +14,6 @@ import { useLayoutEffect } from "@web/core/utils/layout_effect";
 import { Record } from "@web/model/record";
 import { ConfirmationDialog, Dialog } from "@web/ui/dialog";
 
-/**
- * This component will display an article template picker. The user will be able
- * to preview the article templates and select the one they want.
- */
 export class ArticleTemplatePickerDialog extends Component {
     static template = "knowledge.ArticleTemplatePickerDialog";
     static components = {
@@ -106,9 +102,6 @@ export class ArticleTemplatePickerDialog extends Component {
         }
     }
 
-    /**
-     * Selects the first entry from the templates gallery sidebar.
-     */
     selectFirstEntryFromSidebar() {
         if (this.state.articlesListedInTemplateGallery.length > 0) {
             const articleId = this.state.articlesListedInTemplateGallery[0].id;

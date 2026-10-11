@@ -49,9 +49,6 @@ export class AccountReportEditPopover extends Component {
         });
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Edit
-    // -----------------------------------------------------------------------------------------------------------------
     async edit() {
         let editValue;
 
@@ -67,7 +64,7 @@ export class AccountReportEditPopover extends Component {
             const localeThousandsSeparator = localization.thousandsSep || "";
 
             if (
-                inputValue.split(localization.decimalPoint || ".").length >= 3 || // At least three parts means two decimal separators which would be wrong.
+                inputValue.split(localization.decimalPoint || ".").length >= 3 ||
                 (inputValue.includes(otherDecimalSeparator) &&
                     otherDecimalSeparator !== localeThousandsSeparator)
             ) {

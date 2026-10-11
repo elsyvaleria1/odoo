@@ -34,7 +34,6 @@ registry.category("web_tour.tours").add("pos_restaurant_sync", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Create a floating order. The idea is to have one of the draft orders be a floating order during the tour.
             FloorScreen.clickNewOrder(),
 
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -43,7 +42,6 @@ registry.category("web_tour.tours").add("pos_restaurant_sync", {
             ProductScreen.setTab("Test"),
             Chrome.clickPlanButton(),
 
-            // Create first order
             FloorScreen.clickTable("5"),
             Chrome.isTabActive("5"),
             ProductScreen.clickDisplayedProduct("Coca-Cola", true),
@@ -62,7 +60,6 @@ registry.category("web_tour.tours").add("pos_restaurant_sync", {
             checkPreparationTicketData([]),
             ProductScreen.totalAmountIs("4.40"),
 
-            // Create 2nd order (paid)
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("2"),
             ProductScreen.clickDisplayedProduct("Coca-Cola", true),
@@ -78,7 +75,6 @@ registry.category("web_tour.tours").add("pos_restaurant_sync", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // order on another table with a product variant
             FloorScreen.orderCountSyncedInTableIs("5", "0"),
             FloorScreen.clickTable("4"),
             ProductScreen.clickDisplayedProduct("Desk Organizer", false),
@@ -101,13 +97,10 @@ registry.category("web_tour.tours").add("pos_restaurant_sync", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // After clicking next order, floor screen is shown.
-            // It should have 1 as number of draft synced order.
             FloorScreen.orderCountSyncedInTableIs("5", "0"),
             FloorScreen.clickTable("5"),
             ProductScreen.totalAmountIs("4.40"),
 
-            // Create another draft order and go back to floor
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("2"),
             ProductScreen.clickDisplayedProduct("Coca-Cola", true),
@@ -115,10 +108,7 @@ registry.category("web_tour.tours").add("pos_restaurant_sync", {
             Chrome.clickPlanButton(),
             FloorScreen.orderCountSyncedInTableIs("5", "0"),
 
-            // Delete the first order then go back to floor
             Chrome.clickOrders(),
-            // The order ref ends with -00002 because it is actually the 2nd order made in the session.
-            // The first order made in the session is a floating order.
             TicketScreen.deleteOrder("002"),
             Dialog.confirm(),
             Chrome.closePrintingWarning(),
@@ -128,20 +118,14 @@ registry.category("web_tour.tours").add("pos_restaurant_sync", {
             ProductScreen.isShown(),
             Chrome.clickPlanButton(),
 
-            // There should be 0 synced draft order as we already deleted -00002.
             FloorScreen.clickTable("5"),
             ProductScreen.orderIsEmpty(),
         ].flat(),
 });
 
-/* pos_restaurant_sync_second_login
- *
- * This tour should be run after the first tour is done.
- */
 registry.category("web_tour.tours").add("pos_restaurant_sync_second_login", {
     steps: () =>
         [
-            // There is one draft synced order from the previous tour
             Chrome.startPoS(),
             FloorScreen.clickTable("2"),
             Chrome.waitRequest(),
@@ -151,7 +135,6 @@ registry.category("web_tour.tours").add("pos_restaurant_sync_second_login", {
             },
             ProductScreen.totalAmountIs("4.40"),
 
-            // Test transfering an order
             ProductScreen.clickControlButton("Transfer"),
             FloorScreen.orderCountSyncedInTableIs(2, 2),
             FloorScreen.clickTable("4"),
@@ -173,7 +156,6 @@ registry.category("web_tour.tours").add("pos_restaurant_sync_second_login", {
                 price: 2.2,
             }),
 
-            // Test if products still get merged after transfering the order
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             ProductScreen.totalAmountIs("6.60"),
             ProductScreen.clickNumpad("1"),
@@ -183,7 +165,6 @@ registry.category("web_tour.tours").add("pos_restaurant_sync_second_login", {
             PaymentScreen.clickPaymentMethod("Cash"),
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
-            // At this point, there are no draft orders.
 
             FloorScreen.clickTable("2"),
             ProductScreen.isShown(),
@@ -248,7 +229,6 @@ registry.category("web_tour.tours").add("test_pos_restaurant_course", {
             ProductScreen.clickOrderButton(),
             Chrome.closePrintingWarning(),
             FloorScreen.clickTable("5"),
-            // Check only 2 courses are there and empty course gets removed on clicking Order button
             {
                 trigger: negate('.order-course-name:eq(2) > span:contains("Course 3")'),
             },
@@ -258,11 +238,9 @@ registry.category("web_tour.tours").add("test_pos_restaurant_course", {
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
             FloorScreen.clickTable("5"),
-            // Check only 2 courses are there and empty course gets removed on clicking Plan button
             {
                 trigger: negate('.order-course-name:eq(2) > span:contains("Course 3")'),
             },
-            // Check empty course gets remove after fire course.
             ProductScreen.clickCourseButton(),
             ProductScreen.selectCourseLine("Course 2"),
             {
@@ -425,9 +403,8 @@ registry.category("web_tour.tours").add("PreparationPrinterContent", {
             NumberPopup.isShown("5"),
             Dialog.confirm(),
             ProductScreen.clickDisplayedProduct("Product Test"),
-            Chrome.freezeDateTime(1739354400000), // 12 feb 2025 - 10:00
+            Chrome.freezeDateTime(1739354400000),
             Dialog.confirm("Add"),
-            // Cutomer Note on orderline
             ProductScreen.addCustomerNote("Test customer note - orderline"),
             ProductScreen.totalAmountIs("10"),
             checkPreparationTicketData(
@@ -648,7 +625,7 @@ registry.category("web_tour.tours").add("test_preset_delivery_restaurant", {
 registry.category("web_tour.tours").add("test_preset_timing_restaurant", {
     steps: () =>
         [
-            Chrome.freezeDateTime(1749981600000), // June 15, 2025 - 10:00
+            Chrome.freezeDateTime(1749981600000),
             Chrome.startPoS(),
             FloorScreen.clickNewOrder(),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -683,7 +660,7 @@ registry.category("web_tour.tours").add("test_preset_timing_restaurant", {
 registry.category("web_tour.tours").add("test_open_register_with_preset_takeaway", {
     steps: () =>
         [
-            Chrome.freezeDateTime(1749981600000), // June 15, 2025 - 10:00
+            Chrome.freezeDateTime(1749981600000),
             Chrome.startPoS(),
             FloorScreen.isShown(),
             FloorScreen.clickTable("5"),
@@ -923,7 +900,6 @@ registry.category("web_tour.tours").add("test_transfering_orders", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Create a floating order with 3 cola
             FloorScreen.clickNewOrder(),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -931,7 +907,6 @@ registry.category("web_tour.tours").add("test_transfering_orders", {
             ProductScreen.setTab("Cola"),
             Chrome.clickPlanButton(),
 
-            // Create a floating order with 3 water
             FloorScreen.clickNewOrder(),
             ProductScreen.clickDisplayedProduct("Water"),
             ProductScreen.clickDisplayedProduct("Water"),
@@ -939,25 +914,21 @@ registry.category("web_tour.tours").add("test_transfering_orders", {
             ProductScreen.setTab("Water"),
             Chrome.clickPlanButton(),
 
-            // Create an order on table 5 with 3 minute maid
             FloorScreen.clickTable("5"),
             ProductScreen.clickDisplayedProduct("Minute Maid"),
             ProductScreen.clickDisplayedProduct("Minute Maid"),
             ProductScreen.clickDisplayedProduct("Minute Maid"),
             Chrome.clickPlanButton(),
 
-            // Create an order on table 4 with 3 coca-cola
             FloorScreen.clickTable("4"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             Chrome.clickPlanButton(),
 
-            // Should have 4 orders
             Chrome.clickOrders(),
             TicketScreen.nbOrdersIs(4),
 
-            // Transfer floating order to another floating order
             TicketScreen.selectOrder("Cola"),
             TicketScreen.loadSelectedOrder(),
             ProductScreen.clickControlButton("Transfer"),
@@ -969,7 +940,6 @@ registry.category("web_tour.tours").add("test_transfering_orders", {
             Chrome.clickOrders(),
             TicketScreen.nbOrdersIs(3),
 
-            // Transfering order from table 5 to table 4
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("5"),
             ProductScreen.clickControlButton("Transfer"),
@@ -979,7 +949,6 @@ registry.category("web_tour.tours").add("test_transfering_orders", {
             Chrome.clickOrders(),
             TicketScreen.nbOrdersIs(2),
 
-            // Transfering order from table to floating order
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("4"),
             ProductScreen.clickControlButton("Transfer"),
@@ -992,7 +961,6 @@ registry.category("web_tour.tours").add("test_transfering_orders", {
             Chrome.clickOrders(),
             TicketScreen.nbOrdersIs(1),
 
-            // Transfering floating order to empty table
             TicketScreen.selectOrder("Water"),
             TicketScreen.loadSelectedOrder(),
             ProductScreen.clickControlButton("Transfer"),
@@ -1003,7 +971,6 @@ registry.category("web_tour.tours").add("test_transfering_orders", {
             Chrome.clickPlanButton(),
             FloorScreen.orderCountSyncedInTableIs("5", "1"),
 
-            // Create a new floating order and transfer it to filled table
             FloorScreen.clickNewOrder(),
             ProductScreen.clickDisplayedProduct("Water"),
             ProductScreen.setTab("Water2"),
@@ -1071,14 +1038,14 @@ registry.category("web_tour.tours").add("test_sync_lines_qty_update", {
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("5"),
             ProductScreen.clickLine("Coca-Cola"),
-            Chrome.waitRequest(), // Wait for sync request (the order is created)
+            Chrome.waitRequest(),
             assertCurrentOrderDirty(false),
             Numpad.click("3"),
             Order.hasLine({ productName: "Coca-Cola", quantity: 3 }),
             assertCurrentOrderDirty(true),
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
             FloorScreen.clickTable("5"),
             ProductScreen.isShown(),
             assertCurrentOrderDirty(false),
@@ -1095,14 +1062,14 @@ registry.category("web_tour.tours").add("test_sync_set_partner", {
             Order.hasLine({ productName: "Coca-Cola" }),
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("5"),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
             assertCurrentOrderDirty(false),
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("Acme Corporation"),
             assertCurrentOrderDirty(true),
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
         ].flat(),
 });
 
@@ -1116,14 +1083,14 @@ registry.category("web_tour.tours").add("test_sync_set_note", {
             Order.hasLine({ productName: "Coca-Cola" }),
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("5"),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
             assertCurrentOrderDirty(false),
             ProductScreen.isShown(),
             ProductScreen.addInternalNote("Hello world"),
             assertCurrentOrderDirty(true),
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
         ].flat(),
 });
 
@@ -1137,7 +1104,7 @@ registry.category("web_tour.tours").add("test_sync_set_line_note", {
             Order.hasLine({ productName: "Coca-Cola" }),
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("5"),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
             assertCurrentOrderDirty(false),
             ProductScreen.isShown(),
             ProductScreen.clickLine("Coca-Cola"),
@@ -1145,7 +1112,7 @@ registry.category("web_tour.tours").add("test_sync_set_line_note", {
             assertCurrentOrderDirty(true),
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
         ].flat(),
 });
 
@@ -1159,7 +1126,7 @@ registry.category("web_tour.tours").add("test_sync_set_pricelist", {
             Order.hasLine({ productName: "Coca-Cola" }),
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("5"),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
             assertCurrentOrderDirty(false),
             ProductScreen.isShown(),
             ProductScreen.clickLine("Coca-Cola"),
@@ -1167,7 +1134,7 @@ registry.category("web_tour.tours").add("test_sync_set_pricelist", {
             assertCurrentOrderDirty(true),
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
-            Chrome.waitRequest(), // Wait for sync request
+            Chrome.waitRequest(),
         ].flat(),
 });
 
@@ -1218,7 +1185,7 @@ registry.category("web_tour.tours").add("test_combo_synchronisation", {
             ProductScreen.transferCourseTo("Course 2"),
             {
                 content: "Check if entire combo is transfered to course 2",
-                trigger: ".pos", // dummy trigger
+                trigger: ".pos",
                 run: function () {
                     const onlyCourse2 = window.posmodel
                         .getOrder()

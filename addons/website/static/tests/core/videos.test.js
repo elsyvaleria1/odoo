@@ -90,7 +90,6 @@ test("autoplay requires a ready player and an iframe without pending approval", 
     iframe.src = "https://www.youtube.com/embed/example";
     const container = document.createElement("div");
     container.append(iframe);
-    // Failed loading must not turn into a second exception in its caller.
     triggerAutoplay(iframe);
     youtubeWindow.YT = {
         Player: class {

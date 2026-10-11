@@ -30,7 +30,6 @@ patch(PosOrderline.prototype, {
         ) {
             this.setQuantity(saleOrderLine.qty_to_invoice);
         } else {
-            // a draft invoice claims its quantity as a posted one does
             const qtyClaimed =
                 saleOrderLine.qty_invoiced + (saleOrderLine.qty_invoiced_draft || 0);
             this.setQuantity(

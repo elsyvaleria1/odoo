@@ -25,8 +25,6 @@ const props = {
 };
 
 test("the map draws once Leaflet and its stylesheet loaded", async () => {
-    // Leaflet draws layers only once the map has a view, which the selected
-    // location gives it
     await mountWithCleanup(MapContainer, {
         props: { ...props, selectedLocationId: "1" },
     });
@@ -35,7 +33,6 @@ test("the map draws once Leaflet and its stylesheet loaded", async () => {
 });
 
 test("a Leaflet module that fails to import leaves the selector usable", async () => {
-    // what a failed import() rejects with; the old catch only knew loadJS's error
     patchWithCleanup(leafletLoader, {
         load: () =>
             Promise.reject(

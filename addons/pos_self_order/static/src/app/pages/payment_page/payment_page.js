@@ -54,8 +54,6 @@ export class PaymentPage extends Component {
         return Boolean(this.selfOrder.currentOrder?.kiosk_payment_to_verify_method_id);
     }
 
-    // this function will be override by pos_online_payment_self_order module
-    // in mobile is the only available payment method
     async startPayment() {
         if (this.paymentToVerify) {
             return;

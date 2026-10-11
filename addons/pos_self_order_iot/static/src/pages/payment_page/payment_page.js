@@ -114,7 +114,6 @@ patch(PaymentPage.prototype, {
 
     _onActionFail(data, order, paymentMethod) {
         if (data.status === "timeout") {
-            // ignore timeout, we keep waiting for the terminal to respond
             return this._keepListening(order, paymentMethod);
         }
         this.transactionInProgress = false;

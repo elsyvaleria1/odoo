@@ -29,7 +29,6 @@ class EditMenuDialog extends Component {
 
     setup() {
         this.bus = useEventBus();
-        // Keep the bus from the WebClient
         const originalBus = this.bus;
         useBus(
             originalBus,
@@ -43,13 +42,11 @@ class EditMenuDialog extends Component {
 
         useBus(this.bus, "ACTION_MANAGER:UPDATE", () => this.cancel());
 
-        // States and data
         this.state = proxy({ tree: {}, flatMenus: {} });
         this.state.tree = this.getTree();
         this.toMove = {};
         this.toDelete = [];
 
-        // DragAndDrop to move menus around
         const root = (this.root = elementRef());
         useNestedSortable({
             ref: root,
@@ -108,11 +105,9 @@ class EditMenuDialog extends Component {
         const menuId = parseInt(element.dataset.itemId);
         const menu = this.flatMenus[menuId];
 
-        // Remove element from parent's children (since we are moving it, this is the mandatory first step)
         let parentMenu = this.flatMenus[menu.parentId];
         parentMenu.children = parentMenu.children.filter((m) => m.id !== menuId);
 
-        // Determine next parent
         const parentLi = parent?.closest("li");
         const parentMenuId = parentLi
             ? parseInt(parentLi.dataset.itemId)
@@ -122,7 +117,6 @@ class EditMenuDialog extends Component {
             menu.parentId = parentMenu.id;
         }
 
-        // Determine at which position we should place the element
         if (previous) {
             const previousMenu = this.flatMenus[previous.dataset.itemId];
             const index = parentMenu.children.findIndex(
@@ -133,7 +127,6 @@ class EditMenuDialog extends Component {
             parentMenu.children.unshift(menu);
         }
 
-        // Last step: prepare the data that can be sent to the server.
         this.toMove[menuId] = {
             parent_menu_id: menu.parentId,
         };
@@ -201,8 +194,6 @@ export class AppMenuEditor extends Component {
 
     setup() {
         this.menus = useService("menu");
-        // ovverride the whole env coming from within studio
-        // contains an override of dialog and an override of action
         provideHostedStudioEnv(this.props.env);
         this.addDialog = useOwnedDialogs();
     }

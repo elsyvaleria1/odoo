@@ -50,10 +50,6 @@ class kioskAttendanceApp extends Component {
         });
         this.state = proxy({
             active_display: "settings",
-            // The kiosk's own mode, not the one it was served with: the
-            // settings screen changes it. It was written back onto `props`,
-            // which is not reactive, so the screen only caught up because the
-            // same handler happened to write `active_display` as well.
             kioskMode: this.props.kioskMode,
             displayDemoMessage:
                 browser.localStorage.getItem("hr_attendance.ShowDemoMessage") !==

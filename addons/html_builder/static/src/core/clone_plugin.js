@@ -24,7 +24,6 @@ const clonableSelector =
     "a.btn:not(.oe_unremovable, .js_subscribe_btn, .s_website_form_send, .s_website_form_submit)";
 
 export function isClonable(el) {
-    // TODO and isDraggable
     return el.matches(clonableSelector) || isRemovable(el);
 }
 
@@ -36,7 +35,6 @@ export class ClonePlugin extends Plugin {
     /** @type {import("plugins").BuilderResources} */
     resources = {
         builder_actions: {
-            // Maybe rename cloneItem ?
             CloneItemAction,
         },
         get_overlay_buttons: withSequence(2, {
@@ -88,17 +86,14 @@ export class ClonePlugin extends Plugin {
     ) {
         this.dispatchTo("on_will_clone_handlers", { originalEl: el });
         const cloneEl = el.cloneNode(true);
-        this.dependencies.dom.removeSystemProperties(cloneEl); // TODO check that
+        this.dependencies.dom.removeSystemProperties(cloneEl);
         el.insertAdjacentElement(position, cloneEl);
 
-        // Update the containers if required.
         if (activateClone) {
             this.dependencies.builderOptions.setNextTarget(cloneEl);
         }
 
-        // Scroll to the clone if required and if it is not visible.
         if (scrollToClone && !isElementInViewport(cloneEl)) {
-            // Firefox mis-scrolls with block "center" on tall snippets; keep "start".
             cloneEl.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 

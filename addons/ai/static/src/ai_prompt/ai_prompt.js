@@ -114,7 +114,6 @@ export class AiPrompt extends Component {
             baseContainers: ["DIV"],
             recordsSelectorDomain: this.props.domain,
             recordsSelectorResModel: this.props.comodel,
-            // small hack to continue to show the placeholder when the widget is focused but empty
             resources: {
                 hints: [
                     withSequence(20, {
@@ -148,7 +147,6 @@ export class AiPrompt extends Component {
         if (!target) {
             return;
         }
-        // select the target to remove it when we will insert
         this.editor.shared.selection.setSelection({
             anchorNode: target.parentElement,
             anchorOffset: childNodeIndex(target),

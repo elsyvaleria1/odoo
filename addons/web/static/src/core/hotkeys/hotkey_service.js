@@ -37,9 +37,6 @@ export { getActiveHotkey };
 
 const log = makeLogger("web.hotkeys");
 
-// WAI-ARIA: aria-disabled="true" disables the element and its focusable
-// descendants; an inert subtree cannot be activated at all. A disabled fieldset
-// disables only its form controls, which :disabled already covers.
 const INOPERABLE_SELECTOR = [
     ":disabled",
     "[aria-disabled='true' i]",

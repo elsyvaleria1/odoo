@@ -17,9 +17,6 @@ describe("getParameterDefaultValue", () => {
     });
 
     test("a domain gets a runnable domain, not an empty string", () => {
-        // The server rejects "" outright: `Domain() invalid argument type for
-        // domain: ''`. This used to be every domain parameter in the page,
-        // because the lookup read `parameter.type`, a key that is not there.
         expect(
             getParameterDefaultValue("domain", { annotation: "DomainType" }),
         ).toEqual([["display_name", "ilike", "a%"]]);

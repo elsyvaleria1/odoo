@@ -75,7 +75,6 @@ registry
                 content: "Add a Super Product to the main_so",
                 run: "click",
             },
-            // END: Go back to quotations for the last sol of the main_so to update
             {
                 trigger: '.breadcrumb-item :contains("Tasks")',
                 content: "Go back to the tasks",

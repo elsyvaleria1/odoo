@@ -21,7 +21,6 @@ export default class LineComponent extends Component {
         this.dialog = useService("dialog");
     }
 
-    // A getter: the component outlives a product change on its line (same virtual id).
     get imageSource() {
         const product = this.props.line.product_id;
         return product.has_image
@@ -153,7 +152,6 @@ export default class LineComponent extends Component {
     }
 
     get showDescription() {
-        // In Barcode we don't get the product's `display_name` with the code, however the description uses it.
         const possibleNames = [
             this.line.product_id.display_name,
             `[${this.line.product_id.default_code}] ${this.line.product_id.display_name}`,
@@ -176,8 +174,6 @@ export default class LineComponent extends Component {
         ) {
             locationName = locationName.replace(rootLocation.display_name, "...");
         }
-        // Location names are free text: building a RegExp out of one silently changes the match
-        // for `Zone (A)` and throws a SyntaxError for `Zone (`. This only ever strips a suffix.
         return locationName.endsWith(currentLocation.name)
             ? locationName.slice(0, -currentLocation.name.length)
             : locationName;
@@ -201,8 +197,6 @@ export default class LineComponent extends Component {
     }
 
     async delete(ev) {
-        // The button sits inside the line: letting the click reach the line's `select`
-        // selected the line being deleted.
         ev.stopPropagation();
         await this.model.removeLine(this.line);
         this.model.trigger("update");

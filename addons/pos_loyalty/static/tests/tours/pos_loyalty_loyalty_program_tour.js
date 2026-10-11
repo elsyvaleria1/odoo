@@ -15,19 +15,16 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram1", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Order1: Generates 2 points.
             ProductScreen.addOrderline("Whiteboard Pen", "2"),
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("AAA Test Partner"),
             PosLoyalty.orderTotalIs("6.40"),
             PosLoyalty.finalizeOrder("Cash", "10"),
 
-            // Order2: Consumes points to get free product.
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("AAA Test Partner"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen", true, "1"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen", true, "2"),
-            // At this point, AAA Test Partner has 4 points.
             PosLoyalty.isMoreControlButtonActive(true),
             PosLoyalty.isRewardButtonHighlighted(true),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen", true, "3"),
@@ -37,11 +34,6 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram1", {
             PosLoyalty.orderTotalIs("6.40"),
             PosLoyalty.finalizeOrder("Cash", "10"),
 
-            // Order3: Generate 4 points.
-            // - Initially gets free product, but was removed automatically by changing the
-            //   number of items to zero.
-            // - It's impossible to checked here if the free product reward is really removed
-            //   so we check in the backend the number of orders that consumed the reward.
             ProductScreen.addOrderline("Whiteboard Pen", "4"),
             PosLoyalty.orderTotalIs("12.80"),
             ProductScreen.clickPartnerButton(),
@@ -51,9 +43,6 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram1", {
             PosLoyalty.hasRewardLine("Free Product - Whiteboard Pen", "-3.20", "1"),
             PosLoyalty.isRewardButtonHighlighted(false),
             ProductScreen.clickNumpad("⌫"),
-            // At this point, the reward line should have been automatically removed
-            // because there is not enough points to purchase it. Unfortunately, we
-            // can't check that here.
             PosLoyalty.orderTotalIs("0.00"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen", true, "1.00"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen", true, "2.00"),
@@ -71,14 +60,9 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram1", {
 registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram2", {
     steps: () =>
         [
-            // Order1: Immediately set the customer to Test Partner AAA which has 4 points.
-            // - He has enough points to purchase a free product but since there is still
-            //   no product in the order, reward button should not yet be highlighted.
-            // - Furthermore, clicking the reward product should not add it as reward product.
             Chrome.startPoS(),
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("AAA Test Partner"),
-            // No item in the order, so reward button is off.
             PosLoyalty.isRewardButtonHighlighted(false),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             PosLoyalty.isRewardButtonHighlighted(true),
@@ -88,9 +72,6 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram2", {
             PosLoyalty.orderTotalIs("3.20"),
             PosLoyalty.finalizeOrder("Cash", "10"),
 
-            // Order2: Generate 4 points for CCC Test Partner.
-            // - Reference: Order2_CCC
-            // - But set BBB Test Partner first as the customer.
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("BBB Test Partner"),
             PosLoyalty.isRewardButtonHighlighted(false),
@@ -106,9 +87,6 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram2", {
             PosLoyalty.orderTotalIs("12.80"),
             PosLoyalty.finalizeOrder("Cash", "20"),
 
-            // Order3: Generate 3 points for BBB Test Partner.
-            // - Reference: Order3_BBB
-            // - But set CCC Test Partner first as the customer.
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("CCC Test Partner"),
             PosLoyalty.isRewardButtonHighlighted(false),
@@ -119,8 +97,6 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram2", {
             PosLoyalty.orderTotalIs("9.60"),
             PosLoyalty.finalizeOrder("Cash", "10"),
 
-            // Order4: Should not have reward because the customer will be removed.
-            // - Reference: Order4_no_reward
             ProductScreen.clickDisplayedProduct("Whiteboard Pen", true, "1"),
             PosLoyalty.isRewardButtonHighlighted(false),
             ProductScreen.clickPartnerButton(),
@@ -129,7 +105,6 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram2", {
             PosLoyalty.claimReward("Free Product - Whiteboard Pen"),
             PosLoyalty.hasRewardLine("Free Product - Whiteboard Pen", "-3.20", "1"),
             ProductScreen.clickPartnerButton(),
-            // This deselects the customer.
             PosLoyalty.unselectPartner(),
             PosLoyalty.customerIs("Customer"),
             PosLoyalty.orderTotalIs("6.40"),
@@ -159,13 +134,10 @@ registry.category("web_tour.tours").add("PosLoyaltyLoyaltyProgram3", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Generates 10.2 points and use points to get the reward product with zero sale price
             ProductScreen.addOrderline("Desk Organizer", "2"),
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("AAA Test Partner"),
 
-            // At this point, the free_product program is triggered.
-            // The reward button should be highlighted.
             PosLoyalty.isRewardButtonHighlighted(true, true),
             PosLoyalty.claimReward("Free Product - Whiteboard Pen"),
             PosLoyalty.hasRewardLine("Free Product - Whiteboard Pen", "-1.00", "1"),
@@ -321,14 +293,12 @@ registry.category("web_tour.tours").add("PosLoyaltyMultipleOrders", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // Order1: Add a product and leave the order in draft.
             ProductScreen.addOrderline("Whiteboard Pen", "2"),
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("Partner Test 1"),
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Cash"),
 
-            // Order2: Finalize a different order.
             Chrome.createFloatingOrder(),
             ProductScreen.addOrderline("Desk Organizer", "1"),
             PosLoyalty.finalizeOrder("Cash", "10"),

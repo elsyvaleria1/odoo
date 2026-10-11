@@ -1,16 +1,8 @@
-// Importing the module applies its patch() on AccountReportFilters.prototype.
 import "@account_reports_cash_basis/components/cash_basis_report/filters";
 
 import { expect, test } from "@odoo/hoot";
 import { AccountReportFilters } from "@report_formula/components/account_report/filters/filters";
 
-/**
- * The cash-basis filters module only patches two getters on
- * AccountReportFilters.prototype; mounting the whole component (Dropdown,
- * services, ...) would test far more than this module owns. Call the
- * patched getters directly against a minimal fake `this`, the same way the
- * component itself would see them via `this.controller`.
- */
 function fakeFilters({ showCashBasis, reportCashBasis, group = true } = {}) {
     return {
         controller: {

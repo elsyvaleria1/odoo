@@ -200,9 +200,6 @@ export class PosData extends SignalStore {
         return `point-of-sale-${odoo.pos_config_id}-${odoo.info?.db}`;
     }
 
-    // what the server has not seen (orders, their children, the offline queue)
-    // stays; the latest local changes are written first, and the connection
-    // closes so that no later write puts server rows back before the reload
     async resetServerCacheForReload() {
         log.lifecycle("[idb] reset server cache for reload", () => ({
             db: this.databaseName,
@@ -215,8 +212,6 @@ export class PosData extends SignalStore {
         return cleared;
     }
 
-    // true once the queued operation reached the server, false once it is
-    // dead-lettered; never settles if the page goes first
     waitForReplay(uuid) {
         if (!this.network.unsyncData.some((entry) => entry.uuid === uuid)) {
             return Promise.resolve(
@@ -237,7 +232,6 @@ export class PosData extends SignalStore {
     }
 
     get serverCacheStores() {
-        // orders, their children and the offline queue are local work, not cache
         const local = new Set([
             ...Object.keys(this.opts.databaseTable),
             UNSYNC_QUEUE_STORE,
@@ -258,7 +252,6 @@ export class PosData extends SignalStore {
 
     async deleteRecordsInIndexedDB(model, ids) {
         log.lifecycle("[idb] delete", () => ({ model, ids: ids.length }));
-        // after any write in flight, which would otherwise put the row back
         return await this.indexedDBMutex.exec(() => this.indexedDB.delete(model, ids));
     }
 
@@ -314,14 +307,12 @@ export class PosData extends SignalStore {
                 }
                 this.dirtyLocalRecords.get(modelName).add(record);
             }
-            // a child marks its parents _dirty, which their rows carry
             for (const field of record.model.getParentFields()) {
                 const parent = record[field.name];
                 if (parent?.model) {
                     mark(parent);
                 }
             }
-            // a referenced row is kept or purged by what references it
             for (const fieldName of this.trackedReferenceFields(modelName, tracked)) {
                 const referenced = record[fieldName];
                 if (referenced?.model) {
@@ -371,8 +362,6 @@ export class PosData extends SignalStore {
         return live;
     }
 
-    // every write is issued before the first await: on pagehide nothing after
-    // it runs, and later transactions on a store commit after earlier ones
     async _synchronizeLocalDataInIndexedDB({ onlyDirty = false } = {}) {
         const endSync = log.perf("synchronizeLocalDataInIndexedDB");
         const plan = Object.entries(this.opts.databaseTable).map(([model, params]) => {
@@ -450,7 +439,6 @@ export class PosData extends SignalStore {
         }
     }
 
-    // outside indexedDBMutex: a queued job would start after the page is gone
     flushLocalDataInIndexedDB() {
         this.debouncedSynchronizeLocalDataInIndexedDB.cancel();
         if (
@@ -560,8 +548,6 @@ export class PosData extends SignalStore {
         return results;
     }
 
-    // before checkAndDeleteMissingOrders: loadServerOrders stamps the current
-    // session on every order it reads, after which none is ever purgeable
     purgeRestoredOrders(results) {
         const isPurgeable = this.opts.databaseTable["pos.order"]?.condition;
         const restored = results?.["pos.order"];
@@ -585,7 +571,6 @@ export class PosData extends SignalStore {
     async getCachedServerDataFromIndexedDB() {
         const endRead = log.perf("[idb] getCachedServerDataFromIndexedDB");
         const stores = this.serverCacheStores;
-        // readAll([]) would read every store, orders included
         const results = stores.length
             ? (await this.indexedDB.readAll(stores)) || {}
             : {};
@@ -831,8 +816,6 @@ export class PosData extends SignalStore {
         await this.initData();
         await this.getLocalDataFromIndexedDB();
         this.initListeners();
-        // the incremental flush only re-checks what changes: one full pass
-        // drops the rows whose purge condition turned true before this boot
         Promise.resolve(this.syncLocalDataInIndexedDB()).catch((error) =>
             logPosMessage(
                 "DataService",
@@ -944,7 +927,6 @@ export class PosData extends SignalStore {
         }
     }
 
-    // uiState is persisted with its row but fires no update event
     watchLocalState(model, record) {
         const key = this.opts.databaseTable[model]?.key;
         if (!key || !record || typeof record.uiState !== "object") {
@@ -1001,7 +983,6 @@ export class PosData extends SignalStore {
         const queuedArgs = queueable
             ? JSON.parse(JSON.stringify(arguments[0]))
             : undefined;
-        // sent on the first attempt too: it may commit before the connection drops
         const operationUuid = uuid || (queueable ? uuidv4() : "");
         const withOperation = (kw = {}) =>
             operationUuid
@@ -1309,7 +1290,6 @@ export class PosData extends SignalStore {
                 if (["product.product", "product.template"].includes(model)) {
                     const domain =
                         model === "product.product" ? "product_variant_ids.id" : "id";
-                    // never queued: a replay holds this.mutex, which queueing takes
                     await this.callRelated(
                         "product.template",
                         "load_product_from_pos",
@@ -1419,8 +1399,6 @@ export class PosData extends SignalStore {
         });
     }
 
-    // nothing else replays the queue while the till believes it is online:
-    // checkConnectivity only runs on a browser online/offline event or offline
     scheduleQueueRetry() {
         const retry = this.queueRetry;
         if (!this.network.unsyncData.length) {
@@ -1572,11 +1550,6 @@ export class PosData extends SignalStore {
         });
     }
 
-    // a write sent before (restored, or sent in this session with its answer lost)
-    // may have committed and been overwritten since (its replay is then answered
-    // without being applied), or not: only the server knows. databaseTable rows
-    // are the till's own and are left alone, and so is a record edited on this
-    // till since the write: that edit is newer than anything the server holds
     async readBackReplayedWrite(
         { model, ids, values },
         { keepLocalEdits = false } = {},

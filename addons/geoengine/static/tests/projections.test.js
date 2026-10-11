@@ -4,7 +4,6 @@ import { geoLibs, loadGeoLibs, registerProjections } from "@geoengine/lib/geo_li
 import { before, describe, expect, test, withFetch } from "@odoo/hoot";
 import { globalCachedFetch } from "@web/../tests/_framework/module_set.hoot";
 
-// What get_layers sends for EPSG:6372 (spatial_ref_sys + pyproj's area of use).
 const MEXICO_LCC = {
     code: "EPSG:6372",
     proj4:
@@ -26,7 +25,6 @@ describe("projections OpenLayers cannot resolve (production)", () => {
         const projection = ol.proj.get("EPSG:6372");
         expect(Boolean(projection)).toBe(true);
         expect(projection.getExtent()).toEqual(MEXICO_LCC.extent);
-        // pyproj: Transformer.from_crs(4326, 6372).transform(-107.39, 24.80)
         const [x, y] = ol.proj.fromLonLat([-107.39, 24.8], "EPSG:6372");
         expect(Math.round(x * 1000) / 1000).toBe(1957969.293);
         expect(Math.round(y * 1000) / 1000).toBe(1427746.328);

@@ -8,10 +8,6 @@ export class AnalyticPivotRenderer extends PivotRenderer {
         this.searchModel = useSearchModel();
     }
 
-    /**
-     * Override to also resolve the selected id against the per-plan group-by
-     * options, which are not top-level entries of `groupByItems`.
-     */
     onGroupBySelected({ itemId, optionId }) {
         if (typeof optionId === "number") {
             itemId = optionId;
@@ -22,7 +18,6 @@ export class AnalyticPivotRenderer extends PivotRenderer {
                 !searchItem.custom,
         );
 
-        // Add custom groupbys
         for (const [
             fieldName,
             customGroupBy,

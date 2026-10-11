@@ -18,25 +18,8 @@ import { useCurrentViewEditorModel } from "@web_studio/client_action/view_editor
 
 import { AddButtonAction } from "../../../interactive_editor/action_button/action_button.js";
 
-/**
- * Overrides and extensions of components used by the FormRenderer
- * As a rule of thumb, elements should be able to handle the props
- * - studioXpath: the xpath to the node in the form's arch to which the component
- *   refers
- * - They generally be clicked on to change their characteristics (in the Sidebar)
- * - The click doesn't trigger default behavior (the view is inert)
- * - They can be draggable (FormLabel referring to a field)
- * - studioIsVisible: all components whether invisible or not, are compiled and rendered
- *   this props allows to toggle the class o_invisible_modifier
- * - They can have studio hooks, that are placeholders for dropping content (new elements, field, or displace elements)
- */
-
 const components = formView.Renderer.components;
 
-/*
- * FormLabel:
- * - Can be draggable if in InnerGroup
- */
 export class FormLabel extends components.FormLabel {
     static template = "web_studio.FormLabel";
     static props = {
@@ -65,12 +48,6 @@ export class FormLabel extends components.FormLabel {
     }
 }
 
-/*
- * Notebook:
- * - Display every page, the elements in the page handle whether they are invisible themselves
- * - Push a droppable hook on every empty page
- * - Can add a new page
- */
 export class Notebook extends components.Notebook {
     static template = "web_studio.Notebook.Hook";
     static components = { ...components.Notebook.components, StudioHook };
@@ -86,10 +63,6 @@ export class Notebook extends components.Notebook {
         this.config = useViewConfig();
     }
     computePages(props) {
-        // `web`'s Notebook answers with `{ pages, disabledPages }`; it used to
-        // answer with the pages array alone (odoo bf19a83c9ab). Reading the
-        // result as an array threw `pages.forEach is not a function` and took
-        // every notebook path in the form editor down with it.
         const computed = super.computePages(props);
         computed.pages.forEach((p) => {
             p[1].studioIsVisible = p[1].isVisible;

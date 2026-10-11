@@ -304,7 +304,6 @@ export class ExportDataDialog extends Component {
     isFieldExpandable(id) {
         const field = this.knownFields[id];
         if (!field) {
-            // A retiring tree item can render after its field cache was replaced.
             log.logic("field no longer available", () => ({ id }));
             return false;
         }

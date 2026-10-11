@@ -38,10 +38,6 @@ test("multi tab triggers shared_value_updated", async () => {
 });
 
 test("values stored under the historical 'undefined.' prefix are migrated", async () => {
-    // The prefix used to be built from `this.name` (undefined on a service
-    // value), so user preferences were persisted under literal
-    // "undefined.<origin>." keys. Starting the service must migrate them to
-    // the fixed "bus.<origin>." prefix instead of silently resetting them.
     const sanitizedOrigin = location.origin.replace(/:\/{0,2}/g, "_");
     localStorage.setItem(
         `undefined.${sanitizedOrigin}.mail.html_composer.enabled`,

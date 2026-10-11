@@ -81,7 +81,7 @@ test("merge multiple records uses the domain selection", async () => {
         groupBy: ["group_id"],
     });
 
-    await contains(".o_group_header:first-child").click(); // fold the first group
+    await contains(".o_group_header:first-child").click();
     await contains("thead .o_list_record_selector").click();
     await contains(".o_selection_box .o_select_domain").click();
     await contains(".btn-primary.o_data_merge_merge_button").click();
@@ -92,8 +92,6 @@ test("merge multiple records uses the domain selection", async () => {
 
 test.tags("desktop");
 test("opening a row opens the original record by its integer id", async () => {
-    // res_id is a Many2oneReference: the row holds `{ resId, displayName }`,
-    // and the form view only accepts the integer.
     mockService("action", {
         doAction(action) {
             expect.step(`${action.res_model},${action.res_id}`);

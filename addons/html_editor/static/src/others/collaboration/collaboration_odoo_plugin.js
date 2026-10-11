@@ -554,18 +554,7 @@ export class CollaborationOdooPlugin extends Plugin {
     async onRecoveryPeerTimeout(processSnapshots) {
         processSnapshots();
     }
-    showConflictDialog() {
-        // todo: implement conflict dialog
-        // if (this.conflictDialogOpened) {
-        //     return;
-        // }
-        // const content = markup(this.odooEditor.editable.cloneNode(true).outerHTML);
-        // this.conflictDialogOpened = true;
-        // this.env.services.dialog.add(ConflictDialog, {
-        //     content,
-        //     close: () => (this.conflictDialogOpened = false),
-        // });
-    }
+    showConflictDialog() {}
 
     getHistorySnapshot() {
         return Object.assign({}, this.dependencies.collaboration.getSnapshotSteps(), {

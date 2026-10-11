@@ -3,7 +3,7 @@
  * @enum {string}
  */
 export const CommandResult = {
-    Success: "Success", // should be imported from o-spreadsheet instead of redefined here
+    Success: "Success",
     FilterNotFound: "FilterNotFound",
     InvalidFilterMove: "InvalidFilterMove",
     DuplicatedFilterLabel: "DuplicatedFilterLabel",

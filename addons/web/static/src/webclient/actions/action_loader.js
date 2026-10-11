@@ -54,8 +54,6 @@ export async function loadAction(actionRequest, context = {}, viewsPreload) {
         const ctx = makeContext([user.context, context]);
         delete ctx.params;
         const params = { action_id: actionRequest, context: ctx };
-        // a cached action is only revalidated: asking for its views again would
-        // send them beside the view service's own revalidation
         const fetch =
             viewsPreload &&
             (async (/** @type {boolean | undefined} */ held) => {
@@ -77,7 +75,6 @@ export async function loadAction(actionRequest, context = {}, viewsPreload) {
                         { retry: 1 },
                     );
                 } catch {
-                    // the plain call, whose failure is the one to report
                     return rpc("/web/action/load", params, { retry: 1 });
                 }
                 if (

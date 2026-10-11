@@ -157,9 +157,6 @@ export class DateTimeField extends FieldComponent {
                 ev.detail?.proms?.push(committed);
                 return;
             }
-            // commitInputs hands back an apply already under way, which may be
-            // waiting on its onchange: the urgent flush re-issues the value as
-            // an urgent update instead of holding the unload on that request
             committed.catch(() => {});
             ev.detail?.proms?.push(this.applyPickedValues());
         });
@@ -230,8 +227,6 @@ export class DateTimeField extends FieldComponent {
             values: key,
         }));
         if (reissued) {
-            // the record's data moves only once the urgent update settles: a
-            // second call in the same flush must not update it twice
             return /** @type {{ promise: Promise<void> }} */ (this._urgentUpdate)
                 .promise;
         }

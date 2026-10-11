@@ -148,7 +148,6 @@ test("a load driven by explicit resIds carries the abort signal too", async () =
     });
 
     const model = await mountListAndGetModel();
-    // a multi-record root driven by known ids reads them instead of searching
     model.config.resIds = [1, 2];
     const before = signals.length;
     const superseded = model.load().catch(() => {});

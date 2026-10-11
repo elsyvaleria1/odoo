@@ -18,9 +18,6 @@ export class AccountReportCogMenu extends Component {
         this.controller = proxy(this.reportContext.controller);
     }
 
-    //------------------------------------------------------------------------------------------------------------------
-    // Buttons
-    //------------------------------------------------------------------------------------------------------------------
     get cogButtons() {
         const buttons = [];
 

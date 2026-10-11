@@ -22,9 +22,6 @@ export class AiPromptField extends Component {
     props = useProps(this.constructor.props);
 
     setup() {
-        // Owned dirty-signal emitter (own owner symbol, cleared on destroy):
-        // a raw boolean trigger would share the legacy owner with every other
-        // unconverted field and clobber their dirty state.
         this.setFieldDirty = useFieldDirtySignal();
     }
 
@@ -56,8 +53,6 @@ export class AiPromptField extends Component {
         if (value !== this.prompt) {
             this.props.record.update({ [this.props.name]: value });
         }
-        // The editor content is now committed to the record: whatever
-        // dirtiness remains is the record's, not this input's.
         this.setFieldDirty(false);
     }
 }

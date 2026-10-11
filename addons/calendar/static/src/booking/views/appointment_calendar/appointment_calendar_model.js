@@ -68,7 +68,6 @@ patch(AttendeeCalendarModel.prototype, {
         } else {
             const isSameDay = hasSame(record.start, record.end, "day");
             if (!isSameDay && hasSame(record.start, record.end, "month")) {
-                // Simplify date-range if an event occurs into the same month (eg. "August, 4-5 2019")
                 record.title =
                     formatValue(record.start, "LLLL d") +
                     "-" +

@@ -21,7 +21,6 @@ patch(ResPartner.prototype, {
         if (this.commercial_company_name) {
             info.push(this.commercial_company_name);
         }
-        // ⚠ French: function = job position
         if (this.function) {
             info.push(this.function);
         }

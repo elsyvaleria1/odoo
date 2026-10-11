@@ -3,10 +3,6 @@ import { InCallViewModel } from "@voip/softphone/in_call_view_model";
 import { KeypadModel } from "@voip/softphone/keypad_model";
 import { isSubstring, matchPhoneNumber } from "@voip/utils/utils";
 
-/**
- * Retains the state of the Softphone that needs to be persisted even if the
- * corresponding component is unmounted.
- */
 export class Softphone {
     activeTab = "dialer";
     activeTabSection = "";
@@ -65,11 +61,6 @@ export class Softphone {
         );
     }
 
-    /**
-     * Setup method to be overridden by subclasses.
-     * This method exists because the constructor cannot be overridden,
-     * allowing subclasses to perform initialization logic.
-     */
     setup() {}
 
     hide() {

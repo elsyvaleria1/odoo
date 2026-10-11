@@ -3,7 +3,6 @@ import { registry } from "@web/core/registry";
 import * as helper from "./tour_helper_stock_barcode.js";
 import { stepUtils } from "./tour_step_utils.js";
 
-// Inventory Tests.
 registry.category("web_tour.tours").add("test_gs1_inventory_gtin_8", {
     steps: () => [
         {
@@ -12,7 +11,7 @@ registry.category("web_tour.tours").add("test_gs1_inventory_gtin_8", {
         },
         {
             trigger: ".o_barcode_client_action",
-            run: "scan 0100000082655853", // (01)00000082655853 -> GTIN-8 -> product barcode == 8265585
+            run: "scan 0100000082655853",
         },
         {
             trigger: '.o_barcode_client_action:contains("PRO_GTIN_8")',
@@ -25,7 +24,7 @@ registry.category("web_tour.tours").add("test_gs1_inventory_gtin_8", {
         },
         {
             trigger: '.o_barcode_client_action:contains("PRO_GTIN_8")',
-            run: "scan 3777", // (37)77 -> add 77 Units to the selected product (the last one)
+            run: "scan 3777",
         },
         {
             trigger: '.o_barcode_line:contains("78")',
@@ -48,9 +47,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_product_units", {
             trigger: ".o_button_inventory",
             run: "click",
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)00000082655853    > product barcode (8265585)
-        //      - (37)102               > units (102)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 010000008265585337102",
@@ -78,10 +74,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
             trigger: ".o_button_inventory",
             run: "click",
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)00111155555717    > tracked by lot product barcode (111155555717)
-        //      - (10)LOT-AAA           > lot (LOT-AAA)
-        //      - (30)5                 > quantity (5)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 010011115555571710LOT-AAA~305",
@@ -96,7 +88,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 helper.assertLineQty(line, "5");
             },
         },
-        // Scans product + lot, and then scans the quantity after the line's creation.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 010011115555571710LOT-AAB",
@@ -135,7 +126,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 helper.assertLineQty(subline, "10");
             },
         },
-        // Scans a second time a quantity (should increment the current line).
         {
             trigger: ".o_barcode_client_action",
             run: "scan 305",
@@ -153,8 +143,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 helper.assertLineQty(subline, "15");
             },
         },
-        // Scans a lot + quantity (should get back the product from the previous
-        // line and create a new line).
         {
             trigger: ".o_barcode_client_action",
             run: "scan 3020##10LOT-AAC",
@@ -172,8 +160,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 helper.assertLineQty(subline, "20");
             },
         },
-        // Scans manually (with a custom separator) lot + quantity but with a lot already scanned,
-        // so it should increment the quantity on the line with this lot.
         ...stepUtils.inputManuallyBarcode("305Alt02910LOT-AAA"),
         {
             trigger: '.o_barcode_line.o_selected .qty-done:contains("10")',
@@ -189,9 +175,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
             },
         },
 
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)15222222222219    > tracked by SN product barcode (15222222222219)
-        //      - (21)Serial1           > serial number (Serial1)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 011522222222221921Serial1",
@@ -207,9 +190,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 helper.assertLineQty(line, "1");
             },
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)15222222222219    > tracked by SN product barcode (15222222222219)
-        //      - (21)Serial2           > serial number (Serial2)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 011522222222221921Serial2",
@@ -225,8 +205,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 helper.assertSublinesCount(2);
             },
         },
-        // Tries to scan multiple quantities for product tracked by SN, should set
-        // the inventory qty. to 1 instead, and display a notification.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 011522222222221921Serial3\x1D3020",
@@ -249,8 +227,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 helper.assertLineQty(subline, "1");
             },
         },
-        // Tries to scan multiple quantities for product tracked by SN but without
-        // a SN, should set the inventory qty. to the scanned one (20).
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01152222222222193020",
@@ -275,8 +251,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_lot_serial", {
                 );
             },
         },
-        // Scans a serial number, it should not write it on the previous line (as
-        // multiple quantitieswas scanned) and create a new one instead.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 011522222222221921Serial4",
@@ -309,7 +283,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_package", {
             trigger: ".o_button_inventory",
             run: "click",
         },
-        // Scans the package in Section 1 => Should raise a warning.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 00987654123487568456",
@@ -318,7 +291,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_package", {
             trigger: ".o_notification_bar.bg-danger",
             run: "click",
         },
-        // Changes location for Section 1 and scans again the package.
         {
             trigger: ".o_barcode_client_action",
             run: "scan LOC-01-01-00",
@@ -340,7 +312,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_package", {
             },
         },
 
-        // Changes location for Section 2 and scans the second package.
         {
             trigger: ".o_barcode_client_action",
             run: "scan LOC-01-02-00",
@@ -361,7 +332,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_package", {
                 helper.assertLineQty(line, "6/6");
             },
         },
-        // Tries to scan the same package => Should raise a warning.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 00487325612456785124",
@@ -371,7 +341,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_package", {
             run: "click",
         },
 
-        // Scans additionnal products and put them in a new pack by scanning a non-existing package barcode.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 0100000082655853304",
@@ -399,7 +368,6 @@ registry.category("web_tour.tours").add("test_gs1_inventory_package", {
             },
         },
 
-        // Validates the inventory.
         {
             trigger: ".o_apply_page",
             run: "scan OBTVALI",
@@ -410,12 +378,9 @@ registry.category("web_tour.tours").add("test_gs1_inventory_package", {
     ],
 });
 
-// Picking Tests.
-
 registry.category("web_tour.tours").add("test_gs1_package_receipt", {
     steps: () => [
         { trigger: ".o_stock_barcode_main_menu", run: "scan WHIN" },
-        // Scans PRO_GTIN_8 x4
         { trigger: ".o_barcode_client_action", run: "scan 0100000082655853300004" },
         {
             trigger: ".o_barcode_line",
@@ -426,8 +391,6 @@ registry.category("web_tour.tours").add("test_gs1_package_receipt", {
                 helper.assertLineQty(line1, "4");
             },
         },
-        // Scans a package => As it doesn't exist in the DB, should put in pack the
-        // previously scanned quantities.
         { trigger: ".o_barcode_client_action", run: "scan 00546879213579461324" },
         {
             trigger: ".o_barcode_line .result-package:text('546879213579461324')",
@@ -439,7 +402,6 @@ registry.category("web_tour.tours").add("test_gs1_package_receipt", {
                 helper.assertLineResultPackage(line1, "546879213579461324");
             },
         },
-        // Scans PRO_GTIN_12 x8.
         { trigger: ".o_barcode_client_action", run: "scan 300008\x1D0100584687955629" },
         {
             trigger: ".o_barcode_line:nth-child(2)",
@@ -454,7 +416,6 @@ registry.category("web_tour.tours").add("test_gs1_package_receipt", {
                 helper.assertLineQty(line2, "8");
             },
         },
-        // Scans again the same package. Now it already exists but should be assigned anyway.
         { trigger: ".o_barcode_client_action", run: "scan 00546879213579461324" },
         {
             trigger:
@@ -471,8 +432,6 @@ registry.category("web_tour.tours").add("test_gs1_package_receipt", {
                 helper.assertLineResultPackage(line2, "546879213579461324");
             },
         },
-        // Selects a line and scans a package type, it should assign it
-        // to the selected line's result package.
         {
             trigger: '.o_barcode_line[data-barcode="584687955629"]',
             run: "click",
@@ -496,7 +455,6 @@ registry.category("web_tour.tours").add("test_gs1_package_receipt", {
             },
         },
 
-        // Scans PRO_GTIN_8 x6
         { trigger: ".o_barcode_client_action", run: "scan 0100000082655853300006" },
         {
             trigger: ".o_barcode_line.o_selected .o_product_label:text('PRO_GTIN_8')",
@@ -506,7 +464,6 @@ registry.category("web_tour.tours").add("test_gs1_package_receipt", {
                 helper.assertLineQty(line, "6");
             },
         },
-        // Scans a package with a type => put in pack the selected line in this package with the type.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 00130406658041178543\x1D91IRONC",
@@ -521,7 +478,6 @@ registry.category("web_tour.tours").add("test_gs1_package_receipt", {
                 helper.assertLineResultPackage(line, "130406658041178543");
             },
         },
-        // Scans PRO_GTIN_12 x12, then scans a package type to put in pack in a new package.
         { trigger: ".o_barcode_client_action", run: "scan 30000000120100584687955629" },
         {
             trigger: '.o_barcode_line.o_selected[data-barcode="584687955629"]',
@@ -552,7 +508,6 @@ registry.category("web_tour.tours").add("test_gs1_package_delivery", {
             trigger: ".o_stock_barcode_main_menu",
             run: "scan WHOUT",
         },
-        // Scans the package
         {
             trigger: ".o_barcode_client_action",
             run: "scan 00546879213579461324",
@@ -601,7 +556,6 @@ registry.category("web_tour.tours").add("test_gs1_reserved_delivery", {
                 helper.assertValidateIsHighlighted(false);
             },
         },
-        // Scans 6 qty. of PRO_GTIN_8 (waiting for 10).
         {
             trigger: ".o_barcode_client_action",
             run: "scan 0100000011011019306",
@@ -616,7 +570,6 @@ registry.category("web_tour.tours").add("test_gs1_reserved_delivery", {
                 helper.assertValidateIsHighlighted(false);
             },
         },
-        // Scans 8 additional qty. of PRO_GTIN_8 (waiting for 10, so we have 4 extra).
         {
             trigger: ".o_barcode_client_action",
             run: "scan 0100000011011019308",
@@ -633,7 +586,6 @@ registry.category("web_tour.tours").add("test_gs1_reserved_delivery", {
                 helper.assertValidateIsHighlighted(true);
             },
         },
-        // Validates the transfer.
         ...stepUtils.validateBarcodeOperation(".o_validate_page.btn-primary"),
     ],
 });
@@ -652,7 +604,7 @@ registry.category("web_tour.tours").add("test_gs1_receipt_conflicting_barcodes_1
         },
         {
             trigger: ".o_barcode_client_action",
-            run: "scan 0100000011011019", // (01)00000011011019 product barcode (11011019)
+            run: "scan 0100000011011019",
         },
         {
             trigger: ".o_barcode_line.o_selected",
@@ -670,9 +622,7 @@ registry.category("web_tour.tours").add("test_gs1_receipt_conflicting_barcodes_1
 
 registry.category("web_tour.tours").add("test_gs1_delivery_ambiguous_lot_number", {
     steps: () => [
-        // Create a delivery.
         { trigger: ".o_stock_barcode_main_menu", run: "scan WHOUT" },
-        // Scan the GS1 barcode (contains product + lot)
         {
             trigger: ".o_scan_message.o_scan_product",
             run: "scan 0100000022222220152407101012345",
@@ -688,10 +638,8 @@ registry.category("web_tour.tours").add("test_gs1_delivery_ambiguous_lot_number"
             },
         },
 
-        // Cancel the transfer and do the same but with packaging barcode instead.
         { trigger: ".o_barcode_client_action", run: "scan OCDCANC" },
         { trigger: ".o_stock_barcode_main_menu", run: "scan WHIN" },
-        // Scan the GS1 barcode (contains product packaging + lot)
         {
             trigger: ".o_scan_message.o_scan_product",
             run: "scan 0110000000240489152407101012345",
@@ -729,7 +677,6 @@ registry.category("web_tour.tours").add("test_gs1_delivery_ambiguous_serial_numb
                 helper.assertLineQty($line, "1/1");
             },
         },
-        // Validates the transfer.
         ...stepUtils.validateBarcodeOperation(".o_validate_page.btn-primary"),
     ],
 });
@@ -748,7 +695,7 @@ registry.category("web_tour.tours").add("test_gs1_receipt_conflicting_barcodes_2
         },
         {
             trigger: ".o_barcode_client_action",
-            run: "scan 0100000011011019", // (01)00000011011019 product barcode (000011011019)
+            run: "scan 0100000011011019",
         },
         {
             trigger: ".o_barcode_line.o_selected",
@@ -781,7 +728,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_conflicting_barcodes_3
                 helper.assertValidateIsHighlighted(false);
             },
         },
-        // Scans '0100000011011019', should get 'PRO_GTIN_8' as this is the product put in the lazy cache.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 0100000011011019",
@@ -801,7 +747,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_conflicting_barcodes_3
                 helper.assertValidateIsHighlighted(false);
             },
         },
-        // Scans a second time '0100000011011019', should create a new line for PRO_GTIN_8.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 0100000011011019",
@@ -823,7 +768,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_conflicting_barcodes_3
                 helper.assertValidateIsHighlighted(false);
             },
         },
-        // Scans the PRO_GTIN_12 (non-GS1) barcode: '000011011019'.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 000011011019",
@@ -854,11 +798,7 @@ registry
     .category("web_tour.tours")
     .add("test_gs1_receipt_conflicting_barcodes_mistaken_as_gs1", {
         steps: () => [
-            // Creates a new receipt.
             { trigger: ".o_stock_barcode_main_menu", run: "scan WHIN" },
-            // Scans 3000000015 -> Will be parsed as 15 units by the GS1 nomenclature
-            // but since we don't expect a quantity here (no line yet), it should also
-            // check if this barcode matches something else (by-passing the nomenclature.)
             { trigger: ".o_barcode_client_action", run: "scan 3000000015" },
             {
                 trigger: ".o_barcode_line",
@@ -867,9 +807,6 @@ registry
                     helper.assertLineQty(line, "1");
                 },
             },
-            // Scans 21000000000003 -> Will be parsed as a serial number by the GS1 nomenclature but since
-            // it's irrelevant to scan a SN here (previous scanned product is not tracked), it should also
-            // check if it's something else barcode (by-passing the nomenclature.)
             { trigger: ".o_barcode_client_action", run: "scan 21000000000003" },
             {
                 trigger: ".o_barcode_line[data-barcode='21000000000003']",
@@ -878,19 +815,14 @@ registry
                     helper.assertLineQty(line, "1");
                 },
             },
-            // Scans again 3000000015 but since it could genuinely be a quantity, we have no way to find if
-            // it's really a GS1 or something else and use it as it was parsed.
             { trigger: ".o_barcode_client_action", run: "scan 3000000015" },
             {
                 trigger: ".o_barcode_line.o_selected .qty-done:contains('16')",
                 run: function () {
                     const line = helper.getLine({ barcode: "21000000000003" });
-                    // The qty of the selected product should be incremented by 15.
                     helper.assertLineQty(line, "16");
                 },
             },
-            // Scans 21-Chouette-MegaPack whom can be interpreted as a lot (AI 21, lot name:
-            // "-Chouette-MegaPack") but who is actually an existing package.
             { trigger: ".o_barcode_client_action", run: "scan 21-Chouette-MegaPack" },
             {
                 trigger:
@@ -904,8 +836,6 @@ registry
                     );
                 },
             },
-            // Now, scans a product tracked by SN and ensures the barcode starting by 21 are indeed
-            // interpreted as serial number once a tracked product's waiting a SN.
             { trigger: ".o_barcode_client_action", run: "scan productserial1" },
             {
                 trigger: ".o_barcode_line[data-barcode='productserial1']",
@@ -949,9 +879,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineQty(0, "0/40");
             },
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)00000076543210    > product barcode (76543210)
-        //      - (30)00000008          > quantity (8)
         ...stepUtils.inputManuallyBarcode("((01)00000076543210(30)00000008)"),
 
         {
@@ -962,8 +889,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineQty(0, "8/40");
             },
         },
-        // Scans the lot: as the line has already done quantity but no lot,
-        // it should apply the lot without increase the quantity.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 10b1-b001",
@@ -976,10 +901,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineQty(0, "8/40");
             },
         },
-        // Scan the product, lot and quantity all at once:
-        //      - (01)00000076543210    > product barcode (76543210)
-        //      - (10)b1-b002           > lot (b1-b002)
-        //      - (30)00000004          > quantity (4)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 010000007654321010b1-b002\x1D3000000004",
@@ -1025,7 +946,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(line2, true);
             },
         },
-        // Scans a non-GS1 lot barcode to be sure it's compatible.
         {
             trigger: ".o_barcode_client_action",
             run: "scan b1-b003",
@@ -1048,7 +968,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(sublines[2], true);
             },
         },
-        // Scan two more time the previous barcode...
         {
             trigger: ".o_barcode_client_action",
             run: "scan b1-b003",
@@ -1076,8 +995,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(sublines[2], true);
             },
         },
-        // ... then scan a GS1 barcode to add 5 more qty., without lot reference,
-        // to be sure the qty. will go on the last selected line.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 3000000005",
@@ -1100,7 +1017,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(sublines[2], true);
             },
         },
-        // Adds a line with the "Add Product" button, then scans the lot/qty.
         {
             trigger: ".o_add_line",
             run: "click",
@@ -1143,10 +1059,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(line4, true);
             },
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (30)00000004          > quantity (4)
-        //      - (10)b1-b004           > lot (b1-b004)
-        //      - (01)00000076543210    > product barcode (76543210)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 3000000004\x1D10b1-b004\x1D0100000076543210",
@@ -1173,7 +1085,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(sublines[3], true);
             },
         },
-        // Scans only a lot => should create a new line with 1 qty.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 10b1-b005",
@@ -1204,7 +1115,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(sublines[4], true);
             },
         },
-        // Now scans the quantity.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 3000007",
@@ -1234,8 +1144,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_lot_serial", {
                 helper.assertLineIsHighlighted(sublines[4], true);
             },
         },
-        // Scans a lot already in the view with additional qty. => Should select the
-        // existing line for this lot and update its quantity done.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 10b1-b004\x1D3000000004",
@@ -1276,8 +1184,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
                 helper.assertLinesCount(0);
             },
         },
-        // Scans 5 kg for the "Product by Units" => Even if the product uses Units as UoM, since
-        // there is no way to know which UoM is compatible, we use the scanned weight as the qty.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01000000152643293100000005",
@@ -1291,7 +1197,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
                 helper.assertLineQty(line, "5 kg");
             },
         },
-        // Scans 4 units for the "Product by Units".
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01000000152643293700000004",
@@ -1305,7 +1210,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
                 helper.assertLineQty(line, "4 Units");
             },
         },
-        // Scans 5 kg for the "Product by Units" => Update qty from 9 to 14 Units.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01000000152643293100000005",
@@ -1320,7 +1224,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
             },
         },
 
-        // Scans 5 kg for the "Product by kg".
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01000000152648793100000005",
@@ -1334,7 +1237,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
                 helper.assertLineQty(line, "5 kg");
             },
         },
-        // Scans 6 units for the "Product by kg" => Update qty from 5 to 11 kg
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01000000152648793700000006",
@@ -1349,7 +1251,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
             },
         },
 
-        // Scans 1.25 kg for the "Product by g" => kg need to be converted to g.
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01000000152648933102000125",
@@ -1363,7 +1264,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
                 helper.assertLineQty(line, "1.25 kg");
             },
         },
-        // Clicks on the edit button to trigger a save.
         {
             trigger: ".o_barcode_line:nth-child(5) .o_edit",
             run: "click",
@@ -1381,7 +1281,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_quantity_with_uom", {
 registry.category("web_tour.tours").add("test_gs1_receipt_scan_not_gs1_multi_barcode", {
     steps: () => [
         { trigger: ".o_stock_barcode_main_menu", run: "scan WHIN" },
-        // Scan a barcode containing 1 product tracked by SN followed by 8 serial numbers.
         {
             trigger: ".o_barcode_client_action",
             run: "scan productserial1,sn1,sn2,sn3,sn4,sn5,sn6,sn7,sn8",
@@ -1401,7 +1300,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_packaging", {
                 helper.assertLinesCount(0);
             },
         },
-        // Scans a packaging without any quantity
         {
             trigger: ".o_barcode_client_action",
             run: "scan 0100000000002226",
@@ -1415,7 +1313,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_packaging", {
                 helper.assertLineQty(line, "1 Dozens");
             },
         },
-        // Scans 4 packaging
         {
             trigger: ".o_barcode_client_action",
             run: "scan 01000000000022263700000004",
@@ -1428,7 +1325,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_packaging", {
                 helper.assertLineQty(0, "5 Dozens");
             },
         },
-        // Clicks on the edit button to trigger a save.
         {
             trigger: ".o_barcode_line:first-child .o_edit",
             run: "click",
@@ -1445,7 +1341,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_packaging", {
 
 registry.category("web_tour.tours").add("test_gs1_tracked_packaging", {
     steps: () => [
-        // Create a receipt and check non-existing lot is correctly scanned alongside the packaging.
         { trigger: ".o_stock_barcode_main_menu", run: "scan WHIN" },
         { trigger: ".o_barcode_client_action", run: "scan 020000001265325610lot-001" },
         {
@@ -1463,7 +1358,6 @@ registry.category("web_tour.tours").add("test_gs1_tracked_packaging", {
         },
         { trigger: ".o_validate_page", run: "click" },
 
-        // Create a delivery and check existing lot is correctly found alongside the packaging.
         { trigger: ".o_stock_barcode_main_menu", run: "scan WHOUT" },
         { trigger: ".o_barcode_client_action", run: "scan 020000001265325610lot-001" },
         {

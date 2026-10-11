@@ -408,22 +408,6 @@ export class QWebTablePlugin extends Plugin {
     }
 }
 
-/**
- * Recursively traverses a table-like tree in order to compute each cell's start position and length (colspan)
- * It stops traversing when encountering a table cell (q-th, q-td)
- * It handles qweb conditions (t-if/t-elif/t-else).
- * The algo goes:
- * - start traversing the table depth first.
- * - when encountering a row (q-tr), reset cellIndex and cellCount to 0
- * - when encountering a cell (q-td, q-th), increment cellIndex and cellCount
- * - don't traverse the cell itself
- * - a cell can have a colspan, increment cellIndex accordingly
- * - when encoutering a t-if: stop temporarly the depth first traversal
- * - store counters
- * - count cells in each mutually exclusive branch
- * - set counters to the maximum yield among the branches
- * - resume normal traversal.
- */
 class TableSizeComputer {
     /**
      * @param {CellInfo} info1
@@ -486,11 +470,6 @@ class TableSizeComputer {
     }
 
     processConditions(el, params) {
-        // we are about to compute the index of elements inside a t-if/t-elif/t-else
-        // sequence of direct siblings.
-        // These siblings are mutually exclusive. Hence, we store the current index,
-        // go inside the branch, then reset the index to its value.
-        // The resulting end index of these siblings in the maximum of them all.
         const cellIndex = this.cellIndex;
         let maxCellIndex = cellIndex;
 
@@ -531,7 +510,6 @@ class TableSizeComputer {
             if (directive === "t-if") {
                 return this.processConditions(el, params);
             } else if (directive && el.tagName === "T") {
-                // Don't plunge into t-elif/t-else: this has been done already
                 return;
             }
         }

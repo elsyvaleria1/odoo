@@ -46,7 +46,6 @@ async function mountPortalChatter({ canPost }) {
         "mail.store": getService("mail.store"),
     });
     patchWithCleanup(service, { createShadow: async (root) => root });
-    // the backend extensions of mail.Chatter in this bundle are not the portal's
     patchWithCleanup(Chatter, {
         template: xml`<div class="o-mail-Chatter"><div t-if="this.props.composer" class="o-mail-Composer"/></div>`,
     });

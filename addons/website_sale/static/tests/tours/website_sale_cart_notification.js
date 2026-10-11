@@ -119,7 +119,6 @@ registry
                 qty: "1",
                 price: "$ 1,000.00",
             }),
-            // Again add same product
             {
                 content: "change quantity",
                 trigger: "#product_detail form input[name=add_qty]",

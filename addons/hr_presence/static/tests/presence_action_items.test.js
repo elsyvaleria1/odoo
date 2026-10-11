@@ -53,9 +53,6 @@ test("the presence actions are collapsed into one submenu", () => {
 });
 
 test("an action another module bound to the same model is left alone", () => {
-    // binding_sequence defaults to 10, so hr's Create User and hr_skills' Resume
-    // both sit in the band this once inferred the section from. Only the field
-    // says whether an action is ours.
     const grouped = groupPresenceActionItems(
         [
             boundAction("Set Present", "state", 10),

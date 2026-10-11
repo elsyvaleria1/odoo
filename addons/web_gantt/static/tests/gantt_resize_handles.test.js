@@ -44,8 +44,6 @@ test("handles keep working after a handle is clicked but not dragged", async () 
     await animationFrame();
     expect(handleCount()).toBeGreaterThan(0);
 
-    // press+release on the handle without moving: willStartDrag runs, dragStart
-    // never does, so nothing lowers `willDrag` again
     const handle = queryFirst(".o_resize_handle");
     await pointerDown(handle);
     await pointerUp(handle);

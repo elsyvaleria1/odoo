@@ -167,7 +167,6 @@ test("a preview asked with the document opens once it is rendered, once", async 
     documentService.requestFocus(6, { openPreview: true });
     patchWithCleanup(documentService, {
         setPreviewedDocument(document) {
-            // the view closes it at teardown: only the openings count here
             if (document) {
                 expect.step(`preview ${document.record.resId}`);
             }
@@ -197,7 +196,6 @@ test("a load superseded while it fetches the requested document leaves the reque
     const documentService = getService("document.document");
     const fetched = new Deferred();
     onRpc("document.document", "web_search_read", async ({ kwargs }) => {
-        // the stale load's fetch of the document outside its page
         if (JSON.stringify(kwargs.domain).includes('["id","=",3]')) {
             await fetched;
         }

@@ -29,7 +29,6 @@ export class DocumentSelectorDialog extends Component {
                 "add_document_spreadsheet_to_dashboard",
                 [this.props.dashboardGroupId, this.selectedSpreadsheet.id],
             );
-            // Reload the view
             this.actionService.switchView("form", {
                 resId: this.props.dashboardGroupId,
             });
@@ -45,7 +44,6 @@ export class DocumentSelectorDialog extends Component {
                 "action_view_new_dashboard",
                 [this.props.dashboardGroupId],
             );
-            // open the new dashboard
             this.actionService.doAction(action);
         }
         this.props.close();

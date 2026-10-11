@@ -23,7 +23,6 @@ export class IoTRemoteDebug extends Component {
 
         this.state = proxy({ enabled: false });
 
-        // Get ngrok status on view load
         this.iotHttp.websocket.onMessage(
             this.identifier,
             null,

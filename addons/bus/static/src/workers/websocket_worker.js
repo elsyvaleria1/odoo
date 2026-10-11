@@ -20,17 +20,8 @@ import {
 
 const MAXIMUM_RECONNECT_DELAY = 60000;
 const UUID = Date.now().toString(36) + Math.random().toString(36).substring(2);
-// Until a tab says whose bus this is, logs have no owner.
 const LOGGER_NAME = "bus_websocket_worker";
 
-// Client actions that (re)establish an evicted/departed client's participation
-// in the bus, and so may re-register it in `channelsByClient`. An allowlist
-// (not "any BUS:* except LEAVE/PONG"): actions that do NOT express intent to
-// receive notifications — BUS:STOP, BUS:SEND, BUS:DELETE_CHANNEL,
-// BUS:REQUEST_LOGS, BUS:SET_LOGGING_ENABLED, BUS:FORCE_UPDATE_CHANNELS — must
-// never resurrect a client that called stop() or was evicted, otherwise a
-// stopped tab silently starts receiving broadcasts again (an unguarded
-// `offline`→BUS:STOP was exactly such a resurrection).
 const REREGISTERING_ACTIONS = new Set([
     "BUS:INITIALIZE_CONNECTION",
     "BUS:START",
@@ -38,94 +29,34 @@ const REREGISTERING_ACTIONS = new Set([
     "BUS:SET_CHANNELS",
 ]);
 
-/**
- * Per-connection state for one WebSocket lifetime.
- *
- * Bundling it here — rather than as loose worker fields (`websocket`,
- * `firstSubscribeDeferred`, `lastChannelSubscription`) reset at four different
- * sites — makes the invariant "no state from a previous connection leaks into
- * the next one" structural instead of comment-enforced:
- *
- * - a new connection is a new ``Connection``, so its subscribe gate
- *   (``subscribeDeferred``) and subscription cache (``lastSubscription``) start
- *   fresh automatically — no open-time/close-time/stop-time resets needed;
- * - a superseded connection is identified by ``epoch``, so a late event from a
- *   replaced socket is ignored instead of acting on the current connection.
- */
 class Connection {
     constructor(socket, epoch) {
         this.socket = socket;
         this.epoch = epoch;
-        // Resolves once THIS connection has sent its own `subscribe`; queued
-        // messages flush only after it, so they never race ahead of the
-        // subscription. A fresh connection ⇒ a fresh (unresolved) gate.
         this.subscribeDeferred = new Deferred();
-        // Last `subscribe` payload sent on THIS connection (dedup). Null ⇒ the
-        // next `_updateChannels` (re)subscribes — exactly the "always subscribe
-        // on a fresh connection" invariant, obtained for free.
         this.lastSubscription = null;
     }
 }
 
-/**
- * This class regroups the logic necessary in order for the
- * SharedWorker/Worker to work. Indeed, Safari and some minor browsers
- * do not support SharedWorker. In order to solve this issue, a Worker
- * is used in this case. The logic is almost the same than the one used
- * for SharedWorker and this class implements it.
- */
 export class WebsocketWorker {
     INITIAL_RECONNECT_DELAY = 1000;
-    /**
-     * Ceiling on the random spread added to a reconnect delay. The spread
-     * applied is `min(connectRetryDelay, RECONNECT_JITTER)`, so it widens with
-     * the attempt instead of being a flat window -- see
-     * `_retryConnectionWithDelay`.
-     */
     RECONNECT_JITTER = 30_000;
-    /** Time a connection stays open before its backoff starts over. */
     STABLE_CONNECTION_DELAY = 10_000;
     CONNECTION_CHECK_DELAY = 60_000;
-    // How often dead clients are looked for, and how long a client may stay
-    // silent before it is pinged (half the timeout) then evicted (full
-    // timeout). Deliberately generous: a bfcache-frozen tab cannot answer
-    // pings, and while `bus_service` replays its channels on `pageshow`, an
-    // aggressive timeout would churn subscriptions for nothing.
     CLIENT_LIVENESS_SWEEP_DELAY = 120_000;
     CLIENT_LIVENESS_TIMEOUT = 600_000;
-    // How long a dispatched notification id is remembered for deduplication.
-    // Mirrors the server's hold-back window (`Websocket.
-    // MAX_NOTIFICATION_HISTORY_SEC = 10` in bus/websocket.py): the server
-    // deliberately re-delivers ids it cannot yet prove were received exactly
-    // once, and holds `last_id` back for that many seconds so notifications
-    // committed out of id order by concurrent transactions are not skipped.
-    // Anything older than the window can no longer be legitimately re-sent,
-    // so remembering it here would be pure memory overhead. Kept a bit larger
-    // than the server's to absorb clock/scheduling slack.
     SEEN_NOTIFICATION_RETENTION_MS = 15_000;
-    // The server's hold-back (`NOTIFICATION_HOLD_BACK_SECONDS`): an id it
-    // dispatched less than this long ago may still have a lower one, drawn
-    // earlier and committed later, behind it. A fresh connection resumes
-    // where the server's own `last_id` would stand (see `_resumeFrom`).
     NOTIFICATION_HOLD_BACK_MS = 10_000;
-    // Defensive cap: a pathological notification flood must not grow the
-    // seen-id map without bound between prunes.
     SEEN_NOTIFICATION_MAX_COUNT = 10_000;
 
     constructor(name) {
         this.name = name;
-        // Timestamp of start of most recent bus service sender
         this.newestStartTs = undefined;
         this.websocketURL = "";
         this.currentUID = null;
         this.currentDB = null;
         this.isWaitingForNewUID = true;
         this.channelsByClient = new Map();
-        // Last time each client was heard from — feeds the liveness sweep: a
-        // tab that crashed or was OOM-killed never sends BUS:LEAVE, and its
-        // port would otherwise stay in `channelsByClient` forever, keeping
-        // the server subscribed to channels no live tab wants and receiving
-        // every broadcast.
         this.lastSeenByClient = new Map();
         this._startClientLivenessSweep();
         this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
@@ -134,47 +65,16 @@ export class WebsocketWorker {
         this.active = true;
         this.state = CONNECTION_STATE.IDLE;
         this.isReconnecting = false;
-        // Whether any connection of this worker ever opened: every later open
-        // is a reconnect, whatever closed the previous one.
         this.hasConnected = false;
         this.loggingEnabled = null;
-        // The logs hold notification payloads: each database and user has a
-        // store of their own, so a user logging in after another on the same
-        // browser cannot download the previous one's.
         this.logger = new Logger(LOGGER_NAME);
-        // Current WebSocket connection (socket + its subscribe gate and
-        // subscription cache), or null when no socket is live. See `Connection`.
         this._connection = null;
-        // Monotonic id stamped on each connection, so a superseded socket's late
-        // events can be told apart from the current one's.
         this._epoch = 0;
-        // Highest notification id seen so far. NOT used for deduplication
-        // (see `seenNotificationIds`) nor sent as `last` (`_resumeFrom`):
-        // only what tells a newly-attaching tab's watermark news from lag.
         this.lastNotificationId = 0;
-        // Below this id nothing can still arrive: the seeded watermark, then
-        // advanced past each seen id the hold-back has expired for.
         this.settledNotificationId = 0;
-        // Recently dispatched notification ids (id -> seen timestamp), kept
-        // for `SEEN_NOTIFICATION_RETENTION_MS`. This is the dedup source of
-        // truth: the server may legitimately deliver LOWER ids in LATER
-        // batches (its hold-back window for out-of-order commits), so a
-        // monotonic watermark filter would silently drop them.
         this.seenNotificationIds = new Map();
-        // Messages sent while no socket was open, the latest per event name:
-        // what is sent is state (presence), and only its last value is worth
-        // anything once the connection is back.
         this.pendingMessages = new Map();
-        // Sticky for the whole debounce window: a forced request must not be
-        // downgraded by a plain one arriving after it. Consumed when the
-        // updater fires.
         this._forceNextUpdate = false;
-        // ONE debounced updater for both the plain and the forced path. Two
-        // independent debouncers could each fire in the same window and send
-        // two identical subscribes, because `force` bypasses the dedup guard in
-        // `_updateChannels`. Discuss does exactly that on every thread pin:
-        // `addChannel` arms the plain path while mail's store patch calls
-        // `forceUpdateChannels`.
         this._debouncedUpdateChannels = debounce(() => {
             const force = this._forceNextUpdate;
             this._forceNextUpdate = false;
@@ -214,10 +114,6 @@ export class WebsocketWorker {
         return this._connection?.socket ?? null;
     }
 
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
     /**
      * Send the message to all the clients that are connected to the
      * worker.
@@ -228,12 +124,6 @@ export class WebsocketWorker {
      */
     broadcast(type, data) {
         this._logDebug("broadcast", type, data);
-        // No JSON round-trip needed: everything broadcast here is already
-        // plain, structured-cloneable data — notification batches come
-        // straight out of `JSON.parse` in `_onWebsocketMessage`, the rest are
-        // literals built in this file — and `postMessage` structured-clones
-        // per client anyway, so the receiving pages never share state with
-        // the worker (or with each other).
         for (const client of this.channelsByClient.keys()) {
             client.postMessage({ type, data: data ?? undefined });
         }
@@ -263,15 +153,8 @@ export class WebsocketWorker {
         if (type !== "BUS:PROVIDE_LOGS") {
             this._logDebug("sendToClient", type, data);
         }
-        // Same provenance guarantee as `broadcast`: data is either parsed
-        // JSON or literals built here, and `postMessage` structured-clones —
-        // a defensive JSON round-trip would be pure overhead.
         client.postMessage({ type, data: data ?? undefined });
     }
-
-    //--------------------------------------------------------------------------
-    // PRIVATE
-    //--------------------------------------------------------------------------
 
     /**
      * Called when a message is posted to the worker by a client (i.e. a
@@ -287,32 +170,11 @@ export class WebsocketWorker {
     _onClientMessage(client, { action, data }) {
         this._logDebug("_onClientMessage", action, data);
         if (!this.channelsByClient.has(client) && REREGISTERING_ACTIONS.has(action)) {
-            // This client is not (or no longer) registered but is issuing an
-            // action that re-establishes bus participation. Two cases produce
-            // an unregistered-but-live client: it called stop()/pagehide
-            // (BUS:LEAVE) or the liveness sweep evicted it while its tab was
-            // frozen. Re-register it with an empty channel map, otherwise a
-            // subsequent BUS:ADD_CHANNEL would operate on a missing map.
             this.channelsByClient.set(client, new Map());
             if (action === "BUS:START" || action === "BUS:ADD_CHANNEL") {
-                // The client believes it is still subscribed (its page-side
-                // channel map survived) but our copy is gone. INITIALIZE and
-                // SET_CHANNELS already carry full state; START/ADD_CHANNEL do
-                // not, so ask the client to replay its full snapshot. This is
-                // the recovery path for a tab evicted while frozen by Page
-                // Lifecycle freeze or system suspend, which resume via
-                // `resume`/`visibilitychange` — never `pageshow` — so
-                // bus_service does not otherwise replay.
                 this.sendToClient(client, "BUS:RESYNC");
             }
         }
-        // Refresh liveness only for a registered client (possibly just
-        // re-registered above). Any message from a live registered port proves
-        // it unfrozen; but a message from a departed client (BUS:LEAVE or
-        // sweep-evicted) that is not re-registering must not recreate a ghost
-        // lastSeen entry — the sweep would then ping it every cycle forever
-        // (worker_service auto-pongs, refreshing it), a leak the eviction can
-        // never reclaim.
         if (this.channelsByClient.has(client)) {
             this.lastSeenByClient.set(client, Date.now());
         }
@@ -345,9 +207,6 @@ export class WebsocketWorker {
             case "BUS:REQUEST_LOGS":
                 this.logger
                     .getLogs()
-                    // IndexedDB can be unavailable (private browsing, quota):
-                    // still answer with the worker info instead of leaving an
-                    // unhandled rejection and a download that never arrives.
                     .catch((error) => [`getLogs failed: ${error}`])
                     .then((logs) => {
                         const workerInfo = {
@@ -448,14 +307,6 @@ export class WebsocketWorker {
         return [...channels].sort();
     }
 
-    /**
-     * Update the channels on the server side even if the channels on
-     * the client side are the same than the last time we subscribed.
-     *
-     * Shares the single debounced updater with the plain path: it only raises
-     * the sticky flag, so an add and a forced update in the same window
-     * collapse into one forced subscribe instead of two.
-     */
     _forceUpdateChannels() {
         this._forceNextUpdate = true;
         this._debouncedUpdateChannels();
@@ -474,12 +325,6 @@ export class WebsocketWorker {
         this._debouncedUpdateChannels();
     }
 
-    /**
-     * Periodically look for dead clients. A tab that crashed or was
-     * OOM-killed never sends BUS:LEAVE; without a sweep its port stays
-     * registered forever — its channels pad every server subscription and
-     * every broadcast posts to a dead port.
-     */
     _startClientLivenessSweep() {
         this._lastLivenessSweepTs = Date.now();
         setInterval(
@@ -493,16 +338,6 @@ export class WebsocketWorker {
         const sinceLastSweep = now - this._lastLivenessSweepTs;
         this._lastLivenessSweepTs = now;
         if (sinceLastSweep > this.CLIENT_LIVENESS_SWEEP_DELAY * 2) {
-            // A whole sweep interval was skipped: timers do not fire while the
-            // machine is asleep (or the worker's event loop was blocked), so
-            // this is lost time, not genuine client silence. Even a moderate
-            // few-minute laptop sleep — well under CLIENT_LIVENESS_TIMEOUT —
-            // inflates every client's age by the lost interval, and no tab
-            // could answer a BUS:PING during it. Evicting on that age would
-            // silently drop live tabs that never got their ping grace (a tab
-            // at age > TIMEOUT/2 before the gap jumps straight past TIMEOUT).
-            // Grant a fresh window instead — real dead tabs are caught on the
-            // next normal sweep.
             for (const client of this.lastSeenByClient.keys()) {
                 this.lastSeenByClient.set(client, now);
             }
@@ -514,9 +349,6 @@ export class WebsocketWorker {
                 this._logDebug("liveness_evict", { age });
                 this._unregisterClient(client);
             } else if (age > this.CLIENT_LIVENESS_TIMEOUT / 2) {
-                // Silent for a while: ask for a sign of life. Live tabs
-                // answer BUS:PONG immediately; frozen (bfcache) or dead ones
-                // cannot and reach the eviction branch on a later sweep.
                 this.sendToClient(client, "BUS:PING");
             }
         }
@@ -546,9 +378,6 @@ export class WebsocketWorker {
         }
         this.newestStartTs = startTs;
         this.websocketURL = websocketURL;
-        // Never let a newly-attaching tab rewind the shared high-watermark:
-        // its localStorage snapshot may lag behind notifications this worker
-        // has already dispatched, which would make the server re-deliver them.
         if ((lastNotificationId ?? 0) > this.lastNotificationId) {
             this.lastNotificationId = lastNotificationId;
             this.settledNotificationId = lastNotificationId;
@@ -557,8 +386,6 @@ export class WebsocketWorker {
         if (this.isWaitingForNewUID && isCurrentUserKnown) {
             this.isWaitingForNewUID = false;
             if (this.currentUID !== null && this.currentUID !== uid) {
-                // another user after an expired session: what opens next is
-                // their first connection
                 this.hasConnected = false;
             }
             this.currentUID = uid;
@@ -570,7 +397,6 @@ export class WebsocketWorker {
         ) {
             this.currentUID = uid;
             this.currentDB = db || this.currentDB;
-            // Another user or database: what opens next is a first connection.
             this.hasConnected = false;
             if (this.websocket) {
                 this.websocket.close(WEBSOCKET_CLOSE_CODES.CLEAN);
@@ -578,28 +404,7 @@ export class WebsocketWorker {
             this.channelsByClient.forEach((_, key) =>
                 this.channelsByClient.set(key, new Map()),
             );
-            // The other already-registered clients kept their page-side channel
-            // claims but just had their worker-side maps wiped, and (unlike the
-            // eviction path) they receive no re-init. Without a RESYNC their
-            // channels would be dropped from the next subscribe and never
-            // restored (a later incremental ADD_CHANNEL only re-registers the
-            // one channel it carries), silently killing bus delivery for those
-            // tabs. Ask every client to replay its full channel snapshot; each
-            // SET_CHANNELS re-subscribes with the aggregate, so this converges
-            // even against the post-switch reconnect.
             this.broadcast("BUS:RESYNC");
-            // `bus_bus.id` is a per-database sequence, so the high-watermark
-            // and the seen-id history from the previous DB are meaningless
-            // (and likely higher / colliding) for the new one. Keeping them
-            // would make the subscribe `last` bogus and the dedup filter drop
-            // legitimate notifications whose ids happen to collide with
-            // recently seen ids of the old DB. Adopt the incoming tab's
-            // watermark instead: it is read from the *new* DB's (db-scoped)
-            // localStorage key, so it is the correct baseline — resetting to 0
-            // would instead subscribe with `last: 0` ("from now") and silently
-            // skip notifications committed between that snapshot and the
-            // resubscribe. Clear the seen-id history (old-DB ids) and drop
-            // now-stale queued messages referencing the old DB's channels.
             this.lastNotificationId = lastNotificationId ?? 0;
             this.settledNotificationId = this.lastNotificationId;
             this.seenNotificationIds.clear();
@@ -607,14 +412,10 @@ export class WebsocketWorker {
         }
         const loggerName = `${LOGGER_NAME}.${this.currentDB}.${this.currentUID}`;
         if (this.logger._name !== loggerName) {
-            // the ownerless store (the one every user shared before), or the
-            // previous user's: nobody reads it from here on, nor collects it
             this.logger.close();
             try {
                 indexedDB.deleteDatabase(this.logger._name);
-            } catch {
-                // no IndexedDB here: nothing was stored either
-            }
+            } catch {}
             this.logger = new Logger(loggerName);
         }
         this._finishClientInitialization(client);
@@ -696,13 +497,6 @@ export class WebsocketWorker {
         clearTimeout(this._stableTimeout);
         this._logDebug("_onWebsocketClose", code, reason);
         this._updateState(CONNECTION_STATE.DISCONNECTED);
-        // Flush any callback chained on this connection's subscribe gate:
-        // non-subscribe messages sent while the socket was open (but before its
-        // first subscribe went out) wait on it. Resolving is safe — the chained
-        // callback re-checks `_isWebsocketConnected()` (false here) and
-        // re-queues into `pendingMessages` for the next open. No replacement
-        // gate is needed: the next `_start` brings a fresh Connection with its
-        // own, and `lastSubscription` dies with this connection too.
         this._connection?.subscribeDeferred.resolve();
         if (
             [
@@ -710,14 +504,9 @@ export class WebsocketWorker {
                 WEBSOCKET_CLOSE_CODES.CLOSING_HANDSHAKE_ABORTED,
             ].includes(code)
         ) {
-            // Don't wait to reconnect: keep-alive shouldn't be noticed, and the
-            // closing handshake was aborted because the client explicitly tried
-            // to connect while the socket was stuck in the closing state.
             this.connectRetryDelay = 0;
         }
         if (this.isReconnecting) {
-            // Another attempt of a reconnect failed: everything but the next
-            // retry was reported by the first close.
             this._retryConnectionWithDelay();
             return;
         }
@@ -728,10 +517,8 @@ export class WebsocketWorker {
                 this.active = false;
                 this.broadcast("BUS:OUTDATED");
             }
-            // WebSocket was closed on purpose, do not try to reconnect.
             return;
         }
-        // WebSocket was not closed cleanly, let's try to reconnect.
         this.isReconnecting = true;
         if (code === WEBSOCKET_CLOSE_CODES.SESSION_EXPIRED) {
             this.isWaitingForNewUID = true;
@@ -768,7 +555,6 @@ export class WebsocketWorker {
         if (this._isStaleSocketEvent(ev)) {
             return;
         }
-        // The close that always follows schedules the retry.
         this._logDebug("_onWebsocketError");
     }
 
@@ -786,9 +572,6 @@ export class WebsocketWorker {
         try {
             payload = JSON.parse(messageEv.data);
         } catch {
-            // The server delivers notification batches as JSON. Anything else
-            // (e.g. an echoed keepalive/control frame) is not ours: ignore it
-            // rather than throwing out of the message listener.
             this._logDebug("_onWebsocketMessage: ignored non-JSON frame");
             return;
         }
@@ -797,22 +580,9 @@ export class WebsocketWorker {
             return;
         }
         if (!Array.isArray(payload)) {
-            // The server delivers notification batches as a JSON array. A frame
-            // that is valid JSON but not an array (e.g. an echoed control frame)
-            // is not a notification batch: ignore it rather than throwing out of
-            // the message listener on `payload.filter`.
             this._logDebug("_onWebsocketMessage: ignored non-array frame");
             return;
         }
-        // Drop any notification whose EXACT id was already processed. This
-        // deliberately mirrors the server's own dedup semantics
-        // (`NotificationDispatchState` in bus/websocket.py): notifications
-        // committed out of id order by concurrent transactions are
-        // re-delivered with LOWER ids in LATER batches during a hold-back
-        // window (`MAX_NOTIFICATION_HISTORY_SEC`). A monotonic
-        // `id > lastNotificationId` watermark would silently discard exactly
-        // those late-committed notifications; only an id-level seen check is
-        // both duplicate-safe and loss-free.
         const now = Date.now();
         this._pruneSeenNotificationIds(now);
         const notifications = payload.filter(
@@ -822,27 +592,12 @@ export class WebsocketWorker {
         if (!notifications.length) {
             return;
         }
-        // Track the greatest id seen (batches are not guaranteed ascending):
-        // what tells a newly-attaching tab's watermark news from lag.
-        //
-        // A loop, NOT `Math.max(this.lastNotificationId, ...ids)`: the spread
-        // passes one argument per notification and throws `RangeError: Maximum
-        // call stack size exceeded` past ~130k of them. The server bounds a
-        // batch now (`MAX_NOTIFICATIONS_PER_POLL`), but this side must not be
-        // what breaks if that bound is ever raised -- and the failure was
-        // silent, not a visible error.
         let highestId = this.lastNotificationId;
         for (const notification of notifications) {
             if (notification.id > highestId) {
                 highestId = notification.id;
             }
         }
-        // Broadcast BEFORE recording the ids as seen. Marking first meant that
-        // anything throwing in between lost the batch outright: the ids were
-        // remembered as delivered while no client had received them, so the
-        // dedup filter discarded the server's redelivery too. Recording after
-        // the broadcast can at worst repeat a batch, which subscribers already
-        // tolerate; it can no longer swallow one.
         this._deliverNotifications(notifications, highestId);
         this.lastNotificationId = highestId;
         for (const notification of notifications) {
@@ -860,8 +615,6 @@ export class WebsocketWorker {
      * @param {number} highestId
      */
     _deliverNotifications(notifications, highestId) {
-        // first, as a tab took its watermark before running a batch's
-        // subscribers when the batch itself carried it
         this.broadcast("BUS:NOTIFICATION_SEEN", highestId);
         for (const [client, claims] of this.channelsByClient) {
             const own = [];
@@ -933,15 +686,12 @@ export class WebsocketWorker {
             return;
         }
         this.settledNotificationId = this._resumeFrom(now);
-        // Insertion order == arrival order, so expired entries form a prefix.
         for (const [id, seenAt] of this.seenNotificationIds) {
             if (isKept(seenAt)) {
                 break;
             }
             this.seenNotificationIds.delete(id);
             if (now - seenAt <= this.NOTIFICATION_HOLD_BACK_MS) {
-                // Capped while still held back: forgotten like the server
-                // forgets past `MAX_HISTORY_LENGTH`.
                 this.settledNotificationId = Math.max(this.settledNotificationId, id);
             }
         }
@@ -955,59 +705,32 @@ export class WebsocketWorker {
         }
     }
 
-    /**
-     * Triggered on websocket open. Send message that were waiting for
-     * the connection to open.
-     */
     _onWebsocketOpen(ev) {
         if (this._isStaleSocketEvent(ev)) {
             return;
         }
         this._logDebug("_onWebsocketOpen");
-        // No deferred/subscription resets here: this is a fresh Connection (built
-        // in `_start`), so its `subscribeDeferred` is unresolved and its
-        // `lastSubscription` is null already. The open-time `_updateChannels`
-        // below therefore always (re)subscribes and resolves the gate — the
-        // "always subscribe on a fresh connection" invariant is structural now,
-        // not restored by nulling worker fields.
         const connection = this._connection;
         this._updateState(CONNECTION_STATE.CONNECTED);
-        // A reconnect is a connection this user and database had before; a
-        // first one that took retries, or one after a switch, is a connect.
         this.broadcast(this.hasConnected ? "BUS:RECONNECT" : "BUS:CONNECT");
         this.hasConnected = true;
         this._debouncedUpdateChannels();
-        // A server that accepts and then closes at once (stopping, rate
-        // limiting, failing) must not reset the backoff of its clients.
         clearTimeout(this._stableTimeout);
         this._stableTimeout = setTimeout(() => {
             this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
         }, this.STABLE_CONNECTION_DELAY);
-        // Actually cancel any pending retry, don't just drop the handle: an
-        // orphaned timer would survive a later BUS:STOP (offline), fire,
-        // reconnect the stopped worker, and — through the error path — re-arm
-        // itself forever.
         clearTimeout(this.connectTimeout);
         this.connectTimeout = null;
         this.isReconnecting = false;
         connection.subscribeDeferred.then(() => {
             if (this._connection !== connection || !this._isWebsocketConnected()) {
-                // Socket already closed/replaced: keep the queue for the next
-                // open instead of writing to a dead or superseded socket.
                 return;
             }
-            // Send the pending application messages after this connection's
-            // own subscribe. No subscribe is ever pending: `_updateChannels`
-            // only subscribes while the socket is open, sending directly.
             this._flushPendingMessages();
         });
         this._restartConnectionCheckInterval();
     }
 
-    /**
-     * Send what was held while no socket was open. At most one message per
-     * event name, so the server's incoming-frame rate limit is never near.
-     */
     _flushPendingMessages() {
         const pending = [...this.pendingMessages.values()];
         this.pendingMessages.clear();
@@ -1028,16 +751,6 @@ export class WebsocketWorker {
         this.pendingMessages.set(message.event_name, payload);
     }
 
-    /**
-     * Sends a custom application-level message to perform a connection check
-     * on the WebSocket.
-     *
-     * Browsers rely on the OS's TCP mechanism, which can take minutes or
-     * hours to detect a dead connection. Sending data triggers an immediate
-     * I/O operation, quickly revealing any network-level failure. This must be
-     * implemented at the application level because the browser WebSocket API
-     * does not expose the built-in ping/pong mechanism.
-     */
     _restartConnectionCheckInterval() {
         clearInterval(this._connectionCheckInterval);
         this._connectionCheckInterval = setInterval(() => {
@@ -1048,40 +761,8 @@ export class WebsocketWorker {
         }, this.CONNECTION_CHECK_DELAY);
     }
 
-    /**
-     * Try to reconnect to the server, after an exponential back off plus a
-     * random spread proportional to it.
-     *
-     * The spread exists for the restart case: a bus process going down drops
-     * every client on every database it serves at the same instant, they all
-     * reconnect together, and each database that comes back triggers a registry
-     * recompute server-side, so the recomputes pile up on the process that just
-     * started. A spread of one second was far too narrow to break that wave up.
-     *
-     * It is proportional -- `min(base, RECONNECT_JITTER)` -- rather than a flat
-     * window, because the two goals pull in opposite directions. A flat 30s
-     * window (what upstream took) spreads the herd but also makes the *first*
-     * retry take a median 16s, so one client's transient blip costs it sixteen
-     * seconds of dead notifications instead of one and a half. Scaling the
-     * spread to the attempt keeps the first retry where it was and widens the
-     * window as attempts accumulate, which is when it is actually needed: a
-     * restarting server refuses the early attempts anyway, and the pile-up
-     * happens once clients start succeeding.
-     */
     _retryConnectionWithDelay() {
-        // Cancel any pending retry first: a second schedule would otherwise
-        // orphan the first timer (untracked by `connectTimeout`, so
-        // uncancellable by `_stop`), leaking a zombie reconnect.
         clearTimeout(this.connectTimeout);
-        // `connectRetryDelay` is the jitter-free exponential base: keeping
-        // jitter out of it stops the base from drifting and makes
-        // MAXIMUM_RECONNECT_DELAY a true ceiling. Jitter is added only to the
-        // armed timer. A base of 0 means "reconnect immediately" (set on
-        // keep-alive/aborted closes) and skips jitter — but the base is then
-        // advanced to INITIAL so a persistently failing socket backs off
-        // normally instead of hot-looping at delay 0. Exponential growth only
-        // starts from INITIAL: after the 0-delay fast path the next delay is
-        // exactly INITIAL_RECONNECT_DELAY, not INITIAL * 1.5.
         const delay =
             this.connectRetryDelay === 0
                 ? 0
@@ -1107,10 +788,6 @@ export class WebsocketWorker {
         this._logDebug("_sendToServer", message);
         const payload = JSON.stringify(message);
         if (!this._isWebsocketConnected()) {
-            // Not open: hold the message for the next connection's flush. Only
-            // application messages ever reach here while offline — subscribes
-            // are sent by `_updateChannels`, which no-ops unless the socket is
-            // open, so nothing stale can pile up in the queue.
             this._holdMessage(message, payload);
             return;
         }
@@ -1119,9 +796,6 @@ export class WebsocketWorker {
         } else {
             const connection = this._connection;
             connection.subscribeDeferred.then(() => {
-                // The gate can resolve after the connection changed (e.g. this
-                // connection closed): re-queue for the next open instead of
-                // writing to a dead/superseded socket and losing the message.
                 if (this._connection === connection && this._isWebsocketConnected()) {
                     this.websocket.send(payload);
                 } else {
@@ -1139,9 +813,6 @@ export class WebsocketWorker {
         this.websocket?.removeEventListener("close", this._onWebsocketClose);
     }
 
-    /**
-     * Start the worker by opening a websocket connection.
-     */
     _start() {
         this._logDebug("_start");
         if (
@@ -1153,10 +824,6 @@ export class WebsocketWorker {
         }
         this._removeWebsocketListeners();
         if (this._isWebsocketClosing()) {
-            // The close event didn’t trigger. Trigger manually to maintain
-            // correct state and lifecycle handling.
-            // Synthetic close for the CURRENT connection (no `currentTarget`, so
-            // it is not treated as a stale-socket event).
             this._onWebsocketClose(
                 new CloseEvent("close", {
                     code: WEBSOCKET_CLOSE_CODES.CLOSING_HANDSHAKE_ABORTED,
@@ -1174,24 +841,12 @@ export class WebsocketWorker {
         socket.addEventListener("close", this._onWebsocketClose);
     }
 
-    /**
-     * Stop the worker.
-     */
     _stop() {
         this._logDebug("_stop");
         clearTimeout(this.connectTimeout);
-        // `_stop` removes the socket listeners below, so `_onWebsocketClose`
-        // (the other place clearing this interval) will not run: clear it here
-        // to avoid leaking a timer on every stop cycle.
         clearInterval(this._connectionCheckInterval);
-        // Cancel pending debounced work so it can't fire against the *next*
-        // connection: a trailing `_updateChannels`/`_sendToServer` would act on
-        // a socket this stop is tearing down.
         this._debouncedUpdateChannels.cancel();
         this._debouncedSendToServer.cancel();
-        // Drop the pending force with the timer it belonged to: otherwise the
-        // next connection's open-time update would inherit it and force a
-        // subscribe that nothing asked for.
         this._forceNextUpdate = false;
         clearTimeout(this._stableTimeout);
         this.connectRetryDelay = this.INITIAL_RECONNECT_DELAY;
@@ -1201,14 +856,6 @@ export class WebsocketWorker {
             connection && connection.socket.readyState !== WEBSOCKET_READY_STATE.CLOSED;
         connection?.socket.close();
         this._removeWebsocketListeners();
-        // Drop the connection before resolving its gate: `_stop` removed the
-        // socket listeners, so `_onWebsocketClose` (which resolves the gate and
-        // reports DISCONNECTED) will not run. A pending send chained on the gate
-        // would otherwise be orphaned; with the connection dropped it re-checks
-        // `_isWebsocketConnected()` (false) and re-queues into `pendingMessages`.
-        // Dropping it also stops `_initializeConnection` from reporting a live
-        // connection to tabs opened while stopped. `lastSubscription` dies with
-        // the connection, so the next connect re-subscribes.
         this._connection = null;
         connection?.subscribeDeferred.resolve();
         this._updateState(CONNECTION_STATE.DISCONNECTED);
@@ -1226,11 +873,6 @@ export class WebsocketWorker {
      */
     _updateChannels({ force = false } = {}) {
         if (!this._isWebsocketConnected()) {
-            // Only subscribe on an open socket. While connecting/disconnected
-            // there is nothing to do: the (re)connect's open handler runs
-            // `_updateChannels` again with the current channels, so a channel
-            // change made in the meantime is picked up there. This is why no
-            // subscribe is ever queued (see `_sendToServer`).
             return;
         }
         const connection = this._connection;

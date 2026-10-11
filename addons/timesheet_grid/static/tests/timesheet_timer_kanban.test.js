@@ -25,7 +25,7 @@ const now = currentTime("UTC");
 defineTimesheetModels();
 beforeEach(() => {
     patchSession();
-    HRTimesheet._views.kanban = /* xml */ `
+    HRTimesheet._views.kanban = `
         <kanban js_class="timesheet_timer_kanban">
             <templates>
                 <field name="name"/>
@@ -205,7 +205,6 @@ test("hr.timesheet (kanban)(timer): unlink timesheet through timesheet_uom_timer
         message: "The timer stop button should be visible",
     });
 
-    // Stop the timer using the kanban view (timesheet_uom_timer widget)
     await click(".o_icon_button");
     await animationFrame();
 
@@ -226,13 +225,13 @@ test("Timer should not start when adding new record", async () => {
     onRpc("get_server_time", () => serializeDateTime(now));
     onRpc("get_create_edit_project_ids", () => []);
 
-    HRTimesheet._views.list = /* xml */ `
+    HRTimesheet._views.list = `
         <list js_class="timesheet_timer_list" editable="bottom">
             <field name="project_id"/>
         </list>
     `;
 
-    HRTimesheet._views.search = /* xml */ `
+    HRTimesheet._views.search = `
         <search>
             <field name="project_id"/>
         </search>

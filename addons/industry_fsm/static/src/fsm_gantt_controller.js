@@ -16,8 +16,6 @@ patch(TaskGanttController.prototype, {
         const { context } = this.model.searchParams;
         const { startDate, stopDate } = this.model.metaData;
         const today = toDateTime(getToday());
-        // similar to what is found in planning_gantt_controller.js but different
-        // --> unify?
         if (
             context.fsm_mode &&
             compareDates(startDate, endOf(today, "day")) <= 0 &&

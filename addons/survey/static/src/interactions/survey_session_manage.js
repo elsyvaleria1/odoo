@@ -60,8 +60,6 @@ export class SurveySessionManage extends Interaction {
                     this.hideResults,
             }),
             "t-on-setDisplayNone": () => {
-                // The leaderboard interaction will send a setDisplayNone event
-                // after finishing its fade-in animation.
                 this.hideResults = true;
             },
         },
@@ -78,11 +76,9 @@ export class SurveySessionManage extends Interaction {
         }
         this.fadeInOutTime = 500;
         this.answersRefreshDelay = 2000;
-        // Flags used in dynamicContent
         this.isSessionClosed = false;
         this.leaderboardIsFadingOut = false;
         this.hideResults = false;
-        // Elements related to other interactions
         this.chartEl = this.el.querySelector(".o_survey_session_chart");
         this.leaderboardEl = this.el.querySelector(".o_survey_session_leaderboard");
         this.timerEl = this.el.querySelector(
@@ -91,7 +87,6 @@ export class SurveySessionManage extends Interaction {
         this.textAnswersEl = this.el.querySelector(
             ".o_survey_session_text_answers_container",
         );
-        // General survey props
         this.surveyId = parseInt(this.el.dataset.surveyId);
         this.attendeesCount = this.el.dataset.attendeesCount
             ? parseInt(this.el.dataset.attendeesCount, 10)
@@ -105,18 +100,13 @@ export class SurveySessionManage extends Interaction {
         this.surveyLastTriggeringAnswers = JSON.parse(
             this.el.dataset.surveyLastTriggeringAnswers || "[]",
         );
-        // Scoring props
         this.isScoredQuestion = this.el.dataset.isScoredQuestion;
         this.sessionShowLeaderboard = this.el.dataset.sessionShowLeaderboard;
         this.hasCorrectAnswers = this.el.dataset.hasCorrectAnswers;
-        // Display props
         this.showBarChart = this.el.dataset.showBarChart;
         this.showTextAnswers = this.el.dataset.showTextAnswers;
-        // Question transition
         this.stopNextQuestion = false;
-        // Background Management
         this.refreshBackground = this.el.dataset.refreshBackground;
-        // Prepare the copy link tooltip
         this.copyBtnTooltip = Tooltip.getOrCreateInstance(
             this.el.querySelector(".o_survey_session_copy"),
             {
@@ -132,10 +122,8 @@ export class SurveySessionManage extends Interaction {
             this.copyBtnPopover?.dispose();
             this.copyBtnTooltip?.dispose();
         });
-        // Attendees count & navigation label
         this.sessionAttendeesCountText = "";
         this.sessionNavigationNextLabel = "";
-        // Show the page and start the timer
         this.el.classList.remove("invisible");
         this.setupIntervals();
         this.registerCleanup(() => {
@@ -145,9 +133,6 @@ export class SurveySessionManage extends Interaction {
     }
 
     async willStart() {
-        // If a chart is present, we wait for the chart interaction to be ready.
-        // The presence of the class `chart_is_ready` means that the chart was
-        // ready before us, so we don't need to wait (see survey_session_chart)
         if (this.chartEl && !this.chartEl.classList.contains("chart_is_ready")) {
             let resolveChartPromise;
             const chartPromise = new Promise(function (resolve) {
@@ -167,7 +152,6 @@ export class SurveySessionManage extends Interaction {
         }
         this.setupCurrentScreen();
         this.startTimer();
-        // Check if we are loading this page because the user clicked on 'previous'
         if (this.el.dataset.goingBack) {
             this.chartUpdateState({ showInputs: true, showAnswers: true });
             if (this.sessionShowLeaderboard && this.isScoredQuestion) {
@@ -243,7 +227,6 @@ export class SurveySessionManage extends Interaction {
                 break;
             case "results":
                 this.chartUpdateState({ showAnswers: true });
-                // when showing results, stop refreshing answers
                 clearInterval(this.resultsRefreshInterval);
                 delete this.resultsRefreshInterval;
                 break;
@@ -267,8 +250,6 @@ export class SurveySessionManage extends Interaction {
                 break;
         }
         this.currentScreen = screenToDisplay;
-        // To avoid a flicker, we do not update the tooltip when going to the
-        // next question, as it will be done anyway in "setupCurrentScreen"
         if (!["question", "nextQuestion"].includes(screenToDisplay)) {
             this.updateNextScreenTooltip();
         }
@@ -287,7 +268,6 @@ export class SurveySessionManage extends Interaction {
                 break;
             case "userInputs":
                 this.chartUpdateState({ showAnswers: false });
-                // resume refreshing answers if necessary
                 if (!this.resultsRefreshInterval) {
                     this.resultsRefreshInterval = setInterval(
                         this.refreshResults.bind(this),
@@ -299,42 +279,22 @@ export class SurveySessionManage extends Interaction {
                 if (this.isScoredQuestion || this.isLastQuestion) {
                     this.leaderboardEl.dispatchEvent(new Event("hideLeaderboard"));
                 }
-                // when showing results, stop refreshing answers
                 clearInterval(this.resultsRefreshInterval);
                 delete this.resultsRefreshInterval;
                 break;
             case "previousQuestion":
                 if (this.isFirstQuestion) {
-                    return; // nothing to go back to, we're on the first question
+                    return;
                 }
                 this.goToNextQuestion(true);
                 break;
         }
         this.currentScreen = screenToDisplay;
-        // To avoid a flicker, we do not update the tooltip when going to the
-        // next question, as it will be done anyway in "setupCurrentScreen"
         if (!["question", "nextQuestion"].includes(screenToDisplay)) {
             this.updateNextScreenTooltip();
         }
     }
 
-    /**
-     * Business logic that determines the 'next screen' based on the current screen and the question
-     * configuration.
-     *
-     * Breakdown of use cases:
-     * - If we're on the 'question' screen, and the question is scored, we move to the 'userInputs'
-     * - If we're on the 'question' screen and it's NOT scored, then we move to
-     *     - 'results' if the question has correct / incorrect answers
-     *       (but not scored, which is kind of a corner case)
-     *     - 'nextQuestion' otherwise
-     * - If we're on the 'userInputs' screen and the question has answers, we move to the 'results'
-     * - If we're on the 'results' and the question is scored, we move to the 'leaderboard'
-     * - In all other cases, we show the next question
-     * - (Small exception for the last question: we show the "final leaderboard")
-     *
-     * (For details about which screen shows what, see 'onNext')
-     */
     getNextScreen() {
         if (this.currentScreen === "question" && this.isScoredQuestion) {
             return "userInputs";
@@ -392,16 +352,12 @@ export class SurveySessionManage extends Interaction {
      * @private
      */
     async goToNextQuestion(goBack) {
-        // The following lines prevent calling multiple times "get next question"
-        // process until next question is fully loaded.
         if (this.stopNextQuestion) {
             return;
         }
         this.stopNextQuestion = true;
-        // Prevent the results to appear before the leaderboard is out
         this.leaderboardIsFadingOut = true;
         this.isStartScreen = false;
-        // start the fadeout animation
         let resolveFadeOut;
         const fadeOutPromise = new Promise(function (resolve) {
             resolveFadeOut = resolve;
@@ -410,18 +366,15 @@ export class SurveySessionManage extends Interaction {
             this.leaderboardIsFadingOut = false;
             resolveFadeOut();
         });
-        // background management
         if (this.refreshBackground) {
             document
                 .querySelector("div.o_survey_background")
                 .classList.add("o_survey_background_transition");
         }
-        // avoid refreshing results while transitioning
         if (this.resultsRefreshInterval) {
             clearInterval(this.resultsRefreshInterval);
             delete this.resultsRefreshInterval;
         }
-        // rpc call to get the next question
         this.nextQuestion = await this.waitFor(
             rpc(`/survey/session/next_question/${this.surveyAccessToken}`, {
                 go_back: goBack,
@@ -434,16 +387,10 @@ export class SurveySessionManage extends Interaction {
         } else {
             preloadBgPromise = Promise.resolve();
         }
-        // await both the fadeout and the rpc
         await this.waitFor(Promise.all([fadeOutPromise, preloadBgPromise]));
         this.bindDeferred(() => this.onNextQuestionDone())();
     }
 
-    /**
-     * Swap the next question's screen in. It replaces this whole element, so
-     * this interaction stops and the new screen's starts from the server's
-     * markup (going back, faded out); the background is the page's, outside it.
-     */
     onNextQuestionDone() {
         if (this.nextQuestion.data.ended) {
             this.isSessionClosed = true;
@@ -467,7 +414,6 @@ export class SurveySessionManage extends Interaction {
      * @private
      */
     async onEndSessionClick(ev) {
-        // ev could not exist (onNextQuestionDone )
         const showResults = ev?.currentTarget?.dataset?.showResults;
         await this.waitFor(
             this.services.orm.call("survey.survey", "action_end_session", [
@@ -497,10 +443,6 @@ export class SurveySessionManage extends Interaction {
         }
     }
 
-    /**
-     * Setup current screen based on question properties.
-     * If it's a non-scored question with a chart, we directly display the user inputs.
-     */
     setupCurrentScreen() {
         if (this.isStartScreen) {
             this.currentScreen = "startScreen";
@@ -513,13 +455,6 @@ export class SurveySessionManage extends Interaction {
         this.updateNextScreenTooltip();
     }
 
-    /**
-     * Send a CustomEvent to the chart interaction to update its state.
-     * Possible options are:
-     *  - showInputs: boolean, show attendees survey.user_input.lines
-     *  - showAnswers: boolean, show the question survey.question.answers
-     *  - questionStatistics: object, chart data (counts / labels / ...)
-     */
     chartUpdateState(options) {
         this.chartEl?.dispatchEvent(
             new CustomEvent("updateState", {
@@ -528,11 +463,6 @@ export class SurveySessionManage extends Interaction {
         );
     }
 
-    /**
-     * Updates the tooltip for current page (on right arrow icon for 'Next' content).
-     * this method will be called on Clicking of Next and Previous Arrow to show the
-     * tooltip for the Next Content.
-     */
     updateNextScreenTooltip() {
         let tooltip;
         if (this.currentScreen === "startScreen") {
@@ -557,11 +487,6 @@ export class SurveySessionManage extends Interaction {
         }
     }
 
-    /**
-     * Setup the two refresh intervals of 2 seconds for our interaction:
-     * - The refresh of attendees count (only on the start screen)
-     * - The refresh of results (used for chart/text answers/progress bar)
-     */
     setupIntervals() {
         if (this.isStartScreen) {
             this.attendeesRefreshInterval = setInterval(
@@ -581,12 +506,6 @@ export class SurveySessionManage extends Interaction {
         }
     }
 
-    /**
-     * Will start the question timer so that the host may know when the question is done to display
-     * the results and the leaderboard.
-     *
-     * If the question is scored, the timer ending triggers the display of attendees inputs.
-     */
     startTimer(el) {
         const surveyManagerEl = el || this.el;
         const timerData = surveyManagerEl.dataset;
@@ -615,14 +534,6 @@ export class SurveySessionManage extends Interaction {
         }
     }
 
-    /**
-     * Refreshes the question results.
-     *
-     * What we get from this call:
-     * - The 'question statistics' used to display the bar chart when appropriate
-     * - The 'user input lines' that are used to display text/date/datetime answers on the screen
-     * - The number of answers, useful for refreshing the progress bar
-     */
     refreshResults() {
         this.waitFor(rpc(`/survey/session/results/${this.surveyAccessToken}`)).then(
             this.bindDeferred((questionResults) => {
@@ -653,10 +564,6 @@ export class SurveySessionManage extends Interaction {
                         );
                     }
 
-                    // Update the last question next screen tooltip depending on
-                    // the selected answers. If a selected answer triggers a
-                    // conditional question, the last question may no longer be
-                    // the last (see PR odoo/odoo#212890).
                     if (this.surveyLastTriggeringAnswers.length) {
                         this.isLastQuestion =
                             !questionResults.answer_count ||
@@ -697,16 +604,12 @@ export class SurveySessionManage extends Interaction {
                 }
             }),
             this.bindDeferred(() => {
-                // onRejected, stop refreshing
                 clearInterval(this.resultsRefreshInterval);
                 delete this.resultsRefreshInterval;
             }),
         );
     }
 
-    /**
-     * We refresh the attendees count every 2 seconds while the user is on the start screen.
-     */
     refreshAttendeesCount() {
         this.waitFor(
             this.services.orm.read(
@@ -723,7 +626,6 @@ export class SurveySessionManage extends Interaction {
                 }
             }),
             this.bindDeferred((err) => {
-                // on failure, stop refreshing
                 clearInterval(this.attendeesRefreshInterval);
                 console.error(err);
             }),

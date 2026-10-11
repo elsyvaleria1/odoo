@@ -27,8 +27,6 @@ registry.category("web_tour.tours").add("OnlinePaymentErrorsTour", {
             PaymentScreen.changeIs("1.0"),
             PaymentScreen.validateButtonIsHighlighted(true),
             PaymentScreen.clickValidate(),
-            // successfully confirming the dialog would imply that the error popup is actually shown
-            // Online payment line is now automatically deleted after the error popup
             Dialog.confirm(),
             PaymentScreen.remainingIs("46.0"),
             PaymentScreen.clickPaymentMethod("Online payment", true, {
@@ -40,8 +38,6 @@ registry.category("web_tour.tours").add("OnlinePaymentErrorsTour", {
             }),
             PaymentScreen.validateButtonIsHighlighted(true),
             PaymentScreen.clickValidate(),
-            // successfully confirming the dialog would imply that the error popup is actually shown
-            // Online payment line is now automatically deleted after the error popup
             Dialog.confirm(),
             PaymentScreen.remainingIs("46.0"),
             PaymentScreen.clickPaymentMethod("Online payment", true, {
@@ -59,8 +55,6 @@ registry.category("web_tour.tours").add("OnlinePaymentErrorsTour", {
             PaymentScreen.remainingIs("0.0"),
             PaymentScreen.validateButtonIsHighlighted(true),
             PaymentScreen.clickValidate(),
-            // successfully confirming the dialog would imply that the error popup is actually shown
-            // Online payment line is now automatically deleted after the error popup
             Dialog.confirm(),
         ].flat(),
 });

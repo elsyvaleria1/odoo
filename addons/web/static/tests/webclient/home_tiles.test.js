@@ -675,8 +675,6 @@ test("a record link opens the form on a click and leaves a modified click to the
         },
     });
     const link = queryOne(".o_recent_record");
-    // bubbles right after the link's own handler, before HOOT's window-level
-    // guard that keeps every anchor click from navigating the test page
     link.parentElement?.addEventListener("click", (ev) =>
         expect.step(`prevented ${ev.defaultPrevented}`),
     );

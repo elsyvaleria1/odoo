@@ -55,7 +55,7 @@ export function useDraggableScroll(scrollContainerRef, options = {}) {
         if (shouldSuppressClick) {
             e.stopPropagation();
             e.preventDefault();
-            shouldSuppressClick = false; // reset after one suppression
+            shouldSuppressClick = false;
         }
     };
 

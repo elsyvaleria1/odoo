@@ -13,7 +13,6 @@ function noQuotesStringify(obj) {
 
 export function createRequestCode({ language, url, requestObj }) {
     if (LANGUAGES[language] === LANGUAGES.json) {
-        // Display the domain inline
         const replacer = (key, value) => {
             if (key === "domain" && Array.isArray(value)) {
                 return { __inline_json__: JSON.stringify(value) };

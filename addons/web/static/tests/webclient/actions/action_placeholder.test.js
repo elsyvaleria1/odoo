@@ -29,8 +29,6 @@ import { KanbanController } from "@web/views/kanban/kanban_controller";
 
 describe.current.tags("desktop");
 
-// the placeholder's deadline is measured in time, so time only passes when a
-// test says so: a loaded machine reaches it between two awaits otherwise
 beforeEach(() => freezeTime());
 
 const { ResCompany, ResPartner, ResUsers } = webModels;
@@ -229,11 +227,9 @@ test("a view that paints its own chrome first stands in for the placeholder", as
     });
     await mountWebClient();
     const action = getService("action");
-    // a form, so the kanban's records are in no cache when it asks for them
     await action.doAction(23);
 
     const landing = action.doAction(22, { clearBreadcrumbs: true });
-    // the kanban holds its paint from its controller's setup, which asks for the records
     await requested;
     await advanceTime(260);
     await landing;

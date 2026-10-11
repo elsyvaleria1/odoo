@@ -147,8 +147,6 @@ import {
 
 const log = makeLogger("web.view.list");
 
-// below the height of any row, so that the rows counted for a screen always
-// overflow it: what is built later lands under the fold and moves nothing
 const SMALLEST_ROW_HEIGHT = 36;
 
 export class ListRenderer extends Component {
@@ -405,8 +403,6 @@ export class ListRenderer extends Component {
                 .VIRTUALIZATION_THRESHOLD,
         });
 
-        // only a list that scrolls a view is told what its controller scrolls
-        // back to: an embedded one cannot know what is on screen around it
         this.screenfulFirst =
             this.props.restoredScrollTop === undefined
                 ? null
@@ -533,7 +529,6 @@ export class ListRenderer extends Component {
      */
     getBuiltRowRecords(list) {
         const records = this.getRowRecords(list);
-        // the row being edited is focused as soon as it is rendered
         return this.screenfulFirst
             ? this.screenfulFirst.leading(
                   toRaw(list),
@@ -711,8 +706,6 @@ export class ListRenderer extends Component {
             getFieldClass: (column) => this.getFieldClass(column),
             getFieldProps: (record, column) => this.getFieldProps(record, column),
             displayDeleteIcon: (record) => this.displayDeleteIcon(record),
-            // every argument reaches the renderer: a subclass may widen a
-            // handler's signature and its row template call it that way
             onCellClicked: (record, ...args) =>
                 this.onCellClicked(rec(record), ...args),
             onButtonCellClicked: (record, ...args) =>

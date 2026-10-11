@@ -20,12 +20,6 @@ const log = makeLogger("web.view_ir");
  */
 export const literalNbsp = (value) => value.replaceAll("&nbsp;", nbsp);
 
-/**
- * The two markup kinds an arch carries besides elements, named as the DOM
- * names them — the twins of `odoo.tools.view_ir.COMMENT` and
- * `PROCESSING_INSTRUCTION`. A parser walk never visits them; the materialised
- * element keeps them where the arch had them.
- */
 export const COMMENT = "#comment";
 export const PROCESSING_INSTRUCTION = "#pi";
 

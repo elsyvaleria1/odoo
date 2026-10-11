@@ -8,11 +8,6 @@ defineMailModels();
 
 const ACTIVE = ["employee_id.active", "=", true];
 
-/**
- * Capture what the list model hands to its parent, without a server: the
- * question is which domain `super.load` is called with, and mounting a view to
- * ask it makes the answer depend on the action's own default filters.
- */
 function captureSuperLoad() {
     const seen = [];
     patchWithCleanup(listView.Model.prototype, {

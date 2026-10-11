@@ -97,20 +97,11 @@ export class TriggerSelectionField extends SelectionField {
         this.groupedOptions = proxy([]);
 
         const orm = useService("orm");
-        // One object holding a model id and the fields of THAT model, assigned
-        // only once they have arrived. Claiming the id before the fetch returns
-        // makes the next observer run skip the fetch and filter against the
-        // PREVIOUS model's fields, which is how a model carrying stage_id,
-        // tag_ids and priority came out offering none of their triggers.
         let loaded = null;
         useRecordObserver(async (record) => {
             const { data, fields } = record;
             const modelId = data.model_id?.id ?? false;
             if (loaded?.modelId !== modelId) {
-                // Nothing to offer until the new model's fields arrive. Leaving
-                // the old list up would present triggers this model does not
-                // support, and a reader quick enough to open the dropdown can
-                // pick one before the fetch lands.
                 this.groupedOptions.length = 0;
                 const relatedFields = modelId
                     ? await orm.searchRead(
@@ -120,8 +111,6 @@ export class TriggerSelectionField extends SelectionField {
                       )
                     : [];
                 if ((record.data.model_id?.id ?? false) !== modelId) {
-                    // A newer model landed while this was in flight; the run
-                    // that observed it owns the options.
                     return;
                 }
                 loaded = { modelId, fields: relatedFields };

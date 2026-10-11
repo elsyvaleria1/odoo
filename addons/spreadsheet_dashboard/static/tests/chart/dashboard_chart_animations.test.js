@@ -35,7 +35,6 @@ test("Charts are animated only at first render", async () => {
     expect(".o-figure").toHaveCount(1);
     expect(charts["chartId"].config.options.animation.animateRotate).toBe(true);
 
-    // Scroll the figure out of the viewport and back in
     model.dispatch("SET_VIEWPORT_OFFSET", { offsetX: 0, offsetY: 500 });
     await animationFrame();
     await animationFrame();

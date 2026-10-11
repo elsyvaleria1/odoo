@@ -22,14 +22,12 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
         super.setup();
         this.knowledgeContext = useKnowledgeContext();
         this.ui = useService("ui");
-        // Item creation is not allowed if the user can not edit the parent article.
         if (
             !("isEmbeddedReadonly" in this.knowledgeContext) ||
             this.knowledgeContext.isEmbeddedReadonly
         ) {
             this.model.meta.canCreate = false;
         }
-        // Set model meta variables to make the model work with the properties
         if (this.props.itemCalendarProps) {
             this.updateModel(this.props.itemCalendarProps);
             this.state.isWeekendVisible =
@@ -41,8 +39,6 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
         }
 
         onMounted(async () => {
-            // Show error message if the start date property is invalid (if it
-            // has been deleted or its type changed)
             if (
                 !this.model.meta.invalid &&
                 Object.keys(this.model.data.records).length === 0
@@ -61,7 +57,6 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
             }
         });
         onWillUpdateProps((nextProps) => {
-            // Update the model if the itemCalendarProps were updated
             if (
                 JSON.stringify(this.props.itemCalendarProps) !==
                 JSON.stringify(nextProps.itemCalendarProps)
@@ -76,7 +71,6 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
     }
 
     get showSideBar() {
-        // Hide sideabar when the view is embedded
         return !this.knowledgeContext.isEmbeddedView && super.showSideBar;
     }
 
@@ -106,9 +100,6 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
         }
     }
 
-    /**
-     * Send the item to the trash
-     */
     deleteRecord(record) {
         this.displayDialog(ConfirmationDialog, {
             title: _t("Confirmation"),
@@ -120,10 +111,7 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
                 this.model.load();
             },
             confirmLabel: _t("Send to trash"),
-            cancel: () => {
-                // `ConfirmationDialog` needs this prop to display the cancel
-                // button but we do nothing on cancel.
-            },
+            cancel: () => {},
         });
     }
 
@@ -136,14 +124,6 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
         this.selectRecord(record.id);
     }
 
-    /**
-     * Open the given article.
-     * If the view is embedded, the article is loaded from the KnowledgeController to preserve
-     * navigation history.
-     * If the view is opened in full screen, the home page action with the given article is loaded
-     * because the knowledge_article_action_item_calendar action does not have a form view (hence,
-     * props.selectRecord does not work).
-     */
     selectRecord(articleId) {
         if (this.knowledgeContext.isEmbeddedView) {
             this.props.selectRecord(articleId);
@@ -155,10 +135,6 @@ export class KnowledgeArticleItemsCalendarController extends CalendarController 
         }
     }
 
-    /**
-     * Update the model field mappings and other meta variables using the given
-     * modelProps.
-     */
     updateModel(modelProps) {
         this.model.meta.fieldMapping.date_start = modelProps.dateStartPropertyId;
         this.model.meta.fieldMapping.date_stop = modelProps.dateStopPropertyId;
@@ -185,10 +161,6 @@ class KnowledgeArticleItemsCommonPopover extends CalendarCommonPopover {
         footer: "knowledge.ArticleItemsCalendarCommonPopover.footer",
     };
 
-    /**
-     * Delete permission should not be based on the view's delete parameter only, but on the
-     * user's write permission on the item as well.
-     */
     get isEventDeletable() {
         return super.isEventDeletable && this.props.record.rawRecord.user_can_write;
     }

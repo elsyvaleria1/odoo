@@ -22,9 +22,6 @@ const ACTION_HELPERS = {
     },
 };
 
-// Commands act inside the element owning the UI -- a dialog when one is open --
-// and only on what is visible there: the first match in the document is the
-// view behind the dialog.
 function clickOnButton(root, selector) {
     const [button] = getVisibleElements(root, selector);
     button?.click();
@@ -34,18 +31,11 @@ function updatePager(root, position) {
     if (!pager) {
         return;
     }
-    // Read the two spans rather than slicing the pager's rendered text. The
-    // old form asked `innerText.includes("-")` whether this was a multi-record
-    // view and `innerText.split("/")[0]` for the position, which conflates the
-    // value with the limit and breaks on any change to the pager's markup or
-    // separator. `.o_pager_limit` was also dereferenced without a null check.
     const valueEl = pager.querySelector(".o_pager_value");
     const limitEl = pager.querySelector(".o_pager_limit");
     if (!valueEl || !limitEl) {
         return;
     }
-    // A multi-record view shows a span such as "1-80"; there is no single
-    // record to page to, so the command does not apply.
     const value = valueEl.textContent.trim();
     if (value.includes("-")) {
         return;
@@ -80,10 +70,6 @@ function updatePager(root, position) {
 }
 
 export const COMMANDS = {
-    // There is no OCDEDIT: the form view has had no explicit edit mode since
-    // Odoo 17, so `.o_form_button_edit` no longer exists anywhere. Keeping the
-    // key mapped to a selector that matches nothing made the scan a silent
-    // no-op; unmapped, it now reports "Unknown barcode command".
     OCDDISC: (root) => clickOnButton(root, ".o_form_button_cancel"),
     OCDSAVE: (root) => clickOnButton(root, ".o_form_button_save"),
     OCDPREV: (root) => clickOnButton(root, ".o_pager_previous"),
@@ -98,14 +84,7 @@ export const barcodeGenericHandlers = {
         barcode.bus.addEventListener("barcode_scanned", (ev) => {
             const barcode = ev.detail.barcode;
             if (barcode.startsWith("OBT")) {
-                // A barcode is untrusted input, so its text is escaped rather
-                // than interpolated: `OBTa], [class` would otherwise build the
-                // selector `[barcode_trigger=a], [class]` and click every
-                // visible element on the page. A try/catch is not enough --
-                // that payload is a *valid* selector, just not the intended one.
                 const trigger = `[barcode_trigger=${CSS.escape(barcode.slice(3))}]`;
-                // Only the first match is activated: a trigger is one command,
-                // and clicking every match compounds a mis-scan.
                 const [target] = getVisibleElements(ui.activeElement, trigger);
                 if (target) {
                     target.click();

@@ -23,8 +23,6 @@ patch(GraphController.prototype, {
                 const measuresToActivate = validMeasures.filter(
                     (m) => !activeMeasures.includes(m),
                 );
-                // It should only be at most one item, so just take the first.
-                // This is because graph only allows one active measure.
                 const measure = measuresToActivate[0] ?? metaData.measure;
                 if (measure) {
                     await this.model.updateMetaData({ measure });

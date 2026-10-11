@@ -206,7 +206,7 @@ export class SpreadsheetDashboardAction extends Component {
     get activeDashboardGroupName() {
         return this.getDashboardGroups().find(
             (group) =>
-                group.id !== "favorites" && // Skip the FAVORITES group
+                group.id !== "favorites" &&
                 group.dashboards.some(({ data }) => data.id === this.activeDashboardId),
         )?.name;
     }

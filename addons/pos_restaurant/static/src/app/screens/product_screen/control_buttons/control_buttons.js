@@ -12,7 +12,6 @@ patch(ControlButtons.prototype, {
         this.clickPrintBill = useAsyncLockedMethod(this.clickPrintBill.bind(this));
     },
     async clickPrintBill() {
-        // Need to await to have the result in case of automatic skip screen.
         await this.pos.printReceipt({
             printBillActionTriggered: true,
         });

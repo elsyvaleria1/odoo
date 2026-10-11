@@ -80,9 +80,6 @@ registry.category("web_tour.tours").add("planning_test_tour", {
             ),
             run: function () {
                 const expected = "9:00 AM - 11:59 AM";
-                // Without the replace below, this step could break since Intl
-                // uses sometimes U+202f instead of a simple space.
-                // Note: U+202f is a narrow non-break space.
                 const actual = this.anchor.textContent.replace(/\u202f/g, " ");
                 if (!actual.startsWith(expected)) {
                     console.error(

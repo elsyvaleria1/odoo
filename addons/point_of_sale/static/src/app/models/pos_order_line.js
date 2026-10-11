@@ -18,7 +18,6 @@ export class PosOrderline extends PosOrderlineAccounting {
 
     setup(vals) {
         super.setup(vals);
-        // read before setFullProductName, whose write marks the line dirty
         if (this.isSynced && !this._dirty) {
             this._syncedQty = this.qty;
         }
@@ -633,8 +632,6 @@ export class PosOrderline extends PosOrderlineAccounting {
     get canBeRemoved() {
         return this.product_id.uom_id?.isZero(this.qty) ?? this.qty === 0;
     }
-    /** The ticket screen files a refund detail on the order that owns the line
-     * being refunded, keyed by that line's uuid -- never on the refunding order. */
     get refundDetail() {
         const refunded = this.refunded_orderline_id;
         return refunded?.order_id?.uiState?.lineToRefund?.[refunded.uuid];
@@ -645,9 +642,6 @@ export class PosOrderline extends PosOrderlineAccounting {
             (line) => line.order_id.state !== "cancel",
         );
         const loaded = refunds.reduce((acc, line) => acc - line.qty, 0);
-        // the server's count holds each synced refund at its last synced quantity;
-        // the rest was refunded on lines this till has not loaded. A synced line
-        // whose synced quantity is unknown counts as 0 there, so never short
         const countedByServer = refunds
             .filter((line) => line.isSynced)
             .reduce((acc, line) => acc - (line._syncedQty ?? 0), 0);

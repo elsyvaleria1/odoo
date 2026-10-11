@@ -194,9 +194,6 @@ export class EmbeddedComponentPlugin extends Plugin {
             component: null,
         };
         mountReplacingHost(root, host, {
-            // the selection is taken right before the host's content goes,
-            // and useEditableDescendants restores it once the descendants
-            // are back in place
             beforeReplace: () =>
                 setMountSelection(
                     host,

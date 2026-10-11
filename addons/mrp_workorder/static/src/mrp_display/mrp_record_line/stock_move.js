@@ -7,7 +7,7 @@ import { useOpenMany2XRecord } from "@web/fields/relational/many2x_autocomplete"
 import { useActiveActions } from "@web/fields/relational/relational_active_actions";
 
 import { MrpQuantityDialog } from "../dialog/mrp_quantity_dialog.js";
-import { MrpSelectQuantDialog } from "../dialog/mrp_select_quant_dialog.js"; // TODO remove in master
+import { MrpSelectQuantDialog } from "../dialog/mrp_select_quant_dialog.js";
 import { QualityCheck } from "./quality_check.js";
 
 export class StockMove extends QualityCheck {
@@ -52,9 +52,9 @@ export class StockMove extends QualityCheck {
 
     get icon() {
         if (this.isTracked) {
-            return this.displayCheck ? "check" : "plus"; // Make sure to display check for prefilled quality check moves
+            return this.displayCheck ? "check" : "plus";
         }
-        return this.isComplete ? "rotate-left" : "pencil"; // No move lines for untracked moves, work directly on the move
+        return this.isComplete ? "rotate-left" : "pencil";
     }
 
     get isComplete() {
@@ -116,7 +116,6 @@ export class StockMove extends QualityCheck {
         return this.props.record.data.byproduct_id;
     }
 
-    //TODO remove in master
     addMoveLine() {
         const product = this.props.record.data.product_id;
         const locationSrc = this.props.production.data.location_src_id;
@@ -174,19 +173,19 @@ export class StockMove extends QualityCheck {
     async clicked() {
         if (this.isTracked) {
             if (this.displayCheck) {
-                await this.markAsDone(); // check button: accept prefilled values and confirm QC
+                await this.markAsDone();
             } else {
                 if (this.byproduct) {
-                    this.createQuant(); // plus button: create a new move line. Create a new quant for the byproduct.
+                    this.createQuant();
                 } else {
-                    this.addMoveLine(); // plus button: create a new move line. Show a list of quants  to take from.
+                    this.addMoveLine();
                 }
             }
         } else {
             if (this.isComplete) {
-                await this.undo(); // undo button: reset move data for untracked move
+                await this.undo();
             } else {
-                this.editUntrackedMove(); // pencil button: edit untracked move quantity
+                this.editUntrackedMove();
             }
         }
         return this.props.startWorking();

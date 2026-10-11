@@ -708,8 +708,6 @@ for (const direction of /** @type {const} */ ([-1, 1])) {
                     },
                 },
             });
-            // Observe the original promise without allowing a detached rejection
-            // to end the test before its navigation contract can be checked.
             patchWithCleanup(pager, {
                 update(...args) {
                     const update = super.update(...args);

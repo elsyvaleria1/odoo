@@ -1,11 +1,5 @@
 // @ts-check
 
-// A button that runs a verb the user holds on some records only comes from
-// the server with invisible="__verbs and not __verbs.get('<verb>')" and a
-// hidden __verbs field, which the record's read answers as {verb: held}.
-// Nothing here is verb-specific on the client: these tests hold that the
-// ordinary view machinery evaluates that condition per record.
-
 import { expect, test } from "@odoo/hoot";
 import {
     defineModels,

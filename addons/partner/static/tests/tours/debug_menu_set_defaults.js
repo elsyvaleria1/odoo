@@ -35,10 +35,6 @@ registry.category("web_tour.tours").add("debug_menu_set_defaults", {
             run: "click",
         },
         {
-            // Setting a <select> to a value it does not offer is a silent
-            // no-op: nothing is saved and the failure only surfaces at the
-            // last step, blaming the default instead of the dialog. Assert
-            // the option first so a breakage names itself here.
             content: "The dialog must actually offer Website",
             trigger: '#formview_default_fields:has(option[value="website"])',
         },

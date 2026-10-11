@@ -79,21 +79,19 @@ test("Click on chart in dashboard mode redirect to the odoo menu", async functio
 
     await click(fixture.querySelector(".o-chart-container canvas"));
     await animationFrame();
-    // Clicking on a chart while not dashboard mode do nothing
     expect.verifySteps([]);
 
     model.updateMode("dashboard");
     await animationFrame();
     await click(fixture.querySelector(".o-chart-container canvas"));
     await animationFrame();
-    // Clicking on a chart while on dashboard mode redirect to the odoo menu
     expect.verifySteps([doActionStep]);
 });
 
 test("Click on chart element in dashboard mode do not redirect twice", async function () {
     patchWithCleanup(components.ChartJsComponent.prototype, {
         enableAnimationInChartData(chartData) {
-            return chartData; // disable animation for the test
+            return chartData;
         },
     });
 
@@ -118,7 +116,6 @@ test("Click on chart element in dashboard mode do not redirect twice", async fun
     model.updateMode("dashboard");
     await animationFrame();
 
-    // Click pie element
     const chartCanvas = fixture.querySelector(".o-chart-container canvas");
     const canvasRect = chartCanvas.getBoundingClientRect();
     const canvasCenter = {
@@ -132,7 +129,6 @@ test("Click on chart element in dashboard mode do not redirect twice", async fun
     await animationFrame();
     expect.verifySteps(["chartElementRedirect"]);
 
-    // Click outside the pie element
     await click(".o-chart-container canvas", { position: "top-left" });
     await animationFrame();
     expect.verifySteps(["chartMenuRedirect"]);
@@ -192,7 +188,7 @@ test("Middle-click on chart in dashboard mode open the odoo menu in a new tab", 
     await contains(".o-chart-container canvas").click({ ctrlKey: true });
     expect.verifySteps(["doAction"]);
 
-    await contains(".o-chart-container canvas").click({ button: 1 }); // middle mouse click
+    await contains(".o-chart-container canvas").click({ button: 1 });
     expect.verifySteps(["doAction"]);
 });
 

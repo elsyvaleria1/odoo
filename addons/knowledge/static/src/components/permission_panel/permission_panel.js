@@ -175,7 +175,6 @@ export class PermissionPanel extends Component {
             this.record.resId,
             member.id,
         ]);
-        //edge case: if the current user is removed from the article, we need to redirect to the home page
         if (
             member.isCurrentUser &&
             this.userIsInternal &&
@@ -236,7 +235,6 @@ export class PermissionPanel extends Component {
      * @param {number} resId
      */
     async openArticle(resId) {
-        // Permission panel needs to stay open while switching articles.
         this.state.isArticleLoaded = false;
         await this.props.openArticle(resId);
         await this.loadMembers(resId);
@@ -268,7 +266,6 @@ export class PermissionPanel extends Component {
         }
         if (member.isCurrentUser && !this.userIsAdmin) {
             if (permission === "none") {
-                // setting own permission to none, user will leave the article
                 this.dialog.add(ConfirmationDialog, {
                     cancel: () => {},
                     cancelLabel: _t("Discard"),
@@ -285,7 +282,6 @@ export class PermissionPanel extends Component {
                     ),
                 });
             } else {
-                // downgrading own permission from write to read
                 this.dialog.add(ConfirmationDialog, {
                     cancel: () => {},
                     cancelLabel: _t("Discard"),
@@ -300,7 +296,6 @@ export class PermissionPanel extends Component {
                 });
             }
         } else if (member.based_on) {
-            // we are desyncing the article from its parent.
             this.dialog.add(ConfirmationDialog, {
                 cancel: () => {},
                 cancelLabel: _t("Discard"),
@@ -314,7 +309,6 @@ export class PermissionPanel extends Component {
                 ),
             });
         } else {
-            // changing permission of non-inherited member or admin upgrading own permission
             await this.setMemberPermission(member, permission);
         }
     }
@@ -322,7 +316,6 @@ export class PermissionPanel extends Component {
     async removeMember(member) {
         if (member.isCurrentUser && member.permission !== "none") {
             if (this.data.category === "private") {
-                // leaving private article, article will be sent to trash
                 this.dialog.add(ConfirmationDialog, {
                     title: _t("Leave Private Article"),
                     body: _t(
@@ -348,7 +341,6 @@ export class PermissionPanel extends Component {
                 });
             }
         } else if (member.based_on) {
-            // removing inherited member permission, this will desync the article from its parent
             this.dialog.add(ConfirmationDialog, {
                 title: _t("Restrict Access"),
                 body: _t(

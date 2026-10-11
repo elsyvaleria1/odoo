@@ -56,11 +56,6 @@ export function camelToSnakeObject(obj) {
     return result;
 }
 
-/**
- * Check if the argument is falsy or is an empty object/array
- *
- * TODO : remove this and replace it by the one in o_spreadsheet xlsx import when its merged
- */
 export function isEmpty(item) {
     if (!item) {
         return true;

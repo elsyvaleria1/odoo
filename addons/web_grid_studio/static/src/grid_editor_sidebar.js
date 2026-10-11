@@ -29,8 +29,6 @@ export class GridEditorSidebar extends Component {
         return this.viewEditorModel.controllerProps.archInfo;
     }
 
-    // The root booleans grid_view.rng admits. Row, column and measure fields
-    // are `<field>` children with a `type`, edited as nodes.
     get toggles() {
         return [
             {

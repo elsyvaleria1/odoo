@@ -5,9 +5,6 @@ import { defineProjectModels, projectModels } from "@project/../tests/project_mo
 import { fields, mountView } from "@web/../tests/web_test_helpers";
 
 describe.current.tags("desktop");
-// The fixtures have to be in place before defineProjectModels() registers the
-// models: mutating _fields/_records afterwards no longer reaches the registered
-// definition, which left this suite querying the default project fixture.
 Object.assign(mailModels.ResPartner._fields, {
     partner_latitude: fields.Float({ string: "Latitude" }),
     partner_longitude: fields.Float({ string: "Longitude" }),
@@ -58,7 +55,6 @@ test("Test muted label for unplanned task in map", async () => {
         },
     );
 
-    // Selector for the second-to-last list item (the second cell)
     expect(queryAll(".o-map-renderer--pin-list-details li")[1]).not.toHaveClass(
         "text-muted",
         {

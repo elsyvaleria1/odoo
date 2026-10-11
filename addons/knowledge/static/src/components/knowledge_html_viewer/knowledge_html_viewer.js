@@ -63,9 +63,6 @@ export class KnowledgeHtmlViewer extends HtmlViewer {
         });
         this.overlayComponentsKey = uniqueId("KnowledgeCommentsHandler");
         useLayoutEffect(
-            // TODO ABD: investigate if we need useRecordObserver if user_permission changes ?
-            // maybe patch occurs too late when user_permission change ?
-            // is it even necessary to check for permission = "none" ?
             () => {
                 let overlayContainer;
                 if (
@@ -76,7 +73,6 @@ export class KnowledgeHtmlViewer extends HtmlViewer {
                 ) {
                     overlayContainer = this.makeLocalOverlay();
                     this.overlayRef.el.append(overlayContainer);
-                    // reactive on this object if necessary
                     this.commentBeaconManager = new CommentBeaconManager({
                         document,
                         source: this.readonlyElementRef.el,

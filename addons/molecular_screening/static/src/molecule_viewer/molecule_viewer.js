@@ -11,7 +11,6 @@ export class MoleculeViewer3D extends FieldComponent {
 
     setup() {
         this.root = elementRef();
-        // 3Dmol is ~500 kB: load it only when a compound form is opened.
         onWillStart(() => loadJS("/molecular_screening/static/lib/3dmol/3Dmol-min.js"));
         onMounted(() => this.renderMolecule());
         onPatched(() => this.renderMolecule());
@@ -44,7 +43,6 @@ export class MoleculeSvg extends FieldComponent {
 
     get src() {
         const svg = this.props.record.data[this.props.name];
-        // Rendered through <img> so any script inside the SVG stays inert.
         return svg ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}` : "";
     }
 }

@@ -120,9 +120,6 @@ export class TimeOffCalendarModel extends CalendarModel {
     }
 
     get employeeId() {
-        // The key is an id from a view context and a list of them from
-        // `action_time_off_dashboard`; indexing only the list form read the
-        // first shape as undefined and silently fell back to the current user.
         const fromContext = this.meta.context.employee_id;
         return (
             (Array.isArray(fromContext) ? fromContext[0] : fromContext) ||

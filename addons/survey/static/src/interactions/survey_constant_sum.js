@@ -27,12 +27,6 @@ export class SurveyConstantSum extends Interaction {
         this.recompute();
     }
 
-    /**
-     * The server rejects a submission whose values do not sum to the target, so
-     * the running total has to be visible while the respondent types. Without
-     * it the only feedback is a validation error after submit, on a question
-     * whose whole point is arithmetic.
-     */
     recompute() {
         let total = 0;
         for (const inputEl of this.el.querySelectorAll("input[data-answer-id]")) {

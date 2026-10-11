@@ -18,24 +18,6 @@ const SETTLE_MARGIN = 1000;
 const EXPIRED = Symbol("expired");
 const SETTLED = Symbol("settled");
 
-/**
- * Silence errors raised after a tour has finished, and un-silence them when
- * the next one starts.
- *
- * `end()` used to install this pair as two inline arrows, which nothing could
- * remove afterwards -- no reference to them existed. Every finished automatic
- * tour therefore left another capturing `error`/`unhandledrejection` listener
- * behind for the lifetime of the page, each one calling
- * `stopImmediatePropagation()`, so a second tour in the same page ran blind
- * and any handler registered *after* a finished tour (a later test's own error
- * assertion, an error reporter mounted after an onboarding tour) could have
- * its detection eaten by a leftover. There is exactly one pair now, and it
- * only lives between the end of one tour and the start of the next.
- *
- * A named function also makes the install idempotent on its own:
- * `addEventListener` drops a duplicate (same target, type, callback, capture).
- * The flag is kept so removal is symmetric and cheap to reason about.
- */
 const swallowError = (ev) => {
     ev.preventDefault();
     ev.stopImmediatePropagation();
@@ -129,8 +111,6 @@ export class TourAutomatic {
     }
 
     start() {
-        // Whatever the tour before this one left silenced, this one needs to
-        // see.
         stopSwallowingPostTourErrors();
         setupEventActions(document.createElement("div"), { allowSubmit: true });
         enableEventLogs(this.debugMode);
@@ -148,8 +128,6 @@ export class TourAutomatic {
                         : step.timeout || this.timeout || CLIENT_SETTLE_TIMEOUT;
                 return [
                     {
-                        // the settle wait below spends the step's own budget and
-                        // goes on when it expires; the macro must not cut it short
                         timeout: timeout + Math.max(stepDelay || 0, 0) + SETTLE_MARGIN,
                         action: async () => {
                             if (this.debugMode) {
@@ -165,9 +143,6 @@ export class TourAutomatic {
                             } else {
                                 console.log(step.describeMe);
                             }
-                            // a step that only observes may catch a state that
-                            // exists while requests are in flight (a loading
-                            // screen); only acting waits for the client to settle
                             if (!step.expectUnloadPage && step.hasAction) {
                                 await this.whenClientSettles(timeout);
                             }
@@ -231,10 +206,6 @@ export class TourAutomatic {
             delete window[hootNameSpace];
             transitionConfig.disabled = false;
             tourState.clear();
-            // The tour is over: an error the page raises from here on belongs
-            // to nobody and must not fail a run that already reported its
-            // result. Owned by the module rather than by this closure -- see
-            // `swallowPostTourErrors`.
             swallowPostTourErrors();
         };
 
@@ -253,14 +224,8 @@ export class TourAutomatic {
                 end();
             },
             onComplete: async () => {
-                // no step is left to race a navigation: a page that unloads
-                // from here on (a backend that redirects once more after the
-                // last step observed it) is not the hazard the guard exists for
                 this.allowUnload = true;
                 log.lifecycle("unloadAllowedAfterLastStep", { tour: this.name });
-                // a tour is over when the client is idle: the last steps
-                // only observed, and what they observed may still be saving,
-                // which the harness would then report as a dirty form
                 await this.whenClientSettles();
                 browser.console.log("tour succeeded");
                 const succeeded = `║ TOUR ${this.name} SUCCEEDED ║`;

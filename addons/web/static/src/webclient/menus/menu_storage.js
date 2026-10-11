@@ -89,7 +89,6 @@ export const menuStorage = {
             menus = payload.menus;
             raw = JSON.stringify(menus);
         } else if (storedVersion !== cacheVersion()) {
-            // Legacy copies are safe only when their full server version matches.
             return { menus: null, raw: null, hash: undefined };
         }
         if (storedVersion !== cacheVersion()) {

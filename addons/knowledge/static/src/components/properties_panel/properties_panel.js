@@ -18,7 +18,6 @@ export class KnowledgeArticleProperties extends Component {
         this.knowledgeContext = useKnowledgeContext();
         this.state = proxy(this.knowledgeContext.propertiesPanelState);
         this.ui = useService("ui");
-        // open/close the panel based on the existence of properties
         useLayoutEffect(
             () => {
                 if (!this.ui.isSmall && this.hasProperties && !this.state.isDisplayed) {

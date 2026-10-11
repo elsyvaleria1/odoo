@@ -260,8 +260,6 @@ export class SnippetModel extends SignalStore {
             this.snippetsByCategory[snippetCategory.id] = snippets;
         }
 
-        // Extract the custom inner content from the custom snippets and remove
-        // those whose module is not installed.
         const customInnerContent = [];
         const customSnippets = this.snippetsByCategory.snippet_custom;
         for (let i = customSnippets.length - 1; i >= 0; i--) {
@@ -273,9 +271,6 @@ export class SnippetModel extends SignalStore {
                 customInnerContent.unshift(snippet);
             }
             if (!this.isCustomStructure(customSnippetName)) {
-                // If no structure snippet could be found, it means that the
-                // module is not installed (i.e. the original snippet has no
-                // `data-snippet` attribute).
                 customSnippets.splice(i, 1);
             }
         }
@@ -342,7 +337,6 @@ export class SnippetModel extends SignalStore {
     }
 
     setSnippetName(snippetsDocument) {
-        // TODO: this should probably be done in py
         for (const snippetEl of snippetsDocument.body.querySelectorAll(
             "snippets > *",
         )) {
@@ -421,9 +415,6 @@ export class SnippetModel extends SignalStore {
                             () => snippetEl.cloneNode(true),
                         );
 
-                        // "CleanForSave" the snippet copy (only its children in
-                        // the case of a popup, or it will be saved as invisible
-                        // and will not be visible in the "add snippet" dialog).
                         const rootEl = snippetEl.matches(".s_popup")
                             ? snippetCopyEl.firstElementChild
                             : snippetCopyEl;
@@ -467,7 +458,6 @@ export class SnippetModel extends SignalStore {
                             },
                         );
 
-                        // Reload the snippets so the sidebar is up to date.
                         await this.reload();
                         resolve(savedName);
                     },
@@ -495,7 +485,7 @@ export const snippetService = {
     start(env, { orm, dialog }) {
         const services = { orm, dialog };
         const context = {
-            lang: user.context.lang, // will be overridden by each module through reload().
+            lang: user.context.lang,
             user_lang: user.context.lang,
         };
 

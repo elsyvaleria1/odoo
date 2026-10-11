@@ -49,8 +49,6 @@ export class TourPointer extends Component {
         const positionOptions = {
             margin: 6,
             onPositioned: (pointer, position) => {
-                // a previous top/left positioning anchored the pointer by its
-                // bottom/right: reset here, where the new direction is known
                 pointer.style.removeProperty("bottom");
                 pointer.style.removeProperty("right");
                 const popperRect = pointer.getBoundingClientRect();

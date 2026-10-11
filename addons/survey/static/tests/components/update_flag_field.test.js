@@ -97,42 +97,33 @@ test("Auto update of is_time_customized", async () => {
     onRpc("survey", "onchange", () => ({
         value: { question_and_page_ids: [[1, 1, { is_time_customized: false }]] },
     }));
-    // Open question
     await contains("tr.o_data_row > td.o_list_char").click();
     expect("div[name='is_time_customized'] input").not.toBeChecked();
-    // set question "is_time_limited" => true
     await contains("div[name='is_time_limited'] input").click();
     await animationFrame();
-    expect("div[name='is_time_customized'] input").toBeChecked(); // widget-triggered update to `true` based on `is_time_limited`
-    // save question
+    expect("div[name='is_time_customized'] input").toBeChecked();
     await contains("div.modal-dialog button.o_form_button_save").click();
     await animationFrame();
-    // set survey "session_speed_rating" => true
     await contains("div[name='session_speed_rating'] input").click();
     await animationFrame();
-    // check that questions "is_time_limited" === true and "is_time_customized" === false after survey onchange
     expect("td.o_field_cell[name='is_time_limited'] input").toBeChecked();
     expect("td.o_field_cell[name='is_time_customized'] input").not.toBeChecked();
-    // Open question again
     await contains("tr.o_data_row > td.o_list_char").click();
     await contains("div[name='time_limit'] input").edit(20);
-    // TODO: JUM (events concurrency)
     await manuallyDispatchProgrammaticEvent(
         queryOne("div[name='time_limit'] input"),
         "change",
     );
     await animationFrame();
-    expect("div[name='is_time_customized'] input").toBeChecked(); // widget-triggered update to `true` based on `time_limit`
+    expect("div[name='is_time_customized'] input").toBeChecked();
     await contains("div[name='time_limit'] input").edit(30);
-    // TODO: JUM (events concurrency)
     await manuallyDispatchProgrammaticEvent(
         queryOne("div[name='time_limit'] input"),
         "change",
     );
     await animationFrame();
-    expect("div[name='is_time_customized'] input").not.toBeChecked(); // widget-triggered update to `false` based on `time_limit`
-    // set question "is_time_limited" => false
+    expect("div[name='is_time_customized'] input").not.toBeChecked();
     await contains("div[name='is_time_limited'] input").click();
     await animationFrame();
-    expect("div[name='is_time_customized'] input").toBeChecked(); // widget-triggered update to `false` based on `is_time_limited`
+    expect("div[name='is_time_customized'] input").toBeChecked();
 });

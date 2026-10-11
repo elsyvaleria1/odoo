@@ -13,7 +13,6 @@ function createReplies(textareaSelector) {
 
     const tourSteps = [];
 
-    // must be able to post "maximumAllowedReplies" replies
     for (let i = 0; i < maximumAllowedReplies; i++) {
         const message = `__social_twitter_test_tour_${uniqueSeed}_${i}__`;
 
@@ -35,7 +34,6 @@ function createReplies(textareaSelector) {
         );
     }
 
-    // the next reply must fail
     const message = `__social_twitter_test_tour_${uniqueSeed}_last__`;
     tourSteps.push(
         {
@@ -67,15 +65,6 @@ function createReplies(textareaSelector) {
     return tourSteps;
 }
 
-/**
- * Twitter has a spam detection and will take measures against spamming accounts.
- * We now have a spam check mechanism to prevent any potential issues.
- * This will test that:
- * - Users can't spam when replying to a stream.post
- * - Users can't spam when replying to another comment (on a stream.post)
- *
- * The spam detection is set to maximum 3 comments.
- **/
 registry
     .category("web_tour.tours")
     .add("social_twitter/static/tests/tours/tour_social_twitter_spam.js", {
@@ -91,12 +80,8 @@ registry
                 content: "Open the tweet comments",
                 run: "click",
             },
-            // Test comments spam
             ...createReplies(
                 ".o_social_comments_modal textarea.o_social_add_comment:not([data-is-comment-reply])",
             ),
-            // Test replies spam
-            // TODO awa: not sure how this one worked, as we have no textarea to reply already opened
-            // ...createReplies('.o_social_comment:first textarea[name="message"]'),
         ],
     });

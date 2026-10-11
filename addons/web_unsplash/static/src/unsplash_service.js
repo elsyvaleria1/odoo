@@ -42,10 +42,6 @@ export const unsplashService = {
                         query: records[0].query,
                     });
 
-                    // The route silently skips any image it fails to fetch or
-                    // process (per-image failures never fail the batch), so a
-                    // shorter result than the request is the only signal that
-                    // some images did not make it in.
                     if (attachments.length < records.length) {
                         file.hasError = true;
                         file.errorMessage = _t("Some images could not be uploaded.");

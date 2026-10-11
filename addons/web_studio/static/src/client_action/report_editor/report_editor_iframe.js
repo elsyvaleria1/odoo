@@ -65,13 +65,8 @@ export class ReportEditorIframe extends Component {
         const iframeEl = iframeRef.el;
         const iframeContent = iframeEl.contentDocument;
 
-        // WHY --> so that after the load of the iframe, if there are images,
-        // the iframe height is recomputed to the height of the content images included
         const computeIframeHeight = () =>
             (iframeEl.style.height = iframeContent.body.scrollHeight + "px");
-        //computeIframeHeight();
-
-        // TODO: won't be pretty if the content is larger than the format
 
         const footer = iframeContent.querySelector(".footer");
         const footerStyle = footer?.style;
@@ -91,7 +86,6 @@ export class ReportEditorIframe extends Component {
 
         iframeContent.querySelector("html").style.overflow = "hidden";
 
-        // set the size of the iframe
         const proms = [];
         Array.from(iframeContent.querySelectorAll("img[src]") || []).forEach((img) => {
             if (img.complete) {

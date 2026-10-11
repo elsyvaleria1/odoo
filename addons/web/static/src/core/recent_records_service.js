@@ -8,7 +8,6 @@ import { user } from "@web/core/user";
 
 const log = makeLogger("web.recent_records");
 
-// openings within this window reach the server as one call
 const FLUSH_DELAY = 1000;
 const MAX_PER_CALL = 50;
 

@@ -42,7 +42,6 @@ test("odoo pivot functions are replaced with their value", async function () {
 });
 
 test("Pivot with a type different of ODOO is not converted", async function () {
-    // Add a pivot with a type different of ODOO
     pivotRegistry.add("NEW_KIND_OF_PIVOT", {
         ui: OdooPivot,
         definition: OdooPivotRuntimeDefinition,
@@ -102,7 +101,7 @@ test("values are not exported formatted", async function () {
 
 test("invalid expression with pivot function", async function () {
     const { model } = await createSpreadsheetWithPivot();
-    setCellContent(model, "A1", "=PIVOT.VALUE(1)+"); // invalid expression
+    setCellContent(model, "A1", "=PIVOT.VALUE(1)+");
     expect(getEvaluatedCell(model, "A1").value).toBe("#BAD_EXPR");
     const data = await freezeOdooData(model);
     const cells = data.sheets[0].cells;
@@ -121,7 +120,7 @@ test("odoo pivot functions detection is not case sensitive", async function () {
 
 test("computed format is exported", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
               <pivot>
                   <field name="pognon" type="measure"/>
               </pivot>
@@ -273,7 +272,7 @@ test("from/to global filter without value is exported", async function () {
 
 test("Empty ODOO.LIST result is frozen to an empty string", async function () {
     const { model } = await createSpreadsheetWithList();
-    setCellContent(model, "A1", '=ODOO.LIST(1, 9999,"probability")'); // has no record
+    setCellContent(model, "A1", '=ODOO.LIST(1, 9999,"probability")');
     await waitForDataLoaded(model);
     expect(getEvaluatedCell(model, "A1").value).toBe("");
     const frozenData = await freezeOdooData(model);
@@ -319,7 +318,7 @@ test("odoo links are replaced with their label", async function () {
 
 test("spilled pivot table", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
           <pivot>
               <field name="probability" type="measure"/>
           </pivot>
@@ -348,7 +347,7 @@ test("spilled pivot table", async function () {
 test('empty string computed measure is exported as =""', async function () {
     const { model } = await createSpreadsheetWithPivot();
     setCellContent(model, "A10", "=PIVOT(1)");
-    expect(getEvaluatedCell(model, "B12").value).toBe(""); // empty value
+    expect(getEvaluatedCell(model, "B12").value).toBe("");
     const data = await freezeOdooData(model);
     const cells = data.sheets[0].cells;
     expect(cells.B12).toBe('=""');

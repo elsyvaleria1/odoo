@@ -37,8 +37,6 @@ export class ThankYouDialog extends Component {
         this.redirectURL = this.processURL(this.props.redirectURL);
         let defaultMessage = _t("You will get the signed document by email.");
         if (this.signInfo.get("companyCountryCode") === "US") {
-            // U.S. signers may request a paper copy in addition to the electronic document,
-            // as required by the ESIGN Act.
             defaultMessage = _t(
                 "You will get the signed document by email. You may also request a paper copy from the sender.",
             );
@@ -187,7 +185,6 @@ export class ThankYouDialog extends Component {
     }
 
     async downloadDocument() {
-        // Simply triggers a download of the document which the user just signed.
         window.open(
             this.makeURI(
                 "/sign/download",
@@ -200,7 +197,6 @@ export class ThankYouDialog extends Component {
     }
 
     makeURI(baseUrl, requestID, token, suffix = "", params = "") {
-        // Helper function for constructing a URI.
         params = params ? "?" + new URLSearchParams(params).toString() : "";
         return `${baseUrl}/${requestID}/${token}${suffix}${params}`;
     }

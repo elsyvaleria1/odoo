@@ -18,7 +18,6 @@ const ProductScreen = { ...ProductScreenPos, ...ProductScreenResto };
 registry.category("web_tour.tours").add("FloorScreenTour", {
     steps: () =>
         [
-            // check floors if they contain their corresponding tables
             Chrome.startPoS(),
             FloorScreen.selectedFloorIs("Main Floor"),
             FloorScreen.hasTable("2"),
@@ -28,15 +27,12 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
             FloorScreen.hasTable("3"),
             FloorScreen.hasTable("1"),
 
-            // clicking table in active mode does not open product screen
-            // instead, table is selected
             Chrome.clickMenuOption("Edit Plan"),
             FloorScreen.clickTable("3"),
             FloorScreen.selectedTableIs("3"),
             FloorScreen.clickTable("1"),
             FloorScreen.selectedTableIs("1"),
 
-            //test copy floor
             FloorScreen.clickFloor("Main Floor"),
             FloorScreen.clickEditButton("Clone"),
             FloorScreen.selectedFloorIs("Main Floor (copy)"),
@@ -57,7 +53,6 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
                 ".floor-selector .button-floor:contains('Main Floor (copy)')",
             ),
 
-            // test add table
             FloorScreen.clickFloor("Main Floor"),
             {
                 trigger: `.edit-buttons i[aria-label="Add Table"]`,
@@ -71,9 +66,7 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
             Dialog.confirm(),
             FloorScreen.selectedTableIs("100"),
 
-            // test duplicate table
             FloorScreen.clickEditButton("Clone"),
-            // the name is the first number available on the floor
             FloorScreen.selectedTableIs("1"),
             FloorScreen.clickEditButton("Rename"),
 
@@ -82,13 +75,10 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
             Dialog.confirm(),
             FloorScreen.selectedTableIs("1111"),
 
-            // switch floor, switch back and check if
-            // the new tables are still there
             FloorScreen.clickFloor("Second Floor"),
             FloorScreen.hasTable("3"),
             FloorScreen.hasTable("1"),
 
-            //test duplicate multiple tables
             FloorScreen.clickTable("1"),
             FloorScreen.selectedTableIs("1"),
             FloorScreen.ctrlClickTable("3"),
@@ -97,7 +87,6 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
             FloorScreen.selectedTableIs("4"),
             FloorScreen.selectedTableIs("5"),
 
-            //test delete multiple tables
             FloorScreen.clickEditButton("Delete"),
             Dialog.confirm(),
 
@@ -108,13 +97,11 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
             FloorScreen.hasTable("100"),
             FloorScreen.hasTable("1111"),
 
-            // test delete table
             FloorScreen.clickTable("1111"),
             FloorScreen.selectedTableIs("1111"),
             FloorScreen.clickEditButton("Delete"),
             Dialog.confirm(),
 
-            // change number of seats
             FloorScreen.clickTable("4"),
             FloorScreen.selectedTableIs("4"),
             FloorScreen.clickEditButton("Seats"),
@@ -124,7 +111,6 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
             Dialog.confirm(),
             FloorScreen.table({ name: "4" }),
 
-            // change number of seat when the input is already selected
             FloorScreen.selectedTableIs("4"),
             FloorScreen.clickEditButton("Seats"),
             NumberPopup.enterValue("15"),
@@ -132,17 +118,14 @@ registry.category("web_tour.tours").add("FloorScreenTour", {
             Dialog.confirm(),
             FloorScreen.table({ name: "4" }),
 
-            // change shape
             FloorScreen.clickEditButton("Make Round"),
 
-            // Opening product screen in main floor should go back to main floor
             FloorScreen.clickSaveEditButton(),
             FloorScreen.table({ name: "4", withoutClass: ".selected" }),
             FloorScreen.clickTable("4"),
             ProductScreen.isShown(),
             Chrome.clickPlanButton(),
 
-            // Opening product screen in second floor should go back to second floor
             FloorScreen.clickFloor("Second Floor"),
             FloorScreen.hasTable("3"),
             FloorScreen.clickTable("3"),
@@ -155,7 +138,6 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
     steps: () =>
         [
             Chrome.startPoS(),
-            // Check the linking of tables
             FloorScreen.clickFloor("Main Floor"),
             FloorScreen.clickTable("4"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -166,7 +148,6 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
             Utils.refresh(),
             FloorScreen.isChildTable("5"),
 
-            // Check that tables are unlinked automatically when the order is done
             FloorScreen.clickTable("5"),
             Chrome.isTabActive("4 & 5"),
             inLeftSide(ProductScreen.orderLineHas("Coca-Cola", "1")),
@@ -183,11 +164,9 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
             Utils.negateStep(FloorScreen.isChildTable("5")),
 
             FloorScreen.linkTables("5", "4"),
-            // Check that the tables are unlinked when the child table is dragged
             FloorScreen.unlinkTables("5", "4"),
             Utils.negateStep(FloorScreen.isChildTable("5")),
 
-            // Verify that tables are unlinked and original orders are restored after dragging a child table.
             FloorScreen.isShown(),
             FloorScreen.clickTable("4"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -199,11 +178,9 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
 
-            // Link tables 5 and 4
             FloorScreen.linkTables("5", "4"),
             FloorScreen.isChildTable("5"),
 
-            // Check merged orders
             FloorScreen.clickTable("5"),
             Chrome.isTabActive("4 & 5"),
             inLeftSide(ProductScreen.orderLineHas("Coca-Cola", "1")),
@@ -211,11 +188,9 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
 
-            // Unlink tables and verify restoration of original orders
             FloorScreen.unlinkTables("5", "4"),
             Utils.negateStep(FloorScreen.isChildTable("5")),
 
-            // Check original orders for table 4
             FloorScreen.clickTable("4"),
             inLeftSide(ProductScreen.orderLineHas("Coca-Cola", "1")),
             ProductScreen.clickOrderButton(),
@@ -227,7 +202,6 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
 
-            // Check original orders for table 5
             FloorScreen.clickTable("5"),
             inLeftSide(ProductScreen.orderLineHas("Minute Maid", "1")),
             ProductScreen.clickOrderButton(),
@@ -239,13 +213,11 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
 
-            // Relink tables and verify
             FloorScreen.linkTables("5", "4"),
             FloorScreen.clickTable("5"),
             Chrome.isTabActive("4 & 5"),
             ProductScreen.orderlinesHaveNoChange(),
 
-            // Add a new product to the merged order
             ProductScreen.clickDisplayedProduct("Minute Maid"),
             ProductScreen.orderlineIsToOrder("Minute Maid"),
             ProductScreen.clickOrderButton(),
@@ -255,13 +227,11 @@ registry.category("web_tour.tours").add("TableMergeUnmergeTour", {
             },
             ProductScreen.orderlinesHaveNoChange(),
 
-            // Unlink tables again and verify restoration
             Chrome.clickPlanButton(),
             FloorScreen.isShown(),
             FloorScreen.unlinkTables("5", "4"),
             Utils.negateStep(FloorScreen.isChildTable("5")),
 
-            // Verify orders after unlinking
             FloorScreen.clickTable("5"),
             inLeftSide(ProductScreen.orderLineHas("Minute Maid", "1")),
             Chrome.clickPlanButton(),
@@ -308,7 +278,6 @@ registry.category("web_tour.tours").add("no_ghost_floor", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // 1. Create new floor along with a table
             Chrome.clickMenuOption("Edit Plan"),
             FloorScreen.addFloor("Ghost Floor"),
             {
@@ -324,7 +293,6 @@ registry.category("web_tour.tours").add("no_ghost_floor", {
             FloorScreen.selectedTableIs("999"),
             FloorScreen.clickSaveEditButton(),
 
-            // 2. Create and pay an order on that table
             FloorScreen.clickFloor("Ghost Floor"),
             FloorScreen.clickTable("999"),
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
@@ -333,14 +301,12 @@ registry.category("web_tour.tours").add("no_ghost_floor", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // 3. Delete the floor
             Chrome.clickMenuOption("Edit Plan"),
             FloorScreen.clickFloor("Ghost Floor"),
             FloorScreen.clickEditButton("Delete"),
             Dialog.confirm(),
             FloorScreen.clickSaveEditButton(),
 
-            // 4. Refund one orderline of the paid order
             Chrome.clickOrders(),
             TicketScreen.selectFilter("Active"),
             TicketScreen.selectFilter("Paid"),
@@ -351,7 +317,6 @@ registry.category("web_tour.tours").add("no_ghost_floor", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
 
-            // 5. Floor Plan ===> The floor deleted was reappearing
             FloorScreen.hasNotFloor("Ghost Floor"),
         ].flat(),
 });

@@ -28,12 +28,8 @@ class IoTDeviceController extends formView.Controller {
             await this.updateDisplayUrl(record.data);
         }
     }
-    /**
-     * Send an action to the device to update the keyboard layout
-     */
     async updateKeyboardLayout(data) {
         const { iot_id, identifier, keyboard_layout, is_scanner } = data;
-        // IMPROVEMENT: Perhaps combine the call to update_is_scanner and update_layout in just one remote call to the iotbox.
         this.iotHttp.action(
             iot_id.id,
             identifier,
@@ -81,9 +77,6 @@ class IoTDeviceController extends formView.Controller {
             });
         }
     }
-    /**
-     * Send an action to the device to update the screen url
-     */
     async updateDisplayUrl(data) {
         const { iot_id, identifier, display_url } = data;
         return this.iotHttp.action(iot_id.id, identifier, {
@@ -116,7 +109,6 @@ class IoTDeviceController extends formView.Controller {
             const { iot_id, identifier, type, subtype } = this.model.root.data;
 
             if (type === "printer" && subtype === "office_printer") {
-                // We print a "real" pdf report: the external report sample
                 const reportId = (
                     await this.orm.searchRead(
                         "ir.actions.report",

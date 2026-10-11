@@ -30,10 +30,6 @@ function distance(point) {
     return Math.hypot(point.x, point.y);
 }
 
-// Rings are ellipses, so plain distance from the focus does NOT encode degree:
-// a point at the flat top of an outer ring is genuinely closer to the origin
-// than one at the wide side of an inner one. Undo the squash and the rings are
-// nested circles again, which is the invariant that actually has to hold.
 function ringRadius(point) {
     return Math.hypot(point.x, point.y / RING_ASPECT);
 }
@@ -149,15 +145,6 @@ describe("joint is reachable and draws", () => {
         expect(joint.DirectedGraph).toBeInstanceOf(Object);
     });
 
-    // The placement search computes a point on the link and expects JointJS to
-    // put the label's centre there. Worth checking against the library rather
-    // than assumed -- labelPlacements reported no collisions while four labels
-    // visibly sat on nodes, and the reason was a disagreement about which
-    // segment `distance` measures.
-    //
-    // The boxes here are the real NODE_WIDTH x NODE_HEIGHT on purpose. An
-    // earlier version of this used 10x10, where the drawn path and the
-    // centre-to-centre line are nearly the same and the bug is invisible.
     test("a link label lands where {distance, offset} says", async () => {
         const { dia, shapes } = await loadJoint();
         container = document.createElement("div");
@@ -198,10 +185,6 @@ describe("joint is reachable and draws", () => {
             y: box.top + box.height / 2 - paperBox.top,
         };
 
-        // Centres are 500 apart at y = NODE_HEIGHT / 2, and the link is drawn
-        // between the two BOUNDARIES -- from x = NODE_WIDTH to x = 500 -- so
-        // half way along the drawn path is x = (NODE_WIDTH + 500) / 2, NOT 250.
-        // The offset is perpendicular, straight down.
         expect(Math.abs(centre.x - (NODE_WIDTH + 500) / 2)).toBeLessThan(12);
         expect(Math.abs(centre.y - (NODE_HEIGHT / 2 + 40))).toBeLessThan(12);
         paper.remove();
@@ -266,8 +249,6 @@ describe("partner network wedges", () => {
 
         const positions = ringLayout(nodes, edges);
 
-        // blood precedes business in CATEGORY_ORDER, and each holds half the
-        // outer nodes, so the two wedges split the circle at pi
         for (const id of [10, 11]) {
             expect(angleOf(positions.get(id))).toBeLessThan(Math.PI);
         }
@@ -287,7 +268,6 @@ describe("partner network wedges", () => {
         const positions = ringLayout(nodes, edges);
         const blood = [10, 11, 12, 13, 14, 15].map((id) => angleOf(positions.get(id)));
 
-        // six of eight outer nodes => three quarters of the circle
         expect(Math.max(...blood)).toBeLessThan(1.5 * Math.PI);
     });
 
@@ -316,8 +296,6 @@ describe("partner network wedges", () => {
             tie(3, 1, 20, "ritual"),
         ]);
 
-        // 20 is reachable from the focus (degree 0) and from 10 (degree 1);
-        // the lower-degree end wins
         expect(categories.get(20)).toBe("ritual");
         expect(categories.get(10)).toBe("business");
     });
@@ -352,7 +330,6 @@ describe("partner network wedges", () => {
         const blood = [10, 11, 12].map((id) => angleOf(positions.get(id)));
         const business = [20, 21, 22].map((id) => angleOf(positions.get(id)));
 
-        // the two wedges split at pi; neither reaches the boundary
         expect(Math.max(...blood)).toBeLessThan(Math.PI - 0.02);
         expect(Math.min(...business)).toBeGreaterThan(Math.PI + 0.02);
     });
@@ -364,8 +341,6 @@ describe("partner network wedges", () => {
         const withEdges = ringLayout(nodes, edges);
         const withNone = ringLayout(nodes);
 
-        // one category means no neighbour to separate from, so the gutter is
-        // not taken and the placement matches the plain concentric layout
         for (const id of [10, 11, 12, 13]) {
             expect(withEdges.get(id)).toEqual(withNone.get(id));
         }
@@ -380,7 +355,6 @@ describe("partner network wedges", () => {
 });
 
 describe("partner network filtering", () => {
-    // juan -1- maria -2- pedro -3- lucia, plus a business tie hanging off juan.
     function network() {
         return {
             focus_id: 1,
@@ -424,9 +398,6 @@ describe("partner network filtering", () => {
         expect(idsOf(result)).toEqual([1, 2, 3, 5]);
     });
 
-    // The server refuses to emit an edge whose far end carries no degree,
-    // because that node sits at an unknown distance from the focus. Narrowing
-    // here has to make the same refusal or it draws exactly those nodes back in.
     test("an edge leaving the last kept ring is dropped with it", () => {
         const result = filterNetwork(network(), { degree: 2, categories: every });
 
@@ -447,9 +418,6 @@ describe("partner network filtering", () => {
         expect(idsOf(result)).not.toInclude(5);
     });
 
-    // Hiding the nearest tie is not a matter of hiding one line: everything
-    // behind it was reached THROUGH it, so it leaves with it rather than
-    // floating at a degree nothing supports any more.
     test("hiding a near category takes the chain behind it", () => {
         const result = filterNetwork(network(), {
             degree: 3,
@@ -535,10 +503,6 @@ describe("partner network packing", () => {
         return found;
     }
 
-    // The property the ring's radius is grown to establish. The formula this
-    // replaced predicted a radius from arc length and could leave pairs sitting
-    // on top of each other once the rings were flattened; this asserts the
-    // outcome instead of the formula.
     test("no two nodes overlap, however crowded the ring", () => {
         for (const count of [2, 5, 12, 30, 60]) {
             const positions = ringLayout([focus, ...crowd(count, 1, 10)]);
@@ -568,9 +532,6 @@ describe("partner network packing", () => {
         expect(collisions(ringLayout(nodes, edges))).toBe(0);
     });
 
-    // The reason the rings are ellipses at all: node boxes are far wider than
-    // they are tall, so a circle over-spends height, and height is what binds
-    // the fit in a canvas wider than it is tall.
     test("the drawing is wider than it is tall", () => {
         const { width, height } = extent(
             ringLayout([focus, ...crowd(11, 1, 100), ...crowd(9, 2, 200)]),
@@ -588,18 +549,12 @@ describe("partner network packing", () => {
             ),
         );
 
-        // Positions are rounded to whole pixels and y is stored already
-        // squashed, so undoing the squash multiplies that rounding by 1/aspect.
-        // The tolerance is that noise (~1px here), not slack in the invariant.
         for (const radius of radii) {
             expect(Math.abs(radius - radii[0])).toBeLessThan(3);
         }
         expect(RING_ASPECT).toBeLessThan(1);
     });
 
-    // Growing a ring must not push its members out of the sector their category
-    // owns, or the radius search would quietly undo the grouping it is laid out
-    // to show.
     test("growing a ring leaves every node in its own wedge", () => {
         const nodes = [focus, ...crowd(10, 1, 10), ...crowd(10, 1, 20)];
         const edges = [
@@ -628,20 +583,15 @@ describe("partner network branches", () => {
         return angle < 0 ? angle + 2 * Math.PI : angle;
     }
 
-    // The shape that broke: a company reached into a family through one
-    // shareholder. BOTH first-degree ties are "business", so grouping by
-    // category crushed them into one wedge while the shareholder's relatives
-    // fanned out across every other wedge -- putting a contact nowhere near the
-    // person it descends from, and sending its edge across the whole drawing.
     function companyNetwork() {
         const nodes = [
             focus,
-            { id: 10, degree: 1 }, // the shareholder
-            { id: 11, degree: 1 }, // the other company
-            { id: 20, degree: 2 }, // the shareholder's blood relative
-            { id: 21, degree: 2 }, // ...and affinity
-            { id: 22, degree: 2 }, // ...and ritual
-            { id: 30, degree: 2 }, // the other company's business contact
+            { id: 10, degree: 1 },
+            { id: 11, degree: 1 },
+            { id: 20, degree: 2 },
+            { id: 21, degree: 2 },
+            { id: 22, degree: 2 },
+            { id: 30, degree: 2 },
         ];
         const edges = [
             tie(1, 1, 10, "business"),
@@ -663,7 +613,6 @@ describe("partner network branches", () => {
         expect(ties.get(30).parentId).toBe(11);
     });
 
-    // Walk each node up to the first-degree ancestor it descends from.
     function branchOf(id, ties) {
         let cursor = id;
         while (ties.get(cursor) && ties.get(cursor).parentId !== 1) {
@@ -672,11 +621,6 @@ describe("partner network branches", () => {
         return cursor;
     }
 
-    // The property grouping by category lost, stated the way it can actually be
-    // measured from positions alone: sweep the circle and each branch is one
-    // unbroken run. Anything else means a contact from another branch sits
-    // between a parent and its own children, which is what sent edges across
-    // the middle of the drawing.
     test("each branch occupies one unbroken arc", () => {
         const { nodes, edges } = companyNetwork();
         const positions = ringLayout(nodes, edges);
@@ -706,9 +650,6 @@ describe("partner network branches", () => {
                 .map((node) => [node.id, angleOfPoint(positions.get(node.id))]),
         );
 
-        // 10 has three children and 11 has one, so 10 is given three quarters
-        // of the circle -- the arcs are sized by what hangs below them, not
-        // split evenly -- and 11 with its single child sits beyond all of them.
         for (const id of [20, 21, 22, 10]) {
             expect(angles.get(id)).toBeLessThan(angles.get(11));
         }
@@ -722,8 +663,6 @@ describe("partner network branches", () => {
             { id: 11, degree: 1 },
             { id: 12, degree: 1 },
         ];
-        // declared business, blood, affinity -- the layout must not preserve
-        // that order, it must impose CATEGORY_ORDER on it
         const edges = [
             tie(1, 1, 10, "business"),
             tie(2, 1, 11, "blood"),
@@ -782,11 +721,6 @@ describe("partner network edge labels", () => {
                 )
                 .map((edge) => {
                     const placement = placements.get(edge.id);
-                    // Ask the layout where the label goes rather than
-                    // re-deriving it: a link is drawn boundary to boundary, not
-                    // centre to centre, and duplicating that here is how this
-                    // checker came to report zero collisions while four labels
-                    // sat on nodes.
                     const anchor = labelAnchor(
                         positions.get(edge.source),
                         positions.get(edge.target),
@@ -865,11 +799,6 @@ describe("partner network edge labels", () => {
         return { nodes, edges };
     }
 
-    // A single fixed ratio along the link put 9 of 21 labels on top of a node
-    // on a real network: 0.72 of a short link is INSIDE the box at its far end,
-    // so the anchor was under the very node it named. The anchor is read from
-    // the box's extent along the link now, and the search moves outward from
-    // there only when it must.
     test("no label sits on a node, at any fan size", () => {
         for (const count of [2, 3, 5, 8, 12, 16, 30]) {
             const { nodes, edges } = fan(count);
@@ -934,16 +863,6 @@ describe("partner network edge labels", () => {
         }
     });
 
-    // A symmetric tie is stored once, from whichever end recorded it, so the
-    // same relationship can arrive with source and target swapped. Placement
-    // must not notice: the two readings are mirror images about the middle of
-    // the drawn path, which is what makes the anchor a property of the GEOMETRY
-    // rather than of the row.
-    //
-    // Measured on a crowded ring on purpose. On a short link the two node boxes
-    // leave less drawn path than the label is wide, no point on it clears
-    // either box, and the anchor is deliberately the middle -- where a mirror
-    // test cannot tell the two readings apart.
     test("a label lands the same way round whichever end stored the tie", () => {
         const { nodes, edges } = fan(20);
         const reversed = edges.map((edge) =>
@@ -955,9 +874,6 @@ describe("partner network edge labels", () => {
         const forward = layoutNetwork(nodes, edges).placements.get(1);
         const backward = layoutNetwork(nodes, reversed).placements.get(1);
 
-        // HOOT's toBeCloseTo takes {margin}, not Jest's digit count -- a bare
-        // number lands in `options`, leaving the default margin of 1, which on
-        // values in [0, 1] asserts nothing at all.
         expect(forward.distance + backward.distance).toBeCloseTo(1, { margin: 0.0001 });
         expect(forward.distance).not.toBeCloseTo(0.5, { margin: 0.05 });
     });
@@ -973,11 +889,6 @@ describe("partner network edge labels", () => {
         }
     });
 
-    // The worst case is real but rare: every tie on a tight ring carrying the
-    // longest wording in the vocabulary at once. The search cannot clear that,
-    // and takes its least-colliding candidate rather than dropping a label --
-    // a label pushed somewhere awkward still names its edge, a missing one
-    // loses the relationship.
     test("every edge is given a placement, even when nothing clears", () => {
         const { nodes, edges } = fan(6, "member of the same ejido as");
         const positions = ringLayout(nodes, edges);

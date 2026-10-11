@@ -42,7 +42,6 @@ export class BoardController extends Component {
                     ? parseInt(previous.dataset.idx, 10) + 1
                     : 0;
                 if (fromColIdx !== toColIdx) {
-                    // to reduce visual flickering
                     element.classList.add("d-none");
                 }
                 this.moveAction(fromColIdx, fromActionIdx, toColIdx, toActionIdx);
@@ -53,11 +52,9 @@ export class BoardController extends Component {
     moveAction(fromColIdx, fromActionIdx, toColIdx, toActionIdx) {
         const action = this.board.columns[fromColIdx].actions[fromActionIdx];
         if (fromColIdx !== toColIdx) {
-            // action moving from a column to another
             this.board.columns[fromColIdx].actions.splice(fromActionIdx, 1);
             this.board.columns[toColIdx].actions.splice(toActionIdx, 0, action);
         } else {
-            // move inside a column
             if (fromActionIdx === toActionIdx) {
                 return;
             }
@@ -77,7 +74,6 @@ export class BoardController extends Component {
         const currentColNbr = this.board.colNumber;
         const nextColNbr = layout.split("-").length;
         if (nextColNbr < currentColNbr) {
-            // need to move all actions in last cols in the last visible col
             const cols = this.board.columns;
             const lastVisibleCol = cols[nextColNbr - 1];
             for (let i = nextColNbr; i < currentColNbr; i++) {

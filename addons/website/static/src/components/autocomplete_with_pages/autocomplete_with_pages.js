@@ -31,18 +31,12 @@ export class AutoCompleteWithPages extends AutoComplete {
                 const targetFocus = this.onInputFocus.bind(this);
                 input.addEventListener("blur", targetBlur);
                 input.addEventListener("click", targetClick);
-                // capture: at the target, capture listeners run before the
-                // ones the input's owner registered earlier
                 input.addEventListener("change", targetChangeEcho, true);
                 input.addEventListener("change", targetChange);
                 input.addEventListener("input", targetInput);
                 input.addEventListener("keydown", targetKeydown);
                 input.addEventListener("focus", targetFocus);
                 if (input.ownerDocument.activeElement === input && input.value) {
-                    // typing began before the listeners existed (the picker
-                    // mounts its autocomplete after its own mount): the
-                    // value already typed deserves the suggestions the next
-                    // keystroke would bring
                     log.logic("target input focused before attach: syncing value");
                     this._syncInputValue();
                 }

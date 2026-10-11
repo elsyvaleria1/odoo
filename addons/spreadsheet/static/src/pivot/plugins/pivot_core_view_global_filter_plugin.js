@@ -17,15 +17,10 @@ import { NO_RECORD_AT_THIS_POSITION } from "../pivot_model.js";
  * @returns {object}
  */
 function pivotPeriodToFilterValue(timeRange, value) {
-    // reuse the same logic as in `parsePeriod`?
     if (typeof value === "number") {
         value = value.toString(10);
     }
-    if (
-        value === "false" || // the value "false" is the default value when there is no data for a group header
-        typeof value !== "string"
-    ) {
-        // anything else then a string at this point is incorrect, so no filtering
+    if (value === "false" || typeof value !== "string") {
         return undefined;
     }
 
@@ -80,8 +75,6 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
     beforeHandle(cmd) {
         switch (cmd.type) {
             case "START":
-                // make sure the domains are correctly set before
-                // any evaluation
                 this._addDomains();
                 break;
         }
@@ -126,10 +119,6 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Getters
-    // ---------------------------------------------------------------------
-
     /**
      * Get the computed domain of a pivot
      * CLEAN ME not used outside of tests
@@ -172,7 +161,6 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
                     continue;
                 }
                 let transformedValue;
-                // TODO rename currentValue to filterValue
                 const currentValue = this.getters.getGlobalFilterValue(filter.id);
                 switch (filter.type) {
                     case "date":
@@ -202,8 +190,6 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
                                 break;
                             }
                         }
-                        // A group by value of "none": the records without a
-                        // value are exactly what the "not set" operator selects
                         if (value === false) {
                             transformedValue = { operator: "not set" };
                         } else if (JSON.stringify(currentValue?.ids) !== `[${value}]`) {
@@ -221,10 +207,6 @@ export class PivotCoreViewGlobalFilterPlugin extends OdooCoreViewPlugin {
         }
         return matchingFilters;
     }
-
-    // ---------------------------------------------------------------------
-    // Private
-    // ---------------------------------------------------------------------
 
     /**
      * Add an additional domain to a pivot

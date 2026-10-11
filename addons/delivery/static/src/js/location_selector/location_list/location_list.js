@@ -21,7 +21,6 @@ export class LocationList extends Component {
                 ?.focus();
         });
 
-        // Focus on the location on the list when clicking on the map marker.
         useLayoutEffect(
             (locations, selectedLocationId) => {
                 const selectedLocation = locations.find(

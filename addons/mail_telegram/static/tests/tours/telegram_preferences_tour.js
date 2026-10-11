@@ -18,9 +18,6 @@ registry.category("web_tour.tours").add("mail_telegram_preferences", {
             trigger: ".modal div[name=telegram_notify_state]:contains('Delivering')",
         },
         {
-            // the dialog scrolls to the field when it is clicked, and a scroll
-            // after the dropdown opened closes it: scroll first, as a person
-            // does before typing
             content: "Bring the destination into view",
             trigger: ".modal div[name=telegram_notify_chat_id]",
             async run({ anchor }) {

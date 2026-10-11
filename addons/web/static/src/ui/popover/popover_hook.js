@@ -35,7 +35,6 @@ export function makePopover(addFn, component, options) {
             const opening = {};
             current = opening;
             previous?.remove?.().catch(reportUncaught);
-            // Closing the previous instance can synchronously open a newer one.
             if (current !== opening) {
                 log.lifecycle("superseded");
                 return;

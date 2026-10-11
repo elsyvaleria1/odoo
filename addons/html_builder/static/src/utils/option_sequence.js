@@ -1,16 +1,9 @@
 /** @odoo-module native */
-// Gives names to options sequence.
-// Module-specific sequences are defined in other option_sequence.js files.
 
 const BEGIN = 1;
 const END = 100;
 
-/** Ordered set of known positions. */
 const ALL = [BEGIN, END];
-/**
- * This position should be used for non-snippet options.
- * For the default position of snippet specific options, use {@link SNIPPET_SPECIFIC}.
- */
 export const DEFAULT = track(10);
 
 /**

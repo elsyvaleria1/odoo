@@ -80,7 +80,6 @@ describe("restaurant pos_store.js", () => {
         await waitUntilOrdersSynced(store);
         expect(store.getPendingOrder().orderToCreate).toHaveLength(0);
         expect(order.isDirty()).toBe(false);
-        //Update the order
         order.setInternalNote("Test note");
         expect(order.isDirty()).toBe(true);
         await store.unsetTable();
@@ -91,8 +90,6 @@ describe("restaurant pos_store.js", () => {
 
     describe("class DevicesSynchronisation", () => {
         test("Synchronization for a filled table has arrived", async () => {
-            // If a local order is already create on a table when another device send another order
-            // for the same table, we merge the orderlines of the local order with the synced order.
             const store = await setupPosEnv();
             const sync = store.deviceSync;
             const table = store.models["restaurant.table"].get(2);
@@ -166,8 +163,6 @@ describe("restaurant pos_store.js", () => {
                 ]),
             });
 
-            // This function is called by setTable in pos_store, but it is not awaited.
-            // So we need to await it here to ensure the test runs correctly.
             await store.deviceSync.readDataFromServer();
             expect(table.getOrder().id).toEqual(1);
         });
@@ -301,9 +296,7 @@ describe("restaurant pos_store.js", () => {
             const order = await getFilledOrder(store);
             order.general_customer_note = '[{"text":"General Note","colorIndex":0}]';
             store.selectedOrderUuid = null;
-            // without a selected order, `categoryCount` throws
             expect(() => store.categoryCount).toThrow();
-            // explicitly specify the order to compute the changes for
             const changes = store.getCategoryCount(order);
             expect(changes).toEqual([
                 { count: 3, name: "Category 1" },
@@ -447,9 +440,6 @@ describe("restaurant pos_store.js", () => {
     });
 
     test("firstPage is LoginScreen only when there is no cashier", async () => {
-        // It used to read LoginScreen unconditionally, because reading the getter
-        // reset the cashier on its way past. The getter is a description now, so
-        // the state has to be arranged rather than caused by the assertion.
         const store = await setupPosEnv();
         store.resetCashier();
         expect(store.firstPage.page).toBe("LoginScreen");

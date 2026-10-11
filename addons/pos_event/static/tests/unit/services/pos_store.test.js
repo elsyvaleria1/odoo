@@ -13,7 +13,6 @@ test("createDummyProductForEvents", async () => {
     );
     const events = models["event.event"].getAll();
 
-    // Check if a dummy product for the event is created
     expect(eventProducts).toHaveLength(events.length);
     for (const product of eventProducts) {
         expect(product.event_id).toEqual(

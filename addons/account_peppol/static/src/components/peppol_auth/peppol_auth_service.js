@@ -22,7 +22,7 @@ export const peppolAuthService = {
                 tag: "display_notification",
                 params: {
                     ...(success ? successNotificationVals : failureNotificationVals),
-                    next: { type: "ir.actions.act_window_close" }, // close the wizard
+                    next: { type: "ir.actions.act_window_close" },
                 },
             });
         });

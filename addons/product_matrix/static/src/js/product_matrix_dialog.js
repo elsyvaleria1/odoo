@@ -23,14 +23,6 @@ export class ProductMatrixDialog extends Component {
 
         const productMatrixRef = (this.productMatrixRef = elementRef());
         useHotkey("enter", () => this._onConfirm(), {
-            /***
-             * By default, Hotkeys don't work in input fields. As the matrix table is composed of
-             * input fields, the `bypassEditableProtection` param will allow Hotkeys to work from
-             * the input fields.
-             *
-             * To avoid triggering the confirmation when pressing 'enter' on the close or the
-             * discard button, we only set the hotkey area on the matrix table.
-             */
             bypassEditableProtection: true,
             area: () => productMatrixRef.el,
         });
@@ -46,8 +38,6 @@ export class ProductMatrixDialog extends Component {
                 if (relevantInput) {
                     relevantInput.select();
                 } else {
-                    // Based on the record creation, it may ignore the 'no_variant' attributes
-                    // (e.g. from a stock.move), thus finding no match in the matrix.
                     inputs[0].select();
                 }
             } else {
@@ -84,13 +74,12 @@ export class ProductMatrixDialog extends Component {
             }
         }
         if (matrixChanges.length > 0) {
-            // NB: server also removes current line opening the matrix
             this.props.record.update({
                 grid: JSON.stringify({
                     changes: matrixChanges,
                     product_template_id: this.props.product_template_id,
                 }),
-                grid_update: true, // to say that the changes to grid have to be applied to the SO.
+                grid_update: true,
             });
         }
         this.props.close();

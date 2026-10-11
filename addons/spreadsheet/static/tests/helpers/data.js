@@ -19,20 +19,8 @@ import { RPCError } from "@web/core/network";
  * @property {object} [actions]
  */
 
-/**
- * Get a basic arch for a pivot, which is compatible with the data given by
- * getBasicData().
- *
- * Here is the pivot created:
- *     A      B      C      D      E      F
- * 1          1      2      12     17     Total
- * 2          Proba  Proba  Proba  Proba  Proba
- * 3  false          15                    15
- * 4  true    11            10     95     116
- * 5  Total   11     15     10     95     131
- */
 export function getBasicPivotArch() {
-    return /* xml */ `
+    return `
         <pivot string="Partners">
             <field name="foo" type="col"/>
             <field name="bar" type="row"/>
@@ -40,20 +28,8 @@ export function getBasicPivotArch() {
         </pivot>`;
 }
 
-/**
- * Get a basic arch for a list, which is compatible with the data given by
- * getBasicData().
- *
- * Here is the list created:
- *     A      B      C          D
- * 1  Foo     bar    Date       Product
- * 2  12      True   2016-04-14 xphone
- * 3  1       True   2016-10-26 xpad
- * 4  17      True   2016-12-15 xpad
- * 5  2       False  2016-12-11 xpad
- */
 export function getBasicListArch() {
-    return /* xml */ `
+    return `
         <list string="Partners">
             <field name="foo"/>
             <field name="bar"/>
@@ -64,7 +40,7 @@ export function getBasicListArch() {
 }
 
 export function getBasicGraphArch() {
-    return /* xml */ `
+    return `
         <graph string="PartnerGraph">
             <field name="bar" />
         </graph>
@@ -92,8 +68,6 @@ export function getBasicServerData() {
 export function generateListDefinition(model, columns, actionXmlId, orderBy = []) {
     const cols = [];
     for (const name of columns) {
-        // A property column is addressed as `<properties_field>.<property>`,
-        // and only the first segment is a field of the model.
         const fieldName = name.split(".")[0];
         const PyModel = Object.values(SpreadsheetModels).find((m) => m._name === model);
         cols.push({
@@ -527,7 +501,6 @@ export class Partner extends models.Model {
         },
     ];
 
-    // TODO: check which views are actually needed in the tests
     _views = {
         list: getBasicListArch(),
         pivot: getBasicPivotArch(),
@@ -681,10 +654,6 @@ export function addViewsFromServerData(serverData) {
     }
 }
 
-/**
- * Check if the records are valid.
- * This is mainly to avoid the mail's service crashing if the res.users are not correctly set.
- */
 function checkRecordsValidity(modelName, records) {
     if (modelName === "res.users") {
         const serverUserId = serverState.userId;

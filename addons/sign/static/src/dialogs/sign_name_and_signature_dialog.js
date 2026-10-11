@@ -32,7 +32,7 @@ export class SignNameAndSignature extends NameAndSignature {
             this.props.frame.updateFrame = () => {
                 if (this.state.activeFrame) {
                     this.props.signature.signatureChanged = true;
-                    const xOffset = localization.direction === "rtl" ? 0.75 : 0.06; // magic numbers
+                    const xOffset = localization.direction === "rtl" ? 0.75 : 0.06;
                     this.signFrame.el.classList.toggle("active", true);
                     return this.html2canvas(this.signFrame.el, {
                         backgroundColor: null,
@@ -171,17 +171,10 @@ export class SignNameAndSignatureDialog extends Component {
     onSignatureChange(signMode) {
         const { name, isSignatureEmpty, signatureChanged } = this.props.signature;
         const isAutoMode = signMode === "auto";
-        // Disable Sign all button if:
-        // - Name is missing or empty
-        //   - In "auto" mode, the name is only whitespace
-        //   - In any other mode, the signature is empty
         const buttonsDisabled = !name || isAutoMode ? !name.trim() : isSignatureEmpty;
         if (this.footerState.signAllButtonsDisabled !== buttonsDisabled) {
             this.footerState.signAllButtonsDisabled = buttonsDisabled;
         }
-        // Disable Sign button if:
-        // - signature is not changed
-        // - name is missing
         this.footerState.signButtonDisabled = buttonsDisabled || !signatureChanged;
     }
 }

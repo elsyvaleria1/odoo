@@ -38,11 +38,6 @@ export const busLogsService = {
             enabled: shared_storage.getSharedValue("bus_log_menu.enabled", false),
             toggleLogging() {
                 state.enabled = !state.enabled;
-                // Always forward to the worker: `setLoggingEnabled` no-ops
-                // safely when the worker is unstarted, and an `isActive` guard
-                // would drop the toggle on a tab whose own bus is inactive even
-                // though the shared worker (alive via other tabs) is what holds
-                // the logging flag.
                 bus_service.setLoggingEnabled(state.enabled);
                 shared_storage.setSharedValue("bus_log_menu.enabled", state.enabled);
             },
@@ -50,15 +45,9 @@ export const busLogsService = {
         shared_storage.bus.addEventListener("shared_value_updated", ({ detail }) => {
             if (detail.key === "bus_log_menu.enabled") {
                 state.enabled = JSON.parse(detail.newValue);
-                // Forward the cross-tab toggle to the shared worker too:
-                // otherwise a toggle made in another tab updates only this
-                // tab's local flag and the worker's logging never changes.
                 bus_service.setLoggingEnabled(state.enabled);
             }
         });
-        // Chained on the deferred (not `registerHandler()` directly, which
-        // would BOOT the worker) so this service never forces a worker start
-        // on pages that don't use the bus.
         worker_service.connectionInitializedDeferred.then(() => {
             worker_service.registerHandler(handleProvideLogs);
             bus_service.setLoggingEnabled(state.enabled);

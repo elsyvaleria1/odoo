@@ -24,16 +24,12 @@ export class RoomBookingRemainingTime extends Component {
 
     setup() {
         this.state = proxy({ remainingTime: millisecondsUntil(this.props.endTime) });
-        // Update the remaining time every second
         useInterval(() => {
             const remainingTime = millisecondsUntil(this.props.endTime);
-            // Prevent flicker (could show -1s for a split second)
             if (remainingTime >= 0) {
                 this.state.remainingTime = remainingTime;
             }
         }, 1000);
-        // When there are 2 consecutive bookings, make sure the remaining time is updated
-        // immediately (because the booking title and sidebar update immediately)
         onWillUpdateProps((nextProps) => {
             this.state.remainingTime = millisecondsUntil(nextProps.endTime);
         });

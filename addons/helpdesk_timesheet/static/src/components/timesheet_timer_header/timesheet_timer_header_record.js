@@ -25,7 +25,6 @@ patch(TimesheetTimerHeaderRecord.prototype, {
                     "not has_helpdesk_team and not helpdesk_ticket_id",
                     this.props.timesheet.evalContextWithVirtualIds,
                 );
-                // TODO: check if it is still needed
                 fieldInfo.context = `{'default_project_id': project_id}`;
             }
         }

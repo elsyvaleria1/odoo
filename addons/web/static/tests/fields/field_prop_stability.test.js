@@ -176,7 +176,6 @@ test("a widget with stable props does not render on an unrelated edit", async ()
 
     const stats = await renderCounts(editUnrelatedFiveTimes);
 
-    // the edited field itself need not re-render: its input follows the record
     expect("[name='name'] input").toHaveValue("xyzab");
     expect(stats["fields.web.Many2ManyTagsField"] || 0).toBe(0);
 });

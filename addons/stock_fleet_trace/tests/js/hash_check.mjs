@@ -1,6 +1,3 @@
-// Hash offline events the way the driver screen does, for test_driver_screen.
-// Reads a JSON list of events on stdin and writes, for each, the JSON the phone
-// would send and the event_hash it would compute.
 import { hashEvent } from "../../static/driver/canonical.js";
 
 const chunks = [];

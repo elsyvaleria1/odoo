@@ -6,13 +6,8 @@ import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 
-const TEXT_URL_REGEX = /https?:\/\/[\w@:%.+&~#=/-]+(?:\?\S+)?/g; // from tools.mail.TEXT_URL_REGEX
+const TEXT_URL_REGEX = /https?:\/\/[\w@:%.+&~#=/-]+(?:\?\S+)?/g;
 
-/**
- * Patch to provide extra characters count information to
- * consider links converted with link_tracker and opt-out
- * link if the option is selected.
- */
 patch(SmsWidget.prototype, {
     setup() {
         super.setup(...arguments);
@@ -44,7 +39,7 @@ patch(SmsWidget.prototype, {
         }
         return this.noticeLinksReplaced
             ? _t(" (including link trackers)")
-            : super.nbrCharExplanation; // Also default when no linkReplacementsPlaceholders
+            : super.nbrCharExplanation;
     },
     /**
      * @override

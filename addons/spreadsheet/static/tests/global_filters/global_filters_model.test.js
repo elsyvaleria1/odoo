@@ -158,12 +158,10 @@ test("Cannot have duplicated names", async function () {
     await addGlobalFilter(model, filter);
     expect(model.getters.getGlobalFilters().length).toBe(1);
 
-    // Add filter with same name
     let result = await addGlobalFilter(model, { ...filter, id: "456" });
     expect(result.reasons).toEqual([CommandResult.DuplicatedFilterLabel]);
     expect(model.getters.getGlobalFilters().length).toBe(1);
 
-    // Edit to set same name as other filter
     await addGlobalFilter(model, { ...filter, id: "789", label: "Other name" });
     expect(model.getters.getGlobalFilters().length).toBe(2);
     result = await editGlobalFilter(model, {
@@ -172,7 +170,6 @@ test("Cannot have duplicated names", async function () {
     });
     expect(result.reasons).toEqual([CommandResult.DuplicatedFilterLabel]);
 
-    // Edit to set same name
     result = await editGlobalFilter(model, {
         ...filter,
         label: "Hello",
@@ -211,7 +208,6 @@ test("Can name/rename filters with special characters", async function () {
     expect(result).toBe(DispatchResult.Success);
     expect(model.getters.getGlobalFilters().length).toBe(1);
 
-    // Edit to set another name with special characters
     result = await editGlobalFilter(model, {
         ...filter,
         label: "+Othe^ we?rd name+$",
@@ -855,10 +851,10 @@ test("current value appears in text filter with range", async function () {
     });
     await setGlobalFilterValue(model, {
         id: "42",
-        value: { operator: "ilike", strings: ["World"] }, // set the value to one of the allowed values
+        value: { operator: "ilike", strings: ["World"] },
     });
 
-    setCellContent(model, "A2", "Bob"); // change the value of the cell
+    setCellContent(model, "A2", "Bob");
     expect(model.getters.getTextFilterOptions("42")).toEqual([
         { value: "Hello", formattedValue: "Hello" },
         { value: "Bob", formattedValue: "Bob" },
@@ -875,7 +871,7 @@ test("default value appears once if the same value is in the text filter range",
         type: "text",
         label: "Text Filter",
         rangesOfAllowedValues: [toRangeData(sheetId, "A1")],
-        defaultValue: { operator: "ilike", strings: ["Hello"] }, // same value as in A1
+        defaultValue: { operator: "ilike", strings: ["Hello"] },
     });
     expect(model.getters.getTextFilterOptions("42")).toEqual([
         { value: "Hello", formattedValue: "Hello" },
@@ -914,7 +910,7 @@ test("errors and empty cells if the same value is in the text filter range", asy
         type: "text",
         label: "Text Filter",
         rangesOfAllowedValues: [toRangeData(sheetId, "A1:A3")],
-        defaultValue: { operator: "ilike", strings: ["Hello"] }, // same value as in A1
+        defaultValue: { operator: "ilike", strings: ["Hello"] },
     });
     expect(model.getters.getTextFilterOptions("42")).toEqual([
         { value: "Hello", formattedValue: "Hello" },
@@ -960,10 +956,8 @@ test("import/export a text filter range", async function () {
         label: "Text Filter",
         rangesOfAllowedValues: [toRangeData(sheetId, "A1:A2")],
     });
-    // export
     const data = model.exportData();
     expect(data.globalFilters[0].rangesOfAllowedValues).toEqual(["Sheet1!A1:A2"]);
-    // import
     const newModel = new Model(data);
     const ranges = newModel.getters.getGlobalFilter("42").rangesOfAllowedValues;
     expect(ranges.length).toBe(1);
@@ -1380,7 +1374,7 @@ test("Can undo-redo a MOVE_GLOBAL_FILTER", async function () {
 
 test("pivot headers won't change when adding a filter ", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -1547,7 +1541,7 @@ test("don't reload data if an empty filter is added", async function () {
         id: "42",
         type: "date",
         label: "This month",
-        defaultValue: undefined, // no default value!
+        defaultValue: undefined,
     });
     expect(getCellValue(model, "A1")).toBe(131);
     expect.verifySteps([]);
@@ -1709,7 +1703,7 @@ test("Export global filters for excel", async function () {
     expect(filterSheet.cells["C2"]).toBe(
         String(model.getters.getFilterDisplayValue(filter.label)[1][0].value),
     );
-    model.exportXLSX(); // should not crash
+    model.exportXLSX();
 });
 
 test("Export from/to global filters for excel", async function () {
@@ -1764,7 +1758,7 @@ test("Export boolean global filters with undefined value for excel", async funct
     expect(filterSheet.cells["B1"]).toBe("Value");
     expect(filterSheet.cells["B2"]).toBe("");
 
-    model.exportXLSX(); // should not crash
+    model.exportXLSX();
 });
 
 test("Export relational global filter for excel", async function () {
@@ -1795,7 +1789,7 @@ test("Export relational global filter for excel", async function () {
     expect(filterSheet.cells["A3"]).toBe("test relation ilike");
     expect(filterSheet.cells["B3"]).toBe("hello, world");
 
-    model.exportXLSX(); // should not crash
+    model.exportXLSX();
 });
 
 test("Date filter automatic default value for years filter", async function () {
@@ -2111,7 +2105,7 @@ test("from_to date filter domain value on a date field", async function () {
 });
 
 test("from_to date filter domain value on a datetime field UTC+2", async function () {
-    mockTimeZone(+2); // UTC+2
+    mockTimeZone(+2);
     const { model } = await createSpreadsheetWithPivot();
     /**@type GlobalFilter */
     const filter = {
@@ -2138,7 +2132,7 @@ test("from_to date filter domain value on a datetime field UTC+2", async functio
 });
 
 test("from_to date filter domain value on a datetime field UTC-2", async function () {
-    mockTimeZone(-2); // UTC-2
+    mockTimeZone(-2);
     const { model } = await createSpreadsheetWithPivot();
     /**@type GlobalFilter */
     const filter = {
@@ -2287,7 +2281,7 @@ test("Date filter with automatic default without a year value yields an empty do
 
 test("Can set a value to a relation filter from the SET_MANY_GLOBAL_FILTER_VALUE command", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -2340,7 +2334,7 @@ test("getFiltersMatchingPivot return correctly matching filter according to cell
     ];
     const { model } = await createSpreadsheetWithPivot({
         serverData,
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -2430,7 +2424,7 @@ test("getFiltersMatchingPivot return an empty array if there is no pivot formula
 
 test("getFiltersMatchingPivot return correctly matching filter according to cell formula with multi-levels grouping", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -2469,7 +2463,7 @@ test("getFiltersMatchingPivot return correctly matching filter according to cell
 
 test("getFiltersMatchingPivot return correctly matching filter according to cell formula with __count and positional argument", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="__count" type="measure"/>
@@ -2496,7 +2490,7 @@ test("getFiltersMatchingPivot return correctly matching filter according to cell
 
 test("getFiltersMatchingPivot return correctly matching filter according to cell formula with positional argument", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                     <pivot>
                         <field name="product_id" type="row"/>
                         <field name="probability" type="measure"/>
@@ -2523,7 +2517,7 @@ test("getFiltersMatchingPivot return correctly matching filter according to cell
 
 test("getFiltersMatchingPivot return correctly matching filter when there is a filter with no field defined", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="row"/>
                     <field name="probability" type="measure"/>
@@ -2539,7 +2533,7 @@ test("getFiltersMatchingPivot return correctly matching filter when there is a f
 
 test("getFiltersMatchingPivot return empty filter for cell formula without any argument", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                     <pivot>
                         <field name="product_id" type="row"/>
                         <field name="probability" type="measure"/>
@@ -2560,7 +2554,7 @@ test("getFiltersMatchingPivot return empty filter for cell formula without any a
 
 test("getFiltersMatchingPivot return empty filter when no records is related to the pivot cell", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                     <pivot>
                         <field name="product_id" type="row"/>
                         <field name="probability" type="measure"/>
@@ -2677,7 +2671,7 @@ test("field matching is removed when an Odoo chart is deleted", async function (
 
 test("getFiltersMatchingPivot return correctly matching filter with the 'measure' special field", async function () {
     const { model } = await createSpreadsheetWithPivot({
-        arch: /*xml*/ `
+        arch: `
                 <pivot>
                 <field name="product_id" type="row"/>
                 <field name="probability" type="measure"/>
@@ -2784,9 +2778,6 @@ test("can move a global filter", function () {
 });
 
 test("Spreadsheet pivot are not impacted by global filter", function () {
-    // This test is to ensure that the start of evaluation do not crash.
-    // It will be removed as soon as the feature is implemented in spreadsheet.
-
     new Model({
         sheets: [{ id: "1" }],
         pivots: [

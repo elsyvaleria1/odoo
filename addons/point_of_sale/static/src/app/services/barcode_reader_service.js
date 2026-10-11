@@ -116,8 +116,6 @@ export class BarcodeReader {
                 elements: parseBarcode.map((e) => e.type),
                 handlers: cbMaps.filter((cb) => cb.gs1).length,
             }));
-            // A failed callback must not release the scan mutex while another
-            // callback is still processing this barcode.
             const results = await Promise.allSettled(
                 cbMaps.map(async (cb) => cb.gs1?.(parseBarcode)),
             );
@@ -230,8 +228,6 @@ export const barcodeReaderService = {
 
         try {
             if (session.nomenclature_id) {
-                // Independent reads: the session start waits for one round
-                // trip, not one per nomenclature.
                 const [nomenclature, fallbackNomenclature] = await Promise.all([
                     BarcodeParser.fetchNomenclature(orm, session.nomenclature_id),
                     session.fallback_nomenclature_id &&

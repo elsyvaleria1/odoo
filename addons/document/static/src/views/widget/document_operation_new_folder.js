@@ -45,8 +45,6 @@ export class DocumentsOperationNewFolder extends Component {
                     documents,
                     attachmentId,
                     operation,
-                    // no onClose: the action service hands this dialog the
-                    // one of the wizard it replaces, which reloads the view
                     context: {
                         default_destination: result.resId.toString(),
                         default_display_name: result.data.name,

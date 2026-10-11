@@ -63,7 +63,6 @@ export class AccountReport extends Component {
             this.props.action.restored_from_breadcrumb = true;
         }
 
-        // ControlPanel reads viewSwitcherEntries from the env config; a client action doesn't provide it.
         this.config.viewSwitcherEntries = [];
 
         this.orm = useService("orm");
@@ -82,7 +81,6 @@ export class AccountReport extends Component {
         });
 
         onWillDestroy(() => {
-            // Since the controller is preloading the sections using a setTimeout, it's never stopped unless we explicitly tell it.
             this.controller.destroyed = true;
         });
 
@@ -94,9 +92,6 @@ export class AccountReport extends Component {
         this.reportContext = useAccountReportContext();
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Custom overrides
-    // -----------------------------------------------------------------------------------------------------------------
     static registerCustomComponent(customComponent) {
         registry
             .category("account_reports_custom_components")
@@ -130,9 +125,6 @@ export class AccountReport extends Component {
         return `report_formula.${name}Customizable`;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Table
-    // -----------------------------------------------------------------------------------------------------------------
     get tableClasses() {
         let classes = "";
 

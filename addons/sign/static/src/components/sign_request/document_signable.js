@@ -34,7 +34,6 @@ export function datasetFromElements(elements) {
                     typeof parsed === "number" &&
                     parsed > Number.MAX_SAFE_INTEGER
                 ) {
-                    // Keep numbers as strings below to avoid MAX_SAFE_INTEGER issues.
                     dataset[key] = value;
                 } else {
                     dataset[key] = parsed;
@@ -101,19 +100,15 @@ export class Document extends Component {
                     this.state.viewedDocuments.size === this.documents.length;
 
                 if (!hasUnsignedDocs && allDocsViewed) {
-                    // If all documents are signed and viewed, show validation banner
                     this.showBanner(this.validateBanner);
                     return;
                 }
 
-                // Hide validation banner since there are unsigned/un-viewed documents
                 this.hideBanner(this.validateBanner);
 
                 if (currentDocUnsigned) {
-                    // If current document needs signing, hide "next document" banner
                     this.hideBanner(this.nextDocumentBanner);
                 } else {
-                    // If current document is signed or have nothing to sign, show "next document" banner
                     this.showBanner(this.nextDocumentBanner);
                 }
             },
@@ -208,17 +203,12 @@ export class Document extends Component {
         }
     }
 
-    /**
-     * Controls the visibility of the navigator to be invisible if current document is signed
-     */
     controlNavigatorVisibility(hasUnsignedItems) {
         if (this.documents) {
             const currentDoc = this.documents[this.state.openedDocumentIndex];
             const iframeManager = currentDoc.iframeManager;
             if (iframeManager && iframeManager.navigator) {
-                // If hasUnsignedItems is false, we need to check if there are unsigned items for the current role in the document
                 if (!hasUnsignedItems && this.isDocumentUnsigned()) {
-                    // Check if there are items for the current role
                     hasUnsignedItems = Object.values(
                         iframeManager.signItems || {},
                     ).some((pageItems) =>
@@ -402,7 +392,6 @@ export class Document extends Component {
         return iframeManager;
     }
 
-    // **** Signing ****
     getMailFromSignItems() {
         let mail = "";
         for (let i = 0; i < this.documents.length; i++) {
@@ -588,7 +577,6 @@ export class Document extends Component {
                 document.location.pathname = response.url;
             } else {
                 this.disableItems();
-                // only available in backend
                 const nameList = this.signInfo.get("nameList");
                 if (nameList && nameList.length > 0) {
                     this.dialog.add(NextDirectSignDialog);
@@ -601,7 +589,6 @@ export class Document extends Component {
         }
     }
 
-    /** Tell the signer why their signature was not submitted. */
     onSignError(response) {
         if (response.sms) {
             this.signatureInfo.smsToken = undefined;
@@ -713,7 +700,6 @@ export class SignableDocument extends Document {
         useLayoutEffect(
             () => {
                 if (this.requestID) {
-                    // Geolocation
                     const { el: parentEl } = this.props.parent;
                     const askLocation = parentEl.getElementById(
                         "o_sign_ask_location_input",
@@ -755,7 +741,6 @@ export class SignableDocument extends Document {
  * @param { HTMLElement } parent
  */
 export async function initDocumentToSign(parent) {
-    // Manually add 'sign' to module list and load the translations
     const env = makeEnv();
     await startServices(env);
     await whenReady();

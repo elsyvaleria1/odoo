@@ -14,10 +14,6 @@ import { CalendarEvent } from "./mock_server/mock_models/calendar_event.js";
 defineCalendarModels();
 preloadFullCalendar();
 
-/**
- * Create a partner with a meeting activity linked to a calendar event, the
- * shared fixture both tests below exercise.
- */
 function createMeetingWithActivity(pyEnv, { partnerName } = {}) {
     const partnerId = pyEnv["res.partner"].create(
         partnerName ? { name: partnerName } : {},
@@ -77,8 +73,6 @@ test("Cancelling an activity linked to an event keeps it visible if the server r
     });
     await start();
     await openFormView("res.partner", partnerId);
-    // The rejection reaches the user through the RPC error dialog; the test
-    // owns it so that it is the one error this test expects.
     expect.errors(1);
     await click(".o-mail-Activity .btn", { text: "Cancel" });
     await contains(".o-mail-Activity", { count: 1 });

@@ -3,8 +3,6 @@ import { _t } from "@web/core/translation";
 
 const UPLOAD_INPUT_SELECTOR = ".document_file_uploader.o_input_file";
 
-// a browser names an XML file after its platform's MIME database: Firefox on
-// Linux says application/xml where Chrome says text/xml
 export const XML_MIMETYPES = ["application/xml", "text/xml"];
 export const PASTEABLE_MIMETYPES = [...XML_MIMETYPES, "application/pdf"];
 

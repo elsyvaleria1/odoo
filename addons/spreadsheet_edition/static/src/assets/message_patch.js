@@ -1,5 +1,5 @@
 /** @odoo-module native */
-import "@mail/core/web/message_patch"; // dependency ordering
+import "@mail/core/web/message_patch";
 
 import { Message } from "@mail/core/common/message";
 import { useService } from "@web/core/utils/hooks";

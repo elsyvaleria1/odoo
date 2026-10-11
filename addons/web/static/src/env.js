@@ -196,7 +196,6 @@ export function makeAppConfig(appContext, overrides = {}) {
         config.customDirectives === customDirectives &&
         config.globalValues === globalValues
     ) {
-        // compiled ahead of time with exactly these options
         config.getTemplate = config.dev ? getCompiledDevTemplate : getCompiledTemplate;
     }
     return config;

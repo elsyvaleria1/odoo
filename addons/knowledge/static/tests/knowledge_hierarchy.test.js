@@ -114,7 +114,6 @@ onRpc(
         kwargs: { exclude_article_ids: excludeArticleIds },
     }) {
         const Article = this.env["article"];
-        // returns ancestors of the current article (without the ones given in excludeArticleIds)
         return Article.slice(
             0,
             Article.indexOf(Article.browse(articleId)[0]) - 1,
@@ -129,7 +128,6 @@ onRpc("has_access", function () {
 let openArticle;
 
 before(() => {
-    // Create a component to test the breadcrumb and the hierarchy without the top bar component:
     class KnowledgeNavigation extends Component {
         static template = xml`
             <KnowledgeHierarchy record="this.props.record"/>
@@ -172,12 +170,10 @@ const assertCurrentArticle = (articleId) => {
 const assertHierarchyArticles = async (articleIds) => {
     expect(".o_hierarchy_item").toHaveCount(articleIds.length);
     if (articleIds.length > 3) {
-        // Open dropdown to check articles between root and parent
         await openHierarchyDropdown();
     }
     MockServer.env["article"].browse(articleIds).forEach((article, idx) => {
         if (idx === articleIds.length - 1) {
-            // current article
             expect(
                 `.o_hierarchy_item:last-of-type:contains(${article.icon || "📄"})`,
             ).toHaveCount(1);
@@ -191,12 +187,10 @@ const assertHierarchyArticles = async (articleIds) => {
                 ).toHaveCount(1);
             }
         } else if (idx < articleIds.length - 2 && idx > 0) {
-            // article in dropdown
             expect(
                 `.o-dropdown-item:nth-of-type(${idx}):contains(${article.display_name})`,
             ).toHaveCount(1);
         } else {
-            // root or parent article
             expect(
                 `.o_hierarchy_item:nth-of-type(${idx + 1}) a:contains(${article.display_name})`,
             ).toHaveCount(1);
@@ -221,12 +215,8 @@ const clickHierarchyArticle = async (articleId) => {
     return animationFrame();
 };
 
-/**
- * open the dropdown in the hierarchy
- */
 const openHierarchyDropdown = async () => {
     if (queryFirst(".o_hierarchy_item a:contains('...').show")) {
-        // dropdown already opened
         return;
     }
     await click(".o_hierarchy_item a:contains('...')");
@@ -234,7 +224,7 @@ const openHierarchyDropdown = async () => {
 };
 
 const viewParams = {
-    arch: /* xml */ `
+    arch: `
         <form js_class="knowledge_article_view_form">
             <widget name="knowledge_navigation" class="d-flex"/>
         </form>
@@ -245,26 +235,17 @@ const viewParams = {
 
 test("Hierarchy - Open articles in hierarchy", async function () {
     await mountView({ ...viewParams, resId: 4 });
-    // Check that root, ellipsis, parent and current article are shown
     await assertHierarchyArticles([1, 2, 3, 4]);
-    // Open article 3
     await clickHierarchyArticle(3);
-    // Check that root, parent and current article are shown
     await assertHierarchyArticles([1, 2, 3]);
-    // Open Article 2
     await clickHierarchyArticle(2);
-    // Check that root and current article are shown
     await assertHierarchyArticles([1, 2]);
-    // Open Root Article
     await clickHierarchyArticle(1);
-    // Check that root is shown
     await assertHierarchyArticles([1]);
     openArticle(4);
     await animationFrame();
     await assertHierarchyArticles([1, 2, 3, 4]);
-    // Open Article 2 in the dropdown
     await clickHierarchyArticle(2);
-    // Check that article 2 is opened
     assertCurrentArticle(2);
 });
 
@@ -272,11 +253,9 @@ test("Hierarchy - Inaccessible articles", async function () {
     Article._records[1].user_has_access = false;
     Article._records[3].user_can_write = false;
     await mountView({ ...viewParams, resId: 4 });
-    // Check that the hierarchy is correct and that current article's icon and name are readonly
     await assertHierarchyArticles([1, 2, 3, 4]);
     expect(".o_hierarchy_item a.o_article_emoji").toHaveCount(0);
     expect(".o_hierarchy_item input").toHaveCount(0);
-    // Check that the link to the article in the dropdown is disabled
     const [article] = MockServer.env["article"].browse(2);
     expect(`.o-dropdown-item.disabled:contains(${article.display_name})`).toHaveCount(
         1,

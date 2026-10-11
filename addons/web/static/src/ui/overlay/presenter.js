@@ -116,9 +116,6 @@ export function makeOverlayPresenter({
                 pluginManager: options.pluginManager,
                 sequence: options.sequence,
                 rootId: rootIdOf(target),
-                // synchronous unless onClose is not: the overlay then leaves in
-                // the render that closes it, and one opening meanwhile (a
-                // dropdown group handing over) is not restarted by a second one
                 onRemove: (/** @type {any} */ removeParams) => {
                     presentation.isClosing = true;
                     let result;

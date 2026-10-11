@@ -40,6 +40,5 @@ export class ImageSize extends BaseOptionComponent {
     }
 }
 function isBase64ImageSrc(src) {
-    // Check if it's a data URL with base64 encoding
     return src && src.startsWith("data:image/") && src.includes(";base64,");
 }

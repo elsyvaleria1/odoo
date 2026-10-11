@@ -82,13 +82,6 @@ export const loader = proxy({
     loadEmoji: () => loadBundle("web.assets_emoji"),
     /** @type {{ emojiValueToShortcodes: {[key: string]: string[]}, emojiRegex: RegExp } | undefined} */
     loaded: undefined,
-    // What the first successful load returned, final until
-    // resetLoadedEmojiData(). Every later loadEmoji() resolves in a microtask
-    // instead of going back through loadBundle and a dynamic import, both of
-    // which settle on a later task even when memoised -- and
-    // generateEmojisOnHtml sits on every message post, where that one task
-    // was enough to reorder the post RPC behind the store's 1 ms fetch
-    // debounce and to swap a livechat window in after the visitor had closed it.
     /** @type {{ categories: any[], emojis: any[] } | undefined} */
     data: undefined,
 });
@@ -486,8 +479,6 @@ export class EmojiPicker extends Component {
         this.syncPlaceholder();
     }
 
-    // the placeholder follows the hover without a render, so it is never
-    // rendered: a render computed before a hover would be patched over it
     syncPlaceholder() {
         const el = /** @type {HTMLInputElement | null} */ (this.searchInputRef.el);
         if (el && el.placeholder !== this.placeholder) {

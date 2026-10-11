@@ -38,8 +38,6 @@ export class MailActivity extends mailModels.MailActivity {
         const activities = this.browse(idOrIds);
         const ids = activities.map((a) => a.id);
         const events = activities.map((a) => a.calendar_event_id).filter(Boolean);
-        // Mirror the real model: only unlink an event no OTHER activity
-        // (outside the ones being unlinked) still references.
         const eventsToUnlink = events.filter(
             (eventId) =>
                 this.search([

@@ -348,8 +348,6 @@ export class Store extends BaseStore {
 
     /** @returns {Promise<void>} */
     _nextBusConnection() {
-        // A connection the browser reported lost (offline, then online) comes
-        // back as BUS:CONNECT, one the server dropped as BUS:RECONNECT.
         const bus = this.env.services.bus_service;
         return new Promise((resolve) => {
             const connected = () => {

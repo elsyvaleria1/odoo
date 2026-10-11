@@ -21,11 +21,6 @@ const { ResCompany, ResPartner, ResUsers } = webModels;
 
 defineModels([Foo, ResCompany, ResPartner, ResUsers]);
 
-/**
- * An editable list whose `note` column is required but hidden behind the
- * optional-columns gear. Leaving it empty makes the record invalid with the
- * culprit off screen.
- */
 const ARCH = `
     <list editable="top">
         <field name="name"/>

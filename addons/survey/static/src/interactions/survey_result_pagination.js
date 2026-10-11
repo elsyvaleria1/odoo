@@ -42,8 +42,6 @@ export class SurveyResultPagination extends Interaction {
             hideFilter: this.el.dataset.hideFilter,
         };
 
-        // The following two events are dispatched by survey_result when user
-        // clicks on the "print" button.
         this.el.addEventListener("save_state_and_show_all", () => {
             this.paginationStateBackup = Object.assign({}, this.paginationState);
             this.onShowAllAnswers();

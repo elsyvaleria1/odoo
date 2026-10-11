@@ -16,7 +16,6 @@ const orderTrackingDisplayService = {
             bus_service,
             session.preparation_display.bus_channel,
         );
-        // a revoked link reloads into the page refusing it
         onNotified("LINK_REVOKED", () => browser.location.reload());
         onNotified("NEW_ORDERS", (newOrders) => {
             Object.assign(orders, newOrders);

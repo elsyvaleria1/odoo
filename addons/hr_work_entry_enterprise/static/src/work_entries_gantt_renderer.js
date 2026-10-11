@@ -306,9 +306,6 @@ export class WorkEntriesGanttRenderer extends HrGanttRenderer {
     }
 
     onMultiReplace(values, selectedCells) {
-        // Validated entries are deliberately kept in the selection: dropping them
-        // here left the whole call with nothing to do and the user with no
-        // feedback at all. The model asks the server, which refuses out loud.
         const cellsInfo = this.getCellsInfoInContract(this.getCellsInfo(selectedCells));
         const records = this.getSelectedRecords(selectedCells);
         return this.model.multiReplaceRecords(values, cellsInfo, records);

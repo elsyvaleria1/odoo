@@ -30,15 +30,6 @@ export class MailingFilterDropdown extends Dropdown {
     }
 }
 
-/**
- * Widget to create / remove favorite filters on mass mailing and/or marketing automation, extended
- * from Many2OneField. This widget is designed specifically for 'mailing_filter_id'
- * field on 'mailing.mailing' and 'marketing.campaign' form view.
- *
- * In edit mode, it will allow to save the latest configured domain
- * in form of the favorite filter, or to remove the store filters.
- *
- */
 export class FieldMany2OneMailingFilter extends Component {
     static template = "mass_mailing.MailingFilter";
     static components = {
@@ -74,11 +65,6 @@ export class FieldMany2OneMailingFilter extends Component {
         return computeM2OProps(this.props);
     }
 
-    /**
-     * The filter can be saved when no favorite filter is set, or when the
-     * domain no longer matches the favorite filter's; it can be removed
-     * otherwise. A domain that does not parse allows neither.
-     */
     get filter() {
         const data = this.props.record.data;
         let recordDomain;
@@ -100,8 +86,6 @@ export class FieldMany2OneMailingFilter extends Component {
             isDomainEmpty: recordDomain === "[]",
         };
     }
-
-    // HANDLERS
 
     /**
      * Focus the 'Save' button on 'Tab' key, or directly save the filter on 'Enter'
@@ -127,7 +111,6 @@ export class FieldMany2OneMailingFilter extends Component {
     async onRemoveFilter(ev) {
         const filterId = this.props.record.data.mailing_filter_id.id;
         const mailingDomain = this.props.record.data[this.props.domain_field];
-        // Prevent multiple clicks to avoid trying to deleting same record multiple times.
         ev.target.disabled = true;
 
         await this.orm.unlink("mailing.filter", [filterId]);
@@ -154,7 +137,6 @@ export class FieldMany2OneMailingFilter extends Component {
             this.notification.add(_t("Please provide a name for the filter"), {
                 type: "danger",
             });
-            // Keep the drop-down open, and re-focus the input
             ev.stopPropagation();
             filterInput.focus();
         } else {

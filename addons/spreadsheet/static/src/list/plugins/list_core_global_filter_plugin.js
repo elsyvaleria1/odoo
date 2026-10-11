@@ -72,10 +72,6 @@ export class ListCoreGlobalFilterPlugin extends OdooCorePlugin {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
     /**
      * @param {string} id
      * @returns {string}
@@ -92,10 +88,6 @@ export class ListCoreGlobalFilterPlugin extends OdooCorePlugin {
     getListFieldMatching(listId, filterId) {
         return this.getListFieldMatch(listId)[filterId];
     }
-
-    // -------------------------------------------------------------------------
-    // Private
-    // -------------------------------------------------------------------------
 
     /**
      * Sets the current FieldMatching on a list
@@ -125,10 +117,6 @@ export class ListCoreGlobalFilterPlugin extends OdooCorePlugin {
             fieldMatching || this.getters.getFieldMatchingForModel(model),
         );
     }
-
-    // ---------------------------------------------------------------------
-    // Import/Export
-    // ---------------------------------------------------------------------
 
     /**
      * @param {Object} data

@@ -55,8 +55,6 @@ function parseShadow(value) {
     }
     const shadow = parseBoxShadow(value);
     if (shadow.color) {
-        // a computed color-mix() comes back as color(srgb ...); what gets
-        // written into the page is the portable spelling
         shadow.color = normalizeCSSColor(shadow.color);
     }
     return shadow;

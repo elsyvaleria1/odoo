@@ -55,11 +55,7 @@ patch(PosStore.prototype, {
         return [
             ...super.idleTimeout,
             {
-                timeout: 180000, // 3 minutes
-                // A statement body, not an `&&` chain: `closeAll()` answers
-                // nothing, so the chain died on its first link and the
-                // navigation below it never ran at all -- an idle restaurant
-                // POS closed its dialogs and then sat where it was.
+                timeout: 180000,
                 action: () => {
                     this.dialog.closeAll();
                     if (
@@ -89,7 +85,6 @@ patch(PosStore.prototype, {
     async preSyncAllOrders(orders) {
         if (this.config.module_pos_restaurant) {
             for (const order of orders) {
-                // Avoid to block others devices on register screen when no table and name is set.
                 if (!order.table_id && !order.floating_order_name) {
                     order.floating_order_name =
                         order.floatingOrderName || order.pos_reference;
@@ -189,7 +184,6 @@ patch(PosStore.prototype, {
         let whileGuard = 0;
         const mergedCourses = this.mergeCourses(sourceOrder, destOrder);
 
-        // Sum the guest counts from both orders
         const totalGuests =
             sourceOrder.getCustomerCount() + destOrder.getCustomerCount();
         destOrder.setCustomerCount(totalGuests);
@@ -223,7 +217,6 @@ patch(PosStore.prototype, {
                 newLine.course_id = orphanLine.course_id?.id;
                 uuid = newLine.uuid;
                 if (orphanLine.course_id && mergedCourses) {
-                    // Replace new line uuid in the merged courses
                     const course = mergedCourses[orphanLine.course_id.uuid];
                     if (course?.lines) {
                         course.lines = course.lines.map((lineUuid) =>
@@ -261,7 +254,6 @@ patch(PosStore.prototype, {
             };
         }
         if (destOrder.courses) {
-            // Ensure unassigned lines in destOrder are linked to the last course
             const lastCourse = destOrder.courses?.at(-1);
             if (lastCourse) {
                 destOrder.lines.forEach((line) => {
@@ -280,7 +272,7 @@ patch(PosStore.prototype, {
         if (!sourceOrder.hasCourses() && !destOrder?.hasCourses()) {
             return;
         }
-        const result = {}; // Contains the required info to restore merge courses in the original table
+        const result = {};
         const courseMap = new Map();
         sourceOrder.course_ids.forEach((course) => {
             courseMap.set(course.index, course);
@@ -293,10 +285,8 @@ patch(PosStore.prototype, {
             };
         });
 
-        // Add courses from the target, merging lines if course numbers match
         destOrder.course_ids?.forEach((targetCourse) => {
             if (courseMap.has(targetCourse.index)) {
-                // If the course already exists, merge the lines
                 const sourceCourse = courseMap.get(targetCourse.index);
                 if (sourceCourse) {
                     const sourceCourseLines = [...sourceCourse.line_ids];
@@ -313,7 +303,6 @@ patch(PosStore.prototype, {
             courseMap.set(targetCourse.index, targetCourse);
         });
 
-        // Ensures all courses are assigned to the target order
         const mergedCourses = Array.from(courseMap.values()).sort(
             (a, b) => a.index - b.index,
         );
@@ -359,7 +348,6 @@ patch(PosStore.prototype, {
 
             const courseByLines = {};
             if (beforeMergeCourseDetails?.length) {
-                // Restore courses
                 for (const courseDetails of beforeMergeCourseDetails) {
                     const course = this.data.models["restaurant.order.course"].create({
                         order_id: newOrder,
@@ -495,7 +483,6 @@ patch(PosStore.prototype, {
         if (nbNoteChange) {
             categories["noteUpdate"] = { count: nbNoteChange, name: _t("Note") };
         }
-        // Only send modeUpdate if there's already an older mode in progress.
         if (
             orderChanges.modeUpdate &&
             Object.keys(order.last_order_preparation_change.lines).length
@@ -528,7 +515,6 @@ patch(PosStore.prototype, {
             }
         }
     },
-    //@override
     async afterProcessServerData() {
         this.floorPlanStyle =
             localStorage.getItem("floorPlanStyle") ||
@@ -543,7 +529,6 @@ patch(PosStore.prototype, {
         this.restoreSampleDataState();
         return data;
     },
-    //@override
     addNewOrder(data = {}) {
         const order = super.addNewOrder(...arguments);
         if (this.config.module_pos_restaurant) {
@@ -637,7 +622,6 @@ patch(PosStore.prototype, {
             );
             await this.syncAllOrders({ table_ids: tableIds });
         }
-        //Need product details from backand to UI for urbanpiper
         return await super.getServerOrders();
     },
     getDefaultSearchDetails() {
@@ -694,7 +678,6 @@ patch(PosStore.prototype, {
                 order.floating_order_name = order.getPartner()?.name;
                 if (!order.floating_order_name) {
                     await this.editFloatingOrderName(order);
-                    //re-set the order in case an order was selected from the current orders list in the EditOrderNamePopup
                     order = this.getOrder();
                     if (!order.floating_order_name) {
                         return;
@@ -735,7 +718,6 @@ patch(PosStore.prototype, {
             if (!(e instanceof ConnectionLostError)) {
                 throw e;
             }
-            // Reject error in a separate stack to display the offline popup, but continue the flow
             Promise.reject(e);
         } finally {
             this.tableSyncing = false;
@@ -772,8 +754,6 @@ patch(PosStore.prototype, {
             if (!this.isOrderTransferMode) {
                 this.syncAllOrders();
             } else if (order) {
-                // (`this.previousScreen !== "ReceiptScreen"` used to guard here
-                // — previousScreen is assigned nowhere, so it was always true.)
                 await this.syncAllOrders({ orders: [order] });
             }
         }
@@ -825,7 +805,6 @@ patch(PosStore.prototype, {
                 return;
             }
 
-            // Transferring order to another order from FloorScreen
             if (this.router.state.current === "FloorScreen") {
                 const tableElement = ev.target.closest(".table");
                 if (!tableElement) {
@@ -981,9 +960,7 @@ patch(PosStore.prototype, {
         });
         let selectedCourse = course;
         if (order.course_ids.length === 1 && order.lines.length > 0) {
-            // Assign order lines to the first course
             order.lines.forEach((line) => (line.course_id = course));
-            // Create a second empty course
             selectedCourse = this.data.models["restaurant.order.course"].create({
                 order_id: order,
                 index: order.getNextCourseIndex(),

@@ -71,7 +71,7 @@ test("brief disconect not considered lost", async () => {
     );
     await waitForSteps(["BUS:DISCONNECT"]);
     await runAllTimers();
-    await waitForSteps(["BUS:RECONNECT"]); // Only reconnect step, which means the monitoring state didn't change.
+    await waitForSteps(["BUS:RECONNECT"]);
 });
 
 test("computer sleep doesn't mark connection as lost", async () => {
@@ -85,10 +85,10 @@ test("computer sleep doesn't mark connection as lost", async () => {
     await waitForSteps(["isConnectionLost - false", "BUS:CONNECT"]);
     const unlockWebsocket = lockWebsocketConnect();
     patchWithCleanup(navigator, { onLine: false });
-    await manuallyDispatchProgrammaticEvent(window, "offline"); // Offline event is triggered when the computer goes to sleep.
+    await manuallyDispatchProgrammaticEvent(window, "offline");
     await waitForSteps(["BUS:DISCONNECT"]);
     patchWithCleanup(navigator, { onLine: true });
-    await manuallyDispatchProgrammaticEvent(window, "online"); // Online event is triggered when the computer wakes up.
+    await manuallyDispatchProgrammaticEvent(window, "online");
     unlockWebsocket();
     await runAllTimers();
     await waitForSteps(["BUS:RECONNECT"]);
@@ -96,9 +96,6 @@ test("computer sleep doesn't mark connection as lost", async () => {
 });
 
 test("J11: a failed worker marks the connection as lost after init", async () => {
-    // A worker service that ends FAILED never emits any BUS:WORKER_STATE_UPDATED,
-    // so without the deferred-chained check the connection would read healthy
-    // forever on a permanently dead bus. Force the terminal FAILED state.
     patchWithCleanup(WorkerService.prototype, {
         async ensureWorkerStarted() {
             this._state = WORKER_SERVICE_STATE.FAILED;
@@ -108,7 +105,6 @@ test("J11: a failed worker marks the connection as lost after init", async () =>
     patchWithCleanup(console, { warn: () => {} });
     await makeMockEnv();
     const monitoring = getService("bus.monitoring_service");
-    // Boot the bus so the (patched) worker service settles into FAILED.
     await getService("bus_service").start();
     await runAllTimers();
     expect(monitoring.isConnectionLost).toBe(true);

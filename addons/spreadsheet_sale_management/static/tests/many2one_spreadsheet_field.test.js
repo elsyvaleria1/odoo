@@ -38,7 +38,7 @@ test("create record and open action", async () => {
     onRpc("action_view_new_spreadsheet", ({ args, kwargs }) => {
         expect(kwargs.context.default_name).toBe("yy");
         expect.step("action_view_new_spreadsheet");
-        return action; // return any action
+        return action;
     });
     onRpc("web_save", ({ args, kwargs }) => {
         expect(args[1].spreadsheet_template_id).toBe(1);
@@ -55,7 +55,7 @@ test("create record and open action", async () => {
     await mountView({
         type: "form",
         resModel: "sale.order.template",
-        arch: /*xml*/ `
+        arch: `
         <form>
             <field name="spreadsheet_template_id" widget="many2one_spreadsheet"/>
         </form>

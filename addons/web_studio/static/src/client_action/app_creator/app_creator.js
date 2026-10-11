@@ -18,10 +18,8 @@ class AppCreatorState {
      */
     constructor({ onFinished }) {
         this._onFinished = onFinished;
-        // ==================== Misc ====================
         this.step = "welcome";
 
-        // ================== Fields ==================
         this.fieldsValidators = {
             appName: () => !!this.data.appName,
             menu: (_this) => _this.menuCreatorModel.isValid,
@@ -35,7 +33,6 @@ class AppCreatorState {
             modelOptions: [],
         };
 
-        // ================== Steps ==================
         this._steps = {
             welcome: {
                 next: () => "app",
@@ -57,10 +54,6 @@ class AppCreatorState {
         };
     }
 
-    //--------------------------------------------------------------------------
-    // Getters
-    //--------------------------------------------------------------------------
-
     get step() {
         return this._step;
     }
@@ -77,10 +70,6 @@ class AppCreatorState {
     get hasPrevious() {
         return "previous" in this._currentStep;
     }
-
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
 
     isFieldValid(fieldName) {
         return this.showValidation ? this.fieldsValidators[fieldName](this) : true;
@@ -105,10 +94,6 @@ class AppCreatorState {
             this.step = this._currentStep.previous;
         }
     }
-
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
 
     get _currentStep() {
         return this._steps[this._step];
@@ -155,10 +140,8 @@ export class AppCreator extends Component {
 
         const iconValue =
             iconData.type === "custom_icon"
-                ? // custom icon data
-                  [iconData.iconClass, iconData.color, iconData.backgroundColor]
-                : // attachment
-                  iconData.uploaded_attachment_id;
+                ? [iconData.iconClass, iconData.color, iconData.backgroundColor]
+                : iconData.uploaded_attachment_id;
 
         try {
             const result = await rpc("/web_studio/create_new_app", {
@@ -176,10 +159,6 @@ export class AppCreator extends Component {
             this.uiService.unblock();
         }
     }
-
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
 
     /**
      * @param {KeyboardEvent} ev

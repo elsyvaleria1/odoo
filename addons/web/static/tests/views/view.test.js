@@ -1369,9 +1369,6 @@ test("action-restricting context is read from the NEW props when the arch change
 
 test("the descriptor schema is closed: an unknown key is refused, SearchPanel is not", async () => {
     serverState.debug = "1";
-    // `"*": true` used to admit any key, which is how dead keys accumulated on
-    // descriptors outside web. A key the framework reads nowhere is now a
-    // registration error rather than a silent no-op.
     class Panel extends Component {
         static template = xml`<div/>`;
         static props = null;

@@ -26,7 +26,6 @@ export default {
             })
             .catch((error) => {
                 if (error instanceof RPCError) {
-                    // These methods don't exist in Express Checkout.
                     this._displayErrorDialog?.(
                         _t("Payment processing failed"),
                         error.data.message,

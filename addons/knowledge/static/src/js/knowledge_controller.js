@@ -52,7 +52,6 @@ export class KnowledgeArticleFormController extends FormController {
             toggleProperties: this.toggleProperties.bind(this),
             save: this.save.bind(this),
             discard: this.discard.bind(this),
-            // Internal states:
             propertiesPanelState: proxy({ isDisplayed: false }),
             chatterPanelState: proxy({ isDisplayed: false }),
             commentsState: this.commentsService.getCommentsState(),
@@ -82,16 +81,12 @@ export class KnowledgeArticleFormController extends FormController {
             this.dialogService.add(ArticleAnnexePickerDialog, props);
         });
 
-        // Unregister the current candidate recordInfo for Knowledge macros in
-        // case of breadcrumbs mismatch.
         onWillStart(() => {
             if (
                 !this.dialogContext.inDialog &&
                 this.config.breadcrumbs &&
                 this.config.breadcrumbs.length
             ) {
-                // Unregister the current candidate recordInfo in case of
-                // breadcrumbs mismatch.
                 this.knowledgeCommandsService.unregisterCommandsRecordInfo(
                     this.config.breadcrumbs,
                 );
@@ -161,9 +156,6 @@ export class KnowledgeArticleFormController extends FormController {
         }
     }
 
-    /**
-     * If the article has no name set, tries to rename it.
-     */
     ensureArticleName() {
         const recordData = this.model.root.data;
         if (
@@ -235,10 +227,8 @@ export class KnowledgeArticleFormController extends FormController {
             return;
         }
 
-        // blur to remove focus on the active element
         document.activeElement.blur();
 
-        // load the new record
         try {
             if (this.model.root.isNew) {
                 await this.model.load({ resId });
@@ -324,20 +314,13 @@ export class KnowledgeArticleFormController extends FormController {
         }
     }
 
-    /**
-     * Add/Remove article from favorites and reload the favorite tree.
-     * One does not use "record.update" since the article could be in readonly.
-     */
     async toggleFavorite() {
-        // Save in case name has been edited, so that this new name is used
-        // when adding the article in the favorite section.
         if (await this.model.root.isDirty()) {
             await this.model.root.save();
         }
         await this.orm.call(this.model.root.resModel, "action_toggle_user_favorite", [
             [this.resId],
         ]);
-        // Load to have the correct value for 'is_user_favorite'.
         await this.model.root.load();
     }
 

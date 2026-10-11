@@ -31,7 +31,6 @@ test("Number of connected users is correctly rendered", async function () {
         message: "It should display one other connected users",
     });
 
-    // The same user is connected with two different tabs.
     joinSession(transportService, { id: 4321, userId: 9999 });
     await animationFrame();
     expect(displayedConnectedUsers()).toBe(1, {

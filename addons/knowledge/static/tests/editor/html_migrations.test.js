@@ -142,7 +142,6 @@ defineModels([Article]);
 
 onRpc("get_sidebar_articles", () => ({ articles: [], favorite_ids: [] }));
 
-// Prevent instantiation of the color picker
 onRpc("render_public_asset", () => false);
 
 onRpc("has_access", () => true);
@@ -233,17 +232,6 @@ describe("test migration of embedded views and view links filters", () => {
                         searchModelPromise.resolve(this);
                     }
                 },
-                /**
-                 * This method is voided for the test because it overwrites
-                 * favorites with real favorite records data (which are not
-                 * defined here).
-                 * For the purpose of this test, only the data contained in the
-                 * searchModel state should be tested (to ensure that the
-                 * upgrade actually happened). In a real situation,
-                 * _reconciliateFavorites will also "fix" some properties
-                 * with the most up to date information from actual irFilters
-                 * records, but that is done independently from the JS upgrade.
-                 */
                 _reconciliateFavorites() {},
             });
             patchWithCleanup(EmbeddedViewLinkComponent.prototype, {

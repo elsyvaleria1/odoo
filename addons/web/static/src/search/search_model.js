@@ -360,7 +360,6 @@ export class SearchModel extends SearchQueryMixin(
         try {
             if (!this.searchPanelInfo.loaded) {
                 // exported before the first fetch returned: the sections are
-                // empty, and a reload would refetch only the counted ones
                 log.logic("restore-unloaded-panel", () => ({
                     displayed: Boolean(this.display.searchPanel),
                 }));

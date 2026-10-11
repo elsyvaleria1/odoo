@@ -11,17 +11,6 @@ import {
     webModels,
 } from "@web/../tests/web_test_helpers";
 
-/**
- * The controller's chassis, isolated from OpenLayers.
- *
- * geoengine ships no test that mounts its controller, so the control panel it
- * renders was never asserted: before the ViewLayout conversion it drew a search
- * bar it could not reveal on a small screen (`SearchBar` was guarded by
- * `searchBarToggler.state.showSearchBar` and the toggler button was never
- * rendered at all), no cog menu despite declaring one, and no no-content
- * helper. Stubbing the renderer is what makes that assertable without a WebGL
- * context.
- */
 class StubRenderer extends Component {
     static template = xml`<div class="o_geo_stub_renderer"/>`;
     static props = null;
@@ -64,15 +53,9 @@ describe("GeoengineController chassis", () => {
         expect(".o_cp_searchview").toHaveCount(1);
     });
 
-    // The loaded-root cases (first paint, reload, panel toggle) live in
-    // geoengine_view_e2e.test.js, which mounts the real renderer against a
-    // mocked get_layers.
-
     test.tags("mobile");
     test("on a small screen the search bar can be revealed", async () => {
         await mountGeo();
-        // The toggler button is the whole point: without it the search bar is
-        // hidden on a small screen with no way to bring it back.
         expect("button[aria-label='Toggle the search bar']").toHaveCount(1);
     });
 });

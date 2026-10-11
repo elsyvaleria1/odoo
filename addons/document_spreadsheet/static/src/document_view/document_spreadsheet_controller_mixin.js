@@ -64,7 +64,6 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
             XLSX_MIME_TYPES.includes(mainDocumentOrTarget.data.mimetype) ||
             mainDocumentOrTarget.data.mimetype === "text/csv"
         ) {
-            // Keep MainDocument as `active` can be different for shortcut and target.
             if (!mainDocument.data.active) {
                 this.dialogService.add(ConfirmationDialog, {
                     title: _t("Restore file?"),
@@ -131,7 +130,6 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
         const doc = selection[0];
         const endFreeze = log.perf("freezeAndShare");
 
-        // Freeze the spreadsheet
         await loadBundle("spreadsheet.o_spreadsheet");
         const { fetchSpreadsheetModel, freezeOdooData } =
             await import("@spreadsheet/helpers/model");
@@ -143,7 +141,6 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
         const spreadsheetData = JSON.stringify(await freezeOdooData(model));
         const excelFiles = model.exportXLSX().files;
 
-        // Create a new <document.document> with the frozen data
         const record = await this.orm.call(
             "document.document",
             "action_freeze_and_copy",
@@ -164,10 +161,6 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
         const menuItems = super.getTopBarActionMenuItems();
         const selectionCount = this.model.targetRecords.length;
         const singleSelection = selectionCount === 1 && this.targetRecords[0];
-        // download/share are contributed by the documents controller and insert
-        // by spreadsheet_edition; guard their presence rather than assume it, as
-        // patch composition does not guarantee every layer contributed its item
-        // for the current view/controller (see getStaticActionMenuItems).
         if (menuItems.download) {
             menuItems.download.isAvailable = () =>
                 this.model.targetRecords.some(
@@ -203,10 +196,6 @@ export const DocumentsSpreadsheetControllerMixin = () => ({
 
     getStaticActionMenuItems() {
         const menuItems = super.getStaticActionMenuItems(...arguments);
-        // `insert` is contributed by spreadsheet_edition's controller patch; it is
-        // absent when that patch is not in the effective super chain for this
-        // controller, so guard before augmenting it (a missing guard here crashed
-        // the whole action-menu render, and with it every documents view).
         if (menuItems.insertInSpreadsheet) {
             const isAvailable = menuItems.insertInSpreadsheet.isAvailable;
             menuItems.insertInSpreadsheet.isAvailable = () =>

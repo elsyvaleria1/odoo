@@ -17,8 +17,6 @@ class ImageSnippetOptionPlugin extends Plugin {
             return;
         }
 
-        // Open the media dialog and replace the image snippet placeholder by
-        // the selected image.
         let isImageSelected = false;
         await new Promise((resolve) => {
             const onClose = this.dependencies.media.openMediaDialog({
@@ -26,8 +24,6 @@ class ImageSnippetOptionPlugin extends Plugin {
                 save: async (selectedImageEl) => {
                     isImageSelected = true;
                     snippetEl.replaceWith(selectedImageEl);
-                    // If the "Image" snippet was dropped as a grid item, make
-                    // it a grid image.
                     if (dragState.draggedEl.classList.contains("o_grid_item")) {
                         dragState.draggedEl.classList.add("o_grid_item_image");
                     }

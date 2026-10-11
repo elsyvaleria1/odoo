@@ -16,7 +16,7 @@ registry.category("web_tour.tours").add("PosSettleOrder", {
             Dialog.confirm("Open Register"),
             PosSale.settleNthOrder(1),
             ProductScreen.selectedOrderlineHas("Pizza Chicken", 9),
-            ProductScreen.clickNumpad("Qty", "2"), // Change the quantity of the product to 2
+            ProductScreen.clickNumpad("Qty", "2"),
             ProductScreen.selectedOrderlineHas("Pizza Chicken", 2),
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Bank"),
@@ -31,14 +31,10 @@ registry.category("web_tour.tours").add("PosSettleOrderIncompatiblePartner", {
         [
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
-            // The second item in the list is the first sale.order.
             PosSale.settleNthOrder(2),
             ProductScreen.selectedOrderlineHas("product1", 1),
             ProductScreen.totalAmountIs("10.00"),
 
-            // The first item in the list is the second sale.order.
-            // Selecting the 2nd sale.order should use a new order,
-            // therefore, the total amount will change.
             PosSale.settleNthOrder(1),
             ProductScreen.selectedOrderlineHas("product2", 1),
             ProductScreen.totalAmountIs("11.00"),
@@ -74,7 +70,6 @@ registry.category("web_tour.tours").add("PosRefundDownpayment", {
             PaymentScreen.clickValidate(),
             ReceiptScreen.clickNextOrder(),
             ...ProductScreen.clickRefund(),
-            // Filter should be automatically 'Paid'.
             TicketScreen.filterIs("Paid"),
             TicketScreen.selectOrder("001"),
             Order.hasLine({
@@ -125,7 +120,7 @@ registry.category("web_tour.tours").add("PosSettleOrderNotGroupable", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
             PosSale.settleNthOrder(1),
-            ProductScreen.totalAmountIs(28.98), // 3.5 * 8 * 1.15 * 90%
+            ProductScreen.totalAmountIs(28.98),
             ProductScreen.selectedOrderlineHas("Product A", "0.5"),
             ProductScreen.checkOrderlinesNumber(4),
             ProductScreen.selectedOrderlineHas("Product A", "0.5", "4.14"),
@@ -157,7 +152,6 @@ registry.category("web_tour.tours").add("PosSettleOrderWithNote", {
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Bank"),
             PaymentScreen.clickValidate(),
-            // Check in the receipt
             Order.hasLine({
                 customerNote: "Customer note 2--Customer note 3",
             }),

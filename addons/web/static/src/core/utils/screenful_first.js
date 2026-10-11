@@ -64,8 +64,6 @@ export function useScreenfulFirst({ screenful, keyOf = (item) => item }) {
                     break;
                 }
             }
-            // the same items in a new array, while they were still being
-            // built: the count reached carries over, or it would never grow
             const reached =
                 kept && !previous.complete
                     ? Math.min(source.length, previous.built)
@@ -95,9 +93,6 @@ export function useScreenfulFirst({ screenful, keyOf = (item) => item }) {
         }
         for (const build of rendered) {
             if (build.built < build.source.length) {
-                // a commit runs in an animation frame, so a timer set from it
-                // fires once that frame is painted: the next items are built
-                // between two frames, never ahead of the one that shows these
                 timer = browser.setTimeout(grow);
                 return;
             }
@@ -115,8 +110,6 @@ export function useScreenfulFirst({ screenful, keyOf = (item) => item }) {
         leading(owner, items, whole = false) {
             void round.value;
             if (!rendering) {
-                // a render reads its collections in one go: the first read of
-                // a run starts the set of what this render shows
                 rendering = true;
                 rendered = new Set();
                 queueMicrotask(() => {
@@ -130,8 +123,6 @@ export function useScreenfulFirst({ screenful, keyOf = (item) => item }) {
                 builds.set(owner, build);
             }
             if (whole || build.complete) {
-                // every item was built: the collection changing in place is an
-                // edit of what is on screen, not a new set to put there
                 build.built = source.length;
             }
             build.complete = build.built >= source.length;

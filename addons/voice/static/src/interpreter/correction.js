@@ -39,10 +39,6 @@ import { NUMBER_WORDS_SPOKEN, spokenDigits } from "./numbers.js";
 const MAX_HEAD_WORDS = 3;
 const MAX_CANDIDATES = 12;
 
-/**
- * Pairs a Spanish recogniser swaps for each other, at half the cost of any
- * other substitution: each one was observed in real es-MX recordings.
- */
 const CONFUSABLE = ["dt", "rl", "pt", "bm", "bd", "kg", "sf"].map(
     (pair) => new Set(pair),
 );
@@ -385,7 +381,6 @@ export function soundCollisions(inventory) {
     return collisions;
 }
 
-/** Punctuation said aloud inside a code, which a record's name writes as a mark. */
 const SPOKEN_MARKS = new Set(["guion", "diagonal", "bajo", "slash", "dash", "hyphen"]);
 
 /**

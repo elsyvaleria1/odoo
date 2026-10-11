@@ -51,7 +51,6 @@ patch(ExpressCheckout.prototype, {
                 country: shippingInfo.querySelector("#o_payment_demo_shipping_country")
                     .value,
             };
-            // Call the shipping address update route to fetch the shipping options.
             const { delivery_methods } = await this.waitFor(
                 rpc(this.paymentContext["shippingAddressUpdateRoute"], {
                     partial_delivery_address: expressDeliveryAddress,

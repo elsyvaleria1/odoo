@@ -22,16 +22,10 @@ export class AccountReportLineCell extends Component {
         this.controller = proxy(this.reportContext.controller);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------------------------------------------------
     isNumeric(type) {
         return ["float", "integer", "monetary", "percentage"].includes(type);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Attributes
-    // -----------------------------------------------------------------------------------------------------------------
     get cellClasses() {
         if (this.props.cell.comparison_mode) {
             return this.comparisonClasses;
@@ -79,9 +73,6 @@ export class AccountReportLineCell extends Component {
         return classes;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Audit
-    // -----------------------------------------------------------------------------------------------------------------
     async audit() {
         const auditAction = await this.orm.call(
             "report.formula",
@@ -108,9 +99,6 @@ export class AccountReportLineCell extends Component {
         return this.action.doAction(auditAction);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Edit Popover
-    // -----------------------------------------------------------------------------------------------------------------
     editPopover(ev) {
         const close = () => {
             this.popoverCloseFn();
@@ -137,9 +125,6 @@ export class AccountReportLineCell extends Component {
         );
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Comparison cell
-    // -----------------------------------------------------------------------------------------------------------------
     get comparisonClasses() {
         let classes = "text-end";
 

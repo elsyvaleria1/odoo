@@ -42,8 +42,6 @@ class UiService {
         /** @type {Document | HTMLElement} */
         this.activeElement = document;
         this.isBlocked = false;
-        // through utils, not SIZES directly: point_of_sale patches utils.isSmall
-        // to widen "small" to tablets, and env.isSmall must follow
         this.isSmall = utils.isSmall(this);
     }
 
@@ -189,9 +187,6 @@ class UiService {
         this.activeElement = this.activeElements.current;
         this.blockCount = 0;
         this.isBlocked = false;
-        // deleting, not restoring makeEnv's throwing getter: a component that
-        // renders once more while the env is being torn down reads undefined
-        // instead of taking the teardown down with it
         delete (/** @type {any} */ (this.env).isSmall);
     }
 }

@@ -41,7 +41,7 @@ async function mountCover() {
         type: "form",
         resModel: "article",
         resId: 1,
-        arch: /* xml */ `
+        arch: `
             <form>
                 <field name="cover_image_url" invisible="1"/>
                 <field name="cover_image_position" invisible="1"/>

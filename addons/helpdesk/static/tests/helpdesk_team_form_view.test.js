@@ -140,7 +140,6 @@ test("do not reload if the feature is already installed", async () => {
 
     await fieldInput("use_helpdesk_timesheet").check();
     await clickSave();
-    // Check we reload only the first time we enable the timesheet feature in a helpdesk team
 
     expect.verifySteps([
         "get_features_enabled",

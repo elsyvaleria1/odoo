@@ -89,8 +89,6 @@ function parseX2ManyViews(node, fieldInfo, models, field) {
             /** @type {{ ArchParser: { consumes?: string, new (): { parse: (n: ViewIRNode | Element, m: any, r?: string) => any } } }} */ (
                 viewRegistry.get(viewType)
             );
-        // a sub-view parser still on the element gets a fresh element built
-        // from the child node; one on the IR gets the node itself
         const subArch =
             ArchParser.consumes === "ir"
                 ? child
@@ -133,8 +131,6 @@ function parseMany2OneViews(fieldInfo) {
     if (!relatedFields) {
         return;
     }
-    // The registry contract allows an array or a function of the field info,
-    // as parseX2ManyViews and the property-field path already honour.
     if (relatedFields instanceof Function) {
         relatedFields = relatedFields(fieldInfo);
     }

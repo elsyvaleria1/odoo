@@ -4,7 +4,6 @@ import { Component, proxy, t, useProps } from "@odoo/owl";
 import { elementRef } from "@web/core/utils/element_ref";
 import { useService } from "@web/core/utils/hooks";
 
-/** Fixed-position host of the viewer inside a documents view. */
 export class DocumentsFileViewerHost extends Component {
     static template = "document.DocumentsFileViewer";
     static components = {

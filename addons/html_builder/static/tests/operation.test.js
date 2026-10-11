@@ -87,7 +87,6 @@ test("handle 3 concurrent cancellable operations (with delay)", async () => {
     call3.resolve();
     await operation.mutex.getUnlockedDef();
     expect.verifySteps([
-        //
         "load before 1",
         "load after 1",
         "load before 3",
@@ -150,8 +149,8 @@ describe("Block editable", () => {
         await contains(":iframe .test-options-target").click();
         await contains("[data-action-id='customAction']").click();
         expect(":iframe .o_loading_screen:not(.o_we_ui_loading)").toHaveCount(1);
-        await advanceTime(50); // cancelTime=50 trigger by the preview
-        await advanceTime(500); // setTimeout in addLoadingElement
+        await advanceTime(50);
+        await advanceTime(500);
         expect(":iframe .o_loading_screen.o_we_ui_loading").toHaveCount(1);
 
         customActionDef.resolve();
@@ -220,8 +219,6 @@ describe("Async operations", () => {
         expect.verifySteps(["apply first", "revert", "apply second"]);
         expect(":iframe .test-options-target").toHaveClass("second");
         expect(":iframe .test-options-target").not.toHaveClass("first");
-        // Escape the select to trigger an explicit revert. Otherwise, the test
-        // sometimes fails with an unverified step.
         await press(["Escape"]);
         expect.verifySteps(["revert"]);
     });
@@ -266,8 +263,6 @@ describe("Async operations", () => {
         expect(":iframe .test-options-target").toHaveClass("blue");
         expect(":iframe .test-options-target").not.toHaveClass("red");
         expect.verifySteps(["apply red", "revert", "apply blue"]);
-        // Escape the colorpicker to trigger an explicit revert. Otherwise, the
-        // test sometimes fails with an unverified step.
         await press(["Escape"]);
         expect.verifySteps(["revert"]);
     });
@@ -297,7 +292,6 @@ describe("Operation that will fail", () => {
         await setupHTMLBuilder(`<div class="test-options-target">b</div>`);
         await contains(":iframe .test-options-target").click();
         await contains("[data-action-id='testAction']").hover();
-        // the crash is reported in a dialog, dismissed before the builder is used again
         await contains(".o_dialog .btn-close").click();
         await contains("[data-class-action='test']").click();
         expect(":iframe .test-options-target").toHaveOuterHTML(
@@ -329,15 +323,12 @@ describe("Operation that will fail", () => {
         await setupHTMLBuilder(`<div class="test-options-target">b</div>`);
         await contains(":iframe .test-options-target").click();
         await contains("[data-action-id='testAction']").click();
-        // the preview and the commit each report their crash in a dialog, both
-        // dismissed before the builder is used again
         await contains(".o_dialog:not(.o_inactive_modal) .btn-close").click();
         await contains(".o_dialog:not(.o_inactive_modal) .btn-close").click();
         await contains("[data-class-action='test']").click();
         expect(":iframe .test-options-target").toHaveOuterHTML(
             '<div class="test-options-target test">b</div>',
         );
-        // preview + commit
         expect.verifyErrors(["This action should crash", "This action should crash"]);
     });
 });
@@ -386,10 +377,6 @@ describe("Operations failing on outdated snippets", () => {
             },
         );
 
-        // Interacting with an outdated snippet. We test that only one
-        // notification is displayed (the one triggered by the hover), while the
-        // error triggered by the click does not result in a second notification
-        // because one is already open.
         await contains(":iframe .s_title h1:contains('Old')").click();
         await contains("[data-action-id='testAction']").hover();
         await animationFrame();
@@ -400,7 +387,6 @@ describe("Operations failing on outdated snippets", () => {
         );
         expect.verifyErrors([]);
 
-        // Close the notification and try to interact with an up-to-date snippet
         await contains(`.o_notification_close`).click();
         await contains(":iframe .s_title h1:contains('New')").click();
         await contains("[data-action-id='testAction']").hover();
@@ -441,10 +427,6 @@ describe("Operations failing on outdated snippets", () => {
             },
         );
 
-        // Interacting with an outdated snippet. We test that only one
-        // notification is displayed (the one triggered by the hover), while the
-        // error triggered by the click does not result in a second notification
-        // because one is already open.
         await contains(":iframe .s_title h1:contains('Old')").click();
         await contains("[data-action-id='testAction']").hover();
         await animationFrame();
@@ -455,7 +437,6 @@ describe("Operations failing on outdated snippets", () => {
         );
         expect.verifyErrors([]);
 
-        // Close the notification and try to interact with an up-to-date snippet
         await contains(`.o_notification_close`).click();
         await contains(":iframe .s_title h1:contains('New')").click();
         await contains("[data-action-id='testAction']").hover();
@@ -499,10 +480,6 @@ describe("Operations failing on outdated snippets", () => {
             },
         );
 
-        // Interacting with an outdated snippet. We test that only one
-        // notification is displayed (the one triggered by the hover), while the
-        // error triggered by the click does not result in a second notification
-        // because one is already open.
         await contains(":iframe .s_title h1:contains('Old')").click();
         await contains("[data-action-id='testAction']").hover();
         await animationFrame();
@@ -513,7 +490,6 @@ describe("Operations failing on outdated snippets", () => {
         );
         expect.verifyErrors([]);
 
-        // Close the notification and try to interact with an up-to-date snippet
         await contains(`.o_notification_close`).click();
         await contains(":iframe .s_title h1:contains('New')").click();
         await contains("[data-action-id='testAction']").hover();
@@ -548,7 +524,6 @@ describe("Operations failing on outdated snippets", () => {
             },
         );
 
-        // Interacting with an outdated snippet. Notification is shown
         await contains(":iframe .s_title h1:contains('Old')").click();
         expect(".o_notification .o_notification_bar.bg-warning").toHaveCount(1);
         expect(".o_notification_content").toHaveText(
@@ -583,7 +558,6 @@ describe("Operations failing on outdated snippets", () => {
             },
         );
 
-        // Interacting with an outdated snippet. Notification is shown
         await contains(":iframe .s_title h1:contains('Old')").click();
         expect(".o_notification .o_notification_bar.bg-warning").toHaveCount(1);
         expect(".o_notification_content").toHaveText(
@@ -626,7 +600,6 @@ describe("Operations failing on outdated snippets", () => {
             },
         );
 
-        // Interacting with an outdated snippet. Notification is shown
         await contains(":iframe .s_title h1:contains('Old')").click();
         await contains("[data-action-param='class2']").hover();
         await animationFrame();
@@ -635,7 +608,6 @@ describe("Operations failing on outdated snippets", () => {
             "This snippet is outdated. It might have caused problem during the editing. Please drag the new version from the snippet panel to update it.",
         );
 
-        // Close the notification and try to interact with an up-to-date snippet
         await contains(`.o_notification_close`).click();
         await contains(":iframe .s_title h1:contains('New')").click();
         await contains("[data-action-param='class2']").hover();

@@ -117,7 +117,6 @@ export class AccountReturnCheckKanbanRenderer extends KanbanRenderer {
     }
 
     async _reloadListAndReturn(params, accountReturnId) {
-        // Reload return card
         const result = await this.originalListLoad(params);
         if (this.destroyed) {
             return result;
@@ -128,7 +127,6 @@ export class AccountReturnCheckKanbanRenderer extends KanbanRenderer {
         }
         this.returnRecord.setData(returnData[0]);
 
-        // Reload chatter messages
         this.bus.trigger("MAIL:RELOAD-THREAD", {
             model: "account.return",
             id: accountReturnId,

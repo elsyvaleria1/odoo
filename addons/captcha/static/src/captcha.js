@@ -3,21 +3,14 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { session } from "@web/session";
 
-/**
- * The installed providers, by code: `load(siteKey)` loads the provider's
- * script, `getToken(siteKey, action)` answers a token proving a person asked
- * for `action`; `label` names the provider, `legalTemplate` its notice.
- */
 export const captchaProviders = registry.category("captcha_providers");
 
-/** The captcha of the provider chosen in the settings, for any form. */
 export class Captcha {
     constructor() {
         this.config = session.captcha || null;
         this.provider = this.config && captchaProviders.get(this.config.provider, null);
     }
 
-    /** The template of the provider's notice, when it asks for one. */
     get legalTemplate() {
         return this.provider?.legalTemplate || null;
     }
@@ -52,8 +45,6 @@ export class Captcha {
                 token: await this.provider.getToken(this.config.site_key, action),
             };
         } catch {
-            // the provider's script failed to load, its key was refused, or the
-            // person did not pass its challenge: none of which the form can tell
             return {
                 error: _t(
                     "%s could not check that this form was sent by a person. Please try again.",

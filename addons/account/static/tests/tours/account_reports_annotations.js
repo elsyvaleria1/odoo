@@ -5,10 +5,6 @@ import { Asserts } from "./asserts.js";
 registry.category("web_tour.tours").add("account_reports_annotations", {
     url: "/odoo/action-account.action_account_report_bs",
     steps: () => [
-        //--------------------------------------------------------------------------------------------------------------
-        // Annotations
-        //--------------------------------------------------------------------------------------------------------------
-        // Test the initial status of annotations - There are 2 annotations to display
         {
             content: "Initial annotations",
             trigger: ".o_content",
@@ -47,11 +43,9 @@ registry.category("web_tour.tours").add("account_reports_annotations", {
                     ".btn_annotation.o_account_report_chatter_annoted",
                 );
 
-                // Check the number of annotated lines
                 Asserts.isEqual(annotations.length, 2);
             },
         },
-        // Test that we can add a new annotation
         {
             content: "Click to show caret option",
             trigger: "tr:nth-child(8) .btn_annotation:not(:visible)",
@@ -89,11 +83,9 @@ registry.category("web_tour.tours").add("account_reports_annotations", {
                     ".btn_annotation.o_account_report_chatter_annoted",
                 );
 
-                // Check the number of annotated lines
                 Asserts.isEqual(annotations.length, 3);
             },
         },
-        // Test that we can edit an annotation
         {
             content: "Open second annotated line annotation popover",
             trigger: "tr:nth-child(8) .btn_annotation",
@@ -144,7 +136,6 @@ registry.category("web_tour.tours").add("account_reports_annotations", {
             trigger: ".o_control_panel .btn-secondary[data-tooltip='Chatter']",
             run: "click",
         },
-        // Test that we dont show there is an annotation if we delete the only annotation of a line
         {
             content: "Open Third annotated line annotation popover",
             trigger: "tr:nth-child(12) .btn_annotation",
@@ -187,7 +178,6 @@ registry.category("web_tour.tours").add("account_reports_annotations", {
                     ".btn_annotation.o_account_report_chatter_annoted",
                 );
 
-                // Check the number of annotated lines
                 Asserts.isEqual(annotations.length, 2);
             },
         },

@@ -27,7 +27,6 @@ const dt = (iso) => parseISO(iso);
 
 test("dateAddFixedOffset keeps the wall-clock hour across a DST change", () => {
     mockTimeZone("Europe/Brussels");
-    // 2019-03-31 02:00 -> 03:00 in Brussels
     const before = dt("2019-03-30T08:00:00");
     expect(toISO(dateAddFixedOffset(before, { hours: 24 }))).toBe(
         toISO(dt("2019-03-31T08:00:00")),
@@ -35,12 +34,10 @@ test("dateAddFixedOffset keeps the wall-clock hour across a DST change", () => {
     expect(toISO(dateAddFixedOffset(before, { days: 1 }))).toBe(
         toISO(dt("2019-03-31T08:00:00")),
     );
-    // 2019-10-27 03:00 -> 02:00
     const fall = dt("2019-10-26T08:00:00");
     expect(toISO(dateAddFixedOffset(fall, { hours: 24 }))).toBe(
         toISO(dt("2019-10-27T08:00:00")),
     );
-    // A plain add() drifts by the offset change; the helper is what hides it.
     expect(fall.add({ hours: 24 }).hour).toBe(7);
 });
 
@@ -66,7 +63,6 @@ test("localStartOf and localEndOf follow the locale week start", () => {
     patchWithCleanup(localization, { weekStart: 7 });
     expect(toISODate(localStartOf(wednesday, "week"))).toBe("2026-09-06");
     expect(toISODate(localEndOf(wednesday, "week"))).toBe("2026-09-12");
-    // Any other unit is the plain calendar boundary.
     expect(toISODate(localStartOf(wednesday, "month"))).toBe("2026-09-01");
     expect(toISO(localEndOf(wednesday, "day"))).toBe(toISO(endOf(wednesday, "day")));
 });
@@ -74,11 +70,11 @@ test("localStartOf and localEndOf follow the locale week start", () => {
 test("getUnionOfIntersections clips the outer intervals and keeps the inner ones", () => {
     const interval = [dt("2019-01-05"), dt("2019-01-20")];
     const intervals = [
-        [dt("2019-01-01"), dt("2019-01-03")], // before
-        [dt("2019-01-02"), dt("2019-01-07")], // overlaps the start
-        [dt("2019-01-10"), dt("2019-01-12")], // inside
-        [dt("2019-01-18"), dt("2019-01-25")], // overlaps the end
-        [dt("2019-01-26"), dt("2019-01-28")], // after
+        [dt("2019-01-01"), dt("2019-01-03")],
+        [dt("2019-01-02"), dt("2019-01-07")],
+        [dt("2019-01-10"), dt("2019-01-12")],
+        [dt("2019-01-18"), dt("2019-01-25")],
+        [dt("2019-01-26"), dt("2019-01-28")],
     ];
     const union = getUnionOfIntersections(interval, intervals);
     expect(union.map(([a, b]) => [toISODate(a), toISODate(b)])).toEqual([
@@ -87,7 +83,6 @@ test("getUnionOfIntersections clips the outer intervals and keeps the inner ones
         ["2019-01-18", "2019-01-20"],
     ]);
     expect(getUnionOfIntersections(interval, [intervals[0], intervals[4]])).toEqual([]);
-    // A single intersecting interval is clipped on both sides.
     expect(
         getUnionOfIntersections(interval, [[dt("2019-01-01"), dt("2019-01-31")]]).map(
             ([a, b]) => [toISODate(a), toISODate(b)],
@@ -106,7 +101,6 @@ test("getCellColor: nothing off is null, everything off is flat, otherwise a gra
     expect(getCellColor(4, [1, 1, 0, 0], false)).toMatch(
         /^background:linear-gradient\(90deg,/,
     );
-    // Four sub-slots draw six stops, the two inner ones twice.
     expect(
         getCellColor(4, [1, 1, 0, 0], false).match(/DayOff-background/g),
     ).toHaveLength(3);

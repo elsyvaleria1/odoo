@@ -12,9 +12,6 @@ patch(BarcodeModel.prototype, {
      * @override
      */
     async noProductToast(barcodeData) {
-        // Applicable for the group ["base.group_system"]
-        // Applicable for models ["stock.picking", "stock.quant"]
-        // Applicable for the picking operation ["receipts"]
         const canManageBarcodelookup = await this.groups.group_user_admin;
         if (
             canManageBarcodelookup &&
@@ -95,7 +92,6 @@ patch(BarcodeModel.prototype, {
             }
             this.cache.setCache(result);
 
-            // modifying the barcodeData
             const [productRecord] = result["product.product"];
             barcodeData.match = true;
             barcodeData.quantity = 1;

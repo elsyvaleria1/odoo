@@ -89,7 +89,6 @@ export class ButtonProperties extends Component {
             activeFields: approvalRecordDefinition,
         };
 
-        // We don't want to display 'a' in the sidebar.
         this.viewEditorModel.activeNode.humanName = _t("Button");
 
         onWillStart(async () =>
@@ -106,7 +105,6 @@ export class ButtonProperties extends Component {
             this.viewEditorModel.viewType !== "form" &&
             this.viewEditorModel.activeNode.arch.closest("header")
         ) {
-            // Invisible property is not editable for Header buttons in List and Kanban
             return [];
         }
         return this.props.availableOptions;
@@ -229,10 +227,6 @@ export class ButtonProperties extends Component {
         this.loadApprovalSteps();
     }
 
-    /**
-     * The steps gating this button, as approval.binding knows them: an archived step
-     * leaves the list, and a button whose steps are all archived answers ungated.
-     */
     async loadApprovalSteps([model, method, action] = this.getApprovalParams()) {
         this.viewEditorModel.bus.trigger("approval-update");
         const [approvals] = await this.orm.call(

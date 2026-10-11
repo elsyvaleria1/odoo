@@ -16,7 +16,6 @@ const Chrome = { ...ChromePos, ...ChromeRestaurant };
 registry.category("web_tour.tours").add("ControlButtonsTour", {
     steps: () =>
         [
-            // Test merging table, transfer is already tested in pos_restaurant_sync_second_login.
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
             FloorScreen.clickTable("2"),
@@ -24,8 +23,6 @@ registry.category("web_tour.tours").add("ControlButtonsTour", {
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("4"),
             ProductScreen.addOrderline("Minute Maid", "3", "2", "6.0"),
-            // Extra line is added to test merging table.
-            // Merging this order to another should also include this extra line.
             ProductScreen.clickDisplayedProduct("Coca-Cola"),
             ProductScreen.selectedOrderlineHas("Coca-Cola", "1"),
 
@@ -41,7 +38,6 @@ registry.category("web_tour.tours").add("ControlButtonsTour", {
             Order.hasLine({ productName: "Minute Maid", quantity: "3" }),
             Order.hasLine({ productName: "Coca-Cola", quantity: "1" }),
 
-            // Test SplitBillButton
             ProductScreen.clickControlButton("Split"),
             SplitBillScreen.clickBack(),
             ProductScreen.clickLine("Water", "5"),
@@ -53,7 +49,6 @@ registry.category("web_tour.tours").add("ControlButtonsTour", {
                 internalNote: "test note",
                 withClass: ".selected",
             }),
-            // Check that note is imported if come back to the table
             Chrome.clickPlanButton(),
             FloorScreen.clickTable("2"),
             Order.hasLine({
@@ -65,7 +60,6 @@ registry.category("web_tour.tours").add("ControlButtonsTour", {
 
             ProductScreen.addOrderline("Water", "8", "1", "8.0"),
 
-            // Test GuestButton
             ProductScreen.clickControlButton("Guests"),
             {
                 content: `click numpad button: 1`,
@@ -94,7 +88,6 @@ registry.category("web_tour.tours").add("ControlButtonsTour", {
             Dialog.confirm(),
             ProductScreen.guestNumberIs("5"),
 
-            // Test Cancel Order Button
             Dialog.cancel(),
             Order.hasLine({ productName: "Water", quantity: "5" }),
             ProductScreen.clickControlButton("Cancel Order"),
@@ -102,7 +95,6 @@ registry.category("web_tour.tours").add("ControlButtonsTour", {
             Order.doesNotHaveLine(),
             FloorScreen.isShown(),
 
-            // Test moving order to a table on a different floor
             FloorScreen.clickTable("5"),
             ProductScreen.addOrderline("Water", "5", "2", "10.0"),
             ProductScreen.clickControlButton("Transfer"),

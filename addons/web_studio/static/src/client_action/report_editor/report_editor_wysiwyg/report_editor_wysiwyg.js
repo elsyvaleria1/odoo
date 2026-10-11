@@ -126,9 +126,6 @@ export class ReportEditorWysiwyg extends Component {
             },
         });
 
-        // This little reactive is to be bound to the editor, so we create it here.
-        // This could have been a useState, but the current component doesn't use it.
-        // Instead, it passes it to a child of his,
         this.undoRedoState = proxy({
             canUndo: false,
             canRedo: false,
@@ -184,8 +181,6 @@ export class ReportEditorWysiwyg extends Component {
             this.appServices,
         );
         editor.attachTo(editable);
-        // disable the qweb's plugin class: its style is too complex and confusing
-        // in the case of reports
         editable.classList.remove("odoo-editor-qweb");
         return editor;
     }
@@ -202,7 +197,6 @@ export class ReportEditorWysiwyg extends Component {
         if (odoo.debug) {
             ["t-esc", "t-out", "t-field"].forEach((tAtt) => {
                 doc.querySelectorAll(`*[${tAtt}]`).forEach((e) => {
-                    // Save the previous title to set it back before saving the report
                     if (e.hasAttribute("title")) {
                         e.setAttribute("data-oe-title", e.getAttribute("title"));
                     }
@@ -267,7 +261,6 @@ export class ReportEditorWysiwyg extends Component {
         const htmlParts = {};
         const editable = this.editor.getElContent();
 
-        // Clean technical title
         if (odoo.debug) {
             editable.querySelectorAll("*[t-field],*[t-out],*[t-esc]").forEach((e) => {
                 if (e.hasAttribute("data-oe-title")) {

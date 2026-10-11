@@ -56,8 +56,6 @@ export class MrpDisplay extends Component {
     props = useProps(this.constructor.props);
 
     setup() {
-        // the shop floor restyles buttons and tags outside its own root (the
-        // control panel's burger menu), so it tells the page it is on
         useBodyClass("o_mrp_display_open");
         this.config = useViewConfig();
         this.searchModel = useSearchModel();
@@ -150,7 +148,6 @@ export class MrpDisplay extends Component {
             this.searchModel.workorders = this.groups.workorders;
             this.searchModel.setWorkcenterFilter(this.state.workcenters);
             await this.useEmployee.getConnectedEmployees(true);
-            // select the workcenter received in the context
             if (this.props.context.workcenter_id) {
                 this.state.workcenters = await this.orm.searchRead(
                     "mrp.workcenter",
@@ -221,14 +218,12 @@ export class MrpDisplay extends Component {
     _onProductBarcodeScanned(barcode) {
         for (const record of this.relevantRecords) {
             if (this.state.activeResModel === "mrp.workorder") {
-                // 1. Check if there is a quality check with this product (WO only)
                 for (const check of record.data.check_ids.records) {
                     if (check.data.component_barcode === barcode) {
                         return check.component.onClick();
                     }
                 }
             }
-            // 2. Check if there is a move with this product (WO/MO)
             for (const move of record.data.move_raw_ids.records) {
                 if (
                     move.data.product_barcode === barcode &&
@@ -238,7 +233,6 @@ export class MrpDisplay extends Component {
                 }
             }
             if (this.state.activeResModel === "mrp.workorder") {
-                // 3. Check if there is a byproduct move on this WO or on the MO but not any WO with this product
                 for (const move of record._parentRecord.data.move_byproduct_ids
                     .records) {
                     if (
@@ -250,7 +244,6 @@ export class MrpDisplay extends Component {
                     }
                 }
             } else {
-                // 4. Check if there is a byproduct move with this product (MO only)
                 for (const move of record.data.move_byproduct_ids.records) {
                     if (move.data.product_barcode === barcode) {
                         return move.component.onClick();
@@ -276,18 +269,9 @@ export class MrpDisplay extends Component {
         return workorder.component.onClickHeader();
     }
 
-    // Deliberately not memoized. This used to cache the result against
-    // `this.adminId`, but the template reads `barcodeTargetRecord` as a bare
-    // getter, so it runs against OWL's per-render context and both writes
-    // landed on a throwaway object -- the cache never survived a render and
-    // the branch was dead. Making it work would be worse than removing it: the
-    // key is the admin alone, while the result is derived from
-    // `relevantRecords`, so a cache hit would keep pointing at a work order
-    // that the list no longer contains.
     get barcodeTargetRecord() {
         const currentAdminId = this.useEmployee.employees.admin.id;
         if (!currentAdminId) {
-            // No current admin, no target record.
             return false;
         }
         const firstWorking = this.relevantRecords.find((r) =>
@@ -305,12 +289,10 @@ export class MrpDisplay extends Component {
     }
 
     get workorders() {
-        // Returns all workorders
         return this.model.root.records.flatMap((mo) => mo.data.workorder_ids.records);
     }
 
     get filteredWorkorders() {
-        // Returns all workorders, filtered by the currently selected states
         const activeStates = this.searchModel.state.workorderFilters.reduce(
             (acc, f) => (f.isActive ? [...acc, f.name] : acc),
             [],
@@ -362,7 +344,6 @@ export class MrpDisplay extends Component {
                       : workcenterFilter,
               );
 
-        // Separate filtered records depending if they are already in cache or not.
         const [recordsAlreadyInCache, recordsNotInCache] = [[], []];
         for (const record of filteredRecords) {
             this.recordCacheIds.includes(record.resId)
@@ -370,7 +351,6 @@ export class MrpDisplay extends Component {
                 : recordsNotInCache.push(record);
         }
 
-        // Sort records already in cache by their position in this cache, keeping show case at first position
         recordsAlreadyInCache.sort((rec1, rec2) => {
             if (rec1.resId === this.showCaseId) {
                 return -1;
@@ -385,9 +365,7 @@ export class MrpDisplay extends Component {
 
         if (recordsNotInCache) {
             if (!showMOs) {
-                // Sort Work Orders not in cache by their state.
                 const statesComparativeValues = {
-                    // Smallest value = first. Biggest value = last.
                     progress: 0,
                     ready: 1,
                     pending: 2,
@@ -460,7 +438,6 @@ export class MrpDisplay extends Component {
     }
 
     _makeModelParams() {
-        // Define the structure for related fields
         const { resModel, fields } = this.props.models.find(
             (m) => m.resModel === "mrp.production",
         );
@@ -605,7 +582,7 @@ export class MrpDisplay extends Component {
                 JSON.parse(localStorage.getItem(`${localStorageName}.activeWC`)),
             );
         } else if (workcenters && workcenters.length) {
-            return workcenters[0].id; // Defaults to the first WC (often the Overview).
+            return workcenters[0].id;
         }
         return false;
     }

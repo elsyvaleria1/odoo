@@ -24,18 +24,11 @@ function isOdooPivotFormula(formula, getters) {
     return getters.getPivotCoreDefinition(pivotId).type === "ODOO";
 }
 
-//--------------------------------------------------------------------------
-// Autofill Component
-//--------------------------------------------------------------------------
 export class AutofillTooltip extends Component {
     static template = "spreadsheet_edition.AutofillTooltip";
     static props = { content: t.array() };
     props = useProps(this.constructor.props);
 }
-
-//--------------------------------------------------------------------------
-// Autofill Rules
-//--------------------------------------------------------------------------
 
 autofillRulesRegistry.add("autofill_pivot", {
     condition: (cell) =>
@@ -51,10 +44,6 @@ autofillRulesRegistry.add("autofill_pivot", {
     },
     sequence: 2,
 });
-
-//--------------------------------------------------------------------------
-// Autofill Modifier
-//--------------------------------------------------------------------------
 
 autofillModifiersRegistry.add("PIVOT_UPDATER", {
     apply: (rule, data, getters, direction) => {

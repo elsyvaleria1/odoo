@@ -13,12 +13,6 @@ const anchorSelector =
 const anchorExclude =
     ".modal *, .oe_structure .oe_structure *, [data-oe-type=html] .oe_structure *, .s_popup";
 
-/**
- * Anchor titles are usually taken from headings (h1–h6). Here, styled titles
- * often use utility classes instead, e.g. .h*-fs, .display-*-fs, .base-fs,
- * .o_small-fs. Including these ensures anchors reflect visible titles, even
- * when not using semantic <h*> tags.
- */
 const TITLE_SELECTOR =
     "h1, h2, h3, h4, h5, h6, .h1-fs, .h2-fs, .h3-fs, .h4-fs, .h5-fs, .h6-fs, .display-1-fs, .display-2-fs, .display-3-fs, .display-4-fs, .base-fs, .o_small-fs";
 
@@ -62,7 +56,6 @@ export class AnchorPlugin extends Plugin {
         ];
     }
 
-    // TODO check if no other way when doing popup options.
     isModal(element) {
         return element.classList.contains("modal");
     }
@@ -127,7 +120,6 @@ export class AnchorPlugin extends Plugin {
                     primary: true,
                     onClick: () => {
                         closeNotification();
-                        // Open the "rename anchor" dialog.
                         this.services.dialog.add(AnchorDialog, {
                             currentAnchorName: decodeURIComponent(element.id),
                             renameAnchor: async (anchorName) => {

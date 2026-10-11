@@ -12,8 +12,6 @@ export default class GroupedLineComponent extends LineComponent {
             this.qtyDemand &&
             this.qtyDone === this.qtyDemand
         ) {
-            // In case the line is tracked and has multiple sublines, we consider the line complete
-            // if it has enough quantity and all sublines with quantity has a lot.
             for (const subline of this.linesToDisplay) {
                 const lotName = subline.trace_id?.name || subline.lot_name;
                 if (this.model.getQtyDone(subline) && !lotName) {
@@ -56,8 +54,6 @@ export default class GroupedLineComponent extends LineComponent {
 
     get lotName() {
         if (!this.model.showReservedSns) {
-            // In case we don't display unscanned reserved lots, display it only
-            // if only one subline with a lot has some quantity done.
             if (this.linesToDisplay.length === 1) {
                 for (const line of this.linesToDisplay) {
                     const lotName = line.trace_id?.name || line.lot_name;

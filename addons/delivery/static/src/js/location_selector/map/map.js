@@ -20,7 +20,6 @@ export class Map extends Component {
         this.markers = [];
         this.mapRef = elementRef();
 
-        // Create the map.
         useLayoutEffect(
             () => {
                 this.leafletMap = L.map(this.mapRef.el, {
@@ -41,7 +40,6 @@ export class Map extends Component {
             () => [],
         );
 
-        // Update the size of the map.
         useLayoutEffect(
             () => {
                 this.leafletMap.invalidateSize();
@@ -49,7 +47,6 @@ export class Map extends Component {
             () => [this.props.locations],
         );
 
-        // Update the markers and center the map on the selected location.
         useLayoutEffect(
             (locations, selectedLocationId) => {
                 this.addMarkers(locations);
@@ -57,7 +54,6 @@ export class Map extends Component {
                     (l) => String(l.id) === selectedLocationId,
                 );
                 if (selectedLocation) {
-                    // Center the Map.
                     this.leafletMap.panTo(
                         [selectedLocation.latitude, selectedLocation.longitude],
                         { animate: true },
@@ -81,7 +77,6 @@ export class Map extends Component {
     addMarkers(locations) {
         for (const loc of locations) {
             const isSelected = String(loc.id) === this.props.selectedLocationId;
-            // Icon creation
             const iconInfo = {
                 className: isSelected
                     ? "o_location_selector_marker_icon_selected"
@@ -98,8 +93,6 @@ export class Map extends Component {
                 title: locations.indexOf(loc) + 1,
             });
 
-            // By default, the marker's zIndex is based on its latitude. This ensures the selected
-            // marker is always displayed on top of all others.
             if (isSelected) {
                 marker.setZIndexOffset(100);
             }

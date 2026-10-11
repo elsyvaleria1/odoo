@@ -6,10 +6,6 @@ import { useBus, useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/fields/standard_field_props";
 
 export class BarcodeHandlerField extends Component {
-    // The anchor is what lets the widget tell whether its own view is the one
-    // the user is looking at. Without it every mounted instance reacts to every
-    // scan -- a form behind a dialog would take the scan meant for the dialog,
-    // and be left dirty by it.
     static template = xml`<span class="d-none o_barcode_handler" t-ref="this.anchorRef"/>`;
     static props = { ...standardFieldProps };
     props = useProps(this.constructor.props);

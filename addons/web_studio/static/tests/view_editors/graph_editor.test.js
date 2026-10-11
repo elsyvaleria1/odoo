@@ -135,8 +135,6 @@ test("switching chart types in graph editor", async () => {
 test("open xml editor of graph component view and close it", async () => {
     serverState.debug = "1";
 
-    // the XML editor lazy loads its libs and its templates so its start
-    // method is monkey-patched to know when the widget has started
     const xmlEditorDef = new Deferred();
 
     patchWithCleanup(CodeEditor.prototype, {

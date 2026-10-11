@@ -6,7 +6,6 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { WithSearch } from "@web/search/with_search/with_search";
 
-// from record.js
 const defaultActiveField = { attrs: {}, options: {}, domain: "[]", string: "" };
 
 export class MrpDisplayAction extends Component {
@@ -156,11 +155,6 @@ export class MrpDisplayAction extends Component {
                 for (const [fName, fInfo] of Object.entries(fields)) {
                     fields[fName] = { ...defaultActiveField, ...fInfo };
                     delete fields[fName].context;
-                    // `related` from fields_get is the Python related-path string
-                    // (e.g. "move_id.product_uom_id"). getFieldsSpec treats any truthy
-                    // `related` as a sub-spec object {activeFields, fields} and would
-                    // crash on Object.keys(undefined). Real nested sub-specs are wired
-                    // explicitly in mrp_display.js; leaf related m2o only need display_name.
                     delete fields[fName].related;
                 }
 

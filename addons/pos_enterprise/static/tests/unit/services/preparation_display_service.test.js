@@ -115,7 +115,7 @@ describe("checkStateVisibility", () => {
             const state = store.data.models["pos.prep.state"].getAll()[0];
             state.timeToShow = 0;
             store.toggleTime("now");
-            store.toggleTime("tomorrow"); // force timeCheck to fail
+            store.toggleTime("tomorrow");
             const visible = store.checkStateVisibility(state);
             expect(visible).toBe(true);
         });
@@ -217,10 +217,8 @@ describe("checkStateVisibility", () => {
 
             const state = store.data.models["pos.prep.state"].getAll()[0];
 
-            // Matching category
             store.toggleCategory(state.categories[0]);
 
-            // Non-matching product
             const otherProduct = store.data.models["product.product"]
                 .getAll()
                 .find((p) => p.id !== state.product.id);

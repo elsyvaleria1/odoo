@@ -29,10 +29,6 @@ class ImageFormatOptionPlugin extends Plugin {
             }
         },
     };
-    /**
-     * Returns a list of valid formats for a given image or an empty list if
-     * there is no mimetypeBeforeConversion data attribute on the image.
-     */
     async computeAvailableFormats(img, computeMaxDisplayWidth) {
         const data = { ...img.dataset, ...(await loadImageInfo(img)) };
         if (!data.mimetypeBeforeConversion || shouldPreventGifTransformation(data)) {
@@ -66,8 +62,6 @@ class ImageFormatOptionPlugin extends Plugin {
             mimetypeBeforeConversion !==
             (this.config.defaultImageMimetype ?? "image/webp")
         ) {
-            // Avoid a key collision by subtracting 0.1 - putting the default image mimetype
-            // above the original format one of the same size.
             widths[maxWidth - 0.1] = [
                 _t("%spx", maxWidth),
                 this.config.defaultImageMimetype ?? "image/webp",

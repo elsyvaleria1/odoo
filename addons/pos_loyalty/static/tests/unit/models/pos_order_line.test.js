@@ -11,7 +11,6 @@ describe("pos.order.line - loyalty", () => {
         const models = store.models;
         const order = store.addNewOrder();
 
-        // Get loyalty program #2 - type = "ewallet"
         const program = models["loyalty.program"].get(2);
 
         const line = await addProductLineToOrder(store, order, {
@@ -26,9 +25,7 @@ describe("pos.order.line - loyalty", () => {
         const models = store.models;
         const order = store.addNewOrder();
 
-        // Get loyalty program #2 - type = "ewallet"
         const programA = models["loyalty.program"].get(2);
-        // Get loyalty program #4 - type = "ewallet"
         const programB = models["loyalty.program"].get(4);
 
         const line = await addProductLineToOrder(store, order);
@@ -41,7 +38,6 @@ describe("pos.order.line - loyalty", () => {
         const store = await setupPosEnv();
         const models = store.models;
 
-        // Get loyalty card #3 which program_id = 3 (gift_card)
         const card = models["loyalty.card"].get(3);
 
         const order = store.addNewOrder();

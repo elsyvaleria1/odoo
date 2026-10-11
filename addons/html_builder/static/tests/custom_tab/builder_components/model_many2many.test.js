@@ -72,7 +72,7 @@ test("model many2many: find tag, select tag, unselect tag", async () => {
     await contains(".btn.o-dropdown").click();
     expect("input").toHaveCount(1);
     await contains("input").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect("span.o-dropdown-item").toHaveCount(3);
     await contains("span.o-dropdown-item").click();
@@ -82,7 +82,7 @@ test("model many2many: find tag, select tag, unselect tag", async () => {
     expect("table tr").toHaveCount(1);
 
     await contains(".btn.o-dropdown").click();
-    await delay(300); // debounce
+    await delay(300);
     await animationFrame();
     expect("span.o-dropdown-item").toHaveCount(2);
     await contains("span.o-dropdown-item").click();

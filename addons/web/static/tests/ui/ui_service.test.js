@@ -666,7 +666,6 @@ test("destroy() removes isSmall rather than restoring makeEnv's throwing guard",
 
     env.services.ui.destroy();
 
-    // a late render during teardown must read undefined, not throw
     expect("isSmall" in env).toBe(false);
     expect(env.isSmall).toBe(undefined);
 });

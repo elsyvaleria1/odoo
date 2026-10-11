@@ -8,10 +8,8 @@ import { patch } from "@web/core/utils/patch";
 patch(PaymentForm.prototype, {
     setup() {
         super.setup();
-        this.stripeElements = {}; // Store the element of each instantiated payment method.
+        this.stripeElements = {};
     },
-
-    // #=== DOM MANIPULATION ===#
 
     /**
      * Prepare the inline form of Stripe for direct payment.
@@ -37,18 +35,15 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Check if instantiation of the element is needed.
         if (flow === "token") {
-            return; // No elements for tokens.
+            return;
         } else if (this.stripeElements[paymentOptionId]) {
-            this._setPaymentFlow("direct"); // Overwrite the flow even if no re-instantiation.
-            return; // Don't re-instantiate if already done for this provider.
+            this._setPaymentFlow("direct");
+            return;
         }
 
-        // Overwrite the flow of the select payment option.
         this._setPaymentFlow("direct");
 
-        // Extract and deserialize the inline form values.
         const radio = document.querySelector('input[name="o_payment_radio"]:checked');
         const inlineForm = this._getInlineForm(radio);
         const stripeInlineForm = inlineForm.querySelector(
@@ -58,14 +53,11 @@ patch(PaymentForm.prototype, {
             stripeInlineForm.dataset["stripeInlineFormValues"],
         );
 
-        // Instantiate Stripe object if needed.
         this.stripeJS ??= Stripe(
             this.stripeInlineFormValues["publishable_key"],
-            // The values required by Stripe Connect are inserted into the dataset.
             new StripeOptions()._prepareStripeOptions(stripeInlineForm.dataset),
         );
 
-        // Instantiate the elements.
         const elementsOptions = {
             appearance: { theme: "stripe" },
             currency: this.stripeInlineFormValues["currency_name"],
@@ -90,7 +82,6 @@ patch(PaymentForm.prototype, {
         }
         this.stripeElements[paymentOptionId] = this.stripeJS.elements(elementsOptions);
 
-        // Instantiate the payment element.
         const paymentElementOptions = {
             defaultValues: {
                 billingDetails: this.stripeInlineFormValues["billing_details"],
@@ -112,10 +103,9 @@ patch(PaymentForm.prototype, {
             'input[name="o_payment_tokenize_checkbox"]',
         );
         if (tokenizationCheckbox) {
-            // Display tokenization-specific inputs when the tokenization checkbox is checked.
             this.stripeElements[paymentOptionId].update({
                 setupFutureUsage: tokenizationCheckbox.checked ? "off_session" : null,
-            }); // Force sync the states of the API and the checkbox in case they were inconsistent.
+            });
             tokenizationCheckbox.addEventListener("input", () => {
                 this.stripeElements[paymentOptionId].update({
                     setupFutureUsage: tokenizationCheckbox.checked
@@ -125,8 +115,6 @@ patch(PaymentForm.prototype, {
             });
         }
     },
-
-    // #=== PAYMENT FLOW ===#
 
     /**
      * Trigger the payment processing by submitting the elements.
@@ -141,12 +129,10 @@ patch(PaymentForm.prototype, {
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
         if (providerCode !== "stripe" || flow === "token") {
-            // Tokens are handled by the generic flow.
             await super._initiatePaymentFlow(...arguments);
             return;
         }
 
-        // Trigger form validation and wallet collection.
         try {
             await this.waitFor(this.stripeElements[paymentOptionId].submit());
         } catch (error) {

@@ -111,8 +111,6 @@ export class ShortCutPlugin extends Plugin {
         let blockEl = closestBlock(selection.anchorNode);
         const leftDOMPath = leftLeafOnlyNotBlockPath(selection.anchorNode);
         let spaceOffset = selection.anchorOffset;
-        // Offset of the beginning of the line the caret is on, within the
-        // block: everything after the closest line break to its left.
         let lineBreak;
         let lineOffset = 0;
         let leftLeaf = leftDOMPath.next().value;
@@ -138,8 +136,6 @@ export class ShortCutPlugin extends Plugin {
             );
             if (command && command.isAvailable(selection)) {
                 if (lineBreak) {
-                    // Isolate the line so that the command applies to it alone
-                    // and `blockEl.firstChild` below is the start of the line.
                     this.dependencies.split.splitBlockSegments();
                     blockEl = closestBlock(selection.anchorNode);
                 }

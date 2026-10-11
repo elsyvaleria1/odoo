@@ -9871,7 +9871,6 @@ test(`basic support for widgets: onchange update`, async () => {
             this.state = proxy({
                 dataToDisplay: this.props.record.data.foo,
             });
-            // tracked: the widget follows its record, which does not render it
             useEffect(() => {
                 const foo = this.props.record.data.foo;
                 untrack(() => {
@@ -10121,7 +10120,6 @@ test(`keep editing after call_button fail`, async () => {
     await contains(`button.child_ids`).click();
     expect.verifySteps(["web_save"]);
     expect.verifyErrors(["RPC_ERROR: Odoo Server Error"]);
-    // the failure is reported in a dialog, dismissed before editing goes on
     await contains(`.o_dialog .btn-close`).click();
 
     await contains(
@@ -10683,8 +10681,6 @@ test("resequence list lines when previous resequencing crashed", async () => {
     await animationFrame();
     expect.verifyErrors(["RPC_ERROR"]);
     expect(queryAllTexts(".o_list_char")).toEqual(["first line", "second line"]);
-    // the crash is reported in a dialog, dismissed before the next resequence;
-    // the drag aims at the row, so the dialog must have left first
     await contains(".o_dialog .modal-header button[aria-label='Close']").click();
     await waitForNone(".o_dialog");
 
@@ -12041,9 +12037,6 @@ test(`only re-render necessary fields after change`, async () => {
         "[Field foo] onMounted",
     ]);
 
-    // the widget itself patches only when the value it shows changes: the
-    // text typed is already in the input; the wrapper, only when its feedback
-    // (readonly, required, invalid, empty) does
     await contains(`.o_field_widget[name=foo] input`).edit("new value");
     expect.verifySteps([]);
 
@@ -13504,7 +13497,6 @@ test(`cached web_read - record stays dirty when revalidation lands after an edit
     expect(`.o_field_char input`).toHaveValue("yop");
 
     await contains(`.o_field_widget[name=foo] input`).edit("This is yop");
-    // the revalidation reports what the server now holds, so the server holds it
     MockServer.env["partner"].write([1], { foo: "new yop" });
     def.resolve([{ id: 1, foo: "new yop", display_name: "new first record" }]);
     await animationFrame();

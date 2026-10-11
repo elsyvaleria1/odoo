@@ -31,7 +31,6 @@ export class AvatarCardResourcePopover extends AvatarCardPopover {
     }
 
     loadAdditionalData() {
-        // To use when overriden in other modules to load additional data, returns promise(s)
         return [];
     }
 

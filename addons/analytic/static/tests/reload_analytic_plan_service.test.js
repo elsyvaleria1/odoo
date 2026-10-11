@@ -1,12 +1,5 @@
 // @ts-check
 
-/**
- * `reloadAnalyticPlan` reloads the action context when an analytic plan is
- * written, because views must pick up the field the plan just added. Same
- * `successOnly` reasoning as `stock_warehouse`, and the same total absence of
- * coverage while it hand-rolled the `rpcBus` decode.
- */
-
 import { beforeEach, describe, expect, test } from "@odoo/hoot";
 import { animationFrame } from "@odoo/hoot-mock";
 import { makeMockEnv, patchWithCleanup } from "@web/../tests/web_test_helpers";

@@ -27,7 +27,6 @@ export class ValuationChartAction extends Component {
                 [],
             );
             if (this.chartData.labels.length === 0) {
-                // no data, then use sample data
                 this.chartData = this.sampleData.getSampleData();
                 this.isSample = true;
             }

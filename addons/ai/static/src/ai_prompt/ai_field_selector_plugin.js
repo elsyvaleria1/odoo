@@ -43,7 +43,6 @@ export class AIFieldSelectorPlugin extends Plugin {
     }
 
     normalize(element) {
-        // make sure fields are always protected (could be added without this plugin)
         for (const fieldEl of element.querySelectorAll(AI_FIELD_SELECTOR)) {
             fieldEl.dataset.oeProtected = true;
         }

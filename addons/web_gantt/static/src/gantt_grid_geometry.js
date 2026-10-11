@@ -8,12 +8,6 @@ import { dateAddFixedOffset, diffColumn } from "./gantt_helpers.js";
  * @typedef {import("./gantt_ranges").Scale} Scale
  */
 
-/**
- * Date <-> grid column arithmetic for one range at one scale, with the
- * boundaries memoised: ten thousand pills over a month span only as many
- * distinct columns as the month has, and every boundary is a Temporal
- * allocation. Build a new one when the range or the scale changes.
- */
 export class GridGeometry {
     /**
      * @param {DateTime} globalStart
@@ -55,14 +49,6 @@ export class GridGeometry {
             stopDate,
             false,
         );
-        // Both indices are measured from `globalStart`, and subtracting them is
-        // NOT the same as diffing the two columns against each other. Where a
-        // DST transition removes midnight, `startOf(interval)` lands an hour
-        // late, and the diff reports the gap between two such boundaries as
-        // 0.9583 days -- which reached the grid as
-        // `grid-column: c39 / c39.958333333333334`, naming a line that does not
-        // exist. Measured against the boundary each time, every index is a
-        // whole number of columns and so is their difference.
         const index1 = this.columnIndexFromDate(column1);
         const index2 = this.columnIndexFromDate(column2);
         const firstCol = 1 + index1 * cellPart + delta1;

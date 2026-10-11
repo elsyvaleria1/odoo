@@ -28,7 +28,6 @@ export class Meter extends Component {
             { upperLimit: 1, className: "text-success", text: _t("Strong") },
         ];
 
-        // Finding the appropriate strength range
         const { className, text } = strengthRanges.find(
             ({ upperLimit }) => this.value <= upperLimit,
         );

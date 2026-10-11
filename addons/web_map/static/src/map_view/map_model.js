@@ -26,8 +26,6 @@ const DATE_GROUP_FORMATS = {
 
 const SERVER_DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
-// api.mapbox.com/directions refuses more than this and says so in the body:
-// "Too many coordinates; maximum number of coordinates is 25".
 const MAP_BOX_MAX_ROUTE_POINTS = 25;
 
 /**
@@ -59,17 +57,9 @@ export function hasCoordinates(partner) {
 
 let nextRevision = 1;
 
-/**
- * The state `load()` publishes, rebuilt from scratch on every load. It is
- * reactive from birth: geocoding keeps writing into it after the load that
- * published it, and a view follows those writes.
- */
 function makeMapData(metaData = {}) {
     const groupBy = metaData.groupBy || [];
     return proxy({
-        // Every load replaces `records` and `partners` with fresh objects, so
-        // a consumer holding on to the old ones is holding stale field values.
-        // Identity cannot say so through Owl's reactive proxy; this can.
         revision: nextRevision++,
         count: 0,
         fetchingCoordinates: false,
@@ -101,8 +91,6 @@ export class MapModel extends Model {
         this.coordinateFetchingTimeoutHandle = undefined;
         this.shouldFetchCoordinates = false;
         this.keepLast = new KeepLast();
-        // Separate from `keepLast`: geocoding also runs outside `load()` and
-        // must not cancel a record fetch that is still in flight.
         this.keepLastGeocoding = new KeepLast();
     }
     /**
@@ -118,9 +106,7 @@ export class MapModel extends Model {
             ...params,
         };
 
-        // remove the properties fields from the group by
         metaData.groupBy = (metaData.groupBy || []).filter((groupBy) => {
-            // properties fields are in the form `[propert_field_name].[property_entry_key]`
             const [fieldName] = groupBy.split(".");
             const field = metaData.fields[fieldName];
             return field?.type !== "properties";
@@ -145,16 +131,6 @@ export class MapModel extends Model {
 
         this.notify();
     }
-    /**
-     * Tells the model to stop fetching coordinates.
-     * In OSM mode, the model starts to fetch coordinates once every second after the
-     * model has loaded.
-     * This fetching has to be done every second if we don't want to be banned from OSM.
-     * There are typically two cases when we need to stop fetching:
-     * - when component is about to be unmounted because the request is bound to
-     *   the component and it will crash if we do so.
-     * - when calling the `load` method as it will start fetching new coordinates.
-     */
     stopFetchingCoordinates() {
         browser.clearTimeout(this.coordinateFetchingTimeoutHandle);
         this.coordinateFetchingTimeoutHandle = undefined;
@@ -203,7 +179,6 @@ export class MapModel extends Model {
         };
     }
 
-    /** How many of the loaded records are placed on the map right now. */
     get locatedRecordCount() {
         return this._getLocatedRecordCount(this.data);
     }
@@ -228,8 +203,6 @@ export class MapModel extends Model {
             context: this.metaData.context,
             orm: this.orm,
         });
-        // the resequence method modifies this.data.records before the resequence backend call
-        // we need to notify after the synchronous record change
         this.notify();
         const resequencedRecords = await resequenceProm;
         if (resequencedRecords.length) {
@@ -239,16 +212,10 @@ export class MapModel extends Model {
                 );
                 record[fieldName] = resequencedRecord[fieldName];
             }
-            // Only the leg order changed: addresses were geocoded by the load
-            // that produced these records and do not need fetching again.
             await this._loadRoute(this.metaData, this.data);
             this.notify();
         }
     }
-
-    //----------------------------------------------------------------------
-    // Protected
-    //----------------------------------------------------------------------
 
     /**
      * Adds the corresponding partner to a record.
@@ -277,7 +244,6 @@ export class MapModel extends Model {
     async _fetchData(metaData) {
         const data = makeMapData(metaData);
 
-        //case of empty map
         if (!metaData.resPartnerField) {
             return this.keepLast.add(Promise.resolve(data));
         }
@@ -287,7 +253,6 @@ export class MapModel extends Model {
             (name) => metaData.fields[name].type === "datetime",
         );
         for (const record of results.records) {
-            // convert date fields from UTC to local timezone
             for (const field of datetimeFields) {
                 if (record[field]) {
                     record[field] = formatValue(
@@ -659,16 +624,11 @@ export class MapModel extends Model {
         if (!data.useMapBoxAPI || !metaData.routing || data.groupByKey) {
             return;
         }
-        // A route needs two ends: geocoding above may just as well have found
-        // none, so the points are recomputed rather than carried from the load.
         const points = this._getRouteCoordinates(data);
         if (points.length < 2) {
             return;
         }
         if (points.length > MAP_BOX_MAX_ROUTE_POINTS) {
-            // The request would be refused, and the default `limit` is 80, so
-            // a routed map of any size reaches this. Say so without spending a
-            // call on an answer that is already known.
             data.routingError = _t("Too many routing points (maximum 25)");
             return;
         }
@@ -700,8 +660,8 @@ export class MapModel extends Model {
             case 403:
                 this._notifyMapBoxFallback(_t("Unauthorized connection"));
                 break;
-            case 422: // Max. addresses reached
-            case 429: // Max. requests reached
+            case 422:
+            case 429:
                 data.routingError = this._getErrorMessage(err.message);
                 break;
             default:
@@ -753,7 +713,6 @@ export class MapModel extends Model {
      * @returns {Promise}
      */
     async _geocodeWithOpenStreetMap(metaData, data) {
-        // Group partners by address so one request serves every partner sharing it.
         const partnersByAddress = new Map();
         for (const partner of this._getPartnersToGeocode(data)) {
             const address = partner.contact_address_complete;
@@ -763,15 +722,11 @@ export class MapModel extends Model {
             partnersByAddress.get(address).push(partner);
         }
 
-        // `fetchingCoordinates` is used to display the "fetching banner"
-        // We need to check if there are coordinates to fetch before reload the
-        // view to prevent flickering
         data.fetchingCoordinates = partnersByAddress.size > 0;
         this.shouldFetchCoordinates = true;
         const partnersList = [...partnersByAddress.values()];
         for (let i = 0; i < partnersList.length; i++) {
             if (i > 0) {
-                // Rate limit: only between requests, never before the first.
                 await new Promise((resolve) => {
                     this.coordinateFetchingTimeoutHandle = browser.setTimeout(
                         resolve,
@@ -846,8 +801,6 @@ export class MapModel extends Model {
                 data.useMapBoxAPI = false;
                 return this._startGeocodingWithOpenStreetMap(metaData, data);
             }
-            // Outside the catch above: a failure to store the coordinates is
-            // not a MapBox failure and must not switch the view's provider.
             return this._savePartnerCoordinates(metaData, data);
         }
         await this._startGeocodingWithOpenStreetMap(metaData, data);
@@ -868,9 +821,6 @@ export class MapModel extends Model {
         try {
             await this._writePartnerCoordinates(metaData, partners);
         } catch {
-            // The coordinates are already on screen; only the cache that
-            // spares the next load a round of geocoding is lost, so the map
-            // says so rather than failing to open.
             this.notification.add(
                 _t("The geocoded addresses could not be saved for next time."),
                 { type: "warning" },

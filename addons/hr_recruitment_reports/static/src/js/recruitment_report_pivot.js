@@ -26,7 +26,6 @@ export class RecruitmentReportPivotRenderer extends PivotRenderer {
             }
         });
 
-        // retrieve form and list view ids from the action
         const { views = [] } = this.config;
         this.views = ["list", "form"].map((viewType) => {
             const view = views.find((view) => view[1] === viewType);
@@ -36,9 +35,6 @@ export class RecruitmentReportPivotRenderer extends PivotRenderer {
         const group = { rowValues: cell.groupId[0], colValues: cell.groupId[1] };
 
         const domain = this.model.getGroupDomain(group);
-        // Any measure that doesn't use a sum aggregator will never make sense
-        // in a domain as you f.ex can't fetch a list of the the average
-        // of a set of records.
         if (this.model.metaData.measures[cell.measure].aggregator === "sum") {
             domain.unshift("&");
             domain.push([cell.measure, "=", true]);

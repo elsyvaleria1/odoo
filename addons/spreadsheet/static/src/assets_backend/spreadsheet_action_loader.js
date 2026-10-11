@@ -22,29 +22,15 @@ export function addSpreadsheetActionLazyLoader(actionName, path, displayName) {
     const actionLazyLoader = async (env, action) => {
         log.lifecycle("lazyLoad:start", { actionName });
         const endBundle = log.perf("loadBundle spreadsheet.o_spreadsheet");
-        // load the bundle which should redefine the action in the registry
         await loadBundle("spreadsheet.o_spreadsheet");
         endBundle({ actionName });
 
-        // loadBundle only guarantees the bundle's modules were evaluated, which
-        // merely *registers* the services they declare (e.g.
-        // spreadsheet_dashboard_loader). Starting them runs asynchronously
-        // afterwards, so without this await the action component below can mount
-        // and call useService(...) before the service exists — which throws and
-        // renders a blank action (notably: no dashboard ever shows). Force a
-        // full startup pass so the bundle's services are available first.
         const endServices = log.perf("startMissingServices");
         await startMissingServices(env);
         endServices({ actionName });
 
         if (actionRegistry.get(actionName) === actionLazyLoader) {
             log.logic("lazyLoad:actionNotRedefined", { actionName });
-            // At this point, the real spreadsheet client action should be loaded and have
-            // replaced this function in the action registry. If it's not the case,
-            // it probably means that there was a crash in the bundle (e.g. syntax
-            // error). In this case, this action will remain in the registry, which
-            // will lead to an infinite loop. To prevent that, we push another action
-            // in the registry.
             actionRegistry.add(
                 actionName,
                 () => {
@@ -55,7 +41,6 @@ export function addSpreadsheetActionLazyLoader(actionName, path, displayName) {
             );
         }
         log.lifecycle("lazyLoad:done", { actionName });
-        // then do the action again, with the actual definition registered
         return action;
     };
     if (path) {

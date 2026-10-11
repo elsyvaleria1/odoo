@@ -10,9 +10,6 @@ export class Many2ManyAttendeeExpandable extends Many2ManyAttendee {
     static template = "calendar.Many2ManyAttendeeExpandable";
     state = proxy({ expanded: false });
 
-    // Getters reading `props.record.data` directly rather than fields cached
-    // once in `setup()` -- the cached fields went stale if the record's data
-    // changed without the component remounting.
     get attendeesCount() {
         return this.props.record.data.attendees_count;
     }

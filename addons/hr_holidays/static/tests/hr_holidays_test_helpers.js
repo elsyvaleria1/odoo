@@ -9,8 +9,6 @@ import { registerMailMockRoutes } from "@mail/../tests/mock_server/mail_mock_ser
 import { defineModels, defineParams } from "@web/../tests/web_test_helpers";
 
 export function defineHrHolidaysModels() {
-    // Bind mail's mock-server routes to the calling suite; without this every
-    // /mail/* call in an hr_holidays test answers {}.
     registerMailMockRoutes();
     defineParams({ suite: "hr_holidays" }, "replace");
     return defineModels(hrHolidaysModels);

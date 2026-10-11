@@ -50,7 +50,7 @@ export function getAccountingData() {
     return {
         models: { ...getBasicData() },
         views: {
-            "account.move.line,false,list": /* xml */ `
+            "account.move.line,false,list": `
                     <list string="Move Lines">
                         <field name="id"/>
                         <field name="account_id"/>

@@ -87,8 +87,6 @@ function defineLazyGetterTrap(Class) {
 }
 
 function lazyComputed(obj, propName, compute) {
-    // read through the canonical proxy: the value it hands out is the same
-    // record another reader gets, and what it reads invalidates it
     const value = computed(() => compute(proxy(obj)), { detached: true });
     Object.defineProperty(obj, propName, {
         get() {

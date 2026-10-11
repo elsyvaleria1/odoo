@@ -17,7 +17,6 @@ registry.category("web_tour.tours").add("sale_subscription_product_configurator"
         },
         ...tourUtils.selectCustomer("Test Partner"),
         ...tourUtils.addProduct("Main product"),
-        // Assert that the default subscription prices and plans are correct.
         configuratorTourUtils.assertProductPrice("Main product", "5.00"),
         configuratorTourUtils.assertProductPriceInfo("Main product", "per week"),
         configuratorTourUtils.assertOptionalProductPrice("Optional product", "6.00"),
@@ -40,7 +39,6 @@ registry.category("web_tour.tours").add("sale_subscription_product_configurator"
             run: "click",
         },
         ...tourUtils.addProduct("Main product"),
-        // Assert that the selected subscription prices and plans are correct.
         configuratorTourUtils.assertProductPrice("Main product", "15.00"),
         configuratorTourUtils.assertProductPriceInfo("Main product", "per 2 months"),
         configuratorTourUtils.assertOptionalProductPrice("Optional product", "16.00"),
@@ -49,7 +47,6 @@ registry.category("web_tour.tours").add("sale_subscription_product_configurator"
             "per 2 months",
         ),
         ...configuratorTourUtils.saveConfigurator(),
-        // Don't end the tour with a form in edition mode.
         ...stepUtils.saveForm(),
     ],
 });

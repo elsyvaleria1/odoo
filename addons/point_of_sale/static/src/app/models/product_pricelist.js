@@ -29,9 +29,6 @@ export class ProductPricelist extends Base {
             items: this.item_ids.length,
             applicable: rules.length,
         }));
-        // Match product.pricelist.item ordering even after incremental inserts. The
-        // server orders categories by complete_name desc, which puts the deepest of a
-        // product's ancestor categories first.
         const depths = new Map(
             rules.map((rule) => [rule, categoryDepth(rule.categ_id)]),
         );

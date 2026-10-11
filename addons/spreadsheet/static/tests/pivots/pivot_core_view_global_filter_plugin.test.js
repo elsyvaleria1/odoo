@@ -8,7 +8,7 @@ defineSpreadsheetModels();
 
 test("getFiltersMatchingPivotArgs should returns correct value for each filter", async function () {
     const { model, pivotId } = await createSpreadsheetWithPivot({
-        arch: /* xml */ `
+        arch: `
                 <pivot>
                     <field name="product_id" type="col"/>
                     <field name="foo" type="row"/>

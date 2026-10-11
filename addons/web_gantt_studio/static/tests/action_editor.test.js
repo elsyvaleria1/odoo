@@ -8,9 +8,6 @@ describe.current.tags("desktop");
 
 defineStudioEnvironment();
 
-// Lives here and not in web_studio: gantt is offered by the action editor
-// because this module registers its editor, and a suite scoped to web_studio
-// alone builds from a bundle that has no gantt at all.
 test("add a gantt view", async () => {
     expect.assertions(5);
 

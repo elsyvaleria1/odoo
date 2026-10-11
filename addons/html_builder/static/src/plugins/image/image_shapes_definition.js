@@ -8,8 +8,6 @@ export const imageShapeDefinitions = {
             geometrics: {
                 label: _t("Geometrics"),
                 shapes: {
-                    // todo: find it's proper place when implementing
-                    // hovering an image without shape.
                     "html_builder/geometric/geo_square": {
                         transform: false,
                         isTechnical: true,

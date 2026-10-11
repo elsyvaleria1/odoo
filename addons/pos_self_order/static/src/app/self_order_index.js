@@ -45,7 +45,6 @@ export class selfOrderIndex extends Component {
         this.selfOrder = useSelfOrder();
         window.posmodel = this.selfOrder;
 
-        // Disable cursor on touch devices (required on IoT Box Kiosk)
         if (hasTouch()) {
             document.body.classList.add("touch-device");
         }

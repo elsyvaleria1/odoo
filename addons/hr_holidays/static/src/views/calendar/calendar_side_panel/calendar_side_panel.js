@@ -14,7 +14,6 @@ import { CalendarSidePanel } from "@web/views/calendar";
 
 import { TimeOffCalendarFilterSection } from "../filter_section/calendar_filter_section.js";
 
-// the cache hands back the same objects on a hit, already read
 export function readDate(value) {
     return isDateTimeValue(value) ? value : parseISO(value);
 }

@@ -13,11 +13,6 @@ import { useService } from "@web/core/utils/hooks";
 
 import { isEmptyFilterValue } from "../../helpers.js";
 
-/**
- * This component is used to display a list of all the global filters of a
- * spreadsheet/dashboard. It allows the user to select the values of the filters
- * and confirm or discard the changes.
- */
 export class FilterValuesList extends Component {
     static template = "spreadsheet_dashboard.FilterValuesList";
     static components = { FilterValue };
@@ -54,7 +49,6 @@ export class FilterValuesList extends Component {
 
     setGlobalFilterValue(node, value) {
         if (value == null && node.globalFilter.type !== "date") {
-            // preserve the operator.
             node.value = {
                 ...node.value,
                 ...getEmptyFilterValue(node.globalFilter, node.value.operator),
@@ -65,7 +59,7 @@ export class FilterValuesList extends Component {
     }
 
     getTranslatedFilterLabel(filter) {
-        return _t(filter.label); // Label is extracted from the spreadsheet json file
+        return _t(filter.label);
     }
 
     getOperators(filter) {

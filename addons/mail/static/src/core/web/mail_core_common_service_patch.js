@@ -13,9 +13,6 @@ patch(MailCoreCommon.prototype, {
         const { message_ids: messageIds, starred } = payload;
         super._handleNotificationToggleStar(payload, metadata);
         for (const id of messageIds) {
-            // the server flipped every listed message; the flip this tab made itself
-            // is counted already, and the message's own state cannot tell: a
-            // `mail.record/insert` sent just before carries it
             const pending = this.store.pendingStarToggles.get(id);
             const index = pending?.indexOf(starred) ?? -1;
             if (index !== -1) {

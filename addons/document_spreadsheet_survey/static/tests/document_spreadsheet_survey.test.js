@@ -72,12 +72,12 @@ test("See record is not present on wrong survey formulas", async function () {
     const root = cellMenuRegistry
         .getAll()
         .find((item) => item.id === "survey_see_record");
-    setCellContent(model, "A20", '=ODOO.SURVEY("NotASurveyId")'); // Invalid survey ID
+    setCellContent(model, "A20", '=ODOO.SURVEY("NotASurveyId")');
     setSelection(model, "A20");
     const env = { model };
     expect(root.isVisible(env)).toBe(false);
 
-    setCellContent(model, "A20", "=ODOO.SURVEY(25689)"); // Survey does not exist
+    setCellContent(model, "A20", "=ODOO.SURVEY(25689)");
     setSelection(model, "A20");
     expect(root.isVisible(env)).toBe(false);
 });

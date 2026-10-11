@@ -29,7 +29,6 @@ export async function getImageThumbnail(img, width, height) {
     canvas.width = scaledWidth;
     canvas.height = scaledHeight;
     const context = canvas.getContext("2d");
-    // JPEG has no alpha: a transparent pixel would come out black
     context.fillStyle = "#fff";
     context.fillRect(0, 0, scaledWidth, scaledHeight);
     context.drawImage(img, 0, 0, scaledWidth, scaledHeight);

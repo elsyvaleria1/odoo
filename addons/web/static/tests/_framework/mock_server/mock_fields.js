@@ -155,7 +155,6 @@ export const DEFAULT_FIELD_VALUES = {
     ...DEFAULT_STANDARD_FIELD_VALUES,
 };
 
-// a server-defined field can carry a type only its addon declares (a geometry)
 export function getDefaultFieldValue(type) {
     return Object.hasOwn(DEFAULT_FIELD_VALUES, type)
         ? DEFAULT_FIELD_VALUES[type]()

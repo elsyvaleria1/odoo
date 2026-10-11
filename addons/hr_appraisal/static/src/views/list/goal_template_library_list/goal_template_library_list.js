@@ -22,7 +22,6 @@ export class AppraisalGoalListController extends ListController {
                 tag: "soft_reload",
             });
         } else {
-            // To open employees selection
             const action = await this.orm.call(
                 "hr.appraisal.goal",
                 "action_select_employees",

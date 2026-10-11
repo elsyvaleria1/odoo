@@ -83,9 +83,6 @@ export class CohortRenderer extends Component {
         this.model.updateMetaData({ measure });
     }
 
-    /**
-     * Export cohort data in Excel file
-     */
     async downloadExcel() {
         const {
             title,
@@ -100,7 +97,7 @@ export class CohortRenderer extends Component {
         const data = {
             title: title,
             model: resModel,
-            interval_string: this.model.intervals[interval].toString(), // intervals are lazy-translated
+            interval_string: this.model.intervals[interval].toString(),
             measure_string: measures[measure].string,
             date_start_string: dateStartString,
             date_stop_string: dateStopString,

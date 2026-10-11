@@ -6,8 +6,6 @@ import { makeLazyLib } from "@web/core/lib/lazy_lib";
 
 const LEAFLET_CSS = "/web/static/lib/leaflet/leaflet.css";
 
-// the stylesheet travels with the module: a map drawn before it lands has no
-// pane positioning and its tiles stack in a column
 const leaflet = makeLazyLib(async () => {
     const [module] = await Promise.all([import("leaflet"), loadCSS(LEAFLET_CSS)]);
     return module;
@@ -32,7 +30,6 @@ export function loadLeaflet() {
     return leafletLoader.load();
 }
 
-/** How Leaflet is fetched; patchable in tests. */
 export const leafletLoader = {
     /** @returns {Promise<any>} */
     load: () => leaflet.load(),

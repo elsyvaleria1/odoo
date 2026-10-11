@@ -10,16 +10,10 @@ import { IotWebRtc } from "./iot_webrtc.js";
 
 const log = makeLogger("iot.http");
 
-/**
- * Class to handle IoT actions
- * The class is used to send actions to IoT devices and handle fallbacks
- * in case the request fails: it will try to send the request using
- * HTTP POST method and then using the websocket.
- */
 export class IotHttpService {
     longpollingFailedTimestamp = null;
     webRtcFailedTimestamp = null;
-    connectionStatus = "webrtc"; // webrtc, longpolling, websocket, offline
+    connectionStatus = "webrtc";
     connectionTypes = [
         this._webRtc.bind(this),
         this._longpolling.bind(this),
@@ -159,7 +153,6 @@ export class IotHttpService {
                     response?.result === false ||
                     response?.result?.status === "disconnected"
                 ) {
-                    // compat. v19.1+ IoT Boxes
                     onFailure({ status: "disconnected" }, deviceIdentifier, messageId);
                 }
             }
@@ -196,7 +189,7 @@ export class IotHttpService {
                 identifier,
                 {
                     device_identifiers: [deviceIdentifier],
-                    device_identifier: deviceIdentifier, // compatibility with v19.1+ IoT Boxes
+                    device_identifier: deviceIdentifier,
                     ...data,
                 },
                 messageId,
@@ -208,7 +201,7 @@ export class IotHttpService {
 
     async _attemptFallbacks({ iotBoxId, deviceIdentifier, data, onFailure }) {
         if (!["number", "string"].includes(typeof iotBoxId)) {
-            iotBoxId = iotBoxId[0]; // iotBoxId is the ``Many2one`` field, we need the actual ID
+            iotBoxId = iotBoxId[0];
         }
 
         if (!this.cachedIotBoxes[iotBoxId]) {
@@ -216,7 +209,6 @@ export class IotHttpService {
         }
         const { ip, identifier, version } = this.cachedIotBoxes[iotBoxId];
 
-        // if we target the box instead of a device, we want longpolling to handle action as messageType
         const messageType = deviceIdentifier === identifier ? data.action : undefined;
         const params = { ip, identifier, version, data, messageType, ...arguments[0] };
 
@@ -228,7 +220,6 @@ export class IotHttpService {
             }
         }
 
-        // If all the connection types failed, run the onFailure callback and remove the cached IoT Box data
         delete this.cachedIotBoxes[iotBoxId];
         this.connectionStatus = "offline";
         onFailure({ status: "disconnected" }, deviceIdentifier);
@@ -250,7 +241,6 @@ export class IotHttpService {
         onFailure = (...args) => this.onFailure(...args),
         messageId = null,
     ) {
-        // Attempt to listen for messages using the defined connection types
         await this._attemptFallbacks({
             iotBoxId,
             deviceIdentifier,
@@ -334,8 +324,6 @@ export const iotHttpService = {
         const action = iot.action.bind(iot);
         const onMessage = iot.onMessage.bind(iot);
 
-        // Expose only those functions to the environment
-        // status is a getter to have a reactive value
         return {
             post,
             action,

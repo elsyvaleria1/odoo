@@ -21,8 +21,6 @@ Object.assign(phoneFieldProps, {
     enableWhatsAppButton: t.boolean().optional(true),
 });
 
-// Factory: patch() mutates its extension to build the `super` chain, so each
-// call needs its own fresh object (applied to both the field and form descrs).
 const patchDescr = () => ({
     extractProps({ options }) {
         const props = super.extractProps(...arguments);

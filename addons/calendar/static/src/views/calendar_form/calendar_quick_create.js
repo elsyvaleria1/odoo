@@ -13,8 +13,6 @@ export const QUICK_CREATE_CALENDAR_EVENT_FIELDS = {
     stop_date: { type: "date" },
     stop: { type: "datetime" },
     allday: { type: "boolean" },
-    // the quick-create form keeps the recomputed duration in a hidden,
-    // force_save'd field; without it the full form reopens on the drag's
     duration: { type: "float" },
     partner_ids: { type: "many2many" },
     privacy: { type: "selection" },
@@ -61,17 +59,12 @@ export class CalendarQuickCreateFormController extends CalendarFormController {
         );
     }
 
-    /**
-     * This override makes it so that, after creating a calendar event through the activity buttons/widget
-     * on a record, the user is redirected back to the record they clicked the activity button on.
-     */
     async onRecordSaved(...args) {
         await super.onRecordSaved(...args);
         if (this.props.context.return_to_parent_breadcrumb) {
             const breadcrumb =
                 this.actionService.currentController.config.breadcrumbs.at(-2);
             if (breadcrumb) {
-                // todo guce postfreeze: make safer (knowledge macro system?)
                 breadcrumb.onSelected();
             }
         }

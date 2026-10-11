@@ -15,8 +15,6 @@ export const websitePageService = {
             mainObject: htmlEl.dataset.mainObject,
         }));
 
-        // read from <html> on each access: an in-place navigation
-        // (web.partial_navigation) changes the page without restarting services
         return {
             get context() {
                 return {

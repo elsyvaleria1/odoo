@@ -13,7 +13,6 @@ class OnlineAccountRadio extends RadioField {
 
         onMounted(async () => {
             this.state.balances = await this.loadData();
-            // Make sure the first option is selected by default.
             this.onChange(this.items[0]);
         });
     }
@@ -30,7 +29,6 @@ class OnlineAccountRadio extends RadioField {
     }
 
     isNegativeAmount(itemID) {
-        // An undefined balance compares false, which is the intended fallback.
         return this.state.balances?.[itemID]?.[1] < 0;
     }
 }

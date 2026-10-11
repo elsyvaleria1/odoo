@@ -134,7 +134,6 @@ test("apply custom action", async () => {
     await contains(":iframe .test-options-target").click();
     await contains(".we-bg-options-container .o_we_color_preview").click();
     await contains(".o-overlay-item [data-color='#FF0000']").click();
-    // Applied twice for hover (preview) and click (commit).
     expect.verifySteps([
         "load",
         "apply rgb(255, 0, 0)",
@@ -249,9 +248,9 @@ test("should apply transparent color if no color is defined", async () => {
     });
     expect(".o-overlay-item .o_hex_input").not.toHaveValue("#FFFFFF00");
     expect(":iframe .test-options-target").toHaveAttribute("data-color");
-    expect.verifySteps(["apply"]); // Preview
-    await contains(".options-container-header").click(); // Close the popover by clicking outside.
-    expect.verifySteps(["apply", "getValue"]); // Commit
+    expect.verifySteps(["apply"]);
+    await contains(".options-container-header").click();
+    expect.verifySteps(["apply", "getValue"]);
 });
 
 describe("Custom colorpicker: preview and commit", () => {
@@ -276,10 +275,6 @@ describe("Custom colorpicker: preview and commit", () => {
         );
     });
 
-    /****************************************
-     *************** POINTER ***************
-     ***************************************/
-
     test("should preview while modifying custom pickers with mouse", async () => {
         await setupHTMLBuilder(`<div class="test-options-target">b</div>`);
         await contains(":iframe .test-options-target").click();
@@ -292,20 +287,19 @@ describe("Custom colorpicker: preview and commit", () => {
             left: "50%",
         });
         expect(":iframe .test-options-target").toHaveAttribute("data-color");
-        expect.verifySteps(["apply"]); // Only once: preview
+        expect.verifySteps(["apply"]);
         await contains(".o-overlay-item .o_color_slider").click({
             top: "50%",
             left: "50%",
         });
-        expect.verifySteps(["apply"]); // Only once: preview
+        expect.verifySteps(["apply"]);
         await contains(".o-overlay-item .o_opacity_slider").click({
             top: "50%",
             left: "50%",
         });
-        expect.verifySteps(["apply"]); // Only once: preview
+        expect.verifySteps(["apply"]);
         expect(":iframe .test-options-target").toHaveAttribute("data-color");
-        // Make sure it was just a preview: close with escape
-        await press("escape"); // Undo preview
+        await press("escape");
         await animationFrame();
         expect(":iframe .test-options-target").not.toHaveAttribute("data-color");
     });
@@ -322,15 +316,12 @@ describe("Custom colorpicker: preview and commit", () => {
             left: "50%",
         });
         expect(":iframe .test-options-target").toHaveAttribute("data-color");
-        expect.verifySteps(["apply"]); // Only once: preview
-        await contains(".options-container-header").click(); // Close the popover by clicking outside.
-        expect.verifySteps(["apply"]); // Commit
+        expect.verifySteps(["apply"]);
+        await contains(".options-container-header").click();
+        expect.verifySteps(["apply"]);
         expect(":iframe .test-options-target").toHaveAttribute("data-color");
     });
 
-    /****************************************
-     *************** KEYBOARD ***************
-     ***************************************/
     const prepareKeyboardSetup = async () => {
         await setupHTMLBuilder(`<div class="test-options-target">b</div>`);
         await contains(":iframe .test-options-target").click();
@@ -341,7 +332,6 @@ describe("Custom colorpicker: preview and commit", () => {
         await press("Enter");
         await waitFor(".o-overlay-item .o_color_pick_area");
         expect(":iframe .test-options-target").not.toHaveAttribute("data-color");
-        // Press shift+tab until it gets to the colorpicker area.
         for (let i = 0; i < 5; i++) {
             await press("Tab", { shiftKey: true });
         }
@@ -352,22 +342,21 @@ describe("Custom colorpicker: preview and commit", () => {
         await prepareKeyboardSetup();
         await press("ArrowRight");
         await animationFrame();
-        expect.verifySteps(["apply"]); // Preview
+        expect.verifySteps(["apply"]);
         await press("ArrowDown");
         await animationFrame();
-        expect.verifySteps(["apply"]); // Preview
+        expect.verifySteps(["apply"]);
         expect(":iframe .test-options-target").toHaveAttribute("data-color");
-        await press("Tab"); // focus color slider
+        await press("Tab");
         expect(".o-overlay-item .o_color_slider .o_slider_pointer").toBeFocused();
         await press("ArrowUp");
         await animationFrame();
-        expect.verifySteps(["apply"]); // Preview
-        await press("Tab"); // focus opacity slider
+        expect.verifySteps(["apply"]);
+        await press("Tab");
         expect(".o-overlay-item .o_opacity_slider .o_opacity_pointer").toBeFocused();
         await press("ArrowDown");
         await animationFrame();
-        expect.verifySteps(["apply"]); // Preview
-        // Make sure it was just a preview: close with escape
+        expect.verifySteps(["apply"]);
         await press("escape");
         await animationFrame();
         expect(":iframe .test-options-target").not.toHaveAttribute("data-color");
@@ -377,14 +366,14 @@ describe("Custom colorpicker: preview and commit", () => {
         await prepareKeyboardSetup();
         await press("ArrowRight");
         await animationFrame();
-        expect.verifySteps(["apply"]); // Preview
+        expect.verifySteps(["apply"]);
         await press("ArrowDown");
         await animationFrame();
-        expect.verifySteps(["apply"]); // Preview
+        expect.verifySteps(["apply"]);
         expect(":iframe .test-options-target").toHaveAttribute("data-color");
-        await press("Enter"); // Validate
+        await press("Enter");
         await animationFrame();
-        expect.verifySteps(["apply"]); // Commit
+        expect.verifySteps(["apply"]);
         await press("escape");
         await animationFrame();
         expect(":iframe .test-options-target").toHaveAttribute("data-color");

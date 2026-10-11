@@ -19,7 +19,6 @@ export class MediaWebsitePlugin extends Plugin {
     /** @type {import("plugins").BuilderResources} */
     resources = {
         on_replaced_media_handlers: ({ newMediaEl }) =>
-            // Activate the new media options.
             this.dependencies.builderOptions.setNextTarget(newMediaEl),
         on_snippet_dropped_handlers: this.onSnippetDropped.bind(this),
     };
@@ -62,8 +61,6 @@ export class MediaWebsitePlugin extends Plugin {
      * @returns {Boolean}
      */
     isReplaceableMedia(targetEl) {
-        // For a media to be editable, the base case is to be in a
-        // container whose content is editable.
         let isEditable = targetEl.parentElement?.isContentEditable;
 
         if (!isEditable && targetEl.classList.contains("o_editable_media")) {
@@ -109,7 +106,6 @@ export class MediaWebsitePlugin extends Plugin {
      * @param {HTMLElement} mediaEl the media element
      */
     openImageTooltip(mediaEl) {
-        // Remove the displayed tooltip if any first.
         this.removeCurrentTooltip();
         this.removeCurrentTooltip = this.popover.add(mediaEl, Tooltip, {
             tooltip: _t("Double-click to edit"),

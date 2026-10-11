@@ -80,8 +80,6 @@ test("in a form view", async () => {
 
 test("the mismatch label shows the wall clock of the record's offset", async () => {
     mockDate("2026-09-28 12:00:00", -6);
-    // boot/start.js sets the default zone to the session user's, which is
-    // neither the browser's nor necessarily the record's
     patchWithCleanup(dateSettings, { timeZone: "Europe/Brussels" });
     Localization._records = [{ id: 1, country: "belgium", tz_offset: "+0900" }];
     await mountView({

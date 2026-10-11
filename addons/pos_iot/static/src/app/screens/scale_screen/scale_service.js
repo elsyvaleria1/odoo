@@ -39,7 +39,7 @@ patch(PosScaleService.prototype, {
                 identifier,
                 { action: "read_once" },
                 callback,
-                () => {}, // avoid timeout notification
+                () => {},
             );
         });
     },
@@ -59,7 +59,6 @@ patch(PosScaleService.prototype, {
             }
         };
         this.iotHttpService.onMessage(iotId, identifier, callback, () => {});
-        // there is not always an event waiting in the iot, so we trigger one
         this.iotHttpService.action(
             iotId,
             identifier,
@@ -75,8 +74,6 @@ patch(PosScaleService.prototype, {
         } else if (data.status.status === "connected" || data.status === "success") {
             return data.result || 0;
         }
-        // else, do nothing to avoid data.status === "error"
-        // corresponding to timeout because weight did not change
         return this.weight;
     },
 

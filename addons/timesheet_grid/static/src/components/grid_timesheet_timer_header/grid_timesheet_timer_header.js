@@ -72,7 +72,6 @@ export class GridTimesheetTimerHeader extends Component {
         const secondsElapsed = this.timerService.timer.toSeconds;
         if (timesheet.isNew) {
             if (changes.project_id || changes.task_id) {
-                // create the timesheet when the project is set
                 timesheet.save({ reload: false }).then(() => {
                     this.timerService.updateTimerState(timesheet);
                     this.props.updateTimesheet(
@@ -81,7 +80,6 @@ export class GridTimesheetTimerHeader extends Component {
                     );
                 });
             }
-            // Nothing to do since because a timesheet cannot be created without a project set or it is not a manual change.
             return;
         }
         if (
@@ -91,7 +89,7 @@ export class GridTimesheetTimerHeader extends Component {
                 this.props.model.data.timer.description === "/") ||
                 this.props.model.data.timer.name === "/")
         ) {
-            return; // nothing to do
+            return;
         }
         this.timerService.updateTimerState(timesheet);
         this.props.updateTimesheet(this.timerService.timerState.data);

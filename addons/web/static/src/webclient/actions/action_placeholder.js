@@ -13,14 +13,6 @@ const log = makeLogger("web.action.placeholder");
 
 /** @import { ActionPlaceholderInfo } from "./action_service.js" */
 
-/**
- * Covers the outgoing controller with the incoming one's skeleton, but only
- * once loading feedback is due and the incoming one is still not on screen.
- *
- * It is a sibling of the action container, not a child: a render waits for
- * the renders its ancestors have in flight, and the container's is the very
- * one the placeholder stands in for.
- */
 export class ActionPlaceholder extends Component {
     static components = { Portal, SkeletonView };
     static props = {};
@@ -82,16 +74,11 @@ export class ActionPlaceholder extends Component {
         });
         /** @param {boolean} trustsClaim */
         const showUnlessOnScreen = (trustsClaim) => {
-            // a controller that was ready by the deadline mounts in a frame
-            // already scheduled: asking one frame later lets it win
             this.frame = browser.requestAnimationFrame(() => {
                 if (!isWatched()) {
                     return;
                 }
                 if (trustsClaim && placeholder.isClaimed()) {
-                    // a view about to paint its own chrome gets the time to
-                    // do it, once: its claim is made before its libraries and
-                    // its children are known to be ready
                     log.pipeline("claimed", () => ({ viewType: placeholder.viewType }));
                     this.timer = browser.setTimeout(
                         () => showUnlessOnScreen(false),
@@ -112,10 +99,6 @@ export class ActionPlaceholder extends Component {
         this.timer = browser.setTimeout(() => showUnlessOnScreen(true), delay);
     }
 
-    /**
-     * The controller under the placeholder is out of sight, so it is taken
-     * out of reach too: no hotkey, focus or click lands on what is not shown.
-     */
     cover() {
         const outgoing = document.querySelector(".o_action_manager > .o_action");
         if (outgoing && !outgoing.hasAttribute("inert")) {

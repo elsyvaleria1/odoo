@@ -339,8 +339,6 @@ export function useSyncedInputProperty(
         }
         return true;
     };
-    // what sync reads is tracked: a component whose template does not read the
-    // value is not re-rendered, hence not patched, when only the value changed
     useEffect(() => {
         sync();
     });

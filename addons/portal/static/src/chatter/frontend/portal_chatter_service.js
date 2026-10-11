@@ -91,8 +91,6 @@ export const portalChatterService = {
         portalChatter.initialize(env).catch((error) => {
             odoo.portalChatterReady.resolve(false);
             if (error instanceof ConnectionLostError) {
-                // the connection handlers own a lost or cut transport; a
-                // request interrupted by navigating away is the usual one
                 throw error;
             }
             console.error("Portal chatter failed to initialize", error);

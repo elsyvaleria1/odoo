@@ -49,11 +49,7 @@ function roundHalfAwayFromZero(value) {
 }
 
 const EPSILON_SCALE = 2 ** -50;
-// Past 2**47 the epsilon grows beyond an eighth of a step and the float's own
-// representation error can fake a tie: the float stops telling real digits from
-// noise, so the shortest decimal that round-trips to it is rounded instead.
 const EXACT_THRESHOLD = 2 ** 47;
-// a double round-trips any decimal of at most this many significant digits
 const FAITHFUL_DIGITS = 15;
 
 /**
@@ -221,8 +217,6 @@ export function roundPrecision(value, precision, method = "HALF-UP") {
             Math.abs(value) !== tie(magnitude, roundingFactor, inverted)) &&
         significantDigits(value) <= FAITHFUL_DIGITS
     ) {
-        // the epsilon decided it, but the float spells a decimal off the
-        // boundary: a real digit, not arithmetic noise, so round that instead
         return roundExact(value, precision, method);
     }
     return result === 0 ? 0 : result;
@@ -305,7 +299,6 @@ export function humanNumber(number, options = {}) {
         if (s <= number / minMagnitude) {
             number = Math.round((number * d2) / s) / d2;
             if (i < unitSymbols.length && number >= 1000 * minMagnitude) {
-                // rounding carried into the next unit: 999_999 is "1M", not "1,000k"
                 log.logic("humanNumber carried into the next unit", () => ({
                     rounded: number,
                     from: unitSymbols[i - 1],

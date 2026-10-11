@@ -59,7 +59,6 @@ export class DocumentsDropZone extends Component {
             : "o_documents_drop_over_unauthorized";
     }
 
-    /** Both: the folder, so the class, may have changed while the files hovered. */
     _clearDropOver() {
         this.root?.el?.classList.remove(
             "o_documents_drop_over",
@@ -82,7 +81,6 @@ export class DocumentsDropZone extends Component {
     onDragLeave(ev) {
         ev.stopPropagation();
         ev.preventDefault();
-        // leaving a card for the next one is not leaving the view
         if (ev.relatedTarget && this.root?.el?.contains(ev.relatedTarget)) {
             return;
         }

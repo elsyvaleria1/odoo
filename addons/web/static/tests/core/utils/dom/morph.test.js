@@ -218,8 +218,6 @@ test("a string of any kind is refused: the caller parses what it trusts", () => 
     const target = mount(`<div>safe</div>`);
     const html = "<img src=x onerror=alert(1)>";
 
-    // a plain string, a translated one (_t returns a String subclass) and
-    // owl's Markup alike
     for (const content of [html, new String(html), markup(html)]) {
         expect(() => morph(target, /** @type {any} */ (content))).toThrow(TypeError);
     }

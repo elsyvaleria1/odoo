@@ -90,8 +90,6 @@ for (const widgetName of ["selection", "radio", "selection_badge", "statusbar"])
             /** @type {any} */
             const value = controller.model.root.data.choice;
             expect(value.display_name).toBe("Option 150");
-            // The mobile statusbar collapses to a toggler. Both layouts need
-            // the current label in the options used by getCurrentLabel().
             expect(".o_statusbar_status").toHaveText(/Option 150/);
         }
     });
@@ -141,7 +139,6 @@ test("reference model lookup does not stamp a model selected after its request",
     expect(requested.includes(3)).toBe(true);
 });
 
-// Include this file in normal mobile-lane discovery.
 test.tags("mobile");
 test("the selected status remains available in the collapsed mobile statusbar", async () => {
     patchWithCleanup(StatusBarField, { RELATION_LIMIT: 2 });

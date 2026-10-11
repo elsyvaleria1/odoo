@@ -9,10 +9,8 @@ import { patch } from "@web/core/utils/patch";
 patch(PaymentForm.prototype, {
     setup() {
         super.setup();
-        this.xenditData = {}; // Store the form and public key of each instantiated Card method.
+        this.xenditData = {};
     },
-
-    // #=== DOM MANIPULATION ===#
 
     /**
      * Prepare the inline form of Xendit for direct payment.
@@ -38,18 +36,15 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Check if instantiation of the inline form is needed.
         if (flow === "token") {
-            return; // No inline form for tokens.
+            return;
         } else if (this.xenditData[paymentOptionId]) {
-            this._setPaymentFlow("direct"); // Overwrite the flow even if no re-instantiation.
-            return; // Don't re-extract the data if already done for this payment method.
+            this._setPaymentFlow("direct");
+            return;
         }
 
-        // Overwrite the flow of the selected payment method.
         this._setPaymentFlow("direct");
 
-        // Extract and store the public key.
         const radio = document.querySelector('input[name="o_payment_radio"]:checked');
         const inlineForm = this._getInlineForm(radio);
         const xenditInlineForm = inlineForm.querySelector('[name="o_xendit_form"]');
@@ -58,12 +53,9 @@ patch(PaymentForm.prototype, {
             inlineForm: xenditInlineForm,
         };
 
-        // Load the SDK.
         await this.waitFor(loadJS("https://js.xendit.co/v1/xendit.min.js"));
         Xendit.setPublishableKey(this.xenditData[paymentOptionId].publicKey);
     },
-
-    // #=== PAYMENT FLOW ===#
 
     /**
      * Validate the form inputs before initiating the payment flow.
@@ -82,7 +74,6 @@ patch(PaymentForm.prototype, {
             flow === "token" ||
             paymentMethodCode !== "card"
         ) {
-            // Tokens are handled by the generic flow and other payment methods have no inline form.
             await super._initiatePaymentFlow(...arguments);
             return;
         }
@@ -90,7 +81,6 @@ patch(PaymentForm.prototype, {
         const formInputs = this._xenditGetInlineFormInputs(paymentOptionId);
         const details = this._xenditGetPaymentDetails(paymentOptionId);
 
-        // Set custom validity messages on inputs based on Xendit's feedback.
         Object.keys(formInputs).forEach((el) => formInputs[el].setCustomValidity(""));
         if (!Xendit.card.validateCardNumber(details.card_number)) {
             formInputs["card"].setCustomValidity(_t("Invalid Card Number"));
@@ -105,9 +95,8 @@ patch(PaymentForm.prototype, {
             formInputs["cvn"].setCustomValidity(_t("Invalid CVN"));
         }
 
-        // Ensure that all inputs are valid.
         if (!Object.values(formInputs).every((element) => element.reportValidity())) {
-            this._enableButton(); // The submit button is disabled at this point, enable it.
+            this._enableButton();
             return;
         }
         await super._initiatePaymentFlow(...arguments);
@@ -138,17 +127,13 @@ patch(PaymentForm.prototype, {
         Xendit.card.createToken(
             {
                 ...this._xenditGetPaymentDetails(paymentOptionId),
-                // Allow reusing tokens when the transaction should be tokenized.
                 is_multiple_use: processingValues["should_tokenize"],
                 amount: processingValues["rounded_amount"],
             },
             async (err, token) => {
-                // if any errors are reported, immediately report it
                 if (err) {
                     this._xenditHandleResponse(err, token, processingValues, "");
                 }
-                // For multiple use tokens, we have to create an authentication first before
-                // charging.
                 if (processingValues["should_tokenize"]) {
                     Xendit.card.createAuthentication(
                         {
@@ -191,8 +176,7 @@ patch(PaymentForm.prototype, {
             let errMessage = err.message;
 
             if (err.error_code === "API_VALIDATION_ERROR") {
-                // Invalid user input
-                errMessage = err.errors[0].message; // Wrong field format
+                errMessage = err.errors[0].message;
             }
             this._displayErrorDialog(_t("Payment processing failed"), errMessage);
             this._enableButton();
@@ -203,15 +187,12 @@ patch(PaymentForm.prototype, {
                 reference: processingValues.reference,
                 partner_id: processingValues.partner_id,
             };
-            // Verified state could come from either authorization or tokenization. If it comes from
-            // authentication, we must pass auth_id.
             if (mode === "auth") {
                 Object.assign(payload, {
                     token_ref: token.credit_card_token_id,
                     auth_id: token.id,
                 });
             } else {
-                // 'token'
                 payload["token_ref"] = token.id;
             }
             try {
@@ -240,8 +221,6 @@ patch(PaymentForm.prototype, {
             window.open(token.payer_authentication_url, "authorization-form");
         }
     },
-
-    // #=== GETTERS ===#
 
     /**
      * Return all relevant inline form inputs of the provided payment option.

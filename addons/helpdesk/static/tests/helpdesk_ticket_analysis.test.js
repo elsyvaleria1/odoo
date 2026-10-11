@@ -47,17 +47,17 @@ class HelpdeskTicketReportAnalysis extends models.Model {
         },
     ];
     _views = {
-        graph: /* xml */ `
+        graph: `
             <graph string="Tickets Analysis" sample="1" js_class="helpdesk_ticket_analysis_graph">
                 <field name="team_id"/>
             </graph>
         `,
-        pivot: /* xml */ `
+        pivot: `
             <pivot string="Tickets Analysis" display_quantity="1" sample="1" js_class="helpdesk_ticket_analysis_pivot">
                 <field name="team_id"/>
             </pivot>
         `,
-        cohort: /* xml */ `
+        cohort: `
             <cohort
                 string="Tickets Analysis"
                 date_start="create_date" date_stop="close_date" interval="week"
@@ -68,9 +68,9 @@ class HelpdeskTicketReportAnalysis extends models.Model {
 }
 helpdeskModels.HelpdeskTicketReportAnalysis = HelpdeskTicketReportAnalysis;
 helpdeskModels.HelpdeskTicket._views = {
-    form: /* xml */ `<form><field name="name"/></form>`,
-    list: /* xml */ `<list><field name="name"/></list>`,
-    search: /* xml */ `<search><field name="name"/></search>`,
+    form: `<form><field name="name"/></form>`,
+    list: `<list><field name="name"/></list>`,
+    search: `<search><field name="name"/></search>`,
 };
 defineHelpdeskModels();
 setupChartJsForTests();
@@ -104,7 +104,6 @@ test("helpdesk.ticket.report.analysis (graph): clicking on a bar leads to helpde
     expect(".o_list_renderer").toBeDisplayed({
         message: "Clicking on a bar should open a list view",
     });
-    // The model of the list view that is opened consequently should be "helpdesk.ticket"
     expect.verifySteps(["helpdesk.ticket.report.analysis", "helpdesk.ticket"]);
 });
 
@@ -124,7 +123,6 @@ test("helpdesk.ticket.report.analysis (pivot): clicking on a cell leads to helpd
     expect(".o_list_renderer").toBeDisplayed({
         message: "Clicking on a cell should open a list view",
     });
-    // The model of the list view that is opened consequently should be "helpdesk.ticket"
     expect.verifySteps(["helpdesk.ticket.report.analysis", "helpdesk.ticket"]);
 });
 
@@ -144,7 +142,6 @@ test("helpdesk.ticket.report.analysis (cohort): clicking on a cell leads to help
     expect(".o_list_renderer").toBeDisplayed({
         message: "Clicking on a row should open a list view",
     });
-    // The model of the list view that is opened consequently should be "helpdesk.ticket"
     expect.verifySteps(["helpdesk.ticket.report.analysis", "helpdesk.ticket"]);
 });
 
@@ -163,7 +160,7 @@ test("helpdesk.ticket.report.analysis : fix the domain, in case field is not pre
         { id: 2, ticket_id: 2, rating_last_value: 4 },
     ];
     HelpdeskTicketReportAnalysis._views = {
-        graph: /* xml */ `
+        graph: `
             <graph string="Tickets Analysis" sample="1" js_class="helpdesk_ticket_analysis_graph">
                 <field name="ticket_id"/>
                 <field name="rating_last_value"/>

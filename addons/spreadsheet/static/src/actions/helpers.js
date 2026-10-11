@@ -51,7 +51,6 @@ export async function navigateTo(env, actionXmlId, actionDescription, options) {
         };
     } finally {
         await actionService.doAction(
-            // clear empty keys
             JSON.parse(JSON.stringify(navigateActionDescription)),
             options,
         );

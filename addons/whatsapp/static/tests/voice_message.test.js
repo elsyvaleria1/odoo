@@ -60,7 +60,7 @@ test("make voice message in whatsapp", async () => {
     });
     await start();
     await openDiscuss(channelId);
-    await loadLamejs(); // simulated AudioProcess.process() requires lamejs fully loaded
+    await loadLamejs();
     await click(".o-mail-Composer button[title='More Actions']");
     await contains(".dropdown-item:contains('Voice Message')");
     await contains(".dropdown-item:contains('Attach Files')");
@@ -69,32 +69,16 @@ test("make voice message in whatsapp", async () => {
     await contains(".o-mail-VoiceRecorder", { text: "00 : 00" });
     await click(".o-mail-Composer button[title='More Actions']");
     await contains(".dropdown-item:contains('Stop Recording')");
-    await contains(".dropdown-item:contains('Attach Files')", { count: 0 }); // whatsapp allow only 1 attachment per message, including voice message
-    /**
-     * Simulate 10 sec elapsed.
-     * `patchDate` does not freeze the time, it merely changes the value of "now" at the time it was
-     * called. The code of click following the first `patchDate` doesn't actually happen at the time
-     * that was specified, but few miliseconds later (8 ms on my machine).
-     * The process following the next `patchDate` is intended to be between 10s and 11s later than
-     * the click, because the test wants to assert a 10 sec counter, and the two dates are
-     * substracted and then rounded down in the code (it means absolute values are irrelevant here).
-     * The problem with aiming too close to a 10s difference is that if the click is longer than
-     * the following process, it will round down to 9s.
-     * The problem with aiming too close to a 11s difference is that if the click is shorter than
-     * the following process, it will round down to 11s.
-     * The best bet is therefore to use 10s + 500ms difference.
-     */
+    await contains(".dropdown-item:contains('Attach Files')", { count: 0 });
     mockDate("2023-07-31 13:00:10.500");
-    // simulate some microphone data
     resources.audioProcessor.process([[new Float32Array(128)]]);
     await animationFrame();
     await contains(".o-mail-VoiceRecorder", { text: "00 : 10" });
     await click(".o-mail-Composer button[title='Stop Recording']");
     await contains(".o-mail-VoicePlayer");
-    // wait for audio stream decode + drawing of waves
     await voicePlayerDrawing;
     await contains(".o-mail-VoicePlayer button[title='Play']");
-    await contains(".o-mail-VoicePlayer canvas", { count: 2 }); // 1 for global waveforms, 1 for played waveforms
-    await contains(".o-mail-VoicePlayer", { text: "00 : 03" }); // duration of call-invitation_.mp3
-    await contains(".o-mail-Composer button[title='More Actions']", { count: 0 }); // cannot voice message nor upload files
+    await contains(".o-mail-VoicePlayer canvas", { count: 2 });
+    await contains(".o-mail-VoicePlayer", { text: "00 : 03" });
+    await contains(".o-mail-Composer button[title='More Actions']", { count: 0 });
 });

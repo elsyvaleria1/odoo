@@ -47,7 +47,6 @@ function serve(answer) {
     });
 }
 
-/** Records a native submission instead of letting it leave the test page. */
 function catchNativeSubmit() {
     const listener = (ev) => {
         if (!ev.defaultPrevented) {

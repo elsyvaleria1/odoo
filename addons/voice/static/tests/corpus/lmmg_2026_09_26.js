@@ -1,8 +1,5 @@
 // @ts-check
 
-// LMMG, 2026-09-26: what was said, on which screen, and what each local Whisper
-// model heard it as (speech_measure --transcripts). The barcode lines live in
-// stock_barcode_voice.
 export const LMMG_2026_09_26 = [
     {
         file: "c001.wav",

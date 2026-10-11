@@ -42,10 +42,6 @@ export class Digipad extends Component {
         onWillStart(() => this._fetchPackagingButtons());
     }
 
-    /**
-     * The record's quantity: what the buttons are enabled from. A copy taken in `setup`
-     * kept "0" and "-1" disabled after a quantity was typed.
-     */
     get quantity() {
         return this.props.record.data[this.props.fieldToEdit] || 0;
     }
@@ -76,8 +72,6 @@ export class Digipad extends Component {
         }
         return "btn-secondary text-success";
     }
-
-    // Private
 
     /**
      * The quantity typed in the field, which may not be in the record yet.
@@ -138,7 +132,6 @@ export class Digipad extends Component {
             }
             domain = [["id", "in", product_uoms[0].uom_ids]];
             if (this.quantityToFulfill) {
-                // Doesn't fetch packaging with a too high quantity.
                 domain.push(["factor", "<=", this.quantityToFulfill]);
             }
             this.state.packagingButtons = await this.orm.searchRead(
@@ -151,7 +144,6 @@ export class Digipad extends Component {
             this.state.packagingButtons = [];
         }
     }
-    // Handlers
 
     /**
      * Resets the field value to 0.

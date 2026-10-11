@@ -6,7 +6,6 @@ import { user } from "@web/core/user";
 import { session } from "@web/session";
 import { bannerRegistry } from "@web/webclient/banners/banner_stack";
 
-// `sysadmin.message` is set by hand: {message, warning_type: "user" | "admin"}
 /** @returns {string | null} */
 function sysadminMessage() {
     const { message, warning_type: audience } = session.sysadmin_message ?? {};

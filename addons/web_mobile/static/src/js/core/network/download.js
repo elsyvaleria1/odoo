@@ -10,10 +10,6 @@ download._download = async function (options) {
             options.csrf_token = odoo.csrf_token;
         }
         mobile.methods.downloadFile(options);
-        // There is no need to wait downloadFile because we delegate this to
-        // Download Manager Service where error handling will be handled correclty.
-        // On our side, we do not want to block the UI and consider the request
-        // as success.
         return Promise.resolve();
     } else {
         return _download.apply(this, arguments);

@@ -18,25 +18,20 @@ test("validSelection", async () => {
     const comp = await mountWithCleanup(PresetInfoPopup, {
         props: { callback: () => {} },
     });
-    // none
     preset.identification = "none";
     expect(Boolean(comp.validSelection)).toBe(true);
-    // name
     preset.identification = "name";
     expect(comp.validSelection).toBeEmpty();
     comp.state.name = "Good Person";
     expect(Boolean(comp.validSelection)).toBe(true);
-    // mail
     preset.mail_template_id = 21;
     expect(comp.validSelection).toBeEmpty();
     comp.state.email = "good.person@odoo.com";
     expect(Boolean(comp.validSelection)).toBe(true);
-    // slots
     preset.use_timing = true;
     expect(comp.validSelection).toBeEmpty();
     comp.state.selectedSlot = "2025-07-30 14:25:21";
     expect(Boolean(comp.validSelection)).toBe(true);
-    // Partner
     preset.identification = "address";
     expect(comp.validSelection).toBeEmpty();
     comp.state.phone = "+1987-654-3210";

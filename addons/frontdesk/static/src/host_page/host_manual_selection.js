@@ -49,8 +49,6 @@ export class HostManualSelection extends Component {
     }
 
     calculateLimit() {
-        // This function calculates the maximum number of host cards that can fit on the screen based on its size,
-        // font size, and the number of cards per row.
         let hostCardPerLine = 1;
         let fontSizeMultiplication = 1;
         let searchBarHeight = 0;

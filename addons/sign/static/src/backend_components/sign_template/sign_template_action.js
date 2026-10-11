@@ -49,9 +49,6 @@ export class SignTemplate extends Component {
         this.activityId = this.props.action.context.default_activity_id;
         this.signStatus = proxy({
             isTemplateChanged: false,
-            // isSignTemplateSaved is used as a flag to know if the template is saved or not.
-            // It is used to show a notification when the user tries to edit the uploaded document.
-            // It is set to true when the template is saved from the backend.
             isSignTemplateSaved: this.resModel === "sign.request" ? true : false,
             save: () => {},
             discardChanges: () => {},
@@ -89,14 +86,10 @@ export class SignTemplate extends Component {
                 ) {
                     await this.signStatus.save();
                     this.notification.add(_t("Saved"), { type: "success" });
-                }
-                // When the user clicks on "discard" from the status indicator, do not show the confirmation dialog.
-                else if (
+                } else if (
                     !this.signTemplate.active &&
                     !this.signStatus.isDiscardingChanges
                 ) {
-                    /* When user is directly sending a document for signing by clicking
-                    on the 'Send' or 'Sign Now' button from wizard, we don't want to show the confirmation dialog. */
                     const isSignRequest = await this.orm.searchCount(
                         "sign.request",
                         [["template_id", "=", this.signTemplate.id]],
@@ -133,7 +126,6 @@ export class SignTemplate extends Component {
             hasSignRequests: this.hasSignRequests,
             documents: this.state.documents,
             selectedDocumentId: this.state.selectedDocumentId,
-            /* Update callbacks binding for parent. */
             onEditTemplate: () => this.onEditTemplate(),
             updateCollapse: (id, value) => this.updateCollapse(id, value),
             updateSigners: this.updateSigners.bind(this),
@@ -180,13 +172,10 @@ export class SignTemplate extends Component {
     }
 
     waitForIframeToLoad() {
-        //TODO: this save methods does n rpc requests, where n is the number of documents.
-        //To bo optimized later.
         this.signStatus.save = async () => {
             const saveDocuments = this.state.documents
                 .filter((document) => !document.deleted)
                 .map((document) => document.iframe?.saveChangesOnBackend());
-            // Wait for all save operations to complete
             return Promise.all(saveDocuments);
         };
         let iframesLoaded = false;
@@ -204,7 +193,6 @@ export class SignTemplate extends Component {
                     this.templateID,
                 ])
                 .then((info) => {
-                    /* Make all signers collapsed when loading for the first time. */
                     const updatedInfo = info.map((item) => ({
                         ...item,
                         isCollapsed: true,
@@ -212,21 +200,17 @@ export class SignTemplate extends Component {
                         itemsCount: 0,
                     }));
 
-                    /* Make the last signer uncollapsed. */
                     if (updatedInfo.length > 0) {
                         updatedInfo[updatedInfo.length - 1].isCollapsed = false;
                     }
 
-                    /* Update signer's loaded information. */
                     this.updateSigners(updatedInfo);
                     this.state.nextId = this.state.signers.length;
 
-                    /* We must have at least one signer after load. */
                     if (updatedInfo.length === 0) {
                         this.pushNewSigner();
                     }
 
-                    /* Set callback for tracking number of items of each signer and load font. */
                     this.state.documents.forEach((document) => {
                         document.iframe.setFont(this.font);
                     });
@@ -284,8 +268,6 @@ export class SignTemplate extends Component {
     }
 
     updateCollapse(id, value) {
-        /* Make the signer with the matching id receive the new value,
-        and force all other signers to have its dropdown collapsed. */
         this.state.signers.forEach((signer) => {
             if (signer.id === id) {
                 signer.isCollapsed = value;
@@ -322,7 +304,6 @@ export class SignTemplate extends Component {
                     const saveDocuments = this.state.documents
                         .filter((document) => !document.deleted)
                         .map((document) => document.iframe?.saveChangesOnBackend());
-                    // Wait for all save operations to complete
                     return Promise.all(saveDocuments);
                 };
             };
@@ -426,9 +407,6 @@ export class SignTemplate extends Component {
         );
     }
 
-    /**
-     * Checks that user has group sign.manage_template_access for showing extra fields
-     */
     async checkManageTemplateAccess() {
         this.manageTemplateAccess = await user.hasGroup("sign.manage_template_access");
     }
@@ -545,7 +523,6 @@ export class SignTemplate extends Component {
                 confirm: async () => {
                     await this.onTemplateSaveClick();
                     if (this.signStatus.isTemplateChanged) {
-                        // If there is unsaved sign items, it will save the template before leaving.
                         await this.signStatus.save();
                     }
                     resolve(true);
@@ -563,7 +540,6 @@ export class SignTemplate extends Component {
     }
 
     async onUpdateDocument(documentId, file) {
-        /* Update document by duplicating and archiving the current template. */
         new Promise((resolve) => {
             this.dialog.add(ConfirmationDialog, {
                 title: _t("Replace Document"),

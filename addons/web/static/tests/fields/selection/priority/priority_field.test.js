@@ -91,7 +91,6 @@ for (const { stars, attrs, width, empty } of [
         if (width === null) {
             expect(contentWidth).toBeGreaterThan(79);
         } else {
-            // Column widths are floored after adding fractional cell padding.
             expect(Math.abs(contentWidth - width)).toBeLessThan(1.1);
         }
         expect(".o_priority_star").toHaveCount(empty ? 0 : stars);

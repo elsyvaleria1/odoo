@@ -45,9 +45,7 @@ class SafeKanbanRecord extends KanbanRecord {
         super.setup();
         this.safe = useSafeKanban();
     }
-    onGlobalClick() {
-        // prevent click handling by the component
-    }
+    onGlobalClick() {}
 }
 
 class _KanbanEditorRecord extends KanbanRecord {

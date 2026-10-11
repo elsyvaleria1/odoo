@@ -14,10 +14,7 @@ export class GoalTemplateDeleteConfirmationDialog extends ConfirmationDialog {
         title: ConfirmationDialog.props.title.optional(_t("Bye-bye, record!")),
         body: ConfirmationDialog.props.body.optional(deleteConfirmationMessage),
         confirmLabel: ConfirmationDialog.props.confirmLabel.optional(_t("Delete")),
-        cancel: ConfirmationDialog.props.cancel.optional(() => () => {
-            // `ConfirmationDialog` needs this prop to display the cancel
-            // button but we do nothing on cancel.
-        }),
+        cancel: ConfirmationDialog.props.cancel.optional(() => () => {}),
         cancelLabel: ConfirmationDialog.props.cancelLabel.optional(_t("No, keep it")),
     };
 }

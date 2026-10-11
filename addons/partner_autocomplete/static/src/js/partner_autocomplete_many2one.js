@@ -89,17 +89,12 @@ export class PartnerAutoCompleteMany2one extends Component {
             default_is_company: true,
         };
 
-        // Only real partner fields become defaults; enrichment bookkeeping
-        // (query/description/logo/error/…) is stripped first.
         const company = this.partnerAutocomplete.stripInternalKeys(data.company);
         for (const [key, val] of Object.entries(company)) {
             context["default_" + key] = val && val.id ? val.id : val;
         }
 
         if (data.logo) {
-            // `data.logo` is a URL (e.g. https://logo.clearbit.com/...), not
-            // base64 image bytes - the field name below is only where the
-            // default context key ends up, not what the value actually is.
             context.default_image_1920 = data.logo;
         }
 

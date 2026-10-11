@@ -7,10 +7,9 @@ import { AlertDialog } from "@web/ui/dialog";
 export class PaymentWorldline extends PaymentInterfaceIot {
     getPaymentData(uuid) {
         const paymentLine = this.pos.getOrder().getPaymentlineByUuid(uuid);
-        paymentLine.transaction_id = Math.floor(Math.random() * Math.pow(2, 32)); // 4 random bytes
+        paymentLine.transaction_id = Math.floor(Math.random() * Math.pow(2, 32));
         return {
             messageType: "Transaction",
-            // The last 13 characters of the uuid is a 52-bit integer, fits in the Number data type.
             TransactionID: parseInt(uuid.replace(/-/g, "").slice(19, 32), 16),
             cid: uuid,
             amount: Math.round(paymentLine.amount * 100),
@@ -36,7 +35,6 @@ export class PaymentWorldline extends PaymentInterfaceIot {
 
     onTerminalMessageReceived(data, line) {
         if (data.Stage === "Cancel") {
-            // Result of a cancel request
             if (data.Error) {
                 this._resolveCancellation?.(false);
                 this.env.services.dialog.add(AlertDialog, {
@@ -48,7 +46,6 @@ export class PaymentWorldline extends PaymentInterfaceIot {
                 this._resolvePayment?.(false);
             }
         } else if (data.Disconnected) {
-            // Terminal disconnected
             line.setPaymentStatus("force_done");
             this.env.services.dialog.add(AlertDialog, {
                 title: _t("Terminal Disconnected"),
@@ -57,7 +54,6 @@ export class PaymentWorldline extends PaymentInterfaceIot {
                 ),
             });
         } else if (line.payment_status !== "retry") {
-            // Result of a transaction
             if (data.Error) {
                 this.env.services.dialog.add(AlertDialog, {
                     title: _t("Payment terminal error"),

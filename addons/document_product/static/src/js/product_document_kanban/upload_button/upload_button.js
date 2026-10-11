@@ -18,12 +18,6 @@ export class UploadButton extends Component {
         this.uploadFileInputRef = elementRef();
         this.fileUploadService = useService("file_upload");
         this.notification = useService("notification");
-        // The file_upload bus is application-wide: it fires for every upload in
-        // the session, a chatter attachment elsewhere included. Reload only for
-        // the uploads this button started, identified by the FormData instance
-        // it filled in -- `buildFormData` runs before the request is sent, so
-        // the entry is always registered before the event can fire, and nothing
-        // is added to the payload (not every upload route takes **kwargs).
         this.ownUploads = new Set();
         useBus(this.fileUploadService.bus, "FILE_UPLOAD_LOADED", async (ev) => {
             if (!this.ownUploads.delete(ev.detail.upload?.data)) {
@@ -47,8 +41,6 @@ export class UploadButton extends Component {
                 buildFormData: (formData) => this.buildFormData(formData),
             });
         } finally {
-            // Reset the value so the same file may be selected twice -- also
-            // after a rejected upload, which otherwise looks like a dead button.
             input.value = "";
         }
     }

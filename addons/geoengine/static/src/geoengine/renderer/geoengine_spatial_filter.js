@@ -83,12 +83,6 @@ export function nearDomain(fieldName, ewkt, kilometres) {
     ]).toString();
 }
 
-/**
- * Filters the view's own records by place: inside an area drawn on the map,
- * inside what the map shows, or within a distance of a clicked point. Each
- * becomes a search facet, so it can be removed, combined and saved as a
- * favourite like any other filter; the server applies it as a geo domain.
- */
 export class GeoengineSpatialFilter {
     /**
      * @param {GeoengineRenderer} renderer
@@ -232,8 +226,6 @@ export class GeoengineSpatialFilter {
                               polygonEwkt(geometry.getCoordinates(), srid),
                           ),
                       ];
-            // The sketch is removed after the event: OpenLayers adds the
-            // feature to the source once its handlers return.
             setTimeout(() => this.stop());
             this._apply(description, domain);
         });

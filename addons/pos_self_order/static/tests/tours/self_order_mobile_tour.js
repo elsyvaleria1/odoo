@@ -326,14 +326,11 @@ registry.category("web_tour.tours").add("test_self_order_product_availability", 
         Utils.checkIsNoBtn("My Order"),
         Utils.clickBtn("Order Now"),
         LandingPage.selectLocation("Test-In"),
-        // Mark 'Combo Product 5' as unavailable and verify it shows as out of stock
         Utils.setProductAvailability("Combo Product 5", false),
         ProductPage.checkProductOutOfStock("Combo Product 5"),
         ProductPage.clickProduct("Office Combo"),
         ProductPage.clickComboProduct("Combo Product 4"),
         Utils.clickBtn("Add to cart"),
-        // Make 'Office Combo' unavailable and attempt payment
-        // Expect a dialog stating the product is no longer available and user is redirected to product page
         Utils.clickBtn("Checkout"),
         Utils.setProductAvailability("Office Combo", false),
         Utils.clickBtn("Order"),
@@ -341,8 +338,6 @@ registry.category("web_tour.tours").add("test_self_order_product_availability", 
             "It seems that Office Combo is no longer available. Please go back and edit your order.",
         ),
         Dialog.confirm("OK"),
-        // Add 'Combo Product 4' again and mark 'Combo Product 5' available, then unavailable after adding to cart
-        // Expect unavailable product dialog and user should remain on cart page to process remaining items
         ProductPage.clickProduct("Combo Product 4"),
         Utils.setProductAvailability("Combo Product 5", true),
         ProductPage.clickProduct("Combo Product 5"),
@@ -442,8 +437,6 @@ registry.category("web_tour.tours").add("test_self_order_table_sharing-each_mode
 registry.category("web_tour.tours").add("test_self_order_table_sharing-meal_mode", {
     steps: () =>
         [
-            // The table already holds an order and every device at the table
-            // shares it, so it is offered as this device's order too.
             Utils.checkBtn("My Order"),
             Utils.clickBtn("Order Now"),
             Utils.clickBtn("Checkout"),
@@ -508,7 +501,6 @@ registry.category("web_tour.tours").add("test_delete_mobile_order_from_backend",
             {
                 trigger: "body",
                 run: async () => {
-                    // Simulate mobile self-order deletion from the backend
                     await rpc(`/pos-self-order/test-delete-order-from-backend/`, {
                         order_ids: [posmodel.currentOrder.id],
                     });

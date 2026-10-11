@@ -99,7 +99,6 @@ export class MetricSettings extends Component {
                 this.state.failed = true;
                 return;
             }
-            // the saved favourite may be gone or out of reach
             if (!this.choice) {
                 this.state.filterId = this.state.choices[0]?.id ?? null;
             }

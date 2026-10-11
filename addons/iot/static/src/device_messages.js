@@ -2,21 +2,6 @@
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 
-/**
- * How to read the events a device type sends back, keyed by `iot.device.type`.
- *
- * A module that teaches the IoT Box about a device registers an entry here
- * rather than editing the device form, so the base app carries no vendor's
- * error codes. An entry may provide:
- *
- *   messages        error code -> human readable string
- *   defaultMessage  what a successful test reports
- *   normalize       rewrite an event before anything reads it, for a device
- *                   that reports failure somewhere other than `status`
- *
- * Registrants reach the category by name rather than importing this module, so
- * a driver module stays a leaf that any bundle can carry on its own.
- */
 export const deviceMessages = registry.category("iot_device_messages");
 
 export const PRINTER_MESSAGES = {

@@ -130,8 +130,6 @@ export const expectFormattedPrice = (value, expected) => {
 };
 
 export const dialogActions = async (action, steps = []) => {
-    // a second container would render a second copy of every dialog, each one
-    // making the other's container inert
     if (!queryFirst(".o-main-components-container")) {
         await mountWithCleanup(MainComponentsContainer);
     }

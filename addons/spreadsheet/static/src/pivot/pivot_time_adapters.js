@@ -17,43 +17,6 @@ const { pivotTimeAdapterRegistry } = registries;
 const { toNumber, toJsDate, toString } = helpers;
 const { DEFAULT_LOCALE } = constants;
 
-/**
- * The Time Adapter: Managing Time Periods for Pivot Functions
- * This is the extension of the one of o-spreadsheet to handle the normalization of
- * data received from the server. It also manage the increment of a date, used in
- * the autofill.
- *
- * Normalization Process:
- * When dealing with the server, the time adapter ensures that the received periods are
- * normalized before being stored in the datasource.
- * For example, if the server returns a day period as "2023-12-25 22:00:00," the time adapter
- * transforms it into the normalized form "12/25/2023" for storage in the datasource.
- *
- * Example:
- * To illustrate the normalization process, let's consider the day period:
- *
- * 1. The server returns a day period as "2023-12-25 22:00:00"
- * 2. The time adapter normalizes this period to "12/25/2023" for storage in the datasource.
- *
- * By applying the appropriate normalization, the time adapter ensures that the periods from
- * different sources are consistently represented and can be effectively utilized for lookup
- * operations in the datasource.
- *
- * Implementation notes/tips:
- * - Do not mix web client dates and spreadsheet dates in the same function. Timezones are not handled the same way.
- *   Spreadsheet dates are naive dates (no timezone) while web client dates (Temporal.ZonedDateTime) are timezone aware dates.
- *   **Don't do this**: fromJSDate(toJsDate(value)) (it will be interpreted as UTC)
- *
- * - spreadsheet formats and web client date formats are not the same but can be equivalent.
- *   For example: "MM/dd/yyyy" (web client format) is equivalent to "mm/dd/yyyy" (spreadsheet format)
- *
- * Limitations:
- * If a period value is provided as a **string** to a function, it will interpreted as being in the default locale.
- * e.g. in `PIVOT.VALUE(1, "amount", "create_date", "1/5/2023")`, the day is interpreted as being the 5th of January 2023,
- * even if the spreadsheet locale is set to French and such a date is usually interpreted as the 1st of May 2023.
- * The reason is PIVOT functions are currently generated without being aware of the spreadsheet locale.
- */
-
 function boundedOdooNumberDateAdapter(lower, upper) {
     return {
         normalizeServerValue(groupBy, field, readGroupResult) {
@@ -81,9 +44,6 @@ const odooDayAdapter = {
 
 const weekInputRegex = /\d{1,2}\/\d{4}/;
 
-/**
- * Normalized value: "2/2023" for week 2 of 2023
- */
 const odooWeekAdapter = {
     normalizeFunctionValue(value) {
         if (!weekInputRegex.test(value)) {
@@ -125,10 +85,6 @@ const odooWeekAdapter = {
     },
 };
 
-/**
- * normalized month value is a string formatted as "MM/yyyy" (web client date format)
- * e.g. "01/2020" for January 2020
- */
 const odooMonthAdapter = {
     normalizeServerValue(groupBy, field, readGroupResult) {
         const firstOfTheMonth = getGroupStartingDay(field, groupBy, readGroupResult);
@@ -152,18 +108,11 @@ function formatMonth(date) {
 
 const NORMALIZED_QUARTER_REGEXP = /^[1-4]\/\d{4}$/;
 
-/**
- * normalized quarter value is "quarter/year"
- * e.g. "1/2020" for Q1 2020
- */
 const odooQuarterAdapter = {
     normalizeFunctionValue(value) {
-        // spreadsheet normally interprets "4/2020" as the 1st April
-        // but it should be understood as a quarter here.
         if (typeof value === "string" && NORMALIZED_QUARTER_REGEXP.test(value)) {
             return value;
         }
-        // Any other value is interpreted as any date-like spreadsheet value
         const dateTime = toJsDate(value, DEFAULT_LOCALE);
         return `${dateTime.getQuarter()}/${dateTime.getFullYear()}`;
     },
@@ -207,10 +156,9 @@ const odooDayOfWeekAdapter = {
     normalizeServerValue(groupBy, field, readGroupResult, locale) {
         const fromLocaleIsZero =
             (7 - locale.weekStart + Number(readGroupResult[groupBy])) % 7;
-        return fromLocaleIsZero + 1; // 1-based
+        return fromLocaleIsZero + 1;
     },
     increment(normalizedValue, step) {
-        // day-of-week is 1-based (1-7): shift to 0-based before wrapping, then back.
         return ((((normalizedValue - 1 + step) % 7) + 7) % 7) + 1;
     },
 };
@@ -240,9 +188,6 @@ const odooSecondNumberAdapter = {
     },
 };
 
-/**
- * Decorate adapter functions to handle the empty value "false"
- */
 function falseHandlerDecorator(adapter) {
     return {
         normalizeServerValue(groupBy, field, readGroupResult, locale) {
@@ -343,9 +288,6 @@ function getGroupStartingDay(field, groupBy, group) {
  * parseServerWeekHeader(['2016-04-11', 'W15 2016']) // { week: 15, year: 2016 }
  */
 function parseServerWeekHeader(value) {
-    // Value is always formatted as "W15 2016", no matter the language.
-    // Parsing this formatted value is the only way to ensure we get the same
-    // locale aware week number as the one used in the server.
     const [week, year] = value[1].split(" ");
     return { week: Number(week.slice(1)), year: Number(year) };
 }

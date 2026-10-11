@@ -1,5 +1,4 @@
 /** @odoo-module native */
-// https://socket.io/docs/v4/engine-io-protocol/#protocol
 const PACKET_TYPES = {
     OPEN: "0",
     CLOSE: "1",
@@ -8,7 +7,6 @@ const PACKET_TYPES = {
     MESSAGE: "4",
 };
 
-// https://socket.io/docs/v4/socket-io-protocol/#exchange-protocol
 const MSG_TYPES = {
     CONNECT: "0",
     DISCONNECT: "1",
@@ -37,9 +35,6 @@ export class SocketIoService {
         this.callbacks = callbacks;
         this._reset();
 
-        // Chrome slows down our pings when the tab is inactive, causing the websocket
-        // to disconnect. Instead of this, we disconnect it ourselves when the tab
-        // loses focus, and reconnect once focus is restored.
         document.addEventListener("visibilitychange", () => {
             if (!this.websocket) {
                 return;

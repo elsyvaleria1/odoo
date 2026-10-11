@@ -9,8 +9,6 @@ import { renderToMarkup } from "@web/core/utils/render";
 /** @type {typeof import("jsvat") | undefined} loaded once, on first use */
 let jsvat;
 
-// Bookkeeping/enrichment-metadata keys the IAP payload carries that must never
-// be written onto a partner record nor turned into a `default_*` context key.
 const INTERNAL_KEYS = [
     "error",
     "error_message",
@@ -21,32 +19,15 @@ const INTERNAL_KEYS = [
     "unspsc_codes",
 ];
 
-/**
- * Autocomplete + enrichment for partner/company data, backed by the IAP DnB API.
- *
- * Exposes:
- *  - `autocomplete(value, queryCountryId)` — suggestions for a name/VAT/GST query.
- *  - `makeAutocompleteSource({...})` — a ready-to-use AutoComplete source spec,
- *    shared by the char and many2one widgets.
- *  - `getCreateData(company)` — enriched data + logo before populating a form.
- *  - `removeUselessFields` / `stripInternalKeys` — payload sanitizers.
- */
 export function usePartnerAutocomplete() {
     const keepLastOdoo = new KeepLast();
 
     const notification = useService("notification");
     const orm = useService("orm");
 
-    // Remember the last query that returned nothing, together with the country
-    // scope it was run under. The scope matters: an empty country-scoped result
-    // says nothing about a worldwide (queryCountryId === 0) search for the same
-    // prefix, so both parts must match before we skip the RPC.
-    let lastNoResults = null; // { query: string, countryId: number|false }
+    let lastNoResults = null;
 
     onWillStart(async () => {
-        // import() settles a task later even once the module is loaded, so the
-        // widgets after the first one must not await it again: a dialog opened
-        // on a suggestion would render a tick late
         jsvat ??= await import("jsvat");
     });
 
@@ -55,7 +36,6 @@ export function usePartnerAutocomplete() {
     }
 
     function isVATNumber(value) {
-        // jsvat validates the format and the check digits of an EU-style VAT
         return jsvat.checkVATNumber(sanitizeVAT(value));
     }
 
@@ -63,11 +43,11 @@ export function usePartnerAutocomplete() {
         let isGST = false;
         if (value && value.length === 15) {
             const allGSTinRe = [
-                /\d{2}[a-zA-Z]{5}\d{4}[a-zA-Z][1-9A-Za-z][Zz1-9A-Ja-j][0-9a-zA-Z]/, // Normal, Composite, Casual GSTIN
-                /\d{4}[A-Z]{3}\d{5}[UO]N[A-Z0-9]/, // UN/ON Body GSTIN
-                /\d{4}[a-zA-Z]{3}\d{5}NR[0-9a-zA-Z]/, // NRI GSTIN
-                /\d{2}[a-zA-Z]{4}[a-zA-Z0-9]\d{4}[a-zA-Z][1-9A-Za-z][DK][0-9a-zA-Z]/, // TDS GSTIN
-                /\d{2}[a-zA-Z]{5}\d{4}[a-zA-Z][1-9A-Za-z]C[0-9a-zA-Z]/, // TCS GSTIN
+                /\d{2}[a-zA-Z]{5}\d{4}[a-zA-Z][1-9A-Za-z][Zz1-9A-Ja-j][0-9a-zA-Z]/,
+                /\d{4}[A-Z]{3}\d{5}[UO]N[A-Z0-9]/,
+                /\d{4}[a-zA-Z]{3}\d{5}NR[0-9a-zA-Z]/,
+                /\d{2}[a-zA-Z]{4}[a-zA-Z0-9]\d{4}[a-zA-Z][1-9A-Za-z][DK][0-9a-zA-Z]/,
+                /\d{2}[a-zA-Z]{5}\d{4}[a-zA-Z][1-9A-Za-z]C[0-9a-zA-Z]/,
             ];
 
             isGST = allGSTinRe.some((re) => re.test(value));
@@ -125,7 +105,6 @@ export function usePartnerAutocomplete() {
         };
     }
 
-    /** A synthetic, selectable option that switches the search to worldwide. */
     function worldwideOption() {
         return {
             cssClass: "partner_autocomplete_dropdown_worldwide",
@@ -147,7 +126,6 @@ export function usePartnerAutocomplete() {
         return orm.call("res.partner", "enrich_by_duns", [company.duns]);
     }
 
-    /** Keep only the fields that exist on the target record (avoids "Field_changed"). */
     function removeUselessFields(company, fieldsToKeep) {
         const keep = new Set(fieldsToKeep);
         for (const field in company) {
@@ -158,7 +136,6 @@ export function usePartnerAutocomplete() {
         return company;
     }
 
-    /** Shallow copy of `company` without enrichment bookkeeping keys. */
     function stripInternalKeys(company) {
         const result = {};
         for (const [key, value] of Object.entries(company)) {
@@ -213,10 +190,6 @@ export function usePartnerAutocomplete() {
     async function getSuggestions(value, isVAT, queryCountryId) {
         const method = isVAT ? "autocomplete_by_vat" : "autocomplete_by_name";
 
-        // Optimization: if the search query starts with the same content as a previous query for
-        // which there was no results (under the same country scope), there won't be any results for
-        // the current query. E.g., if there is no results for query "abc123", there won't be any
-        // results for query "abc1234".
         if (
             !isVAT &&
             lastNoResults &&
@@ -235,12 +208,11 @@ export function usePartnerAutocomplete() {
         }
 
         for (const suggestion of suggestions) {
-            suggestion.query = value; // Save queried value (name, VAT) for later
+            suggestion.query = value;
             const parts = [];
             if (suggestion.city) {
                 parts.push(suggestion.city);
             }
-            // Show country name only if searching worldwide
             if (queryCountryId === 0 && suggestion.country_id?.display_name) {
                 parts.push(suggestion.country_id.display_name);
             }

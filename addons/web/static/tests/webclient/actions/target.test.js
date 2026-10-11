@@ -249,8 +249,6 @@ describe("new", () => {
         def.resolve();
         await promC;
         await animationFrame();
-        // the committed dialog is closed when the new one mounts, and leaves
-        // in the render that follows
         await animationFrame();
         expect(".o_technical_modal .slow_dialog_action").toHaveCount(1);
         expect(".o_technical_modal").toHaveCount(1);

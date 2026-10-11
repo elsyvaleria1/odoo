@@ -1,27 +1,23 @@
 /** @odoo-module native */
 export class BarcodeObject {
     constructor(rawValue) {
-        this.rawValue = rawValue; // Untouched barcode.
+        this.rawValue = rawValue;
 
-        this.parsedBarcode = undefined; // Barcode's value(s) once it has been parsed.
-        this.isParsed = false; // Flag to know if barcode was already parsed.
-        this.missingRecords = []; // Keep track of missing records (try to fetch them later.)
+        this.parsedBarcode = undefined;
+        this.isParsed = false;
+        this.missingRecords = [];
         this.isURN = Boolean(this.rawValue.match(/^urn:.*$/));
 
         if (this.parser) {
             try {
                 this.parsedBarcode = this.parser.parseBarcode(this.rawValue);
             } catch (err) {
-                // The barcode can't be parsed but the error is caught to fallback
-                // on the classic way to handle barcodes.
                 console.warn(
                     `Barcode ${this.rawValue} could not be parsed:`,
                     err.message,
                 );
             }
             if (this.parsedBarcode && !Array.isArray(this.parsedBarcode)) {
-                // Depending of the nomenclature, the parsed data is either an object,
-                // either an array of objects. Convert it into an array in all case.
                 this.parsedBarcode = [this.parsedBarcode];
             }
             this.isParsed = Boolean(this.parsedBarcode?.length);
@@ -29,14 +25,9 @@ export class BarcodeObject {
             console.warn("No parser set !");
         }
 
-        // Adds this instance into the raw barcode/barcode object mapping.
         BarcodeObject.mappingRawBarcodeToObject[rawValue] = this;
     }
 
-    /**
-     * Attach to the barcode record(s) already in the cache.
-     * For missing record(s), they need to be fetched afterward.
-     */
     async setRecords(options = false) {
         if (!this.isParsed) {
             return;
@@ -56,7 +47,6 @@ export class BarcodeObject {
         }
     }
 
-    // Getters
     get cache() {
         return BarcodeObject.__cache;
     }
@@ -69,7 +59,6 @@ export class BarcodeObject {
         return BarcodeObject.__parser;
     }
 
-    // Fetching methods
     async fetchTrackingNumber(lotBarcode, options) {
         const lot = await this.cache.getRecordByBarcode(
             lotBarcode,
@@ -109,7 +98,6 @@ export class BarcodeObject {
     }
 }
 
-// Static properties and methods.
 BarcodeObject.mappingRawBarcodeToObject = {};
 
 BarcodeObject.setEnv = (cache, parser) => {

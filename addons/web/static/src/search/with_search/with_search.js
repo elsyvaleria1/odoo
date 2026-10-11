@@ -106,8 +106,6 @@ export class WithSearch extends Component {
         });
 
         onWillStart(async () => {
-            // a declared prop the parent did not pass is an undefined key of
-            // the props view: the search model reads such a key as given
             const config = Object.fromEntries(
                 Object.entries(toRaw(this.props)).filter(
                     ([, value]) => value !== undefined,

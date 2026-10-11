@@ -21,25 +21,21 @@ class DropzonePlugin extends Plugin {
                 dropIn: ".o_mail_wrapper_td",
             },
             {
-                // table_column
                 selector: ".col>td, .col>th",
                 exclude: this.noOptionsSelector,
                 dropNear: ".col>td, .col>th",
             },
             {
-                // table_column_mv
                 selector: ".col_mv, td, th",
                 exclude: this.noOptionsSelector,
                 dropNear: ".col_mv, td, th",
             },
             {
-                // table_row
                 selector: "tr:has(> .row), tr:has(> .col_mv)",
                 exclude: this.noOptionsSelector,
                 dropNear: "tr:has(> .row), tr:has(> .col_mv)",
             },
             {
-                // content
                 selector:
                     ".note-editable > div:not(.o_layout), .note-editable .oe_structure > *, .oe_snippet_body",
                 exclude: this.noOptionsSelector,
@@ -48,15 +44,12 @@ class DropzonePlugin extends Plugin {
                 dropIn: "[data-oe-field='body_html']:not(:has(.o_layout)), .oe_structure",
             },
             {
-                // sizing_x
                 selector: ".row > div",
                 exclude:
                     ".o_mail_no_options, .s_col_no_resize.row > div, .s_col_no_resize",
                 dropNear: ".row:not(.s_col_no_resize) > div",
             },
         ],
-        // Prevent dropping as phrasingContent siblings (reduces the amount of drop zones for
-        // HR block).
         filter_for_sibling_dropzone_predicates: (el) => isPhrasingContent(el),
     };
 

@@ -77,10 +77,8 @@ test("When a call is created, a partner with a corresponding phone number is dis
     pyEnv["res.partner"].create({ name: "Maxime Randonnées", phone: phoneNumber });
     await start();
     await click(".o_menu_systray button[title='Show Softphone']");
-    // dropdown requires an extra delay before click (because handler is registered in useEffect)
     await contains("button span:contains('Keypad')");
     await click("button span:contains('Keypad')");
-    // ensure initial focusing is done before inserting text to avoid focus reset
     await contains(".o-voip-Dialer input:focus");
     await insertText(".o-voip-Dialer input:focus", phoneNumber);
     await triggerHotkey("Enter");

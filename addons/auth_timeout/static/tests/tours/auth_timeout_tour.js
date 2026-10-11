@@ -1,9 +1,6 @@
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 
-// Resolve the live product-module instance from the loader registry: test
-// files load via the import map only (not registerNativeModules), so a
-// static import here would bind a second, unshared instance of the module.
 const getPasskeyLib = () =>
     odoo.loader.modules.get("@auth_passkey/passkey_lib").passkeyLib;
 
@@ -26,18 +23,13 @@ const patchPasskey = {
                 return { id: "foo" };
             },
             async startAuthentication() {
-                return { id: "Zm9v" }; // bytes_to_base64url(b"foo") == "Zm9v"
+                return { id: "Zm9v" };
             },
         });
     },
 };
 const unpatchPasskey = {
     content: "Wait for the identity check to complete before restoring the passkey lib",
-    // The "Use passkey" click triggers an async submit that awaits an RPC
-    // before calling the (patched) startAuthentication. Unpatching on a bare
-    // "body" trigger races that chain and can restore the real WebAuthn lib
-    // mid-flight; the dialog only closes once the whole chain succeeded, so
-    // anchor on its disappearance.
     trigger: "body:not(:has(form.o_check_identity_form))",
     run: function () {
         unpatchPasskeyMethod();
@@ -72,9 +64,6 @@ const assertRPC = {
     content: "Asserts RPC is allowed",
     trigger: "body",
     run: async function () {
-        // Multiple attempts because the inactivity is sent through the websocket and there might be a slight delay
-        // between the moment the identity check form is displayed and the session is marked as inactive
-        // through the websocket.
         await retryUntil((result) => !result?.error, "RPC was prevented unexpectedly");
     },
 };
@@ -95,7 +84,6 @@ const assertNoRPC = {
 registry.category("web_tour.tours").add("auth_timeout_tour_lock_timeout_inactivity", {
     url: "/odoo",
     steps: () => [
-        // Check identity using a password
         assertCheckIdentityForm,
         assertNoRPC,
         challengeBackgroundRPC,
@@ -116,7 +104,6 @@ registry.category("web_tour.tours").add("auth_timeout_tour_lock_timeout_inactivi
         },
         assertRPC,
 
-        // Check identity using a TOTP by app
         assertCheckIdentityForm,
         assertNoRPC,
         {
@@ -136,7 +123,6 @@ registry.category("web_tour.tours").add("auth_timeout_tour_lock_timeout_inactivi
         },
         assertRPC,
 
-        // Check identity using a passkey
         assertCheckIdentityForm,
         assertNoRPC,
         patchPasskey,
@@ -155,7 +141,6 @@ registry
     .add("auth_timeout_tour_lock_timeout_inactivity_2fa", {
         url: "/odoo",
         steps: () => [
-            // Check identity using a passkey, which is 2FA by itself, and check an RPC call works
             assertCheckIdentityForm,
             assertNoRPC,
             challengeBackgroundRPC,
@@ -168,7 +153,6 @@ registry
             unpatchPasskey,
             assertRPC,
 
-            // Check identity using a password + TOTP for 2FA
             assertCheckIdentityForm,
             assertNoRPC,
             {

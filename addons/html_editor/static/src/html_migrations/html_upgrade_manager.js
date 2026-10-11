@@ -49,9 +49,7 @@ export class HtmlUpgradeManager {
                 (subVersion) => compareVersions(subVersion, version) > 0,
             );
             this.upgradedValue = this.upgrade(upgradeSequence);
-        } catch {
-            // If an upgrade fails, silently continue to use the raw value.
-        }
+        } catch {}
         return this.value;
     }
 
@@ -61,8 +59,6 @@ export class HtmlUpgradeManager {
             for (const [key, module] of modules.getEntries()) {
                 const migrate = odoo.loader.modules.get(module)?.migrate;
                 if (!migrate) {
-                    // abort the whole pass: the caller keeps the raw value, as it
-                    // does for a migration that throws
                     const message = `A "${key}" migrate function could not be found at "${module}" or it did not load.`;
                     console.error(message);
                     throw new Error(message);

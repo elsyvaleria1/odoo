@@ -54,9 +54,7 @@ export class appointmentSlotSelect extends Interaction {
     };
 
     setup() {
-        // Block containing the availabilities
         this.slotsListEl = this.el.querySelector("#slotsList");
-        // Resource or staff user selection, shown once an hour slot is picked
         this.resourceSelectionEl = this.el.querySelector("#resourceSelection");
     }
 
@@ -66,19 +64,11 @@ export class appointmentSlotSelect extends Interaction {
         this.firstEl?.click();
     }
 
-    /**
-     * Adapts the availability helpers to the calendar currently rendered.
-     */
     async initSlots() {
-        // First day containing an available slot, read again after every slot update
         this.firstEl = this.el.querySelector(".o_slot_button");
         await this.updateSlotAvailability();
     }
 
-    /**
-     * Finds the first day with an available slot, replaces the currently shown month and
-     * click on the first date where a slot is available.
-     */
     selectFirstAvailableMonth() {
         const firstMonthEl = this.firstEl.closest(".o_appointment_month");
         const currentMonthEl = document.querySelector(
@@ -156,20 +146,8 @@ export class appointmentSlotSelect extends Interaction {
         }
     }
 
-    /**
-     * Adapts the calendar to the slots it holds.
-     *
-     * With no slot at all, empties the availabilities block, hides the timezone
-     * selection and renders an explicative helper instead. When slots are only
-     * missing for the capacity chosen, the details and the calendar stay visible
-     * and only the capacity helper is rendered. Reveals the misconfiguration alert
-     * (rendered by the template when the appointment type has no staff/resource or
-     * no opening hours) and, unless dismissed, an alert for the visitor's next
-     * upcoming appointment.
-     */
     async updateSlotAvailability() {
         if (!this.firstEl) {
-            // No slot available
             if (!this.el.querySelector("select[name='resourceCapacity']")) {
                 this.el
                     .querySelectorAll("#slots_availabilities")
@@ -219,7 +197,6 @@ export class appointmentSlotSelect extends Interaction {
         this.el
             .querySelector(".o_appointment_missing_configuration")
             ?.classList.remove("d-none");
-        // Check upcoming appointments
         const allAppointmentsToken =
             JSON.parse(
                 localStorage.getItem("appointment.upcoming_events_access_token"),
@@ -299,9 +276,6 @@ export class appointmentSlotSelect extends Interaction {
         }
     }
 
-    /**
-     * Navigate between the months available in the calendar displayed
-     */
     onCalendarNavigate(ev) {
         const parentEl = this.el.querySelector(".o_appointment_month:not(.d-none)");
         let monthID = parseInt(parentEl.getAttribute("id").split("-")[1]);
@@ -320,23 +294,18 @@ export class appointmentSlotSelect extends Interaction {
         this.resourceSelectionEl?.replaceChildren();
 
         if (this.firstEl) {
-            // If there is at least one slot available, check if it is in the current month.
             if (!monthEl.querySelector(".o_day")) {
                 this.renderNoAvailabilityForMonth(monthEl);
             }
         }
     }
 
-    /**
-     * Display the list of slots available for the date selected
-     */
     onClickDaySlot(ev) {
         this.el
             .querySelectorAll(".o_slot_selected")
             .forEach((slot) => slot.classList.remove("o_slot_selected", "active"));
         ev.currentTarget.classList.add("o_slot_selected", "active");
 
-        // Do not display slots until user has actively selected the capacity
         const resourceCapacityEl = this.el.querySelector(
             "select[name='resourceCapacity']",
         );
@@ -363,10 +332,6 @@ export class appointmentSlotSelect extends Interaction {
             "select[name='resourceCapacity']",
         )?.value;
         const commonUrlParams = new URLSearchParams(window.location.search);
-        // The url may still carry the staff user, resource, duration and date_time of a
-        // previous booking attempt (e.g. slot already taken, visitor sent back to the
-        // calendar). Drop them so they do not interfere with the values bound to the
-        // slot clicked now.
         commonUrlParams.delete("staff_user_id");
         commonUrlParams.delete("resource_selected_id");
         commonUrlParams.delete("duration");
@@ -406,8 +371,6 @@ export class appointmentSlotSelect extends Interaction {
             ?.classList.remove("o_slot_hours_selected", "active");
         ev.currentTarget.classList.add("o_slot_hours_selected", "active");
 
-        // Outside 'manual + date first' the slot url is opened directly; in that flow we
-        // first let the user select a resource before confirming the slot.
         const isAutoAssign = this.el.querySelector(
             "input[name='is_auto_assign']",
         ).value;
@@ -531,10 +494,6 @@ export class appointmentSlotSelect extends Interaction {
         );
     }
 
-    /**
-     * Refresh the slots info when the user modifies the timezone, the staff user,
-     * the resource or the capacity.
-     */
     async onRefresh() {
         if (this.el.querySelector("#slots_availabilities")) {
             const daySlotSelected =
@@ -615,14 +574,12 @@ export class appointmentSlotSelect extends Interaction {
                     },
                 );
             } catch (error) {
-                // Do not leave the calendar disabled/spinning forever on a server error.
                 this.removeLoadingSpinner();
                 throw error;
             }
             this.swapFragments(response);
             this.initSlots();
             this._updateResourceCapacityOptions();
-            // If possible, we keep the current month, and display the helper if it has no availability.
             const displayedMonthEl = this.el.querySelector(
                 ".o_appointment_month:not(.d-none)",
             );
@@ -630,7 +587,6 @@ export class appointmentSlotSelect extends Interaction {
                 this.renderNoAvailabilityForMonth(displayedMonthEl);
             }
             this.removeLoadingSpinner();
-            // Select previous selected date (in displayed month) if possible.
             const selectedDayEl = displayedMonthEl?.querySelector(
                 `div[data-slot-date="${daySlotSelected}"]`,
             );
@@ -638,9 +594,6 @@ export class appointmentSlotSelect extends Interaction {
         }
     }
 
-    /**
-     * Remove the loading spinners and re-enable the calendar once slots are rendered.
-     */
     removeLoadingSpinner() {
         this.el.querySelector(".o_appointment_slots_loading")?.remove();
         this.el

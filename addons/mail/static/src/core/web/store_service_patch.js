@@ -11,7 +11,6 @@ import { patch } from "@web/core/utils/patch";
 const log = makeLogger("mail.store");
 let unread_store;
 
-/** Counters the server sends as of a bus id, which later bus deltas replay onto. */
 const BUS_FENCED_COUNTERS = [
     "activityCounter",
     "needaction_counter",
@@ -27,22 +26,16 @@ const BUS_FENCED_COUNTERS = [
  */
 async function saveUnreadCounter(counter, retry = true) {
     try {
-        // opened lazily: idbKeyval is a classic library, read when first needed
-        // rather than when this module evaluates
         unread_store ??= new window.idbKeyval.Store(
             "odoo-mail-unread-db",
             "odoo-mail-unread-store",
         );
     } catch {
-        // the browser does not allow the database (private mode, blocked
-        // storage): opening it again would fail the same way
         return;
     }
     try {
         await window.idbKeyval.set("unread", counter, unread_store);
     } catch {
-        // the connection idbKeyval cached was closed by the browser: drop it so
-        // the retry saves the counter on a new one
         unread_store = undefined;
         if (retry) {
             await saveUnreadCounter(counter, false);

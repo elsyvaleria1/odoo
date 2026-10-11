@@ -7,7 +7,6 @@ import { GLORY_RESULT } from "./constants.js";
  */
 export async function parseGloryXml(xmlBlob) {
     const text = await xmlBlob.text();
-    // Remove control characters from Glory response string
     const xmlString = text.replace(/[\cD\0]/g, "");
     return parseXML(xmlString);
 }

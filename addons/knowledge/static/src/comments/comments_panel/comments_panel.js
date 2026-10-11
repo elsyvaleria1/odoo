@@ -44,7 +44,7 @@ export class KnowledgeCommentsPanel extends Component {
             this.alive = false;
         });
         this.state = proxy({
-            mode: "unresolved", // "resolved" / "all"
+            mode: "unresolved",
             loadMoreResolved: false,
             loadMoreOpen: false,
             loading: false,
@@ -82,7 +82,6 @@ export class KnowledgeCommentsPanel extends Component {
             ],
         );
         onWillStart(async () => {
-            // TODO ABD: test this use case
             if (this.action.currentController?.action?.context?.show_resolved_threads) {
                 this.commentsState.displayMode = "panel";
                 this.state.mode = "resolved";

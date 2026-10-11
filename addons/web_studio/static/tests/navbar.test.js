@@ -90,7 +90,6 @@ test("menu buttons will not be placed under 'more' menu", async () => {
 
     mockService("studio", {
         get mode() {
-            // Will force the the navbar in the studio editor state
             return "editor";
         },
     });
@@ -162,7 +161,6 @@ test("homemenu customizer rendering", async () => {
 
     mockService("studio", {
         get mode() {
-            // Will force the the navbar in the studio home_menu state
             return "home_menu";
         },
     });

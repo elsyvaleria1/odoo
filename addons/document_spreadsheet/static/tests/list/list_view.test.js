@@ -157,7 +157,6 @@ test("property fields are not exported", async () => {
     Partner._fields.partner_properties = propertyField;
     const { model } = await createSpreadsheetFromListView({
         actions: async () => {
-            // display the property which is an optional column
             await contains(".o_optional_columns_dropdown_toggle").click();
             await contains(".o-dropdown--menu input[type='checkbox']").click();
             expect(
@@ -168,7 +167,7 @@ test("property fields are not exported", async () => {
         serverData: {
             models: data,
             views: {
-                "partner,false,list": /*xml*/ `
+                "partner,false,list": `
                         <list>
                             <field name="product_id"/>
                             <field name="bar"/>
@@ -382,7 +381,7 @@ test("Re-insert a list correctly ask for lines number", async function () {
     expect(".modal-body input").toHaveCount(1);
     expect(".modal-body input").toHaveProperty("type", "number");
 
-    await contains(".o_dialog .btn-secondary").click(); // cancel
+    await contains(".o_dialog .btn-secondary").click();
     expect(getCellFormula(model, "Z26")).toBe("", {
         message: "the list is not re-inserted",
     });
@@ -393,7 +392,7 @@ test("Re-insert a list correctly ask for lines number", async function () {
         env,
     );
     await animationFrame();
-    await contains(".o_dialog .btn-primary").click(); // confirm
+    await contains(".o_dialog .btn-primary").click();
     expect(getCellFormula(model, "Z26")).toBe('=ODOO.LIST.HEADER(1,"foo","Foo")', {
         message: "the list is re-inserted",
     });
@@ -544,7 +543,6 @@ test("Selected records from current page are inserted correctly", async function
         serverData,
     });
 
-    /** Insert the selected records from current page in a new spreadsheet */
     const target = getFixture();
     await contains(
         target.querySelectorAll("td.o_list_record_selector input")[1],
@@ -594,7 +592,6 @@ test("Selected all records from current page are inserted correctly", async func
         serverData,
     });
 
-    /** Insert the selected records from current page in a new spreadsheet */
     const target = getFixture();
     await contains(
         target.querySelectorAll("td.o_list_record_selector input")[1],
@@ -685,11 +682,10 @@ test("Can see record of a list", async function () {
     await root.execute(env);
     expect.verifySteps(["partner", dataSource.getIdFromPosition(1).toString()]);
 
-    // From a cell inside a merge
     model.dispatch("ADD_MERGE", {
         sheetId: model.getters.getActiveSheetId(),
         target: [toZone("A3:B3")],
-        force: true, // there are data in B3
+        force: true,
     });
     selectCell(model, "B3");
     await root.execute(env);
@@ -744,7 +740,7 @@ test("See records is not visible if the formula is in error", async function () 
         model,
         "B2",
         getCellFormula(model, "B2").replace(`ODOO.LIST(1`, `ODOO.LIST("5)`),
-    ); //Invalid id
+    );
     expect(getEvaluatedCell(model, "B2").message).not.toBe(undefined);
     expect(root.isVisible(env)).toBe(false);
 });
@@ -802,7 +798,7 @@ test("'See records' loads a specific action if set in the list definition", asyn
 test("Context is passed correctly to the action service", async function () {
     const serverData = getBasicServerData();
     const actionXmlId = "spreadsheet.partner_action";
-    serverData.views["partner,false,search"] = /* xml */ `
+    serverData.views["partner,false,search"] = `
         <search>
             <filter string="Filter" name="filter" context="{'search_default_filter': 1}" />
         </search>
@@ -840,9 +836,6 @@ test("Update the list title from the side panel", async function () {
 });
 
 test("list with a contextual domain", async () => {
-    // TODO: the date is coded at 12PM so the test won't fail if the timezone is not UTC. It will still fail on some
-    // timezones (GMT +13). The good way to do the test would be to patch the time zone and the date correctly.
-    // But PyDate uses new Date() instead of luxon, which cannot be correctly patched.
     mockDate("2016-05-14 12:00:00");
     const serverData = getBasicServerData();
     serverData.models.partner.records = [
@@ -852,12 +845,12 @@ test("list with a contextual domain", async () => {
             date: "2016-05-14",
         },
     ];
-    serverData.views["partner,false,search"] = /* xml */ `
+    serverData.views["partner,false,search"] = `
             <search>
                 <filter string="Filter" name="filter" domain="[('date', '=', context_today())]"/>
             </search>
         `;
-    serverData.views["partner,false,list"] = /* xml */ `
+    serverData.views["partner,false,list"] = `
             <list>
                 <field name="foo"/>
             </list>
@@ -884,10 +877,7 @@ test("list with a contextual domain", async () => {
             message: "domain is exported with the dynamic value",
         },
     );
-    expect.verifySteps([
-        "web_search_read", // list view is loaded
-        "web_search_read", // the data is loaded in the spreadsheet
-    ]);
+    expect.verifySteps(["web_search_read", "web_search_read"]);
 });
 
 test("Update the list domain from the side panel", async function () {
@@ -991,7 +981,6 @@ test("List sorting selector should not display already used fields", async funct
     let availableFields = options.map((el) => el.innerText);
     expect(availableFields).toEqual([
         "Active",
-        /* "Creation Date", this field should not be available anymore as it is used */
         "Currency",
         "Date",
         "field_with_array_agg",
@@ -1016,8 +1005,6 @@ test("List sorting selector should not display already used fields", async funct
     availableFields = options.map((el) => el.innerText);
     expect(availableFields).toEqual([
         "Active",
-        /* "Creation Date", this field should not be available anymore as it is used */
-        /* "Currency", this field should not be available anymore as it is used */
         "Date",
         "field_with_array_agg",
         "Id",
@@ -1052,7 +1039,6 @@ test("List sorting selector should display used fields again when corresponding 
     let availableFields = options.map((el) => el.innerText);
     expect(availableFields).toEqual([
         "Active",
-        /* "Creation Date", this field should not be available anymore as it is used */
         "Currency",
         "Date",
         "field_with_array_agg",
@@ -1147,9 +1133,7 @@ test("Sorting from the list is displayed in the properties panel", async functio
     await animationFrame();
     expect(".o_sorting_rule_column:eq(0)").toHaveText("Bar");
     expect(".o_sorting_rule_column:eq(1)").toHaveText("Foo");
-    /** Bar should be descending */
     expect(".o-select-order:eq(0)").toHaveValue("false");
-    /** Foo should be ascending */
     expect(".o-select-order:eq(1)").toHaveValue("true");
 });
 
@@ -1238,13 +1222,11 @@ test("Inserting a grouped list ignore groups", async function () {
     Partner._fields.foo.sortable = true;
     onRpc("partner", "web_read_group", ({ kwargs }) => {
         if (kwargs.groupby) {
-            // The mock server cannot handle orderby count
             kwargs.order = "";
         }
     });
     const { model } = await createSpreadsheetFromListView({
         actions: async (fixture) => {
-            // display the property which is an optional column
             await contains(".o_searchview_dropdown_toggler").click();
             await contains(".o_add_custom_group_menu").select("bar");
             await contains(".o_searchview_facet_label").click();

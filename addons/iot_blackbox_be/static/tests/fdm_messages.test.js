@@ -6,8 +6,6 @@ import { describe, expect, test } from "@odoo/hoot";
 describe.current.tags("headless");
 
 test("an error code buried in the response body becomes an error status", () => {
-    // The blackbox answers 200 with the failure inside the body, so an event
-    // that reads as a success has to be re-read before anything acts on it.
     const event = { status: "success", result: { error: { errorCode: "204" } } };
     const { message } = readDeviceEvent("fiscal_data_module", event);
     expect(event.status).toBe("error");

@@ -8,10 +8,6 @@ import { getFields, LoadableDataSource } from "@spreadsheet/data_sources/data_so
  * @typedef {import("@spreadsheet/data_sources/odoo_data_provider").OdooDataProvider} OdooDataProvider
  */
 
-/**
- * Loads pivot data via an injected load function, reusing LoadableDataSource's
- * load/error/validity state machine instead of re-implementing it.
- */
 export class OdooPivotLoader extends LoadableDataSource {
     /**
      * @param {OdooDataProvider} odooDataProvider

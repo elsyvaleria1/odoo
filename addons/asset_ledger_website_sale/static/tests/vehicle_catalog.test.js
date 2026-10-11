@@ -27,7 +27,6 @@ function shownCards() {
 }
 
 test("starts on a page rendered after DOMContentLoaded", async () => {
-    // the website editor iframe receives the bundle after the event
     const { core } = await startInteractions(CATALOG);
     expect(core.interactions).toHaveLength(1);
     expect(shownCards()).toEqual(["truck", "both", "tractor"]);

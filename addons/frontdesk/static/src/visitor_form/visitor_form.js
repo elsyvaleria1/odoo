@@ -46,7 +46,6 @@ export class VisitorForm extends Component {
             this.inputEmailRef.el?.value || false,
             this.inputCompanyRef.el?.value || false,
         );
-        // Show the HostPage component, if the host_selection field is true from the backend
         this.props.stationInfo.host_selection
             ? this.props.showScreen("HostPage")
             : this.props.showScreen("RegisterPage");

@@ -41,10 +41,6 @@ export class AddToBoard extends Component {
         useAutofocus({ ref: this.autofocusRef });
     }
 
-    //---------------------------------------------------------------------
-    // Protected
-    //---------------------------------------------------------------------
-
     async addToBoard() {
         const { domain, globalContext } = this.searchModel;
         const { context, groupBys, orderBy } = this.searchModel.getPreFavoriteValues();
@@ -83,10 +79,6 @@ export class AddToBoard extends Component {
             });
         }
     }
-
-    //---------------------------------------------------------------------
-    // Handlers
-    //---------------------------------------------------------------------
 
     /**
      * @param {KeyboardEvent} ev

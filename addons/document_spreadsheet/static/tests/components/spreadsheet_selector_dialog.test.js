@@ -191,7 +191,6 @@ test("Change the search bar content trigger a new search with updated domain", a
 test("Pager is limited to 9 elements", async () => {
     const data = JSON.parse(JSON.stringify(serverData));
     data.models["document.document"].records = [];
-    // Insert 20 elements
     for (let i = 1; i <= 20; i++) {
         data.models["document.document"].records.push({
             folder_id: 1,
@@ -316,7 +315,6 @@ test("Can open existing spreadsheet with enter key", async () => {
 test("Offset reset to zero after searching for spreadsheet in spreadsheet selector dialog", async () => {
     const data = JSON.parse(JSON.stringify(serverData));
     data.models["document.document"].records = [];
-    // Insert 12 elements
     for (let i = 1; i <= 12; i++) {
         data.models["document.document"].records.push({
             folder_id: 1,
@@ -369,7 +367,6 @@ test("Can navigate through spreadsheets with arrow keys", async () => {
         message: "Blank spreadsheet should be selected by default",
     });
 
-    // Navigate to the first spreadsheet
     await click(defaultSheet);
     await press("ArrowRight");
     await animationFrame();
@@ -381,7 +378,6 @@ test("Can navigate through spreadsheets with arrow keys", async () => {
         },
     );
 
-    // Navigate back to the blank spreadsheet
     await press("ArrowLeft");
     await animationFrame();
 

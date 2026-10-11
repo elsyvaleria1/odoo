@@ -15,10 +15,6 @@ export class HrHolidaysGanttRenderer extends HrGanttRenderer {
 export class HrHolidaysGanttOverviewRenderer extends HrHolidaysGanttRenderer {
     async onPillClicked(ev, pill) {
         const popoverProps = await this.getPopoverProps(pill);
-        // getPopoverProps() is inherited from web_gantt's base GanttRenderer,
-        // which always includes this button today; guard it anyway so a
-        // future change there (e.g. omitting it based on a permission)
-        // degrades silently instead of throwing here.
         popoverProps.buttons.find((el) => el.id === "open_view_edit_dialog")?.onClick();
     }
 }

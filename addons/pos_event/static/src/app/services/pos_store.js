@@ -64,7 +64,6 @@ patch(PosStore.prototype, {
                 _event_id: event.id,
             });
 
-            // Disable products
             for (const ticket of event.event_ticket_ids) {
                 const productTmpl = ticket.product_id.product_tmpl_id;
                 if (productTmpl) {

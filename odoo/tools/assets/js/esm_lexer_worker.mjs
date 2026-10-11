@@ -3,15 +3,10 @@ import { createInterface } from "node:readline";
 
 await init;
 
-// the parent reads this before its first request: a worker that dies before
-// it (es-module-lexer not installed) could not start, it did not fail a request
 process.stdout.write(JSON.stringify({ ready: true }) + "\n");
 
 let acorn = null;
 
-// A reference in a position a module runs while it is evaluated: at top level,
-// in a class heritage, a computed key, a static field or block. Function and
-// method bodies and instance fields run later, when a bridge is long filled.
 function isReference(parent, key) {
     if (!parent) {
         return true;
@@ -165,8 +160,6 @@ rl.on("line", async (line) => {
         out.starFrom = starFrom;
         out.reexportFrom = reexportFrom;
         out.imports = importRecords;
-        // Dependency checks also need literal dynamic imports, without
-        // confusing source-like text in comments or strings with code.
         out.specifiers = [...new Set(imports.map((i) => i.n).filter(Boolean))];
     } catch (err) {
         out.ok = false;

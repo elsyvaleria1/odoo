@@ -15,24 +15,15 @@ import { registry } from "@web/core/registry";
 registry.category("web_tour.tours").add("PosLoyaltyTour1", {
     steps: () =>
         [
-            // --- PoS Loyalty Tour Basic Part 1 ---
-            // Generate coupons for PosLoyaltyTour2.
-
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // basic order
-            // just accept the automatically applied promo program
-            // applied programs:
-            //   - on cheapest product
             ProductScreen.addOrderline("Whiteboard Pen", "5"),
             PosLoyalty.hasRewardLine("90% on the cheapest product", "-2.88"),
             PosLoyalty.selectRewardLine("on the cheapest product"),
             PosLoyalty.orderTotalIs("13.12"),
             PosLoyalty.finalizeOrder("Cash", "20"),
 
-            // remove the reward from auto promo program
-            // no applied programs
             ProductScreen.addOrderline("Whiteboard Pen", "6"),
             PosLoyalty.hasRewardLine("on the cheapest product", "-2.88"),
             PosLoyalty.orderTotalIs("16.32"),
@@ -40,9 +31,6 @@ registry.category("web_tour.tours").add("PosLoyaltyTour1", {
             PosLoyalty.orderTotalIs("19.2"),
             PosLoyalty.finalizeOrder("Cash", "20"),
 
-            // order with coupon code from coupon program
-            // applied programs:
-            //   - coupon program
             ProductScreen.addOrderline("Desk Organizer", "9"),
             PosLoyalty.hasRewardLine("on the cheapest product", "-4.59"),
             PosLoyalty.removeRewardLine("90% on the cheapest product"),
@@ -53,9 +41,6 @@ registry.category("web_tour.tours").add("PosLoyaltyTour1", {
             PosLoyalty.hasRewardLine("Free Product - Desk Organizer", "-15.30"),
             PosLoyalty.finalizeOrder("Cash", "50"),
 
-            // Use coupon but eventually remove the reward
-            // applied programs:
-            //   - on cheapest product
             ProductScreen.addOrderline("Letter Tray", "4"),
             ProductScreen.addOrderline("Desk Organizer", "9"),
             PosLoyalty.hasRewardLine("90% on the cheapest product", "-4.59"),
@@ -67,17 +52,13 @@ registry.category("web_tour.tours").add("PosLoyaltyTour1", {
             PosLoyalty.orderTotalIs("62.43"),
             PosLoyalty.finalizeOrder("Cash", "90"),
 
-            // specific product discount
-            // applied programs:
-            //   - on cheapest product
-            //   - on specific products
-            ProductScreen.addOrderline("Magnetic Board", "10"), // 1.98
-            ProductScreen.addOrderline("Desk Organizer", "3"), // 5.1
-            ProductScreen.addOrderline("Letter Tray", "4"), // 4.8 tax 10%
+            ProductScreen.addOrderline("Magnetic Board", "10"),
+            ProductScreen.addOrderline("Desk Organizer", "3"),
+            ProductScreen.addOrderline("Letter Tray", "4"),
             PosLoyalty.hasRewardLine("90% on the cheapest product", "-1.78"),
             PosLoyalty.orderTotalIs("54.44"),
             PosLoyalty.enterCode("promocode"),
-            PosLoyalty.hasRewardLine("50% on specific products", "-16.66"), // 17.55 - 1.78*0.5
+            PosLoyalty.hasRewardLine("50% on specific products", "-16.66"),
             PosLoyalty.orderTotalIs("37.78"),
             PosLoyalty.finalizeOrder("Cash", "50"),
         ].flat(),
@@ -86,59 +67,33 @@ registry.category("web_tour.tours").add("PosLoyaltyTour1", {
 registry.category("web_tour.tours").add("PosLoyaltyTour2", {
     steps: () =>
         [
-            // --- PoS Loyalty Tour Basic Part 2 ---
-            // Using the coupons generated from PosLoyaltyTour1.
-
-            // Test that global discount and cheapest product discounts can be accumulated.
-            // Applied programs:
-            //   - global discount
-            //   - on cheapest discount
             Chrome.startPoS(),
-            ProductScreen.addOrderline("Desk Organizer", "10"), // 5.1
+            ProductScreen.addOrderline("Desk Organizer", "10"),
             PosLoyalty.hasRewardLine("on the cheapest product", "-4.59"),
-            ProductScreen.addOrderline("Letter Tray", "4"), // 4.8 tax 10%
+            ProductScreen.addOrderline("Letter Tray", "4"),
             PosLoyalty.hasRewardLine("on the cheapest product", "-4.59"),
             PosLoyalty.enterCode("123456"),
             PosLoyalty.hasRewardLine("10% on your order", "-4.64"),
             PosLoyalty.hasRewardLine("10% on your order", "-2.11"),
-            PosLoyalty.orderTotalIs("60.78"), //SUBTOTAL
+            PosLoyalty.orderTotalIs("60.78"),
             PosLoyalty.finalizeOrder("Cash", "70"),
 
-            // Scanning coupon twice.
-            // Also apply global discount on top of free product to check if the
-            // calculated discount is correct.
-            // Applied programs:
-            //  - coupon program (free product)
-            //  - global discount
-            //  - on cheapest discount
-            ProductScreen.addOrderline("Desk Organizer", "11"), // 5.1 per item
+            ProductScreen.addOrderline("Desk Organizer", "11"),
             PosLoyalty.hasRewardLine("90% on the cheapest product", "-4.59"),
             PosLoyalty.orderTotalIs("51.51"),
-            // add global discount and the discount will be replaced
             PosLoyalty.enterCode("345678"),
             PosLoyalty.hasRewardLine("10% on your order", "-5.15"),
-            // add free product coupon (for qty=11, free=4)
-            // the discount should change after having free products
-            // it should go back to cheapest discount as it is higher
             PosLoyalty.enterCode("5678"),
             PosLoyalty.hasRewardLine("Free Product - Desk Organizer", "-20.40"),
             PosLoyalty.hasRewardLine("90% on the cheapest product", "-4.59"),
-            // set quantity to 18
-            // free qty stays the same since the amount of points on the card only allows for 4 free products
-            //TODO: The following step should works with ProductScreen.clickNumpad("⌫", "8"),
             ProductScreen.clickNumpad("⌫", "⌫", "1", "8"),
             PosLoyalty.hasRewardLine("10% on your order", "-6.68"),
             PosLoyalty.hasRewardLine("Free Product - Desk Organizer", "-20.40"),
-            // scan the code again and check notification
             PosLoyalty.enterCode("5678"),
             PosLoyalty.orderTotalIs("60.13"),
             PosLoyalty.finalizeOrder("Cash", "65"),
 
-            // Specific products discount (with promocode) and free product (1357)
-            // Applied programs:
-            //   - discount on specific products
-            //   - free product
-            ProductScreen.addOrderline("Desk Organizer", "6"), // 5.1 per item
+            ProductScreen.addOrderline("Desk Organizer", "6"),
             PosLoyalty.hasRewardLine("on the cheapest product", "-4.59"),
             PosLoyalty.removeRewardLine("90% on the cheapest product"),
             PosLoyalty.enterCode("promocode"),
@@ -149,12 +104,7 @@ registry.category("web_tour.tours").add("PosLoyaltyTour2", {
             PosLoyalty.orderTotalIs("10.20"),
             PosLoyalty.finalizeOrder("Cash", "20"),
 
-            // Check reset program
-            // Enter two codes and reset the programs.
-            // The codes should be checked afterwards. They should return to new.
-            // Applied programs:
-            //   - cheapest product
-            ProductScreen.addOrderline("Monitor Stand", "6"), // 3.19 per item
+            ProductScreen.addOrderline("Monitor Stand", "6"),
             PosLoyalty.enterCode("098765"),
             PosLoyalty.hasRewardLine("90% on the cheapest product", "-2.87"),
             PosLoyalty.hasRewardLine("10% on your order", "-1.63"),
@@ -172,8 +122,6 @@ registry.category("web_tour.tours").add("PosLoyaltyTour2", {
 registry.category("web_tour.tours").add("PosLoyaltyTour3", {
     steps: () =>
         [
-            // --- PoS Loyalty Tour Basic Part 3 ---
-
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
@@ -224,7 +172,6 @@ registry.category("web_tour.tours").add("PosCouponTour5", {
         ].flat(),
 });
 
-//transform the last tour to match the new format
 registry.category("web_tour.tours").add("PosLoyaltyTour6", {
     steps: () =>
         [
@@ -661,7 +608,7 @@ registry.category("web_tour.tours").add("test_discount_after_unknown_scan", {
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
             ProductScreen.addOrderline("Test Product A", "1"),
-            scan_barcode("00998877665544332211"), //should be unknown
+            scan_barcode("00998877665544332211"),
             PosLoyalty.hasRewardLine("10% on Test Product A", "-0.50"),
             ProductScreen.totalAmountIs("4.50"),
         ].flat(),
@@ -701,7 +648,6 @@ registry.category("web_tour.tours").add("test_confirm_coupon_programs_one_by_one
                 trigger: "body",
                 content: "Create fake orders",
                 run: async () => {
-                    // Create 5 orders that will be synced one by one
                     for (let i = 0; i < 5; i++) {
                         const order = posmodel.createNewOrder();
                         const product = posmodel.models["product.template"].find(
@@ -720,7 +666,6 @@ registry.category("web_tour.tours").add("test_confirm_coupon_programs_one_by_one
                         order.addPaymentline(pm);
                         order.state = "paid";
 
-                        // Create fake coupon point changes to simulate coupons to be confirmed
                         order.uiState.couponPointChanges = [
                             {
                                 points: 124.2,
@@ -732,7 +677,6 @@ registry.category("web_tour.tours").add("test_confirm_coupon_programs_one_by_one
                     }
                 },
             },
-            // Create one more order to be able to trigger the sync from the UI
             ProductScreen.clickDisplayedProduct("Desk Pad"),
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Bank"),
@@ -820,7 +764,6 @@ registry.category("web_tour.tours").add("test_race_conditions_update_program", {
             {
                 trigger: "body",
                 run: async () => {
-                    // Check the number of lines in the order
                     const line_count = document.querySelectorAll(".orderline").length;
                     if (line_count !== 11) {
                         throw new Error(`Expected 11 orderlines, found ${line_count}`);

@@ -51,7 +51,6 @@ test("component should receive a backbutton event", async () => {
     }
 
     const dummy = await mountWithCleanup(DummyComponent);
-    // simulate 'backbutton' event triggered by the app
     document.dispatchEvent(new Event("backbutton"));
     expect.verifySteps(["overrideBackButton: true", "backbutton event"]);
     destroy(dummy);
@@ -75,10 +74,6 @@ test("multiple components should receive backbutton events in the right order", 
 
         _onBackButton(ev) {
             expect.step(`${this.props.name}: ${ev.type} event`);
-            // unmounting is not supported anymore
-            // A real business case equivalent to this is to have a Parent component
-            // doing a foreach on some reactive object which contains the list of dummy components
-            // and calling a callback props.onBackButton right here that removes the element from the list
             destroy(this);
         }
     }
@@ -87,7 +82,6 @@ test("multiple components should receive backbutton events in the right order", 
     await mountWithCleanup(DummyComponent, { props: { name: "dummy2" } });
     await mountWithCleanup(DummyComponent, { props: { name: "dummy3" } });
 
-    // simulate 'backbutton' events triggered by the app
     document.dispatchEvent(new Event("backbutton"));
     document.dispatchEvent(new Event("backbutton"));
     document.dispatchEvent(new Event("backbutton"));
@@ -136,13 +130,10 @@ test("component should receive a backbutton event: custom activation", async () 
     }
 
     const dummy = await mountWithCleanup(DummyComponent, { props: { show: false } });
-    // shouldn't have enabled back button mount
     expect.verifySteps([]);
     await contains(".dummy").click();
-    // simulate 'backbutton' event triggered by the app
     document.dispatchEvent(new Event("backbutton"));
     await contains(".dummy").click();
-    // should have enabled/disabled the back button override
     expect.verifySteps([
         "overrideBackButton: true",
         "backbutton event",
@@ -150,14 +141,10 @@ test("component should receive a backbutton event: custom activation", async () 
     ]);
     destroy(dummy);
 
-    // enabled at mount
     const dummy2 = await mountWithCleanup(DummyComponent, { props: { show: true } });
-    // shouldn't have enabled back button at mount
     expect.verifySteps(["overrideBackButton: true"]);
-    // simulate 'backbutton' event triggered by the app
     document.dispatchEvent(new Event("backbutton"));
     destroy(dummy2);
-    // should have disabled the back-button override during unmount
     expect.verifySteps(["backbutton event", "overrideBackButton: false"]);
 });
 
@@ -184,7 +171,6 @@ test("popover is closable with backbutton event", async () => {
     expect(".o_popover").toHaveCount(1);
     expect(".o_popover #comp").toHaveCount(1);
     expect.verifySteps(["overrideBackButton: true"]);
-    // simulate 'backbutton' event triggered by the app
     document.dispatchEvent(new Event("backbutton"));
 
     expect.verifySteps(["overrideBackButton: false"]);

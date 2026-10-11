@@ -12,11 +12,8 @@ test("validateOrder", async () => {
     const order = store.addNewOrder();
     const fastPaymentMethod = order.config.fast_payment_method_ids[0];
 
-    // Get loyalty program #1 - type = "loyalty"
     const loyaltyProgram = models["loyalty.program"].get(1);
-    // Get loyalty card #1 - linked to Partner #1
     const card = models["loyalty.card"].get(1);
-    // Get loyalty reward #1 - type = "discount"
     const reward = models["loyalty.reward"].get(1);
 
     order.uiState.couponPointChanges = {

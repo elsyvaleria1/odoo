@@ -112,10 +112,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
     /**
      * @param {string} filterId
      * @param {FieldMatching} fieldMatching
@@ -229,8 +225,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
             return [];
         }
         const additionOptions = [
-            // add the current value because it might not be in the range
-            // if the range cells changed in the meantime
             ...(this.getGlobalFilterValue(filterId)?.strings ?? []),
             ...(filter.defaultValue?.strings ?? []),
         ];
@@ -285,10 +279,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
         return allowedValues.concat(additionalOptions);
     }
 
-    // -------------------------------------------------------------------------
-    // Handlers
-    // -------------------------------------------------------------------------
-
     /**
      * Set the current value of a global filter
      *
@@ -313,10 +303,6 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
             value: undefined,
         };
     }
-
-    // -------------------------------------------------------------------------
-    // Private
-    // -------------------------------------------------------------------------
 
     /**
      * Get the global filter with the given name
@@ -433,8 +419,8 @@ export class GlobalFiltersCoreViewPlugin extends OdooCoreViewPlugin {
             B1: "Value",
         };
         const formats = {};
-        let numberOfCols = 2; // at least 2 cols (filter title and filter value)
-        let filterRowIndex = 1; // first row is the column titles
+        let numberOfCols = 2;
+        let filterRowIndex = 1;
         for (const filter of this.getters.getGlobalFilters()) {
             cells[`A${filterRowIndex + 1}`] = filter.label;
             const result = this.getFilterDisplayValue(filter.label);

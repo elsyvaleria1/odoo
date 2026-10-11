@@ -1,57 +1,8 @@
 /** @odoo-module native */
 import { registry } from "@web/core/registry";
 
-/**
- * This service store data from non-knowledge form view records that can be used
- * by a Knowledge form view.
- *
- * A typical usage could be the following:
- * - A form view is loaded and one field of the current record is a match for
- *   Knowledge @see FormControllerPatch
- *   - Information about this record and how to access its form view is stored
- *     in this @see KnowledgeCommandsService .
- * - A knowledge Article is opened and it contains a @see MacrosEmbeddedClipboardComponent .
- *   - When the embedded is injected (@see InsertPendingElementPlugin ) in the view, it
- *     asks this @see KnowledgeCommandsService if the record can be interacted
- *     with.
- *   - if there is one such record, the related buttons are displayed in the
- *     toolbar of the embedded.
- * - When one such button is used, the form view of the record is reloaded
- *   and the button action is executed through a @see Macro .
- *   - an example of macro action would be copying the template contents as the
- *     value of a field_html of the record, such as "description"
- *
- * Scope of the service:
- *
- * Knowledge macros:
- *
- * 1) @see FormControllerPatch :
- *        It will only be called if the viewed record can be used within the
- *        Knowledge module. Such a record should at least have one html field
- *        that is visible and editable by the current user.
- * 2) @see ChatterPatch :
- *        It will be called if the currently viewed record (in a Form view) has
- *        a chatter which the user can use to attach files or send messages.
- * 3) @see MacrosEmbeddedClipboardComponent or @see MacrosFileMixin :
- *        It will be called by a embedded to check whether it has a record that
- *        can be interacted with in the context of the toolbar, detected through
- *        case 1) and/or 2): canPostMessages, canAttachFiles, withHtmlField.
- *
- * Knowledge external embedded views insertion:
- *
- * 1) @see InsertEmbeddedViewMenu :
- *        Store information related to an Odoo view in the service, in order
- *        to insert it in a Knowledge article body.
- * 2) @see InsertPendingElementPlugin :
- *        Recover the previously stored information to perform the insertion.
- */
 export const knowledgeCommandsService = {
     start() {
-        //----------------------------------------------------------------------
-        // Knowledge macros features
-        //----------------------------------------------------------------------
-
-        // Potential candidate for Knowledge macros.
         let commandsRecordInfo = null;
 
         /**
@@ -79,9 +30,6 @@ export const knowledgeCommandsService = {
             commandsRecordInfo = recordInfo;
         }
 
-        /**
-         * Get the current record candidate that would be used in Knowledge.
-         */
         function getCommandsRecordInfo() {
             return commandsRecordInfo;
         }
@@ -128,22 +76,15 @@ export const knowledgeCommandsService = {
             if (!commandsRecordInfo) {
                 return;
             }
-            // Extract identifier props from the breadcrumbs.
             breadcrumbs = getBreadcrumbsIdentifier(breadcrumbs);
             if (
                 breadcrumbs.length <= commandsRecordInfo.breadcrumbs.length ||
                 breadcrumbs[commandsRecordInfo.breadcrumbs.length - 1].jsId !==
                     commandsRecordInfo.breadcrumbs.at(-1).jsId
             ) {
-                // Unregister the recordInfo if the target controller does not
-                // match what was recorded.
                 setCommandsRecordInfo(null);
             }
         }
-
-        //----------------------------------------------------------------------
-        // External embedded views features
-        //----------------------------------------------------------------------
 
         const pendingEmbeddedBlueprints = {};
 

@@ -71,7 +71,6 @@ export class HelpdeskTeamTarget extends Component {
      */
     async _onValueChange() {
         let inputValue = this.inputRef.el.value;
-        // a number can have the thousand separator multiple times. ex: 1,000,000.00
         inputValue = inputValue.replaceAll(
             new RegExp(RegExp.escape(localization.thousandsSep || ""), "g"),
             "",

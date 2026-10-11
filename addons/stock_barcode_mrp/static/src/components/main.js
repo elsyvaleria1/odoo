@@ -137,7 +137,6 @@ patch(MainComponent.prototype, {
             }
             if (update) {
                 if (lineRecord.data.product_qty !== this.model.record.product_qty) {
-                    // need to reassign moves to update the quants on screen
                     await this.orm.call(this.resModel, "action_assign", [[this.resId]]);
                 }
                 this._onRefreshState({ recordId });

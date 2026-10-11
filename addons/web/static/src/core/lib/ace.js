@@ -5,8 +5,6 @@ import { makeLazyLib } from "@web/core/lib/lazy_lib";
 
 const aceLib = makeLazyLib(async () => {
     const [module, qweb] = await Promise.all([import("ace"), import("ace-mode-qweb")]);
-    // a plain object, not the frozen module namespace, so tests can patch
-    // ace.edit; the QWeb mode joins the upstream ones
     return { ...module, modes: { ...module.modes, qweb: qweb.Mode } };
 });
 

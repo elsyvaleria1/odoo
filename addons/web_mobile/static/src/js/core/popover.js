@@ -12,8 +12,6 @@ patch(Popover.prototype, {
         );
     },
 
-    // Handlers
-
     /**
      * Close popover on back-button
      * @private

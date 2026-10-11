@@ -30,9 +30,6 @@ export class GlobalFiltersUIPlugin extends OdooUIPlugin {
                 break;
             case "SET_DATASOURCE_FIELD_MATCHING": {
                 const matcher = globalFieldMatchingRegistry.get(cmd.dataSourceType);
-                /**
-                 * cmd.fieldMatchings looks like { [filterId]: { chain, type } }
-                 */
                 for (const filterId in cmd.fieldMatchings) {
                     const filterFieldMatching = {};
                     for (const dataSourceId of matcher.getIds(this.getters)) {

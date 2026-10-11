@@ -5,7 +5,6 @@ import { patch } from "@web/core/utils/patch";
 const DOCUMENTS_PATH = /^\/odoo\/documents(?=[/?]|$)/;
 
 patch(router, {
-    /** `/odoo/documents/<token>` is resolved by the server into the document or folder */
     isServerRoute(url) {
         return url.pathname.startsWith("/odoo/documents/") || super.isServerRoute(url);
     },

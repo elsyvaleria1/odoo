@@ -29,12 +29,6 @@ export class VersionPayrunListController extends ListController {
     }
 
     buildRawRecord(rawRecord) {
-        // raw_record is already a JSON-safe snapshot built by the pay-run form
-        // controller (_payRunRawRecord): ISO date strings, m2o ids, no date
-        // objects. It only carries the dialog fields, so spreading it
-        // is safe -- unlike the original ...rawRecord on the live OWL record,
-        // which dragged date objects (e.g. l10n_mx_edi_payment_date) that
-        // serialized as dicts and broke server-side date parsing.
         return { ...rawRecord };
     }
 

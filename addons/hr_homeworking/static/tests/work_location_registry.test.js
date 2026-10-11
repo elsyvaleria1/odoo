@@ -19,9 +19,6 @@ test("the icon table and mail's registry cannot drift apart", () => {
     for (const locationType of WORK_LOCATION_TYPES) {
         for (const status of WORK_LOCATION_PRESENCE_WORDS) {
             const decorated = `${locationType}_${status}`;
-            // Drawable and registered are the same set, asserted as a relation:
-            // adding a location word to one table without the other fails here
-            // rather than the next time someone reads a presence comparison.
             expect(workLocationPresence(decorated)).not.toBe(null, {
                 message: `${decorated} must draw an icon`,
             });

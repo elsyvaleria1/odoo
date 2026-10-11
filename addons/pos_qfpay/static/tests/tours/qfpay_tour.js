@@ -10,7 +10,6 @@ import { now } from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 
-// Patch QFPay to validate the request that would be sent to the terminal
 patch(QFPay.prototype, {
     makeQFPayRequest: async function (endpoint, payload) {
         const paymentLine = posmodel.getPendingPaymentLine("qfpay");
@@ -43,20 +42,17 @@ patch(QFPay.prototype, {
     },
 });
 
-// Store uuid of payment between order and refund
 let paymentUuid = "";
 
 registry.category("web_tour.tours").add("qfpay_order_and_refund", {
     steps: () =>
         [
-            // Refund have to be made on the same day before 23:00 HKT.
             Chrome.freezeDateTime(
                 now("Asia/Hong_Kong").with({ hour: 12 }).epochMilliseconds,
             ),
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
 
-            // ORDER
             ProductScreen.addOrderline("Desk Pad"),
             ProductScreen.clickPayButton(),
             PaymentScreen.clickPaymentMethod("Qfpay"),
@@ -77,7 +73,6 @@ registry.category("web_tour.tours").add("qfpay_order_and_refund", {
             },
             ReceiptScreen.isShown(),
 
-            // REFUND
             Chrome.clickOrders(),
             TicketScreen.selectFilter("Active"),
             TicketScreen.selectFilter("Paid"),

@@ -88,7 +88,6 @@ test("failure to save does not block the builder", async () => {
         "disabled",
     );
 
-    // the failure is reported in a dialog, dismissed before saving again
     await contains(".o_dialog .btn-close").click();
     deferred = new Deferred();
     await contains(".o-snippets-top-actions button:contains(Save)").click();
@@ -131,7 +130,6 @@ test("a failed save leaves elements dirty so the retry actually saves them", asy
     expect(":iframe #wrap").toHaveClass("o_dirty");
     expect(resultSave).toHaveLength(0);
 
-    // the failure is reported in a dialog, dismissed before saving again
     await contains(".o_dialog .btn-close").click();
     deferred = new Deferred();
     deferred.resolve(true);

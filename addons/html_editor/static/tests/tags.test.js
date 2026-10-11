@@ -32,7 +32,6 @@ describe("to paragraph", () => {
         await testEditor({
             contentBefore: "<h1>[<i>a</i>b<br><br>]<br></h1>",
             stepFunction: setTag("p"),
-            // The third line remains a h1. It wasn't visibly selected.
             contentAfter: "<p>[<i>a</i>b</p><p><br></p><h1>]<br></h1>",
         });
     });
@@ -41,7 +40,6 @@ describe("to paragraph", () => {
         await testEditor({
             contentBefore: "<h1>]<i>a</i>b<br><br>[<br></h1>",
             stepFunction: setTag("p"),
-            // The third line remains a h1. It wasn't visibly selected.
             contentAfter: "<p>]<i>a</i>b</p><p><br></p><h1>[<br></h1>",
         });
     });
@@ -269,10 +267,6 @@ describe("to paragraph", () => {
             contentBefore:
                 "<table><tbody><tr><td><h1>a<br>b<br>[c<br>d</h1></td><td><h1>e<br>f</h1></td><td><h1>g<br>h]<br>i<br>j</h1></td></tr></tbody></table>",
             stepFunction: setTag("p"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><p>a</p><p>b</p><p>[c</p><p>d</p></td><td><p>e</p><p>f</p></td><td><p>g</p><p>h]</p><p>i</p><p>j</p></td></tr></tbody></table>",
         });
@@ -283,10 +277,6 @@ describe("to paragraph", () => {
             contentBefore:
                 "<table><tbody><tr><td><h1>a<br>b<br>]c<br>d</h1></td><td><h1>e<br>f</h1></td><td><h1>g<br>h[<br>i<br>j</h1></td></tr></tbody></table>",
             stepFunction: setTag("p"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><p>a</p><p>b</p><p>]c</p><p>d</p></td><td><p>e</p><p>f</p></td><td><p>g</p><p>h[</p><p>i</p><p>j</p></td></tr></tbody></table>",
         });
@@ -539,10 +529,6 @@ describe("to heading 1", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>[c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h]<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("h1"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><h1>a</h1><h1>b</h1><h1>[c</h1><h1>d</h1></td><td><h1>e</h1><h1>f</h1></td><td><h1>g</h1><h1>h]</h1><h1>i</h1><h1>j</h1></td></tr></tbody></table>",
         });
@@ -553,10 +539,6 @@ describe("to heading 1", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>]c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h[<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("h1"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><h1>a</h1><h1>b</h1><h1>]c</h1><h1>d</h1></td><td><h1>e</h1><h1>f</h1></td><td><h1>g</h1><h1>h[</h1><h1>i</h1><h1>j</h1></td></tr></tbody></table>",
         });
@@ -730,10 +712,6 @@ describe("to heading 2", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>[c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h]<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("h2"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><h2>a</h2><h2>b</h2><h2>[c</h2><h2>d</h2></td><td><h2>e</h2><h2>f</h2></td><td><h2>g</h2><h2>h]</h2><h2>i</h2><h2>j</h2></td></tr></tbody></table>",
         });
@@ -744,10 +722,6 @@ describe("to heading 2", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>]c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h[<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("h2"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><h2>a</h2><h2>b</h2><h2>]c</h2><h2>d</h2></td><td><h2>e</h2><h2>f</h2></td><td><h2>g</h2><h2>h[</h2><h2>i</h2><h2>j</h2></td></tr></tbody></table>",
         });
@@ -900,10 +874,6 @@ describe("to heading 3", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>[c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h]<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("h3"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><h3>a</h3><h3>b</h3><h3>[c</h3><h3>d</h3></td><td><h3>e</h3><h3>f</h3></td><td><h3>g</h3><h3>h]</h3><h3>i</h3><h3>j</h3></td></tr></tbody></table>",
         });
@@ -914,10 +884,6 @@ describe("to heading 3", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>]c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h[<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("h3"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><h3>a</h3><h3>b</h3><h3>]c</h3><h3>d</h3></td><td><h3>e</h3><h3>f</h3></td><td><h3>g</h3><h3>h[</h3><h3>i</h3><h3>j</h3></td></tr></tbody></table>",
         });
@@ -1032,10 +998,6 @@ describe("to pre", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>[c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h]<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("pre"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><pre>a</pre><pre>b</pre><pre>[c</pre><pre>d</pre></td><td><pre>e</pre><pre>f</pre></td><td><pre>g</pre><pre>h]</pre><pre>i</pre><pre>j</pre></td></tr></tbody></table>",
         });
@@ -1046,10 +1008,6 @@ describe("to pre", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>]c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h[<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("pre"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><pre>a</pre><pre>b</pre><pre>]c</pre><pre>d</pre></td><td><pre>e</pre><pre>f</pre></td><td><pre>g</pre><pre>h[</pre><pre>i</pre><pre>j</pre></td></tr></tbody></table>",
         });
@@ -1246,10 +1204,6 @@ describe("to blockquote", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>[c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h]<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("blockquote"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><blockquote>a</blockquote><blockquote>b</blockquote><blockquote>[c</blockquote><blockquote>d</blockquote></td><td><blockquote>e</blockquote><blockquote>f</blockquote></td><td><blockquote>g</blockquote><blockquote>h]</blockquote><blockquote>i</blockquote><blockquote>j</blockquote></td></tr></tbody></table>",
         });
@@ -1260,10 +1214,6 @@ describe("to blockquote", () => {
             contentBefore:
                 "<table><tbody><tr><td><p>a<br>b<br>]c<br>d</p></td><td><p>e<br>f</p></td><td><p>g<br>h[<br>i<br>j</p></td></tr></tbody></table>",
             stepFunction: setTag("blockquote"),
-            // Having selected across several table cells, the custom table
-            // selection is set over the whole cells, which means we transform
-            // every line in them and not just the ones we selected.
-            // The custom table selection is removed in cleanForSave and the selection is collapsed.
             contentAfter:
                 "<table><tbody><tr><td><blockquote>a</blockquote><blockquote>b</blockquote><blockquote>]c</blockquote><blockquote>d</blockquote></td><td><blockquote>e</blockquote><blockquote>f</blockquote></td><td><blockquote>g</blockquote><blockquote>h[</blockquote><blockquote>i</blockquote><blockquote>j</blockquote></td></tr></tbody></table>",
         });

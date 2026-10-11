@@ -36,8 +36,6 @@ export class MapController extends Component {
 
         /** @type {typeof MapModel} */
         const Model = this.props.Model;
-        // `useState` so the controller template's `model.useSampleModel` read
-        // subscribes it; it previously relied on the model's blanket deep render.
         const model = proxy(useModelWithSampleData(Model, this.props.modelParams));
         this.model = model;
 

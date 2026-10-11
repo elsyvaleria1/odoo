@@ -45,7 +45,6 @@ patch(ExpressCheckout.prototype, {
             total: {
                 label: this.paymentContext["merchantName"],
                 amount: minorAmount + (deliveryAmount ?? 0) + (amountFreeShipping ?? 0),
-                // Delay the display of the amount until the shipping price is retrieved.
                 pending: pending,
             },
             displayItems: displayItems,
@@ -61,11 +60,6 @@ patch(ExpressCheckout.prototype, {
      * @return {void}
      */
     async _prepareExpressCheckoutForm(providerData) {
-        /*
-         * When applying a coupon, the amount can be totally covered, with nothing left to pay. In
-         * that case, the check is whether the variable is defined because the server doesn't send
-         * the value when it equals '0'.
-         */
         if (providerData.providerCode !== "stripe" || !this.paymentContext["amount"]) {
             super._prepareExpressCheckoutForm(...arguments);
             return;
@@ -78,7 +72,7 @@ patch(ExpressCheckout.prototype, {
         const paymentRequest = stripeJS.paymentRequest({
             country: providerData.countryCode,
             currency: this.paymentContext["currencyName"],
-            requestPayerName: true, // Force fetching the billing address for Apple Pay.
+            requestPayerName: true,
             requestPayerEmail: true,
             requestPayerPhone: true,
             requestShipping: this.paymentContext["shippingInfoRequired"],
@@ -95,7 +89,6 @@ patch(ExpressCheckout.prototype, {
                 style: { paymentRequestButton: { type: "buy" } },
             });
 
-        // Check the availability of the Payment Request API first.
         const canMakePayment = await this.waitFor(paymentRequest.canMakePayment());
         if (canMakePayment) {
             paymentRequestButton.mount(
@@ -135,20 +128,17 @@ patch(ExpressCheckout.prototype, {
                 };
                 addresses.shipping_option = ev.shippingOption;
             }
-            // Update the customer addresses on the related document.
             this.paymentContext.partnerId = parseInt(
                 await this.waitFor(
                     rpc(this.paymentContext["expressCheckoutRoute"], addresses),
                 ),
             );
-            // Call the transaction route to create the transaction and retrieve the client secret.
             const { client_secret } = await this.waitFor(
                 rpc(
                     this.paymentContext["transactionRoute"],
                     this._prepareTransactionRouteParams(providerData.providerId),
                 ),
             );
-            // Confirm the PaymentIntent without handling eventual next actions (e.g. 3DS).
             const { paymentIntent, error: confirmError } = await this.waitFor(
                 stripeJS.confirmCardPayment(
                     client_secret,
@@ -157,16 +147,10 @@ patch(ExpressCheckout.prototype, {
                 ),
             );
             if (confirmError) {
-                // Report to the browser that the payment failed, prompting it to re-show the
-                // payment interface, or show an error message and close the payment interface.
                 ev.complete("fail");
             } else {
-                // Report to the browser that the confirmation was successful, prompting it to close
-                // the browser payment method collection interface.
                 ev.complete("success");
                 if (paymentIntent.status === "requires_action") {
-                    // A next step is required.
-                    // Trigger the step.
                     await this.waitFor(stripeJS.confirmCardPayment(client_secret));
                 }
                 redirect("/payment/status");
@@ -174,12 +158,7 @@ patch(ExpressCheckout.prototype, {
         });
 
         if (this.paymentContext["shippingInfoRequired"]) {
-            // Wait until the express checkout form is loaded for Apple Pay and Google Pay to select
-            // a default shipping address and trigger the `shippingaddresschange` event, so we can
-            // fetch the available shipping options. When the customer manually selects a different
-            // shipping address, the shipping options need to be fetched again.
             paymentRequest.on("shippingaddresschange", async (ev) => {
-                // Call the shipping address update route to fetch the shipping options.
                 const availableCarriersData = await this.waitFor(
                     rpc(this.paymentContext["shippingAddressUpdateRoute"], {
                         partial_delivery_address: {
@@ -217,7 +196,6 @@ patch(ExpressCheckout.prototype, {
                 }
             });
 
-            // When the customer selects a different shipping option, update the displayed total.
             paymentRequest.on("shippingoptionchange", async (ev) => {
                 const result = await this.waitFor(
                     rpc("/shop/set_delivery_method", {

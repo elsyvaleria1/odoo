@@ -112,8 +112,6 @@ export class UserAgent extends SignalStore {
     async acceptIncomingCall() {
         this.ringtoneService.stopPlaying();
         this.voip.triggerError(_t("Please accept the use of the microphone."));
-        // ⚠ Async code ahead. Save call here in case the one on this.activeSession
-        // changes in the meantime.
         const call = this.activeSession.call;
         const isSrtpDtls = this._hasSrtpDtlsMediaType(
             this.activeSession.sipSession.body,
@@ -357,7 +355,7 @@ export class UserAgent extends SignalStore {
 
     async rejectIncomingCall() {
         this.ringtoneService.stopPlaying();
-        this.activeSession.sipSession.reject({ statusCode: 603 /* Decline */ });
+        this.activeSession.sipSession.reject({ statusCode: 603 });
         await this.callService.reject(this.activeSession.call);
     }
 
@@ -473,7 +471,7 @@ export class UserAgent extends SignalStore {
     /** @param {Object} inviteSession */
     async _onIncomingInvitation(inviteSession) {
         if (this.activeSession) {
-            inviteSession.reject({ statusCode: 486 /* Busy Here */ });
+            inviteSession.reject({ statusCode: 486 });
             return;
         }
         const phoneNumber = inviteSession.remoteIdentity.uri.user;

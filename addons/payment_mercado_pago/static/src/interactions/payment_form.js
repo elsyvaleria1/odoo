@@ -10,11 +10,9 @@ patch(PaymentForm.prototype, {
     setup() {
         super.setup();
         this.mercadoPagoBricksBuilder = undefined;
-        this.lastMercadoPagoPMId = undefined; // The last instantiated payment method ID.
-        this.lastMercadoPagoBrick = undefined; // The brick of the last instantiated payment method.
+        this.lastMercadoPagoPMId = undefined;
+        this.lastMercadoPagoBrick = undefined;
     },
-
-    // === DOM MANIPULATION === //
 
     /**
      * Prepare the inline form of Mercado Pago for direct payment.
@@ -40,41 +38,33 @@ patch(PaymentForm.prototype, {
             return;
         }
 
-        // Check if instantiation of the component is needed.
         if (flow === "token") {
-            return; // No component for tokens.
+            return;
         } else if (paymentOptionId === this.lastMercadoPagoPMId) {
-            this._setPaymentFlow("direct"); // Overwrite the flow even if no re-instantiation.
-            return; // Don't re-instantiate if already done for this payment method.
+            this._setPaymentFlow("direct");
+            return;
         }
 
-        // Extract and deserialize the inline form values.
         const radio = document.querySelector('input[name="o_payment_radio"]:checked');
         const inlineFormValues = JSON.parse(
             radio.dataset["mercadoPagoInlineFormValues"],
         );
 
-        // Process card payments with the redirect flow if the account is not onboarded with OAuth.
         const publicKey = inlineFormValues["public_key"];
         if (!publicKey) {
-            // The account was not onboarded with OAuth and can't support direct flow.
-            return; // Keep the flow to redirect.
+            return;
         }
 
-        // Overwrite the flow of the selected payment method.
         this._setPaymentFlow("direct");
 
-        // Create the bricksBuilder object if not already done for another payment method.
         if (!this.mercadoPagoBricksBuilder) {
             await this.waitFor(loadJS("https://sdk.mercadopago.com/js/v2"));
             const mercadoPago = new MercadoPago(publicKey, { locale: "en-US" });
             this.mercadoPagoBricksBuilder = mercadoPago.bricks();
         }
 
-        // Unmount the previous brick, if any, as only one brick can be mounted at a time.
         this.lastMercadoPagoBrick?.unmount();
 
-        // Instantiate and mount the card brick.
         const settings = {
             initialization: {
                 amount: this.paymentContext["amount"],
@@ -92,7 +82,6 @@ patch(PaymentForm.prototype, {
                 },
             },
             callbacks: {
-                // Callbacks are required even if empty.
                 onReady: () => {},
                 onError: () => {},
             },
@@ -120,18 +109,16 @@ patch(PaymentForm.prototype, {
      */
     async _initiatePaymentFlow(providerCode, paymentOptionId, paymentMethodCode, flow) {
         if (providerCode !== "mercado_pago" || flow !== "direct") {
-            // Tokens and redirect payment methods are handled by the generic flow.
             await super._initiatePaymentFlow(...arguments);
             return;
         }
 
-        // Trigger form validation.
         this.mercadoPagoFormData = await this.waitFor(
             this.lastMercadoPagoBrick.getFormData(),
         );
         if (!this.mercadoPagoFormData) {
             this._displayErrorDialog(_t("Incorrect payment details"));
-            this._enableButton(); // The submit button is disabled at this point, enable it.
+            this._enableButton();
             return;
         }
         await super._initiatePaymentFlow(...arguments);

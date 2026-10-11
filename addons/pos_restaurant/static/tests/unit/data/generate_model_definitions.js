@@ -1,6 +1,3 @@
-// Side-effect prototype patches (base model methods the restaurant fields
-// need); safe at import time since they only extend an already-defined
-// prototype, unlike the record augmentation which must run post-registration.
 import "./pos_order_line.data.js";
 import "./pos_preset.data.js";
 import "./pos_session.data.js";
@@ -33,11 +30,5 @@ export const definePosRestaurantModels = (extraModels = []) => {
         RestaurantOrderCourse,
         ...extraModels,
     ]);
-    // Applied per test via `beforeEach`, NOT at module-eval time: hoot imports
-    // EVERY test file in the unit-test bundle during collection, so an eager
-    // mutation of the shared model definition leaks this module's fixture into
-    // every other POS suite. `beforeEach` (not `before`) is required — model
-    // definitions are job-scoped per test, so a suite-level hook mutates the
-    // parent job's definition and never reaches the mock server.
     beforeEach(applyRestaurantConfigRecords);
 };

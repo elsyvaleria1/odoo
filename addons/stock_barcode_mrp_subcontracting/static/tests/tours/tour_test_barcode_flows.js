@@ -3,10 +3,6 @@ import { stepUtils } from "@stock_barcode/../tests/tours/tour_step_utils";
 import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 
-// ----------------------------------------------------------------------------
-// Tours
-// ----------------------------------------------------------------------------
-
 registry.category("web_tour.tours").add("test_receipt_classic_subcontracted_product", {
     steps: () => [
         {
@@ -31,7 +27,6 @@ registry.category("web_tour.tours").add("test_receipt_classic_subcontracted_prod
             run: "scan LOC-01-01-00",
         },
         { trigger: ".o_barcode_line:nth-child(2)" },
-        // Adds a line with the "Add Product" button, then scans its destination location.
         {
             trigger: ".o_add_line",
             run: "click",

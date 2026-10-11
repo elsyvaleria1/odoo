@@ -307,7 +307,6 @@ const fetchFromServer = async (request) => {
         isServerOutOfReach = false;
         return response;
     } catch (error) {
-        // a cancelled request rejects too, and says nothing about the server
         if (error instanceof TypeError) {
             isServerOutOfReach = true;
         }
@@ -480,8 +479,6 @@ sw.addEventListener("fetch", (event) => {
     }
     const url = new URL(event.request.url);
     if (event.request.method === "GET" && isHashedAssetURL(url)) {
-        // A script answered through respondWith() is compiled from source on
-        // every load: Chrome keeps no code cache for it.
         if (isServerOutOfReach || sw.navigator?.onLine === false) {
             event.respondWith(keptHashedAsset(event.request));
         } else {

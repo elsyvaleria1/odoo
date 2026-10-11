@@ -75,7 +75,7 @@ test("batch get with a single item", async () => {
         LoadingDataError,
         { message: "it should throw when it's not loaded" },
     );
-    await animationFrame(); // wait for the next tick for the batch to be called
+    await animationFrame();
     expect.verifySteps(["data-fetching-notification"]);
     deferred.resolve();
     await animationFrame();
@@ -139,10 +139,8 @@ test("batch get with one error", async () => {
     );
     await animationFrame();
     expect.verifySteps([
-        // one call for the batch
         "partner/get_something_in_batch",
         "data-fetching-notification",
-        // retries one by one
         "partner/get_something_in_batch",
         "partner/get_something_in_batch",
         "partner/get_something_in_batch",
@@ -172,7 +170,6 @@ test("concurrently get and batch get the same request", async () => {
         LoadingDataError,
     );
     await animationFrame();
-    // it should have fetch the data once
     expect.verifySteps(["partner/get_something", "data-fetching-notification"]);
     expect(serverData.get("partner", "get_something", [5])).toBe(5);
     expect(serverData.batch.get("partner", "get_something", 5)).toBe(5);

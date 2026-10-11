@@ -1,11 +1,5 @@
 /** @odoo-module native */
 
-// Pure presentation helpers for the gamification dashboard and notification
-// service.  Kept free of component state so they can be unit-tested in
-// isolation (see ../../tests/gamification_dashboard_utils.test.js).
-
-// A streak burning for this many days is "hot" (gold flame); half as many is
-// "warm" (green flame).  Below that it is a muted ember.
 export const STREAK_HOT_DAYS = 30;
 export const STREAK_WARM_DAYS = 7;
 
@@ -22,7 +16,6 @@ const TREND_ICON = {
     new: "fa-plus text-info",
 };
 
-// Achievement rarity → Bootstrap contextual badge background.
 const RARITY_BADGE_CLASS = {
     legendary: "bg-success",
     epic: "bg-warning",
@@ -30,7 +23,6 @@ const RARITY_BADGE_CLASS = {
     common: "bg-secondary",
 };
 
-// Gamification bus event type → Font Awesome glyph (without the leading "fa").
 const NOTIFICATION_ICON = {
     badge: "fa-certificate",
     streak: "fa-fire",

@@ -1,17 +1,11 @@
 // @ts-check
 /** @odoo-module native */
 
-// The caller's translation function, not an import: importing nothing, a
-// standalone build of this module (the live chat embedded on another site)
-// carries no second owl and no second translation module, and reads the
-// translations its caller has loaded.
 /** @typedef {(source: string, moduleName: string) => string} TranslateFn */
 let _t = (/** @type {string} */ str) => str;
 
 /** @param {TranslateFn} [translate] */
 function translateWith(translate) {
-    // A page loaded before this module changed calls it without one: its
-    // emoji names stay untranslated rather than its picker failing.
     if (typeof translate !== "function") {
         _t = (str) => str;
         return;

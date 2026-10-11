@@ -12,14 +12,6 @@ import { KanbanRecord } from "@web/views/kanban";
 
 import { ProductCatalogOrderLine } from "./order_line/order_line.js";
 
-/**
- * Order-line components by order model, e.g. `"purchase.order"`.
- *
- * A module that ships its own line component registers it here instead of
- * patching `orderLineComponent` with one more `res_model` comparison: the
- * lookup stays O(1), the set of extensions is enumerable from this module, and
- * two modules cannot silently race to answer for the same model.
- */
 export const productCatalogOrderLines = registry.category(
     "product_catalog_order_lines",
 );
@@ -46,12 +38,6 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
         );
         this._pendingUpdate = Promise.resolve();
 
-        // Leaving the catalog has to outlast the debounce above.
-        // `execBeforeUnmount` does fire the pending write, but nothing awaits
-        // it, so a card touched less than 500ms before leaving had its write
-        // still in flight while the order form was already reloading -- and the
-        // line the user just added was simply absent. Register a flush the
-        // controller awaits in `beforeLeave`, which every exit goes through.
         const parentCatalog = useProductCatalogContext();
         parentCatalog.productCatalogPendingUpdates?.add(this);
         onWillDestroy(() => parentCatalog.productCatalogPendingUpdates?.delete(this));
@@ -86,7 +72,6 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
     }
 
     onGlobalClick(ev) {
-        // avoid a concurrent update when clicking on the buttons (that are inside the record)
         if (ev.target.closest(".o_product_catalog_cancel_global_click")) {
             return;
         }
@@ -96,10 +81,6 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
             this.increaseQuantity();
         }
     }
-
-    //--------------------------------------------------------------------------
-    // Data Exchanges
-    //--------------------------------------------------------------------------
 
     async _updateQuantity() {
         const price = await this._updateQuantityAndGetPrice();
@@ -112,17 +93,11 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
      * @returns {Promise<any>}
      */
     flushPendingUpdate() {
-        // `cancel(true)` runs the pending call synchronously, which reassigns
-        // `_pendingUpdate` to the resulting request before this returns.
         this.debouncedUpdateQuantity.cancel(true);
         return this._pendingUpdate;
     }
 
     _updateQuantityAndGetPrice() {
-        // Chain RPC calls to ensure that each request is completed before starting the next one.
-        // This prevents race conditions and ensures the server processes updates sequentially.
-        // The `.catch` resets the chain after a failed call so a single rejected
-        // request doesn't permanently block every subsequent update on this card.
         this._pendingUpdate = this._pendingUpdate
             .catch(() => {})
             .then(() =>
@@ -158,10 +133,6 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
         });
     }
 
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
-
     updateQuantity(quantity) {
         this._sectionIdOfPendingUpdate = this.searchModel.selectedSection.sectionId;
         if (this.productCatalogData.readOnly) {
@@ -171,15 +142,10 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
         if (lineCountChange !== 0) {
             this.notifyLineCountChange(lineCountChange);
         }
-        // A catalog line is never negative: removing more than is on the order
-        // takes the product off it, it does not owe any back.
         this.productCatalogData.quantity = Math.max(0, quantity || 0);
         this.debouncedUpdateQuantity();
     }
 
-    /**
-     * Add the product to the order
-     */
     addProduct(qty = 1) {
         if (
             this.productCatalogData.quantity === 0 &&
@@ -190,16 +156,10 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
         this.updateQuantity(qty);
     }
 
-    /**
-     * Remove the product to the order
-     */
     removeProduct() {
         this.updateQuantity(0);
     }
 
-    /**
-     * Increase the quantity of the product on the order line.
-     */
     increaseQuantity(qty = 1) {
         this.updateQuantity(this.productCatalogData.quantity + qty);
     }
@@ -214,9 +174,6 @@ export class ProductCatalogKanbanRecord extends KanbanRecord {
         this.updateQuantity(Number.isNaN(quantity) ? 0 : quantity);
     }
 
-    /**
-     * Decrease the quantity of the product on the order line.
-     */
     decreaseQuantity() {
         this.updateQuantity(this.productCatalogData.quantity - 1);
     }

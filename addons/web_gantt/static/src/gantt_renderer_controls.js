@@ -35,19 +35,9 @@ export class GanttRendererControls extends Component {
 
     setup() {
         this.ui = useService("ui");
-        // Subscribe to the model rather than reading it off the raw prop, so a
-        // `notify()` re-renders this component on its own instead of relying on
-        // the controller's blanket deep render.
         this.model = useReactiveModel(this.props.model);
-        // `useDebounced` rather than `debounce`: a range change followed
-        // immediately by leaving the view used to fire its RPC half a second
-        // after the component was gone.
         this.updateMetaData = useDebounced(() => this.requestFetch(), 500);
         this.state = proxy(pick(this.model.metaData, ...KEYS));
-        // The state is a copy the toolbar edits ahead of the model; once the
-        // model commits a range this toolbar did not ask for, the copy is
-        // re-taken -- but not while a request of its own is still in flight,
-        // or a stray notify would erase what the user just clicked.
         this.syncedMetaData = this.model.metaData;
         this.pendingRequests = 0;
         onWillRender(() => this.syncStateFromModel());

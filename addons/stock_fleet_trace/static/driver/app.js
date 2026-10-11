@@ -1,8 +1,3 @@
-// Driver screen: works a delivery trip on the phone without connection.
-// The page is rendered by /stock_fleet_trace/driver with its translated terms in
-// <body data-boot>, cached by the service worker, and syncs the event queue
-// whenever the phone has signal.
-
 import { hashEvent } from "./canonical.js";
 import * as db from "./db.js";
 
@@ -10,15 +5,10 @@ const BASE = "/stock_fleet_trace";
 const SYNC_INTERVAL = 30000;
 const FIX_MAX_AGE = 120000;
 const FINAL_EVENTS = ["deliver", "partial", "not_delivered"];
-// A request that gets no answer in this time is treated as no signal; sending
-// events waits longer, since the server applies them before it answers.
 const RPC_TIMEOUT = 15000;
 const EVENTS_TIMEOUT = 90000;
-// Events per request: a weak signal carries a few at a time.
 const SYNC_CHUNK = 5;
-// Final events the server did not apply leave the stop open again.
 const REOPENING_STATES = ["review", "dismissed"];
-// Camera formats: lot labels come as QR, Code 128, DataMatrix, EAN or Code 39.
 const BARCODE_FORMATS = ["qr_code", "code_128", "data_matrix", "ean_13", "code_39"];
 
 const boot = JSON.parse(document.body.dataset.boot || "{}");
@@ -43,11 +33,6 @@ const state = {
 class SessionExpired extends Error {}
 class ServerError extends Error {}
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Replace Python-style %(name)s placeholders of a translated term. */
 function fmt(term, values = {}) {
     return (term || "").replace(/%\((\w+)\)s/g, (match, name) =>
         name in values ? String(values[name]) : match,
@@ -82,7 +67,6 @@ function pad(number) {
     return String(number).padStart(2, "0");
 }
 
-/** Local time as ISO 8601 with its UTC offset, e.g. 2026-09-29T09:30:00-06:00. */
 function isoWithOffset(date) {
     const offset = -date.getTimezoneOffset();
     const sign = offset >= 0 ? "+" : "-";
@@ -112,10 +96,6 @@ function vibrate(pattern) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Server
-// ---------------------------------------------------------------------------
-
 async function rpc(url, params, timeout = RPC_TIMEOUT) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
@@ -134,13 +114,11 @@ async function rpc(url, params, timeout = RPC_TIMEOUT) {
             signal: controller.signal,
         });
     } catch {
-        // No signal, or a signal too weak to answer in time.
         throw new TypeError("offline");
     } finally {
         clearTimeout(timer);
     }
     if (response.redirected && response.url.includes("/web/login")) {
-        // Odoo sends an expired session to the login page.
         throw new SessionExpired();
     }
     const type = response.headers.get("content-type") || "";
@@ -160,17 +138,12 @@ async function rpc(url, params, timeout = RPC_TIMEOUT) {
     return body.result;
 }
 
-/** Run ``task`` holding ``name`` across every tab of this phone. */
 function withLock(name, task) {
     if (navigator.locks) {
         return navigator.locks.request(name, task);
     }
     return task();
 }
-
-// ---------------------------------------------------------------------------
-// Location
-// ---------------------------------------------------------------------------
 
 let lastFix = null;
 
@@ -187,7 +160,6 @@ function watchLocation() {
     );
 }
 
-/** The phone's position, best effort: null when there is no fix in time. */
 function currentPosition() {
     if (lastFix && Date.now() - lastFix.timestamp < FIX_MAX_AGE) {
         return Promise.resolve(lastFix);
@@ -210,10 +182,6 @@ function currentPosition() {
 function round7(value) {
     return Math.round(value * 1e7) / 1e7;
 }
-
-// ---------------------------------------------------------------------------
-// Events
-// ---------------------------------------------------------------------------
 
 let chainLock = Promise.resolve();
 
@@ -252,14 +220,11 @@ function captureEvent(eventType, pickingId, payload) {
             event,
         });
     };
-    // Serialized, here and across tabs: two events captured at once must not
-    // chain to the same hash.
     const locked = () => withLock(`sft-chain-${tripId}`, run);
     chainLock = chainLock.then(locked, locked);
     return chainLock;
 }
 
-/** Whether a stored record belongs to the user logged in on this phone. */
 function mine(record) {
     return !record.user_id || record.user_id === boot.user_id;
 }
@@ -276,7 +241,6 @@ function stopEvents(pickingId) {
     return state.events.filter((record) => record.event.picking_id === pickingId);
 }
 
-/** The stop's status: the server's, else the last result captured on the phone. */
 function stopStatus(stop) {
     const final = stopEvents(stop.picking_id)
         .filter(
@@ -299,7 +263,6 @@ function stopStatus(stop) {
         return { code: "cancel", label: T.status_cancel };
     }
     if (stop.state === "left") {
-        // No longer on the trip on the server: nothing left to do here.
         return { code: "left", label: T.status_left };
     }
     return { code: "todo", label: T.status_todo };
@@ -313,10 +276,6 @@ function stopScans(pickingId) {
     );
 }
 
-/**
- * Units counted at a stop for a lot (empty lot: a product without one). One
- * scan counts in full: the slip counts every line, a lot label all of its lot.
- */
 function scannedQuantity(stop, lot, onBoard) {
     const scans = stopScans(stop.picking_id);
     if (scans.some((record) => same(record.event.payload.code, stop.name))) {
@@ -335,10 +294,6 @@ function scannedQuantity(stop, lot, onBoard) {
     );
 }
 
-/**
- * Why Delivered would be refused, as the server checks it: once lots were
- * scanned at a stop, every line must be scanned in full. Null when fine.
- */
 function deliverBlockedByScans(stop) {
     const scans = stopScans(stop.picking_id);
     if (!scans.length) {
@@ -352,17 +307,12 @@ function deliverBlockedByScans(stop) {
     for (const [key, quantity] of onBoard) {
         const lot = key.split("|")[1];
         const scanned = scannedQuantity(stop, lot, quantity);
-        // A product without lot counts only once the slip was scanned.
         if (lot && scanned !== quantity) {
             return T.deliver_scans_incomplete;
         }
     }
     return null;
 }
-
-// ---------------------------------------------------------------------------
-// Sync
-// ---------------------------------------------------------------------------
 
 let syncAgain = false;
 
@@ -371,7 +321,6 @@ async function sync() {
         return;
     }
     if (state.syncing) {
-        // Captured while a sync runs: send it right after, not in 30 s.
         syncAgain = true;
         return;
     }
@@ -382,7 +331,6 @@ async function sync() {
     try {
         await withLock("sft-sync", () => sendQueued(errors));
         if (state.pkg) {
-            // Best effort: the stops' server state.
             await refreshPackage(state.pkg.trip.id).catch(() => {});
         }
         state.sessionExpired = false;
@@ -392,7 +340,6 @@ async function sync() {
         if (error instanceof SessionExpired) {
             state.sessionExpired = true;
         } else if (!(error instanceof TypeError)) {
-            // TypeError is no signal: the queue waits for the next try.
             errors.push(error.message);
         }
     } finally {
@@ -411,11 +358,6 @@ async function sync() {
     }
 }
 
-/**
- * Send this user's queued events, trip by trip, a few at a time in chain
- * order. A trip's last hash (its head) goes with the last chunk only, once
- * everything before it arrived.
- */
 async function sendQueued(errors) {
     const all = (await db.getAllEvents()).filter(mine);
     const tripIds = [
@@ -448,16 +390,11 @@ async function sendQueued(errors) {
 }
 
 async function refreshPackage(tripId) {
-    // The phone's last event tells the trip it still holds some, even when
-    // sending them fails: it cannot return until they arrive or the phone is
-    // released.
     const own = (await db.getTripEvents(tripId)).filter(mine);
     const head = own.length ? own.at(-1).event.event_hash : null;
     const pkg = await rpc(`${BASE}/trip/${tripId}/package`, { head });
     pkg.downloaded_at = new Date().toISOString();
     pkg.user_id = boot.user_id;
-    // A stop not delivered leaves the trip on the server; the phone keeps
-    // showing the stops it recorded something for, with that result.
     const previous = await db.getPackage(tripId);
     if (previous) {
         const recorded = new Set(
@@ -479,7 +416,6 @@ async function refreshPackage(tripId) {
 
 let downloading = null;
 
-/** Download, one after the other, the package of every trip in ``trips``. */
 function downloadAll(trips) {
     if (downloading) {
         return downloading;
@@ -490,7 +426,7 @@ function downloadAll(trips) {
                 await refreshPackage(trip.id);
             } catch (error) {
                 if (!(error instanceof ServerError)) {
-                    break; // No signal or session: the next sync tries again.
+                    break;
                 }
             }
         }
@@ -503,10 +439,6 @@ function downloadAll(trips) {
     return downloading;
 }
 
-/**
- * The trips to show: this user's cached list and downloaded packages at once,
- * then the server's list when ``online`` and there is signal.
- */
 async function loadTrips(online = false) {
     const packages = (await db.getPackages()).filter(mine);
     const cached = await db.getMeta(`trips_${boot.user_id}`, []);
@@ -515,8 +447,6 @@ async function loadTrips(online = false) {
         try {
             trips = await rpc(`${BASE}/driver/trips`, {});
             await db.setMeta(`trips_${boot.user_id}`, trips);
-            // Every trip the driver has is on the phone before the signal goes,
-            // not only the ones opened with signal.
             downloadAll(trips);
             state.sessionExpired = false;
         } catch (error) {
@@ -529,7 +459,6 @@ async function loadTrips(online = false) {
     }
     const listed = new Set(trips.map((trip) => trip.id));
     trips = [...trips];
-    // Downloaded trips stay reachable offline even when no longer listed.
     for (const pkg of packages) {
         if (!listed.has(pkg.trip.id)) {
             trips.push({ ...pkg.trip, stop_count: pkg.stops.length });
@@ -541,10 +470,6 @@ async function loadTrips(online = false) {
         downloaded: downloaded.has(trip.id),
     }));
 }
-
-// ---------------------------------------------------------------------------
-// Navigation
-// ---------------------------------------------------------------------------
 
 async function openTrip(tripId) {
     let pkg = await db.getPackage(tripId);
@@ -574,7 +499,6 @@ async function openTrip(tripId) {
     state.form = null;
     await loadEvents();
     render();
-    // The downloaded trip opens at once; the server's state follows if there is signal.
     refreshPackage(tripId)
         .then(() => !state.form && state.screen !== "trips" && render())
         .catch(() => {});
@@ -608,14 +532,6 @@ async function goBack() {
     render();
 }
 
-// ---------------------------------------------------------------------------
-// Scanning
-// ---------------------------------------------------------------------------
-
-/**
- * The code as the trip names it: without a scanner's symbology prefix, and the
- * lot alone from a GS1 label that carries it under application identifier 10.
- */
 function normalizeCode(raw) {
     const text = (raw || "").trim();
     const symbology = text.match(/^\][A-Za-z]\d/);
@@ -624,8 +540,6 @@ function normalizeCode(raw) {
     if (printed) {
         return printed[1].trim();
     }
-    // Raw GS1: application identifiers one after another, variable ones ended
-    // by the group separator. Only a GS1 symbol, or data that reads as one, is parsed.
     if (symbology || code.includes("\u001d") || /^01\d{14}/.test(code)) {
         const fixed = { "01": 14, "02": 14, 11: 6, 13: 6, 15: 6, 17: 6 };
         while (code.length > 2) {
@@ -662,7 +576,6 @@ async function handleScan(raw) {
             same(record.event.payload.code, slip.name),
         );
         if (stopStatus(slip).code === "todo" && !counted) {
-            // One scan of the slip registers every unit of the delivery.
             await captureEvent("scan", slip.picking_id, { code: slip.name });
             await loadEvents();
             if (!state.form) {
@@ -703,7 +616,6 @@ async function handleScan(raw) {
         return;
     }
     let here = matches.filter((m) => m.stop.picking_id === stop.picking_id);
-    // The same lot name on two products counts for the first, as the server does.
     here = here.filter((m) => m.line.product_id === here[0]?.line.product_id);
     if (!here.length) {
         vibrate([300, 100, 300, 100, 300]);
@@ -726,7 +638,6 @@ async function handleScan(raw) {
     const scanned = scannedQuantity(stop, lot, onBoard);
     const status = stopStatus(stop);
     if (status.code !== "todo" || scanned >= onBoard) {
-        // Checked, but not counted: the server would refuse the scan.
         vibrate(60);
         showMessage(
             "ok",
@@ -739,7 +650,6 @@ async function handleScan(raw) {
         );
         return;
     }
-    // One scan of a lot label registers all of that lot for the stop.
     await captureEvent("scan", stop.picking_id, { code: lot });
     await loadEvents();
     vibrate(60);
@@ -799,9 +709,7 @@ async function openCamera() {
                 handleScan(codes[0].rawValue);
                 return;
             }
-        } catch {
-            // A frame that cannot be read yet; try the next one.
-        }
+        } catch {}
         setTimeout(tick, 200);
     };
     tick();
@@ -850,10 +758,6 @@ function scanBox() {
     );
 }
 
-// ---------------------------------------------------------------------------
-// Signature
-// ---------------------------------------------------------------------------
-
 function signaturePad() {
     const canvas = h("canvas", { class: "sft-signature", width: 600, height: 220 });
     const pad = { canvas, signed: false };
@@ -891,7 +795,6 @@ function signaturePad() {
         context.clearRect(0, 0, canvas.width, canvas.height);
         pad.signed = false;
     };
-    /** Base64 PNG without the data: prefix, as the Image field stores it. */
     pad.value = () =>
         pad.signed
             ? canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "")
@@ -909,10 +812,6 @@ function signaturePad() {
     );
     return pad;
 }
-
-// ---------------------------------------------------------------------------
-// Stop actions
-// ---------------------------------------------------------------------------
 
 function field(label, control, required = false) {
     return h(
@@ -932,10 +831,6 @@ function select(options, placeholder) {
     );
 }
 
-/**
- * The form of one action. Each returns its element and a builder that reads
- * the inputs and returns the payload, or throws a translated message.
- */
 function actionForm(kind, stop) {
     const pkg = state.pkg;
     const receiver = h("input", {
@@ -1065,11 +960,6 @@ function actionForm(kind, stop) {
     );
 }
 
-/**
- * What a plugin of another module (window.sftDriverPlugins) works with: its
- * ``actionFields(kind, stop, api)`` returns an element added to the form of a
- * stop action, or nothing.
- */
 const pluginApi = {
     h,
     fmt,
@@ -1079,10 +969,6 @@ const pluginApi = {
     terms: T,
     isOnline: () => state.online,
 };
-
-// ---------------------------------------------------------------------------
-// Rendering
-// ---------------------------------------------------------------------------
 
 const app = document.getElementById("sft-app");
 
@@ -1114,7 +1000,6 @@ function updateSyncBar() {
         fmt(T.last_sync, { time: formatTime(state.lastSync) }),
     ];
     if (state.othersPending) {
-        // Captured by another driver on this phone: sent when that driver logs in.
         parts.push(fmt(T.other_user_pending, { count: state.othersPending }));
     }
     if (state.syncing) {
@@ -1218,8 +1103,6 @@ function renderTrips() {
 }
 
 function logOut() {
-    // Logging out needs the server; queued events stay on the phone, kept per
-    // user, and go out the next time this user signs in.
     if (!state.online) {
         return;
     }
@@ -1334,7 +1217,6 @@ function renderStop() {
             {
                 class: `sft-btn ${cls}`,
                 onclick: () => {
-                    // Refused here what the server would send to review.
                     const blocked =
                         kind === "deliver" ? deliverBlockedByScans(stop) : null;
                     if (blocked) {
@@ -1432,10 +1314,6 @@ function render() {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Boot
-// ---------------------------------------------------------------------------
-
 async function start() {
     if ("serviceWorker" in navigator && boot.service_worker) {
         navigator.serviceWorker
@@ -1458,12 +1336,10 @@ async function start() {
         state.online = false;
         updateSyncBar();
     });
-    // Ask Chrome not to evict what is not sent yet when the phone runs low on space.
     if (navigator.storage && navigator.storage.persist) {
         navigator.storage.persist().catch(() => {});
     }
     setInterval(sync, SYNC_INTERVAL);
-    // What the phone holds shows at once; the server's list follows with signal.
     await loadEvents();
     await loadTrips();
     render();
@@ -1471,7 +1347,6 @@ async function start() {
     if (preselected) {
         await openTrip(preselected);
     }
-    // The list with signal also downloads every trip, not only the one opened.
     loadTrips(true).then(() => state.screen === "trips" && render());
     sync();
 }

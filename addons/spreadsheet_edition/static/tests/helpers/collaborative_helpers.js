@@ -45,9 +45,6 @@ export function leaveSession(spreadsheetChannel, clientId) {
     });
 }
 
-/**
- * Setup a realtime collaborative test environment, with the given data
- */
 export async function setupCollaborativeEnv(serverData) {
     const env = await makeSpreadsheetMockEnv({ serverData });
 

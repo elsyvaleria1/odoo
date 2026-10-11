@@ -21,18 +21,10 @@ function openAccountSettingsTab() {
             content: "Open Users view",
             trigger: '[data-menu-xmlid="base.menu_action_res_users"]',
             run: function (helpers) {
-                // funny story: the users view we're trying to reach, sometimes we're
-                // already there, but if we re-click the next step executes before the
-                // action has the time to re-load, the one after that doesn't, and our
-                // selection get discarded by the action reloading, so here try to
-                // see if we're already on the users action through the breadcrumb and
-                // just close the menu if so
                 const breadcrumb = document.querySelector(".breadcrumb");
                 if (!breadcrumb || !breadcrumb.textContent.includes("Users")) {
-                    // on general settings page, click menu
                     helpers.click();
                 } else {
-                    // else close menu
                     helpers.click('[data-menu-xmlid="base.menu_users"]');
                 }
             },

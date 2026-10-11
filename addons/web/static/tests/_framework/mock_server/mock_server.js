@@ -1546,12 +1546,6 @@ export function defineMenus(menus, options) {
  */
 export function defineModels(ModelClasses, options) {
     const models = Object.values(ModelClasses);
-    // A mock model may carry the routes its addon's client reaches it through
-    // (`static _mockRoutes = [[route, handler], ...]`), so that a helper which
-    // spreads another addon's models gets that addon's routes with them. mail's
-    // routes used to be registered only by defineMailModels(), and every helper
-    // that spread mailModels into a bare defineModels() -- sms, calendar,
-    // snailmail and forty more -- served a chatter no /mail route answered.
     const routes = [];
     for (const ModelClass of models) {
         const RouteModelClass = /** @type {any} */ (ModelClass);

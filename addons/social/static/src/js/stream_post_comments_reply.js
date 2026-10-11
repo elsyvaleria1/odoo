@@ -68,10 +68,6 @@ export class StreamPostCommentsReply extends Component {
         this._addComment(textarea);
     }
 
-    //---------
-    // Private
-    //---------
-
     async _addComment(textarea) {
         if (
             this.props.preventAddComment(
@@ -95,8 +91,6 @@ export class StreamPostCommentsReply extends Component {
             formData.append("comment_id", this.comment.id);
         }
         if (this.state.attachmentSrc) {
-            // convert to base 64 encoded file into a Blob object
-            // (with the correct Content-Type)
             const base64Response = await fetch(this.state.attachmentSrc);
             const blob = await base64Response.blob();
             const file = new File([blob], "attachment", { type: blob.type });
@@ -110,7 +104,6 @@ export class StreamPostCommentsReply extends Component {
         xhr.onload = () => {
             let comment = JSON.parse(xhr.response);
             if (this.isCommentEdit) {
-                // preserve other keys if they didn't change (e.g. like summary, etc)
                 comment = { ...this.comment, ...comment };
             }
             if (comment.error) {
@@ -155,10 +148,6 @@ export class StreamPostCommentsReply extends Component {
         );
     }
 
-    //------------------------
-    // Image Upload Processing
-    //------------------------
-
     /**
      * Triggers image selection (file system browse).
      *
@@ -185,16 +174,9 @@ export class StreamPostCommentsReply extends Component {
         this.state.attachmentSrc = "data:" + type + ";base64," + data;
     }
 
-    /**
-     * Removes the image preview when the user decides to remove it.
-     */
     _onImageRemove() {
         this.state.attachmentSrc = false;
     }
-
-    //--------
-    // Getters
-    //--------
 
     get comment() {
         return this.props.comment;

@@ -38,7 +38,6 @@ export class SelfOrder extends SignalStore {
             pos_data,
         },
     ) {
-        // services
         this.notification = notification;
         this.router = router;
         this.data = pos_data;
@@ -49,7 +48,6 @@ export class SelfOrder extends SignalStore {
         this.bus = bus_service;
         this.dialog = dialog;
 
-        // data
         this.models = this.data.models;
         this.session = this.models["pos.session"].getFirst();
         this.config = this.models["pos.config"].getFirst();
@@ -67,8 +65,6 @@ export class SelfOrder extends SignalStore {
         this.ordering = false;
         this.orderTakeAwayState = {};
         this.orderSubscribtion = new Set();
-        // each order's own bus channel, named by the server: payment results
-        // are sent there, not where every holder of a QR code listens
         /** @type {Map<string, { orderId: number, release: () => void, unsubscribes: (() => void)[] }>} */
         this.orderChannels = new Map();
         this.orderNotifications = {};
@@ -120,8 +116,6 @@ export class SelfOrder extends SignalStore {
                     this.pos_session = [];
                     this.ordering = false;
                 } else {
-                    // reload to get potential new settings
-                    // more easier than RPC for now
                     window.location.reload();
                 }
             });
@@ -198,12 +192,6 @@ export class SelfOrder extends SignalStore {
         }
     }
 
-    /**
-     * Return the current table based on the URL identifier
-     * This is the only way to be sure of the table the user is using
-     * If we rely on the order table, there could be mismatches if the user
-     * scanned another QR code after creating the order.
-     */
     get currentTable() {
         const tableIdentifier = this.router.getTableIdentifier();
         const table = this.models["restaurant.table"].find(
@@ -233,13 +221,10 @@ export class SelfOrder extends SignalStore {
             const hourStart = c.hour_after;
             const hourUntil = c.hour_until;
             if (hourStart === hourUntil || (hourStart === 0 && hourUntil === 24)) {
-                // if equal, it means open the whole day
                 return true;
             } else if (hourStart < hourUntil) {
-                // in this case, if current time is in between, then shop is open
                 return now >= hourStart && now <= hourUntil;
             } else {
-                // in this case, if current time is in between, then shop is closed
                 return !(now >= hourStart && now <= hourUntil);
             }
         });
@@ -395,9 +380,7 @@ export class SelfOrder extends SignalStore {
         );
     }
 
-    // TODO: Remove in master. This method is redundant as the same logic exists in _load_pos_self_data_domain.
     filterPaymentMethods(pms) {
-        //based on _load_pos_self_data_domain from pos_payment_method.py
         return this.config.self_ordering_mode === "kiosk"
             ? pms.filter((rec) =>
                   ["adyen", "stripe"].includes(rec.use_payment_terminal),
@@ -406,17 +389,16 @@ export class SelfOrder extends SignalStore {
     }
 
     async confirmOrder() {
-        const payAfter = this.config.self_ordering_pay_after; // each, meal
-        const device = this.config.self_ordering_mode; // kiosk, mobile
-        const service = this.selfService; // table, counter, delivery
+        const payAfter = this.config.self_ordering_pay_after;
+        const device = this.config.self_ordering_mode;
+        const service = this.selfService;
         const paymentMethods = this.filterPaymentMethods(
             this.models["pos.payment.method"].getAll(),
-        ); // Stripe, Adyen, Online
+        );
 
         let order = this.currentOrder;
         const orderHasChanges = Object.keys(order.changes).length > 0;
 
-        // Stand number page will recall this function after the stand number is set
         if (
             service === "table" &&
             !order.isTakeaway &&
@@ -433,8 +415,6 @@ export class SelfOrder extends SignalStore {
             return;
         }
 
-        // When no payment methods redirect to confirmation page
-        // the client will be able to pay at counter
         if (paymentMethods.length === 0) {
             let screenMode = "pay";
 
@@ -444,10 +424,6 @@ export class SelfOrder extends SignalStore {
 
             this.confirmationPage(screenMode, device, order.access_token);
         } else {
-            // In meal mode, first time the customer validate his order, we send it to the server
-            // and we redirect him to the confirmation page, the next time he validate his order
-            // if the order is already saved on the server, we redirect him to the payment page
-            // In each mode, we redirect the customer to the payment page directly
             if (payAfter === "meal" && orderHasChanges) {
                 await this.sendDraftOrderToServer();
                 this.confirmationPage("order", device, order.access_token);
@@ -575,7 +551,6 @@ export class SelfOrder extends SignalStore {
             this.currentLanguage = this.config.self_ordering_default_language_id;
         }
         languages?.forEach((lg) => {
-            // To display  "Français (BE)"  instead of "French (BE) / Français (BE)"
             lg.display_name = lg.name.split("/").pop();
         });
         cookie.set("frontend_lang", this.currentLanguage?.code || "en_US");
@@ -702,7 +677,6 @@ export class SelfOrder extends SignalStore {
     }
 
     removeOrdersByAccessTokens(orderAccessTokens = []) {
-        // Remove orders and their dependent records locally and from IndexedDB
         this.models["pos.order"]
             .filter((o) => orderAccessTokens.includes(o.access_token))
             .forEach((o) => this.data.localDeleteCascade(o));
@@ -803,7 +777,7 @@ export class SelfOrder extends SignalStore {
                 {
                     order: this.currentOrder.serializeForORM(),
                     access_token: this.access_token,
-                    table_identifier: tableIdentifier, // Always trust URL one, is the one user scanned
+                    table_identifier: tableIdentifier,
                 },
             );
             const result = this.models.connectNewData(data);
@@ -842,8 +816,6 @@ export class SelfOrder extends SignalStore {
                 write_date: serializeDateTime(order.write_date),
             }));
 
-        // Token given in argument are probably not in the local database
-        // so write_date is set to 1970-01-01 00:00:00
         const argTokens = tokens.map((token) => ({
             access_token: token,
             write_date: "1970-01-01 00:00:00",
@@ -861,10 +833,6 @@ export class SelfOrder extends SignalStore {
                 table_identifier: tableIdentifier,
             });
             const result = this.models.connectNewData(data);
-            // A device keeps the open order it already shares. Another open
-            // order of the table, dropped locally when this one was adopted,
-            // comes back on the next refresh; adopting it would swap the
-            // customer's order for another one on every state change.
             const selected = this.models["pos.order"].getBy(
                 "uuid",
                 this.selectedOrderUuid,
@@ -875,9 +843,6 @@ export class SelfOrder extends SignalStore {
             if (openOrder && this.router.activeSlot !== "confirmation") {
                 this.selectedOrderUuid = openOrder.uuid;
 
-                // Only a cart never sent folds into the table's order; a sent
-                // order lives on the server, and dropping it here would only
-                // bring it back on the next refresh.
                 const unsentDrafts = this.models["pos.order"].filter(
                     (o) =>
                         o.state === "draft" && !o.isSynced && o.uuid !== openOrder.uuid,
@@ -978,7 +943,6 @@ export class SelfOrder extends SignalStore {
                     if (productName) {
                         unavailableProducts.add(productName);
                     }
-                    // Remove all children and parent if any product is unavailable
                     line.combo_line_ids.forEach((childLine) => {
                         childLine.delete();
                     });
@@ -1012,7 +976,6 @@ export class SelfOrder extends SignalStore {
             product = productTemplate;
         }
 
-        // Taxes computation.
         const order = this.currentOrder;
         const taxesData = product.getTaxDetails({
             overridedValues: {

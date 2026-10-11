@@ -132,7 +132,6 @@ export class GloryService {
                 children: [amountInCents.toString()],
             },
             {
-                // Option Type 1 = Enable cancellation when there is insufficient change
                 name: "Option",
                 attributes: { type: "1" },
             },
@@ -225,7 +224,6 @@ export class GloryService {
         await this._checkStatusAndVerifyIfNeeded();
 
         const { xmlResponse } = await this._sendXmlRequest(XML_REQUESTS.getInventory, [
-            // Option Type 2 = 'Payable' inventory, see p76 of the IF Specification document
             { name: "Option", attributes: { type: "2" } },
         ]);
         this._inventoryChangeHandler(xmlResponse);
@@ -243,7 +241,6 @@ export class GloryService {
             }
         }
 
-        // If access control is enabled and we don't have a valid user/pass, we receive this 'credential ng' message
         this._waitForResponseWithType("credential ng").then(() => {
             this.status = "BAD_CREDENTIALS";
         });

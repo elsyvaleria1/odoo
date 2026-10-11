@@ -8,13 +8,6 @@ import { useOpenX2ManyRecord } from "@web/fields/relational/x2many_dialog";
 
 import { QuestionPageListRenderer } from "./question_page_list_renderer.js";
 
-/**
- * For convenience, we'll prevent closing the question form dialog and
- * stay in edit mode to make sure only valid records are saved. Therefore,
- * in case of error occurring when saving we will replace default error
- * modal with a notification.
- */
-
 class SurveySaveError extends Error {}
 function SurveySaveErrorHandler(env, error, originalError) {
     if (originalError instanceof SurveySaveError) {
@@ -44,10 +37,6 @@ class QuestionPageOneToManyField extends X2ManyField {
             openRecord: (record) => this.openRecord(record),
         });
 
-        // Systematically and automatically save SurveyForm at each question edit/creation
-        // enables checking validation parameters consistency and using questions as triggers
-        // immediately during question creation.
-        // Preparing everything in order to override `this._openRecord` below.
         const { saveAndLink: superSaveAndLink, updateRecord: superUpdateRecord } =
             useX2ManyCrud(() => this.list, this.isMany2Many);
 
@@ -57,8 +46,6 @@ class QuestionPageOneToManyField extends X2ManyField {
             try {
                 await self.props.record.save();
             } catch (error) {
-                // In case of error occurring when saving.
-                // Remove erroneous question row added to the embedded list
                 await this.list.delete(record);
                 throw new SurveySaveError(error?.data?.message ?? error.message);
             }
@@ -84,7 +71,6 @@ class QuestionPageOneToManyField extends X2ManyField {
         this._openRecord = async (params) => {
             const { record, name } = this.props;
             if (!(await record.save())) {
-                // do not open question form as it won't be savable either.
                 return;
             }
             if (params.record) {

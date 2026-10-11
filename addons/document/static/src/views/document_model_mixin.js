@@ -21,9 +21,6 @@ const log = makeLogger("document.model");
 
 export const DocumentsModelMixin = (component) =>
     class extends component {
-        // _loadData reorders the page around the document to restore and the
-        // root reapplies the selection; a background cache refresh would set
-        // the raw server page on the root and undo both
         static withCache = false;
 
         static useViewContext() {
@@ -37,16 +34,12 @@ export const DocumentsModelMixin = (component) =>
             if (this.config.resModel === "document.document") {
                 this.originalSelection = params.state?.sharedSelection;
             }
-            // set with each root (_createRoot); read by shortcuts before the
-            // first one exists
             this.shortcutTargetRecords = [];
-            // the requested document to preview once the controller renders it
             this.pendingPreviewId = undefined;
             this.action = useService("action");
             this.dialogService = useService("dialog");
             this.documentService = useService("document.document");
             this.notification = useService("notification");
-            // the chatter's activities show on the card and in the list columns
             useBus(
                 this.documentService.bus,
                 DocumentsBusEvent.ACTIVITY_CHANGED,
@@ -58,7 +51,6 @@ export const DocumentsModelMixin = (component) =>
         }
 
         exportSelection() {
-            // the selection, not targetRecords: a preview narrows those to itself
             return this.root.selection.map((rec) => rec.resId);
         }
 
@@ -89,14 +81,11 @@ export const DocumentsModelMixin = (component) =>
             if (this.config.resModel !== "document.document") {
                 return res;
             }
-            // a load superseded by a newer one publishes no root: what
-            // follows belongs to the newer load
             if (this.root === previousRoot) {
                 log.logic("load superseded");
                 return res;
             }
             const root = this.root;
-            // the preview shows records of the root just replaced
             this.viewContext.documentsView.bus.trigger(
                 DocumentsViewEvent.CLOSE_PREVIEW,
             );
@@ -135,16 +124,13 @@ export const DocumentsModelMixin = (component) =>
             const focusedId = this._settleFocus(data?.focus);
             const root = super._createRoot(...arguments);
             if (config.resModel === "document.document") {
-                // fetched with the page: a shortcut never renders without them
                 this.shortcutTargetRecords = (data?.shortcutTargets ?? []).map(
                     (target) => this._createRecordDatapoint(target),
                 );
             }
-            // the empty root of a first load has no records to select yet
             if (config.resModel === "document.document" && root.records?.length) {
                 this._reapplySelection(root);
             }
-            // selected here, not by the record's setup: a reload reuses records
             const focused =
                 focusedId && root.records?.find((r) => r.resId === focusedId);
             if (focused) {
@@ -167,7 +153,6 @@ export const DocumentsModelMixin = (component) =>
             delete this.originalSelection;
         }
 
-        /** The bytes the loaded page weighs: what the folder's details show. */
         _computeFileSize() {
             const items = this.root.groups
                 ? this.root.groups.map((group) => group.aggregates.file_size)
@@ -221,10 +206,6 @@ export const DocumentsModelMixin = (component) =>
             );
         }
 
-        /**
-         * Reload the folder tree and, through the search update it notifies,
-         * the records: loading them here as well read every page twice.
-         */
         async _notifyChange() {
             log.logic("notifyChange");
             await this.viewContext.searchModel._reloadSearchModel(true);
@@ -272,7 +253,6 @@ export const DocumentsModelMixin = (component) =>
             );
         }
 
-        /** What onArchive trashes: those the server says may go, all of them editable. */
         get canArchiveRecords() {
             const documents = this.targetRecords.map((r) => r.data);
             return (
@@ -304,10 +284,8 @@ export const DocumentsModelMixin = (component) =>
             return (
                 this.documentService.hasFolderEditorAccess &&
                 this.targetRecords.every(
-                    // a copy is a new document: a lock on the original does not bind it
                     (r) =>
                         r.data.active &&
-                        // the copy would be its copier's to download
                         (r.data.type !== "binary" || isDownloadAllowed(r.data)),
                 )
             );
@@ -374,8 +352,6 @@ export const DocumentsModelMixin = (component) =>
                 return;
             }
             const record = this.targetRecords[0];
-            // a lock changes that document alone: no folder tree to refetch,
-            // and a preview open on it stays open
             const toggle = async () => {
                 await this.orm.call("document.document", "toggle_lock", [
                     record.data.id,
@@ -463,8 +439,6 @@ export const DocumentsModelMixin = (component) =>
             if (!confirmed) {
                 return;
             }
-            // not root.deleteRecords: it reloads the records, and so does
-            // _notifyChange along with the folder tree
             const resIds = records
                 ? records.map((record) => record.resId)
                 : this.documentService.userIsInternal
@@ -493,14 +467,12 @@ export const DocumentsModelMixin = (component) =>
         onManageVersions() {
             const documentId = this.targetRecords[0].data.id;
             this.documentService.openDialogManageVersions(documentId, async () => {
-                // the preview holds the content it opened with
                 const { previewedDocument } = this.documentService.rightPanelReactive;
                 if (previewedDocument?.record.resId === documentId) {
                     this.viewContext.documentsView.bus.trigger(
                         DocumentsViewEvent.CLOSE_PREVIEW,
                     );
                 }
-                // a group's size is an aggregate only the server recomputes
                 const record = this.root.records?.find((r) => r.resId === documentId);
                 log.logic("versions changed", () => ({
                     documentId,
@@ -610,11 +582,8 @@ export const DocumentsModelMixin = (component) =>
                 navigate,
             }));
             if (action?.warning) {
-                // The server refused some of the documents; nothing to open.
                 notifyEmbeddedActionWarning(this.notification, action.warning);
             } else if (isNotification) {
-                // the client executor calls onClose for a notification too:
-                // none is passed, the reload below is the only one
                 await this.action.doAction(action);
             } else if (action && navigate) {
                 await this.action.doAction(action, {
@@ -646,13 +615,7 @@ export const DocumentsModelMixin = (component) =>
                 await this.documentService.downloadDocuments(this.targetRecords);
             }
         }
-        /**
-         * Brings the requested document into the page being loaded. The
-         * request is only read here: a load superseded by a newer one is
-         * dropped, and the load that publishes settles it (_createRoot).
-         */
         async _loadDocumentToRestore(config, data, cache, signal) {
-            // a picker in a dialog is not the view the request was made for
             const request =
                 data.records && !config.context.documents_view_secondary
                     ? this.documentService.focusRequest

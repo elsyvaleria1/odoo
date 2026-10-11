@@ -185,7 +185,6 @@ test("no content helper", async () => {
     });
 
     expect("div.o_view_nocontent").toHaveCount(1);
-    // Renderer is still displayed beside the no content helper
     expect(".o_cohort_renderer").toHaveCount(1);
     expect(".o_content button").toHaveCount(3);
 });
@@ -241,8 +240,6 @@ test("correctly set by default measure and interval", async () => {
 });
 
 test("correctly sort measure items", async () => {
-    // It's important to compare capitalized and lowercased words
-    // to be sure the sorting is effective with both of them
     Subscription._fields.flop = fields.Integer({
         string: "Abc",
         store: true,
@@ -460,23 +457,15 @@ test("when clicked on cell redirects to the correct list/form view ", async () =
         ],
     });
 
-    // Going to the list view, while clicking Period / Count cell
     await contains("td.o_cohort_value").click();
 
-    // Assert the COLUMN, not its rendered label. `toHaveText` reads innerText,
-    // so it saw the `text-transform: uppercase` this fork applies to list headers
-    // (web/views/list/list_renderer.scss) and read back "START"/"STOP". The intent
-    // is column identity and order, which `data-name` states directly -- the same
-    // idiom the form-view assertions in this file already use.
     expect(".o_list_view th:eq(1)").toHaveAttribute("data-name", "start", {
         message: "First field in the list view should be start",
     });
     expect(".o_list_view th:eq(2)").toHaveAttribute("data-name", "stop", {
         message: "Second field in the list view should be stop",
     });
-    // Going back to cohort view
     await contains(".o_back_button").click();
-    // Going to the list view
     await contains("td div.o_cohort_value").click();
     expect(".o_list_view th:eq(1)").toHaveAttribute("data-name", "start", {
         message: "First field in the list view should be start",
@@ -484,7 +473,6 @@ test("when clicked on cell redirects to the correct list/form view ", async () =
     expect(".o_list_view th:eq(2)").toHaveAttribute("data-name", "stop", {
         message: "Second field in the list view should be stop",
     });
-    // Going to the form view
     await contains(".o_list_view .o_data_row .o_data_cell").click();
 
     expect(".o_form_view .o_field_widget:eq(0)").toHaveAttribute("name", "start", {
@@ -583,7 +571,6 @@ test("when clicked on cell redirects to the action list/form view passed in cont
         context: { list_view_id: "my_list_view", form_view_id: "my_form_view" },
     });
 
-    // Going to the list view, while clicking Period / Count cell
     await contains("td.o_cohort_value").click();
 
     expect(".o_list_view th:eq(1)").toHaveAttribute("data-name", "start", {
@@ -592,9 +579,7 @@ test("when clicked on cell redirects to the action list/form view passed in cont
     expect(".o_list_view th:eq(2)").toHaveAttribute("data-name", "stop", {
         message: "Second field in the list view should be stop",
     });
-    // Going back to cohort view
     await contains(".o_back_button").click();
-    // Going to the list view
     await contains("td div.o_cohort_value").click();
     expect(".o_list_view th:eq(1)").toHaveAttribute("data-name", "start", {
         message: "First field in the list view should be start",
@@ -602,7 +587,6 @@ test("when clicked on cell redirects to the action list/form view passed in cont
     expect(".o_list_view th:eq(2)").toHaveAttribute("data-name", "stop", {
         message: "Second field in the list view should be stop",
     });
-    // Going to the form view
     await contains(".o_list_view .o_data_row .o_data_cell").click();
 
     expect(".o_form_view .o_field_widget:eq(0)").toHaveAttribute("name", "start", {
@@ -740,14 +724,12 @@ test("concurrent reloads: add a filter, and directly toggle a measure", async ()
         message: 'active measure should be "Count"',
     });
 
-    // Set a domain (this reload is delayed)
     def = new Deferred();
     await toggleSearchBarMenu();
     await toggleMenuItem("My Filter");
 
     expect(".o_cohort_row_clickable").toHaveCount(5);
 
-    // Toggle a measure
     await toggleMenu("Measures");
     await toggleMenuItem("Recurring Price");
 
@@ -775,7 +757,7 @@ test('cohort view with attribute disable_linking="1"', async () => {
         arch: `<cohort date_start="start" date_stop="stop" disable_linking="1"/>`,
     });
     expect(".table").toHaveCount(1, { message: "should have a table" });
-    await contains("td.o_cohort_value").click(); // should not trigger a do_action
+    await contains("td.o_cohort_value").click();
 });
 
 test("field with widget attribute", async () => {
@@ -867,12 +849,6 @@ test("when middle clicked on cell open records in new window ", async () => {
     });
 
     await contains("td.o_cohort_value").click({ ctrlKey: true });
-    // No `get current_action` from the initial load: the `doAction` above is
-    // minted on the shared navigation clock while the WebClient's own
-    // `loadState` is still reconstructing, so `loadState` is superseded at its
-    // checkpoint and never reaches `getActionParams` — the read whose result it
-    // would have thrown away. What this test is about is the storage traffic
-    // the middle click causes, which is unchanged below.
     expect.verifySteps([
         "get menu_id-null",
         "get current_lang-null",

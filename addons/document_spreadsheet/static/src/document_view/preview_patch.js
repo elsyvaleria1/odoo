@@ -3,7 +3,6 @@ import { documentPreview } from "@document/attachments/document_file";
 import { XLSX_MIME_TYPES } from "@document_spreadsheet/helpers";
 import { patch } from "@web/core/utils/patch";
 
-// spreadsheets open in the spreadsheet app; Excel and CSV files offer to become one
 patch(documentPreview, {
     isViewable(data) {
         return (

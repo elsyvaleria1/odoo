@@ -4,7 +4,6 @@ import { endOf, startOf } from "@web/core/l10n/dates";
 import { user } from "@web/core/user";
 import { patch } from "@web/core/utils/patch";
 
-// this patch is needed because the load() method empties out the past data and prevents keeping persistent data
 patch(TimerTimesheetGridModel, {
     services: [...TimerTimesheetGridModel.services, "timesheet_leaderboard"],
 });

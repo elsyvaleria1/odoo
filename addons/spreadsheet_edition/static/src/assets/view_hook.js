@@ -70,7 +70,6 @@ export function useInsertInSpreadsheet(getExportableFields) {
         }
         const { list, fields } = await _getListForSpreadsheet(name);
 
-        // if some records are selected, we replace the domain with a "id in [selection]" clause
         if (selection.length > 0) {
             list.domain = [["id", "in", selection]];
         }

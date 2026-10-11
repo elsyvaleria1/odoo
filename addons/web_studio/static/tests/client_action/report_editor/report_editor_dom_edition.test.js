@@ -25,21 +25,6 @@ class SomeModel extends models.Model {
 
 defineModels([SomeModel]);
 
-// These report-editor DOM assertions compare exact editor markup, so the
-// mail/discuss/bus overlays must stay out of `main_components` and their
-// services must not boot.
-//
-// `beforeEach`, NOT `before`: the registries are global singletons, and the
-// test framework's own snapshot/restore (`registerRegistryForCleanup` /
-// `restoreRegistry` in web/static/tests/_framework/env_test_helpers.js) runs
-// per test. A suite-level `before` mutates the registry BEFORE the first
-// snapshot is taken, so the removals get baked into that snapshot and every
-// later one — permanently stripping `mail.*`, `discuss.*`, `bus.*` and
-// `im_status` from every suite that runs after this one in the same browser
-// page. `mail.store` declares `im_status` as a dependency, so it then
-// cascade-skips, and every mail-aware component in every later suite dies on
-// "Service mail.store is not available". Running the removals per test keeps
-// them inside the snapshot window, so the framework restores them for us.
 beforeEach(() => {
     const services = registry.category("services");
     for (const [name] of services.getEntries()) {
@@ -473,7 +458,6 @@ test("select all t-field", async () => {
 
 test("copy t-field", async () => {
     const options = getEditorOptions();
-    // Disable iframe for now: seems that hoot.press doesn't properly handle it.
     options.props.iframe = false;
 
     const { editor, el } = await setupEditor(

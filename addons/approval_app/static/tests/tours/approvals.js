@@ -4,8 +4,6 @@ registry.category("web_tour.tours").add("approvals_tour", {
     url: "/odoo/action-approval.action_approval_category_dashboard",
     steps: () => [
         {
-            // the test prepares Business Trip; the first card is whichever
-            // category the installed modules happen to sort first
             trigger:
                 '.o_kanban_record:contains("Business Trip") button[name="create_request"]',
             content: "create new request",

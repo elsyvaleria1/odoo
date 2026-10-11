@@ -132,7 +132,6 @@ test("cannot save a wrong field", async () => {
     });
     await contains(".o-button-icon.fa-link-slash").click();
     await contains(".o_model_field_selector").click();
-    // Currency is not a text field
     await contains(
         ".o_model_field_selector_popover_item_name:contains(Currency)",
     ).click();
@@ -162,7 +161,7 @@ test("can change date filter offset", async () => {
     });
     expect(".o_model_field_selector").toHaveText("Date");
     expect(".o_filter_field_offset select").toHaveValue("0");
-    await contains(".o_filter_field_offset select").select("1"); // Next
+    await contains(".o_filter_field_offset select").select("1");
     await contains(".o_filter_offset_input").edit("4");
     expect(model.getters.getPivotFieldMatching(pivotId, "43")).toEqual({
         chain: "date",

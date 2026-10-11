@@ -123,7 +123,6 @@ test("templates without a main node are wrapped in a main node by the editor", a
 
 test("kanban structures display depends if element is present in the view", async () => {
     onRpc("/web_studio/edit_view", (request) => {
-        // in this test, we result with a completely different template
         const newArch = `
                 <kanban>
                     <templates>
@@ -226,7 +225,6 @@ test("adding an aside element calls the right operation", async () => {
     onRpc("/web_studio/edit_view", async (request) => {
         const { params } = await request.json();
         expect(params.operations[0].type).toBe("kanban_wrap_main");
-        // server side, this operation would wrap the content inside a <main> node
         const newArch = `
                 <kanban>
                     <templates>
@@ -268,7 +266,6 @@ test("adding a footer element calls the right operation", async () => {
     onRpc("/web_studio/edit_view", async (request) => {
         const { params } = await request.json();
         expect(params.operations[0].type).toBe("kanban_wrap_main");
-        // server side, this operation would wrap the content inside a <main> node
         const newArch = `
                 <kanban>
                     <templates>

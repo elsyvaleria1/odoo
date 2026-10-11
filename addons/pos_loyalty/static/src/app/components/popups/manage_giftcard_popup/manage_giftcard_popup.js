@@ -44,8 +44,6 @@ export class ManageGiftCardPopup extends Component {
     }
 
     onMounted() {
-        // Removing the main "DateTimeInput" component's class "o_input" and
-        // adding the CSS classes "form-control" and "form-control-lg" for styling the form input with Bootstrap.
         const expirationDateInput = document.querySelector(".o_exp_date_container")
             .children[1];
         expirationDateInput.classList.remove("o_input");

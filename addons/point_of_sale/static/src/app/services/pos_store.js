@@ -295,8 +295,6 @@ export class PosStore extends WithLazyGetterTrap {
 
     async reloadData(fullReload = false) {
         log.lifecycle("reloadData", () => ({ fullReload }));
-        // the reload clears the server cache: a till that cannot reach the
-        // server would have nothing left to start from
         if (!(await this.data.isServerReachable())) {
             this.dialog.add(AlertDialog, {
                 title: _t("Reload Data needs the server"),
@@ -592,8 +590,6 @@ export class PosStore extends WithLazyGetterTrap {
         this.hardwareProxy.openCashbox(_t("Cash in / out"));
         return makeAwaitable(this.dialog, CashMovePopup);
     }
-    // a cash move still queued would be missing from the counted balance, and
-    // its replay after the close is refused by the closed session
     async sendPendingOperations(retry) {
         const network = this.data.network;
         if (network.unsyncData.length) {
@@ -951,7 +947,6 @@ export class PosStore extends WithLazyGetterTrap {
                 (order) => order.uuid === orderPathUuid,
             );
         } catch (error) {
-            // runs during boot: a throw here stops the POS from starting
             log.logic("handleUrlParams: server lookup failed", () => ({
                 orderUuid: orderPathUuid,
                 connectionLost: error instanceof ConnectionLostError,
@@ -3195,7 +3190,6 @@ export class PosStore extends WithLazyGetterTrap {
     async syncPresetSlotAvaibility(preset) {
         const endSync = log.perf("syncPresetSlotAvaibility");
         const requests = (this.unwatched.presetSlotRequests ??= new WeakMap());
-        // Different component observers can wrap the same record in different proxies.
         const record = toRaw(preset);
         const request = {};
         requests.set(record, request);

@@ -96,7 +96,6 @@ test("show invisible elements in translate mode", async () => {
     await setupSidebarBuilderForTranslation({ websiteContent: invisibleEl });
 
     expect(":iframe .o_snippet_invisible").toHaveAttribute("data-invisible", "1");
-    // the translator's welcome dialog covers the builder until it is dismissed
     await contains(".modal .btn:contains(Ok, never show me this again)").click();
     await contains(
         ".o_we_invisible_el_panel  .o_we_invisible_entry:contains('Invisible Element') i.fa-eye-slash",
@@ -115,7 +114,6 @@ test("translate text", async () => {
         websiteContent: getTranslateEditable({ inWrap: "Hello" }),
     });
     const editor = getEditor();
-    // the translator's welcome dialog covers the builder until it is dismissed
     await contains(".modal .btn:contains(Ok, never show me this again)").click();
     const textNode = editor.editable.querySelector("span").firstChild;
     setSelection({ anchorNode: textNode, anchorOffset: 1 });

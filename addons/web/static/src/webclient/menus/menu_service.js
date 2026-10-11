@@ -155,12 +155,9 @@ class MenuService {
         this.fetchGeneration = 0;
         this.stored = menuStorage.read();
         this.tree = new MenuTree(this.stored.menus || EMPTY_MENUS);
-        // read by every getter: whoever reads the menus follows a change of
-        // app or of the menus themselves, without listening to the bus
         this.revision = signal(0);
     }
 
-    /** Publishes a change of the current app or of the menus. */
     _publish() {
         this.revision.set(untrack(this.revision) + 1);
         this.env.bus.trigger(AppEvent.MENUS_APP_CHANGED);

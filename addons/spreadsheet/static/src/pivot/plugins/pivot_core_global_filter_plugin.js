@@ -81,10 +81,6 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Getters
-    // -------------------------------------------------------------------------
-
     /**
      * @param {string} id
      * @returns {Record<string, FieldMatching>}
@@ -106,10 +102,6 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
     getPivotFieldMatching(pivotId, filterId) {
         return this.getPivotFieldMatch(pivotId)[filterId];
     }
-
-    // -------------------------------------------------------------------------
-    // Private
-    // -------------------------------------------------------------------------
 
     /**
      * Sets the current pivotFieldMatching on a pivot
@@ -160,10 +152,6 @@ export class PivotCoreGlobalFilterPlugin extends OdooCorePlugin {
             });
         }
     }
-
-    // ---------------------------------------------------------------------
-    // Import/Export
-    // ---------------------------------------------------------------------
 
     /**
      * Import the pivots

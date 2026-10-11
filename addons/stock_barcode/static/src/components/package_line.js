@@ -54,7 +54,6 @@ export default class PackageLineComponent extends LineComponent {
             this.line.package_id.parent_package_id &&
             this.line.outermost_result_package_id
         ) {
-            // Need to recompute the result package "complete_name" since it is not recomputed when unpack.
             const currentResultFullPackageName = `${this.line.outermost_result_package_id.name} > ${this.line.result_package_id.name}`;
             if (this.line.package_id.complete_name === currentResultFullPackageName) {
                 return true;

@@ -50,8 +50,6 @@ export class AceField extends FieldComponent {
             this.editedValue = undefined;
             this.setFieldDirty(false);
             this.state.initialValue = this.serialize(this.field.value);
-            // The record value can be unchanged while Ace holds a rejected draft.
-            // Remount its session to discard that draft and its undo history.
             this.state.revision++;
         });
 
@@ -105,7 +103,6 @@ export class AceField extends FieldComponent {
         this.setFieldDirty(this.isDirty);
         this.editedValue = editedValue;
         if (this.props.record.isFieldInvalid(this.props.name)) {
-            // an edit reopens the save; the next commit decides again
             this.props.record.resetFieldValidity(this.props.name);
         }
     }

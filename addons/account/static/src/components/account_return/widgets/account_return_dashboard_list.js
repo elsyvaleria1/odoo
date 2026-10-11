@@ -59,7 +59,7 @@ export class AccountReturnDashboardList extends Component {
         const returns = await this.orm.call(
             "account.return",
             "get_next_return_for_dashboard",
-            [this.props.record.resId], //allow_multiple_by_types
+            [this.props.record.resId],
         );
 
         this.accountReturns = returns.map(this.formatReturn);
@@ -85,7 +85,6 @@ export class AccountReturnDashboardList extends Component {
                 [[accountReturn.id]],
             );
         } else {
-            // Open the filtered Tax Return view
             action = {
                 name: _t("Tax Return"),
                 type: "ir.actions.act_window",
@@ -98,7 +97,6 @@ export class AccountReturnDashboardList extends Component {
                 context: {
                     search_default_groupby_deadline: 1,
                     search_default_todo_returns: 1,
-                    // Apply name filter using return type
                     search_default_type_id: returnTypeId,
                     max_number_opened_groups: 100000,
                 },

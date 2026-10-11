@@ -54,7 +54,6 @@ test("destroying a visible preview removes its scroll listener", async () => {
     interaction.previewContainerEl.dispatchEvent(new Event("scroll"));
     expect.verifySteps(["update", "update"]);
     core.stopInteractions();
-    // A notification already queued by the browser can outlive disconnect().
     onIntersection([{ isIntersecting: true }]);
     interaction.previewContainerEl.dispatchEvent(new Event("scroll"));
     expect.verifySteps(["disconnect"]);

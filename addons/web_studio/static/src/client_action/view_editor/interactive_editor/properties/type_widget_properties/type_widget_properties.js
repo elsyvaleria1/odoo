@@ -78,7 +78,6 @@ export class TypeWidgetProperties extends Component {
                     name: value.name || key,
                 }),
             );
-            // for each attribute looking for a field, compute the choices to display in the SelectMenu
             await Promise.all(
                 fieldAttributes.map(async (attribute) => {
                     const choices = await this.getFieldChoices(attribute, fields);
@@ -110,9 +109,6 @@ export class TypeWidgetProperties extends Component {
         const options = widgetDescription?.[1].supportedOptions || [];
         const optionNames = new Set(options.map((option) => option.name));
         return [
-            // tag the attributes as the edition changes the attribute value instead of a value from the option attribute.
-            // Properties are looked up by name, so an attribute named like one of the
-            // widget's options (a float's `digits`) would shadow the option Studio edits.
             ...(widgetDescription?.[1].supportedAttributes || [])
                 .filter((attribute) => !optionNames.has(attribute.name))
                 .map((e) => ({
@@ -152,7 +148,6 @@ export class TypeWidgetProperties extends Component {
      */
     _getAttributesForCurrentTypeAndWidget(props) {
         if (!props.node.field) {
-            // node is a widget, and there is no 'type' on such elements
             return JSON.parse(
                 JSON.stringify(this.getSupportedOptionsAndAttributes(props)),
             );
@@ -193,7 +188,6 @@ export class TypeWidgetProperties extends Component {
                     superOption.subOptions = [];
                 }
                 if (!superOption.subOptions.includes(property.name)) {
-                    // only add the subOption if not already present
                     superOption.subOptions.push(property.name);
                 }
             }
@@ -249,11 +243,8 @@ export class TypeWidgetProperties extends Component {
                 name: value.name || key,
             }));
         }
-        // Specific code to filter available fields to display is handled here as supportedOptions
-        // is a generic description and don't allow to describe the full spec of an option
         if (attribute.name === "fold_field") {
             if (this.viewEditorModel.activeNode.field.type === "selection") {
-                // fold_field is only relevant with relational status with its own model
                 attribute.isInvisible = true;
                 return [];
             }
@@ -274,9 +265,6 @@ export class TypeWidgetProperties extends Component {
         );
     }
 
-    /**
-     * Compute the property and its value from one or more attributes on the node
-     */
     getPropertyFromAttributes(property, props) {
         let value;
         value = props.node.attrs[property.name];
@@ -294,13 +282,9 @@ export class TypeWidgetProperties extends Component {
         };
     }
 
-    /**
-     * Compute the property and its value from the `options` attribute on the node
-     */
     getPropertyFromOptions(property, props) {
         let value;
         if (COMPUTED_DISPLAY_OPTIONS[property.name]) {
-            // The display of this property must be computed from the value of the corresponding super option
             const dependentOption = COMPUTED_DISPLAY_OPTIONS[property.name];
             const superOption = this.getOptionObj(dependentOption.superOption);
             const superValue = this.getPropertyFromOptions(superOption, props).value;
@@ -310,7 +294,6 @@ export class TypeWidgetProperties extends Component {
             if (dependentOption.getValue) {
                 property.value = dependentOption.getValue(superValue);
                 if (property.isReadonly) {
-                    // The property value cannot be edited, return the computed value directly
                     return property;
                 }
             }
@@ -356,15 +339,11 @@ export class TypeWidgetProperties extends Component {
         }
 
         if (this.viewEditorModel.fieldsInArch.includes(value)) {
-            // If the currency field is in the view, just alter the
-            // reactives and return.
             const [currencyChanged] = await Promise.all(proms);
             if (currencyChanged) {
                 this.viewEditorModel.fields[this.props.node.field.name][
                     "currency_field"
                 ] = value;
-                // alter the value of the currently selected currency manually to trigger a re-render of the SelectMenu
-                // with the correct value since we don't pass through doOperations from the ViewEditorModel
                 this.attributes.field = this.attributes.field.map((e) => {
                     if (e.name === "currency_field") {
                         e.value = value;
@@ -417,7 +396,7 @@ export class TypeWidgetProperties extends Component {
             if (!this.props.node.attrs.options?.[name]) {
                 return;
             }
-            value = ""; // the currency_field arch option will be deleted
+            value = "";
         }
 
         const currentProperty = this.getOptionObj(name);
@@ -427,9 +406,6 @@ export class TypeWidgetProperties extends Component {
         const options = { ...this.props.node.attrs.options };
         if (value || currentProperty.type === "boolean") {
             if (currentProperty.type === "digits") {
-                // The digits options is composed of two integers.
-                // The first one is unused and the second one is passed to `toFixed`
-                // from `formatFloat`. It should be an integer between 0 and 20.
                 value = Number(value);
                 if (!Number.isInteger(value) || value < 0 || value > 20) {
                     return;

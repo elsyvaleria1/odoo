@@ -75,7 +75,6 @@ test("the kanban parser consumes the IR and annotates its own copy", () => {
     expect(card.querySelector("field[name=name]")?.getAttribute("field_id")).toBe(
         "name_0",
     );
-    // a many2many without a widget is drawn as tags, and the compiler reads that off the tree
     expect(card.querySelector("field[name=tag_ids]")?.getAttribute("widget")).toBe(
         "many2many_tags",
     );

@@ -99,10 +99,6 @@ export class UrgentSaveCoordinator extends StateMachine {
             try {
                 this._bus?.trigger(ModelEvent.WILL_SAVE_URGENTLY, { proms });
             } finally {
-                // A hook may register work before throwing. Observe that work
-                // on the failure path too, then restore the coordinator below.
-                // Work waiting on a task is left running: the save goes on
-                // without it while the unload dispatch can still carry it.
                 await this._settleOrLeave(Promise.allSettled(proms), "flush");
             }
             return await fn();

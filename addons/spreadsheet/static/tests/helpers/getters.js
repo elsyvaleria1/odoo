@@ -3,18 +3,12 @@ import { range } from "@web/core/utils/format/numbers";
 
 const { toCartesian, toZone, toXC } = spreadsheet.helpers;
 
-/**
- * Get the value of the given cell
- */
 export function getCellValue(model, xc, sheetId = model.getters.getActiveSheetId()) {
     const { col, row } = toCartesian(xc);
     const cell = model.getters.getEvaluatedCell({ sheetId, col, row });
     return cell.value;
 }
 
-/**
- * Get the cell of the given xc
- */
 export function getCell(model, xc, sheetId = model.getters.getActiveSheetId()) {
     const { col, row } = toCartesian(xc);
     return model.getters.getCell({ sheetId, col, row });
@@ -80,24 +74,15 @@ export function getFormattedValueGrid(
     return grid;
 }
 
-/**
- * Get the cells of the given sheet (or active sheet if not provided)
- */
 export function getCells(model, sheetId = model.getters.getActiveSheetId()) {
     return model.getters.getCells(sheetId);
 }
 
-/**
- * Get the formula of the given xc
- */
 export function getCellFormula(model, xc, sheetId = model.getters.getActiveSheetId()) {
     const cell = getCell(model, xc, sheetId);
     return cell && cell.isFormula ? cell.content : "";
 }
 
-/**
- * Get the content of the given xc
- */
 export function getCellContent(model, xc, sheetId = model.getters.getActiveSheetId()) {
     const { col, row } = toCartesian(xc);
     return model.getters.getCellText({ sheetId, col, row }, { showFormula: true });
@@ -115,16 +100,10 @@ export function getCorrespondingCellFormula(
     return cell && cell.isFormula ? cell.content : "";
 }
 
-/**
- * Get the list of the merges (["A1:A2"]) of the sheet
- */
 export function getMerges(model, sheetId = model.getters.getActiveSheetId()) {
     return model.exportData().sheets.find((sheet) => sheet.id === sheetId).merges;
 }
 
-/**
- * Get the borders at the given XC
- */
 export function getBorders(model, xc, sheetId = model.getters.getActiveSheetId()) {
     const { col, row } = toCartesian(xc);
     const borders = model.getters.getCellBorder({ sheetId, col, row });
@@ -137,9 +116,6 @@ export function getBorders(model, xc, sheetId = model.getters.getActiveSheetId()
     return borders;
 }
 
-/**
- * Get the formatted value of the given xc
- */
 export function getCellFormattedValue(
     model,
     xc,

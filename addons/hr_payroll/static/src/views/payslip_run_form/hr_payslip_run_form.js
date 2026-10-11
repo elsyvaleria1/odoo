@@ -48,26 +48,11 @@ export class PayslipBatchFormController extends FormController {
             ...employeeListAction,
             help: markup(employeeListAction.help),
             context: {
-                // Pass a JSON-safe snapshot of the dialog fields, not the live
-                // OWL record. Forwarding this.model.root.data leaked date
-                // objects through the action context, where date_start
-                // /date_end did not survive as parseable ISO strings; the list
-                // controller's buildRawRecord() then produced null dates and
-                // hr.payslip.run create() raised "set a start and end date".
                 raw_record: this._payRunRawRecord(),
             },
         });
     }
 
-    /**
-     * Build the JSON-safe pay-run payload carried to the employee-selection
-     * step. Dates are serialized to ISO strings and Many2one fields to ids so
-     * the action context survives serialization. Localization layers override
-     * this to contribute their own fields (see l10n_mx_edi_payslip).
-     *
-     * :return: plain object of pay-run create values
-     * :rtype: object
-     */
     _payRunRawRecord() {
         const data = this.model.root.data;
         return {

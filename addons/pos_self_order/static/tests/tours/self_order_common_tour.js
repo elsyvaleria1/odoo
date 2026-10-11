@@ -32,12 +32,10 @@ registry.category("web_tour.tours").add("self_order_landing_page_carousel", {
 registry.category("web_tour.tours").add("self_order_pos_closed", {
     steps: () => [
         LandingPage.isClosed(),
-        // Normal product
         Utils.clickBtn("Order Now"),
         LandingPage.selectLocation("Test-Takeout"),
         ProductPage.clickProduct("Coca-Cola"),
         Utils.checkIsNoBtn("Checkout"),
-        // Product with attributes
         ProductPage.clickProduct("Desk Organizer"),
         ...ProductPage.setupAttribute(
             [
@@ -48,7 +46,6 @@ registry.category("web_tour.tours").add("self_order_pos_closed", {
         ),
         Utils.checkIsNoBtn("Add to cart"),
         ProductPage.clickDiscard(),
-        // Combo product
         ProductPage.clickProduct("Office Combo"),
         ...ProductPage.setupCombo(
             [
@@ -84,7 +81,6 @@ registry.category("web_tour.tours").add("kiosk_order_pos_closed", {
         ProductPage.clickProduct("Coca-Cola"),
         Utils.checkIsNoBtn("Checkout"),
 
-        // Product with attributes
         ProductPage.clickProduct("Desk Organizer"),
         ...ProductPage.setupAttribute(
             [
@@ -95,7 +91,6 @@ registry.category("web_tour.tours").add("kiosk_order_pos_closed", {
         ),
         Utils.checkIsNoBtn("Add to cart"),
         ProductPage.clickDiscard(),
-        // Combo product
         ProductPage.clickCategory("Category 2"),
         ProductPage.clickProduct("Office Combo"),
         ...ProductPage.setupCombo(

@@ -1,8 +1,5 @@
 import { describe, expect, test } from "@odoo/hoot";
 
-// Expected results come from the global IIFE this module replaced, run under
-// node on the same inputs: the ES module must answer exactly as it did,
-// including the numbers it reformats and the ones it rejects.
 const ORACLE = [
     ["ATU82644408", "ATU82644408"],
     ["ATU04004288", false],

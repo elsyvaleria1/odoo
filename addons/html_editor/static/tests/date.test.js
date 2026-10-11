@@ -81,7 +81,6 @@ describe("date command", () => {
         expect('[data-embedded="date"]').toHaveCount(1);
         expect('[data-embedded="date"] span').toHaveText("April 7, 2026");
 
-        // Edit inserted date
         await contains('[data-embedded="date"] span').click();
         await expectElementCount(".o_datetime_picker", 1);
         await contains(".o_date_item_cell:contains('6')").click();

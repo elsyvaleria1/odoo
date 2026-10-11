@@ -21,7 +21,6 @@ patch(FormController.prototype, {
     },
 
     async openAiChat(callerComponentName) {
-        // save to allow to get messages from backend
         if (!this.mailStore || !(await this.model.root.save())) {
             return;
         }

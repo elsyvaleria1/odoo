@@ -55,7 +55,7 @@ async function mountArticle(values) {
         return true;
     });
     await mountView({
-        arch: /* xml */ `
+        arch: `
             <form js_class="knowledge_article_view_form">
                 <field name="name"/>
                 <field name="active" invisible="1"/>

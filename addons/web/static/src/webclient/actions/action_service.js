@@ -582,8 +582,6 @@ export class ActionManager {
         controller.config.isReloadingController =
             controller === this.controllerStack.at(-1);
         controller.hasOwnLoadingFeedback = false;
-        // the frame on screen is held until then; with nothing on screen
-        // there is no frame to hold, and the first action paints as it can
         const hold = this.currentController?.isMounted ? SHOW_AFTER_DELAY : 0;
         controller.config.feedbackAt = browser.performance.now() + hold;
         controller.config.claimLoadingFeedback = () => {
@@ -686,8 +684,6 @@ export class ActionManager {
     async _dispatchInline(dispatch, options) {
         const { controller, action } = dispatch;
         this._warnDroppedOnClose(action, options);
-        // The controller leaving the screen, not the tip of a pending
-        // dispatch's stack: only a mounted one has state to export.
         const displayed = this.controllerStack.at(-1);
         const outgoing = displayed?.isMounted ? displayed : null;
         if (outgoing?.getLocalState) {
@@ -729,13 +725,11 @@ export class ActionManager {
             id: this.nextId(),
             Component: this.ControllerComponent,
             componentProps: { ...controller.props, dispatch },
-            // committed, failed or superseded: the navigation is over
             settled: dispatch.promise.then(settle, settle),
         };
         if (options.clearBreadcrumbs && !options.noEmptyTransition) {
             controller.__info__.placeholder = this._makePlaceholderInfo(dispatch);
         }
-        // not awaited: web_studio's editor depends on the update firing first
         this.dialogService.closeAll({ noReload: true }).catch(reportUncaught);
         this.env.bus.trigger(AppEvent.ACTION_MANAGER_UPDATE, controller.__info__);
         await dispatch.settled();

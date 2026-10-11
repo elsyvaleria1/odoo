@@ -59,7 +59,6 @@ test("Add a filter with a default value", async () => {
         (user) => user.getters.getGlobalFilterValue(filter.id),
         { operator: "in", ids: [41] },
     );
-    // the default value should be applied immediately
     spExpect([alice, bob, charlie]).toHaveSynchronizedValue(
         (user) => getCellValue(user, "D4"),
         "",

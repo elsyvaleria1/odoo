@@ -57,8 +57,6 @@ test("hr.timesheet (grid): no groupby", async () => {
 });
 
 test("hr.timesheet (grid): unavailability is resolved per employee, not globally", async () => {
-    // The renderer passes the row a cell belongs to; without it every cell
-    // resolved employee `false` and the per-employee lookup was unreachable.
     onRpc("grid_unavailability", () => ({ 1: ["2017-01-25"] }));
     await mountView({
         type: "grid",
@@ -441,7 +439,7 @@ test("hr.timesheet (grid): display sample data and then data + fetch last valida
     await removeFacet("Nothing");
     expect(".o_grid_sample_data").toHaveCount(0);
     expect(".o_grid_section_title").toHaveCount(4);
-    expect.verifySteps(["get_last_validated_timesheet_date"]); // the rpc should be called only once
+    expect.verifySteps(["get_last_validated_timesheet_date"]);
 });
 
 test("test timesheet grid when grouped by employees shows color code on timesheets", async () => {
@@ -452,28 +450,6 @@ test("test timesheet grid when grouped by employees shows color code on timeshee
         views: [[false, "grid"]],
         context: { group_by: ["employee_id"] },
     });
-    /**
-     * Working periods of all employees in the test
-     *
-     * Mario - 6 hours on 25 and 27
-     * Luigi - 8 hours on 24 and 25
-     * Yoshi - 5.5 hours on 25
-     * Toad - No working periods
-     *
-     * The timesheet here would be as (denoted as timesheet amount / that day work period length (corresponding color) )
-     * ╔═══════╦════════════════╦═════════════════════════╦══════════════════╦══════════════════════╦═════════════════════╗
-     * ║       ║ Jan 25         ║ Jan 26                  ║ Jan 27           ║ Jan 28               ║ Unit amount         ║
-     * ╠═══════╬════════════════╬═════════════════════════╬══════════════════╬══════════════════════╬═════════════════════╣
-     * ║ Luigi ║ 2:30 / 8 (Red) ║ 0                       ║ 0                ║ -3:30 / 0 (No color) ║ -1:00 / 8 (Red)     ║
-     * ╠═══════╬════════════════╬═════════════════════════╬══════════════════╬══════════════════════╬═════════════════════╣
-     * ║ Mario ║ 0              ║ 25 / 8 (Orange)         ║ 0                ║ 10 / 8 (Orange)      ║ 35 / 16 (Orange)    ║
-     * ╠═══════╬════════════════╬═════════════════════════╬══════════════════╬══════════════════════╬═════════════════════╣
-     * ║ Toad  ║ 0              ║ 0                       ║ 4 / 0 (No Color) ║ 0                    ║ 4 / 0 (Green)       ║
-     * ╠═══════╬════════════════╬═════════════════════════╬══════════════════╬══════════════════════╬═════════════════════╣
-     * ║ Yoshi ║ 0              ║ 5:30 / 5.30 (No color)  ║ 0                ║ 0                    ║ 5:30 / 5:30 (Green) ║
-     * ╚═══════╩════════════════╩═════════════════════════╩══════════════════╩══════════════════════╩═════════════════════╝
-     *
-     **/
     expect(".o_grid_row .o_grid_cell_readonly span:contains(2:30)").toHaveClass(
         "text-danger",
         {
@@ -551,9 +527,6 @@ test("test timesheet grid when grouped by employees shows color code on timeshee
 });
 
 test("hr.timesheet (grid): rows are ordered by label, whatever shape the group value has", async () => {
-    // A selection was looked up with `in` against its (key, label) list, which
-    // asks an array for an index, so selection rows sorted by key; a date
-    // granularity was read by field name where read_group keys it by spec.
     const model = Object.create(TimesheetGridModel.prototype);
     model.fieldsInfo = {
         sel: {

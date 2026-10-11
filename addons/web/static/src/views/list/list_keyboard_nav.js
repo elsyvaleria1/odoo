@@ -73,7 +73,6 @@ function adjacentRow(row, direction) {
  * @returns {boolean}
  */
 function isNavigableRow(row) {
-    // the footer holds no per-column control: only an exact hit may land there
     return Boolean(row) && row.parentElement?.tagName !== "TFOOT";
 }
 
@@ -298,8 +297,6 @@ class ListKeyboardNavigation {
     constructor(tableRef, ctx) {
         this.tableRef = tableRef;
         this.ctx = ctx;
-        // every method is bound: a renderer replaces one on the instance and
-        // the seam tests call the captured original detached
         const proto = ListKeyboardNavigation.prototype;
         for (const name of Object.getOwnPropertyNames(proto)) {
             const descriptor = Object.getOwnPropertyDescriptor(proto, name);

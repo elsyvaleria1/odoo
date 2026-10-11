@@ -1,8 +1,5 @@
 import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
-// Resolve the live product-module instance from the loader registry: test
-// files load via the import map only (not registerNativeModules), so a
-// static import here would bind a second, unshared instance of the module.
 const getPasskeyLib = () =>
     odoo.loader.modules.get("@auth_passkey/passkey_lib").passkeyLib;
 
@@ -50,7 +47,6 @@ registry.category("web_tour.tours").add("passkeys_tour_verify", {
                 unpatchPasskeyVerify = patch(getPasskeyLib(), {
                     async startAuthentication() {
                         return {
-                            // test-yubikey
                             id: "L2p6jvcWuCMTRmkZHKqqvQbz0Dhk3JbJOx1F8ci99nSNjlfx3Z7nkigMdUACLggB",
                             rawId: "L2p6jvcWuCMTRmkZHKqqvQbz0Dhk3JbJOx1F8ci99nSNjlfx3Z7nkigMdUACLggB",
                             response: {

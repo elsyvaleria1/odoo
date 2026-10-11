@@ -511,10 +511,6 @@ export class MockDedicatedWorkerGlobalScope {
 
 let nextEntryKey = 0;
 
-/**
- * A session history entry: what `navigation.entries()` lists, and what
- * `history` reads its state and length from.
- */
 export class MockNavigationHistoryEntry extends EventTarget {
     /**
      * @param {MockNavigation} navigation
@@ -535,7 +531,6 @@ export class MockNavigationHistoryEntry extends EventTarget {
         return this._navigation._entries.indexOf(this);
     }
 
-    /** the current entry follows the mocked location, which tests set directly */
     get url() {
         return this._navigation.currentEntry === this
             ? this._navigation._location.href
@@ -585,12 +580,6 @@ export class MockNavigateEvent extends Event {
     scroll() {}
 }
 
-/**
- * The Navigation API over one session history: `history` is a view of the
- * same entries, so `pushState` and traversals fire `navigate` as they do in a
- * browser. A navigation nobody intercepts that would load a document only
- * moves the mocked location (a reload fires its "reload" event).
- */
 export class MockNavigation extends MockEventTarget {
     static publicListeners = [
         "navigate",
@@ -834,9 +823,6 @@ export class MockNavigation extends MockEventTarget {
     }
 }
 
-/**
- * `history` over the navigation's session history.
- */
 export class MockHistory {
     /** @param {MockNavigation} navigation */
     constructor(navigation) {

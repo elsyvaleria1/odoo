@@ -30,13 +30,6 @@ const strftimeFormatTable = {
     YY: "y",
     SS: "S",
     ss: "S",
-    // 12-hour clock. `II` (hour) and `p` (AM/PM) are the tokens the
-    // `datetime_format` help text tells users to use, and two of the six
-    // shipped presets are built from them -- but neither was in this table nor
-    // in the regex below, so "MM/DD/YYYY II:mm:SS p" was handed to the server
-    // as the literal "%m/%d/%Y II:%M:%S p". strptime then failed on every row
-    // and `to_re` built a pattern demanding the literal text "II"/"p", so both
-    // 12-hour presets were inert.
     II: "I",
     hh: "I",
     HH: "H",
@@ -44,12 +37,6 @@ const strftimeFormatTable = {
     A: "p",
 };
 
-/**
- * Longest-first so that e.g. `dddd` wins over `dd`, and `SS` is consumed as one
- * token rather than two `S`. Case-insensitive: the lookup below retries on the
- * lower/upper-cased token, which is what distinguishes `MM` (month) from `mm`
- * (minute).
- */
 const HUMAN_FORMAT_TOKENS = /(dddd|ddd|dd|d|mmmm|mmm|mm|ww|yyyy|yy|ii|hh|ss|a|p)/gi;
 
 /**
@@ -66,18 +53,10 @@ const humanToStrftimeFormat = memoize(function humanToStrftimeFormat(value) {
             strftimeFormatTable[token] ??
             strftimeFormatTable[token.toLowerCase()] ??
             strftimeFormatTable[token.toUpperCase()];
-        // Leave an unknown token alone rather than emitting "%undefined":
-        // a literal is at least visible to the user and round-trips.
         return directive ? "%" + directive : token;
     });
 });
 
-/**
- * Inverse of {@link humanToStrftimeFormat}, used to redisplay the options the
- * server echoes back. Several human tokens map to the same directive (`hh` and
- * `II` are both `%I`), so this picks one canonical spelling per directive --
- * the one used by the presets in `_getFormattingOptions`.
- */
 const STRFTIME_TO_HUMAN = {
     w: "d",
     d: "DD",
@@ -99,33 +78,12 @@ const STRFTIME_TO_HUMAN = {
 };
 
 const strftimeToHumanFormat = memoize(function strftimeToHumanFormat(value) {
-    // Single pass over the directives. The previous implementation ran
-    // `String.replace` with a *string* pattern once per table entry, which
-    // replaces only the first occurrence, so a format repeating a directive was
-    // converted partially.
     return value.replace(
         /%(.)/g,
         (match, directive) => STRFTIME_TO_HUMAN[directive] ?? match,
     );
 });
 
-/**
- * -------------------------------------------------------------------------
- * Base Import Business Logic
- * -------------------------------------------------------------------------
- *
- * Handles mapping and updating the preview data of the csv/excel files to be
- * used in the different base_import components.
- *
- * When uploading a file some "preview data" is returned by the backend, this
- * data consist of the different columns of the file and the odoo fields which
- * these columns can be mapped to.
- *
- * Only a small selection of the lines are returned so the user can get an idea
- * of how to correctly map the columns. *(this is why it is refered as "preview
- * data")*
- *
- */
 export class BaseImportModel {
     constructor({ env, context, orm }) {
         this.id = 1;
@@ -202,10 +160,6 @@ export class BaseImportModel {
         this.notificationService = useService("notification");
     }
 
-    //--------------------------------------------------------------------------
-    // Public
-    //--------------------------------------------------------------------------
-
     get formattingOptions() {
         return pick(
             this.importOptionsValues,
@@ -213,10 +167,6 @@ export class BaseImportModel {
         );
     }
 
-    /**
-     * This getter returns the current values pf the options, formatted to match the
-     * server API (date and datetime options should be Python strftime formatted)
-     */
     get formattedImportOptions() {
         const options = this.importOptions;
         options.date_format = humanToStrftimeFormat(options.date_format);
@@ -253,10 +203,6 @@ export class BaseImportModel {
         return tempImportOptions;
     }
 
-    /**
-     * A custom BlockUI is required to add the progress bar or text when blocking
-     * the UI, without modifying the core ui service to handle a generic use case
-     */
     block(message, blockComponent) {
         mainComponentRegistry.add(
             "ImportBlockUI",
@@ -336,9 +282,6 @@ export class BaseImportModel {
 
             if (importProgress) {
                 importProgress.step = i;
-                // `i`, not `i - 1`: this runs *after* step `i` completed, so
-                // `i - 1` under-reported by a whole batch and the bar topped out
-                // at (n-1)/n -- 50% for a two-batch import that had finished.
                 importProgress.value = Math.round((100 * i) / totalSteps);
             }
         }
@@ -363,10 +306,6 @@ export class BaseImportModel {
         return { res: importRes };
     }
 
-    /**
-     * Ask the server for the parsing preview
-     * and update the data accordingly.
-     */
     async updateData(fileChanged = false) {
         if (fileChanged) {
             this.importOptionsValues.sheet.value = "";
@@ -426,17 +365,9 @@ export class BaseImportModel {
         return column.fieldInfo != null;
     }
 
-    /*
-     * We must wait the current iteration of execute_import to conclude and it
-     * will stop at the start of the next batch with handleInterruption
-     */
     stopImport() {
         this.handleInterruption = true;
     }
-
-    //--------------------------------------------------------------------------
-    // Private
-    //--------------------------------------------------------------------------
 
     _addMessage(type, lines) {
         const importMsgs = this.importMessages;
@@ -457,7 +388,6 @@ export class BaseImportModel {
         const { ids, messages, nextrow, name, error, binary_filenames } =
             await this._callImport(isTest, importArgs);
 
-        // Handle server errors
         if (error) {
             return error;
         }
@@ -466,7 +396,6 @@ export class BaseImportModel {
             importRes.ids = importRes.ids.concat(ids);
         }
 
-        // Handle import errors
         if (messages && messages.length) {
             importRes.hasError = true;
             this.stopImport();
@@ -475,15 +404,12 @@ export class BaseImportModel {
             }
         }
 
-        // Push local image to records
         await this._pushLocalImageToRecords(ids, binary_filenames, isTest);
 
-        // Check if we should continue
         if (nextrow) {
             this.setOption("skip", nextrow);
             importRes.nextrow = nextrow;
         } else {
-            // Falsy `nextrow` signals there's nothing left to import
             importRes.nextrow = 0;
             this.stopImport();
         }
@@ -498,9 +424,6 @@ export class BaseImportModel {
                 delayAfterEachBatch: this.binaryFilesParams.delayAfterEachBatch.value,
                 maxBatchSize:
                     this.binaryFilesParams.maxSizePerBatch.value * 1024 * 1024,
-                // BinaryFileManager._send reads these three off `parameters`,
-                // but nothing ever passed them, so the user's field options were
-                // silently dropped for the attachment upload pass.
                 name_create_enabled_fields: importOptions.name_create_enabled_fields,
                 import_set_empty_fields: importOptions.import_set_empty_fields,
                 import_skip_records: importOptions.import_skip_records,
@@ -511,11 +434,6 @@ export class BaseImportModel {
                 return;
             }
             const fields = Object.keys(binaryFilenames);
-            // The server sends one filename per *record*, to pair with `ids`.
-            // If that ever fails to hold, stop rather than zip by index anyway:
-            // a mismatch means some file would be attached to a record it does
-            // not belong to, and a wrong image on a customer record is worse
-            // than a missing one.
             const misaligned = fields.filter(
                 (f) => binaryFilenames[f].length !== ids.length,
             );
@@ -573,10 +491,6 @@ export class BaseImportModel {
             );
             return res;
         } catch (error) {
-            // This pattern isn't optimal but it is need to have
-            // similar behaviours as in legacy. That is, catching
-            // all import errors and showing them inside the top
-            // "messages" area.
             return { error };
         }
     }
@@ -598,7 +512,6 @@ export class BaseImportModel {
         }
 
         for (const [columnFieldId, errors] of Object.entries(sortedMessages)) {
-            // Handle errors regarding specific colums.
             const column = this.columns.find(
                 (e) => e.fieldInfo && e.fieldInfo.fieldPath === columnFieldId,
             );
@@ -607,7 +520,6 @@ export class BaseImportModel {
                 column.errors = errors;
             } else {
                 for (const error of errors) {
-                    // Handle errors regarding specific records.
                     if (error.record !== undefined) {
                         this._addMessage("danger", [
                             error.rows.from === error.rows.to
@@ -617,9 +529,7 @@ export class BaseImportModel {
                                   })
                                 : _t("%s at multiple rows", error.message),
                         ]);
-                    }
-                    // Handle global errors.
-                    else {
+                    } else {
                         this._addMessage("danger", [error.message]);
                     }
                 }
@@ -634,11 +544,6 @@ export class BaseImportModel {
             (f) => f.message || "0",
         );
         for (const [, errors] of Object.entries(errorsByMessage)) {
-            // `message` (the group key, a string) never has a `.record` — the
-            // old `if (!message.record)` guard was always true and gated
-            // nothing; the `.find()` below always ran regardless (t24068
-            // tests-finding #9). Kept unconditional to preserve behavior
-            // exactly; the vacuous check is just removed.
             const foundError = errors.find((e) => e.record === undefined);
             if (foundError) {
                 groupedErrors[0] = foundError;
@@ -670,7 +575,6 @@ export class BaseImportModel {
      * @param {*} res
      */
     _onLoadSuccess(res) {
-        // Set options
         for (const key in res.options) {
             if (this.importOptionsValues[key]) {
                 this.importOptionsValues[key].value = res.options[key];
@@ -684,7 +588,6 @@ export class BaseImportModel {
         this.fields = res.fields;
         this.columns = this._getColumns(res);
 
-        // Set import messages
         if (res.headers.length === 1) {
             this._addMessage("warning", [
                 _t(
@@ -710,9 +613,6 @@ export class BaseImportModel {
 
         if (this.importOptions.has_headers && res.headers && res.preview.length > 0) {
             return res.headers.flatMap((header, index) => {
-                // A header row can be wider than the data rows the examples were
-                // built from (ragged CSV); fall back to an empty example rather
-                // than dereferencing `undefined`.
                 const previews = res.preview[index] || [""];
                 return this._createColumn(
                     res,
@@ -727,10 +627,6 @@ export class BaseImportModel {
             return res.preview.flatMap((preview, index) =>
                 this._createColumn(
                     res,
-                    // No headers means no server-suggested match: a raw data
-                    // value must never stand in for a field match key, or a
-                    // column whose first row happens to equal a real field's
-                    // technical name gets spuriously pre-selected to it.
                     this.importOptions.has_headers ? preview[0] : undefined,
                     this.importOptions.has_headers ? preview[0] : preview.join(", "),
                     index,
@@ -798,7 +694,6 @@ export class BaseImportModel {
             field.fieldPath = ancestors.map((f) => f.name).join("/");
             field.label = ancestors.map((f) => f.string).join(" / ");
 
-            // Get field respective category
             if (!collection) {
                 if (field.name === "id") {
                     collection = fields.basic;
@@ -811,7 +706,6 @@ export class BaseImportModel {
                 }
             }
 
-            // Add field to found category
             collection.push(field);
 
             if (advanced) {
@@ -821,9 +715,6 @@ export class BaseImportModel {
             }
         };
 
-        // Sort fields in their respective categories. (The former
-        // `if (!field.isRelation)` guard was dead: the server never sends an
-        // `isRelation` key, so it was always true.)
         const acceptedTypes = advanced ? ["all"] : res.header_types?.[index];
         for (const field of this.fields) {
             sortSingleField(field, [], undefined, acceptedTypes);
@@ -844,8 +735,6 @@ export class BaseImportModel {
                 continue;
             }
 
-            // Fields of type "char", "text", "html" or "many2many" can be specified
-            // multiple times and will be concatenated; fields of other types must be unique.
             if (["char", "text", "html", "many2many"].includes(column.fieldInfo.type)) {
                 if (column.fieldInfo.type === "many2many") {
                     column.comments.push({
@@ -856,8 +745,6 @@ export class BaseImportModel {
                     });
                 }
 
-                // If multiple columns are mapped on the same field, inform
-                // the user that they will be concatenated.
                 const samefieldColumns = this.columns.filter(
                     (col) =>
                         col.fieldInfo &&
@@ -875,8 +762,6 @@ export class BaseImportModel {
                 column.id !== updatedColumn.id &&
                 updatedColumn.fieldInfo
             ) {
-                // If column is mapped on an already mapped field, remove that field
-                // from the old column to keep it unique.
                 if (updatedColumn.fieldInfo.fieldPath === column.fieldInfo.fieldPath) {
                     column.fieldInfo = null;
                 }
@@ -884,15 +769,6 @@ export class BaseImportModel {
         }
     }
 
-    /**
-     * The parsing options the side panel exposes.
-     *
-     * `csvOnly` marks the three that only a CSV reader consumes. The rest --
-     * date, datetime and the two number separators -- are applied by
-     * `_parse_date_from_data` and `_parse_float_from_data` whatever the reader
-     * was, so they belong on screen for every format (see
-     * `ImportDataSidepanel.isOptionApplicable`).
-     */
     _getFormattingOptions() {
         return {
             encoding: {

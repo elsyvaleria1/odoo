@@ -39,7 +39,6 @@ export class OverlayButtonsPlugin extends Plugin {
     };
 
     setup() {
-        // TODO find how to not overflow the mobile preview.
         this.iframe = this.editable.ownerDocument.defaultView.frameElement;
         this.overlay = this.dependencies.overlay.createOverlay(
             OverlayButtons,
@@ -61,8 +60,6 @@ export class OverlayButtonsPlugin extends Plugin {
                 },
                 closeOnPointerdown: false,
             },
-            // The buttons should appear under other overlays, like the link
-            // popover. The default sequence is 50.
             { sequence: 49 },
         );
         this.target = null;
@@ -76,13 +73,9 @@ export class OverlayButtonsPlugin extends Plugin {
             this.overlay.updatePosition();
         });
 
-        // TODO duplicate of builderOverlay => extract somewhere
-        // Recompute the buttons when the window is resized.
         this.refresh = throttleForAnimation(this.refreshButtons.bind(this));
         this.addDomListener(window, "resize", this.refresh);
 
-        // On keydown, hide the buttons and then show them again when the mouse
-        // moves.
         const onMouseMoveOrDown = throttleForAnimation(() => {
             this.showOverlayButtons();
             this.editable.removeEventListener("mousemove", onMouseMoveOrDown);
@@ -94,8 +87,6 @@ export class OverlayButtonsPlugin extends Plugin {
             this.editable.addEventListener("mousedown", onMouseMoveOrDown);
         });
 
-        // Hide the buttons when scrolling. Show them again when the scroll is
-        // over.
         const scrollingElement = getScrollingElement(this.document);
         const scrollingTarget = getScrollingTarget(scrollingElement);
         this.addDomListener(
@@ -161,7 +152,6 @@ export class OverlayButtonsPlugin extends Plugin {
     addOverlayButtons(optionsContainer) {
         this.removeOverlayButtons();
 
-        // Find the innermost option needing the overlay buttons.
         const optionWithOverlayButtons = optionsContainer.findLast(
             (option) => option.hasOverlayOptions,
         );

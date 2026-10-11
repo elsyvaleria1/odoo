@@ -148,8 +148,6 @@ export class AttachmentUploadService {
             return error.message;
         }
         if (xhr.status >= 200 && xhr.status < 300) {
-            // file_upload fails a 2xx answer without an error only when it was
-            // redirected, i.e. to the login page
             return _t("Your session expired. Please log in again.");
         }
         return xhr.status

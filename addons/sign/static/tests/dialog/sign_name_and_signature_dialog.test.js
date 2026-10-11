@@ -82,10 +82,6 @@ test("sign name and signature dialog toggles active class on frame input change"
 });
 
 test("switching to auto mode draws the name with the loaded fonts", async () => {
-    // Fonts are cached at module scope by web's NameAndSignature, so a fetch
-    // count is a fact about test order, not about this dialog: the earlier
-    // mounts in this file warm the cache and the dialog then skips its own
-    // `/web/sign/get_fonts/` call. What holds regardless is the behaviour.
     onRpc("/web/sign/get_fonts/*", () => Promise.resolve([]));
     onRpc("has_group", () => true);
     await makeDialogMockEnv();
@@ -175,8 +171,6 @@ test("the active frame is drawn by html2canvas into a PNG", async () => {
     await mountSignNameAndSignatureDialog(frame);
     let done = false;
     const drawing = frame.updateFrame().then(() => (done = true));
-    // html2canvas polls the cloned document with setInterval (the Safari iOS
-    // patch), which runs on Hoot's mocked clock
     for (let i = 0; i < 100 && !done; i++) {
         await advanceTime(50);
     }

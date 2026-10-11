@@ -19,9 +19,6 @@ export class ProductCatalogKanbanController extends KanbanController {
         this.orm = useService("orm");
         this.orderId = this.props.context.order_id;
         this.orderResModel = this.props.context.product_catalog_order_model;
-        // Guard a double click on a navigation button: act on the first one and
-        // swallow the rest. The default (trailing) form would instead make every
-        // click wait out the full delay before anything happens.
         this.backToQuotationDebounced = useDebounced(
             this.backToQuotation.bind(this),
             500,
@@ -30,10 +27,6 @@ export class ProductCatalogKanbanController extends KanbanController {
                 trailing: false,
             },
         );
-        // Cards debounce their quantity writes by 500ms. Every card registers
-        // itself here so leaving the catalog can flush and await them; without
-        // that, a product added just before leaving was still being written
-        // while the order form reloaded, and the line was missing.
         this.pendingLineUpdates = new Set();
         provideProductCatalogContext({
             productCatalogPendingUpdates: this.pendingLineUpdates,
@@ -47,15 +40,10 @@ export class ProductCatalogKanbanController extends KanbanController {
         this._defineButtonContent();
     }
 
-    // Force the slot for the "Back to Quotation" button to always be shown.
     get canCreate() {
         return true;
     }
 
-    /**
-     * Fields of the order the button label is derived from. Overridden by the
-     * modules that label the button from something other than `state`.
-     */
     get stateFields() {
         return ["state"];
     }
@@ -70,7 +58,6 @@ export class ProductCatalogKanbanController extends KanbanController {
     }
 
     _defineButtonContent() {
-        // Define the button's label depending of the order's state.
         const orderIsQuotation = ["draft", "sent"].includes(this.orderStateInfo.state);
         if (orderIsQuotation) {
             this.buttonString = _t("Back to Quotation");
@@ -101,9 +88,6 @@ export class ProductCatalogKanbanController extends KanbanController {
     }
 
     async backToQuotation() {
-        // Restore the last form view from the breadcrumbs if breadcrumbs are available.
-        // If, for some weird reason, the user reloads the page then the breadcrumbs are
-        // lost, and we fall back to the form view ourselves.
         if (this.config.breadcrumbs.length > 1) {
             await this.actionService.restore();
         } else {

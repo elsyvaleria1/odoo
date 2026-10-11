@@ -97,7 +97,6 @@ test("empty gantt with sample data and default_group_by (switch view)", async ()
     });
     await animationFrame();
 
-    // the gantt view should be in sample mode
     expect(SELECTORS.viewContent).toHaveClass("o_view_sample_data");
     expect(queryAll(SELECTORS.pill).length).toBeGreaterThan(0);
     expect(SELECTORS.noContentHelper).toHaveCount(1);
@@ -105,12 +104,10 @@ test("empty gantt with sample data and default_group_by (switch view)", async ()
     expect(`.o_searchview_facet`).toHaveText("Project");
     const content = queryFirst(SELECTORS.viewContent).innerHTML;
 
-    // switch to list view
     await switchView("list");
     expect(SELECTORS.view).toHaveCount(0);
     expect(`.o_searchview_facet`).toHaveCount(0);
 
-    // go back to gantt view
     await switchView("gantt");
     await animationFrame();
 
@@ -118,7 +115,6 @@ test("empty gantt with sample data and default_group_by (switch view)", async ()
     expect(`.o_searchview_facet`).toHaveCount(1);
     expect(`.o_searchview_facet`).toHaveText("Project");
 
-    // the gantt view should be still in sample mode
     expect(SELECTORS.viewContent).toHaveClass("o_view_sample_data");
     expect(SELECTORS.noContentHelper).toHaveCount(1);
     expect(SELECTORS.viewContent).toHaveProperty("innerHTML", content);

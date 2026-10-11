@@ -4,7 +4,6 @@ import { stepUtils } from "@web_tour/tour_utils";
 registry
     .category("web_tour.tours")
     .add("appraisals_create_appraisal_goal_from_smart_button", {
-        // starts from /odoo/appraisals/<appraisal_id>
         steps: () => [
             stepUtils.autoExpandMoreButtons(),
             {
@@ -29,7 +28,6 @@ registry
 registry
     .category("web_tour.tours")
     .add("employees_create_appraisal_goal_from_smart_button", {
-        // starts from /odoo/employees/<employee_id>
         steps: () => [
             stepUtils.autoExpandMoreButtons(),
             {

@@ -35,7 +35,7 @@ registry.category("web_tour.tours").add("GiftCardWithRefundtTour", {
         [
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
-            ProductScreen.addOrderline("Magnetic Board", "1"), // 1.98
+            ProductScreen.addOrderline("Magnetic Board", "1"),
             PosLoyalty.orderTotalIs("1.98"),
             PosLoyalty.finalizeOrder("Cash", "20"),
             ...ProductScreen.clickRefund(),
@@ -62,7 +62,6 @@ registry.category("web_tour.tours").add("GiftCardProgramPriceNoTaxTour", {
         [
             Chrome.startPoS(),
             Dialog.confirm("Open Register"),
-            // Use gift card
             ProductScreen.addOrderline("Magnetic Board", "1", "1.98", "1.98"),
             PosLoyalty.enterCode("043123456"),
             Dialog.confirm(),
@@ -223,26 +222,20 @@ registry.category("web_tour.tours").add("test_physical_gift_card", {
             Dialog.confirm("Open Register"),
             ProductScreen.clickDisplayedProduct("Gift Card"),
 
-            // Gift card cannot be used as it's already linked to a partner
             PosLoyalty.useExistingLoyaltyCard("gift_card_partner", false),
-            // Gift card cannot be used as it's expired
             PosLoyalty.useExistingLoyaltyCard("gift_card_expired", false),
-            // Gift card is already sold
             PosLoyalty.useExistingLoyaltyCard("gift_card_sold", false),
 
-            // Use gift_card_generated_but_not_sold - Warning is triggered
             PosLoyalty.enterCode("gift_card_generated_but_not_sold"),
             Dialog.cancel(),
 
-            // Sell the unsold gift card
             PosLoyalty.useExistingLoyaltyCard("gift_card_generated_but_not_sold", true),
             ProductScreen.selectedOrderlineHas("Gift Card", "1", "60.00"),
-            ProductScreen.clickNumpad("2"), // Cannot edit a physical gift card
-            Dialog.confirm(), // Warning is triggered
+            ProductScreen.clickNumpad("2"),
+            Dialog.confirm(),
             PosLoyalty.orderTotalIs("60.00"),
             PosLoyalty.finalizeOrder("Cash", "60"),
 
-            // Use gift_card_valid - No warning should be triggered
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             PosLoyalty.enterCode("gift_card_valid"),
             ProductScreen.clickLine("Gift Card"),
@@ -250,7 +243,6 @@ registry.category("web_tour.tours").add("test_physical_gift_card", {
             PosLoyalty.orderTotalIs("0.00"),
             PosLoyalty.finalizeOrder("Cash", "0"),
 
-            // Use gift_card_partner - No warning should be triggered
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             PosLoyalty.enterCode("gift_card_partner"),
             ProductScreen.clickLine("Gift Card"),
@@ -258,7 +250,6 @@ registry.category("web_tour.tours").add("test_physical_gift_card", {
             PosLoyalty.orderTotalIs("0.00"),
             PosLoyalty.finalizeOrder("Cash", "0"),
 
-            // Use gift_card_sold - Warning should be triggered
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             PosLoyalty.enterCode("gift_card_sold"),
@@ -267,7 +258,6 @@ registry.category("web_tour.tours").add("test_physical_gift_card", {
             PosLoyalty.orderTotalIs("0.00"),
             PosLoyalty.finalizeOrder("Cash", "0"),
 
-            // Use gift_card_generated_but_not_sold - No warning should be triggered
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
@@ -278,7 +268,6 @@ registry.category("web_tour.tours").add("test_physical_gift_card", {
             PosLoyalty.orderTotalIs("0.00"),
             PosLoyalty.finalizeOrder("Cash", "0"),
 
-            // Try to use expired gift card
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
             ProductScreen.clickDisplayedProduct("Whiteboard Pen"),
@@ -286,7 +275,6 @@ registry.category("web_tour.tours").add("test_physical_gift_card", {
             PosLoyalty.orderTotalIs("9.60"),
             PosLoyalty.finalizeOrder("Cash", "9.60"),
 
-            // Sell a new gift card with a partner
             ProductScreen.clickPartnerButton(),
             ProductScreen.clickCustomer("A powerful PoS man!"),
             ProductScreen.clickDisplayedProduct("Gift Card"),

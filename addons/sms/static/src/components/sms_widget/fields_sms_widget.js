@@ -7,11 +7,6 @@ import { registry } from "@web/core/registry";
 import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";
 
-/**
- * SmsWidget is a widget to display a textarea (the body) and a text representing
- * the number of SMS and the number of characters. This text is computed every
- * time the user changes the body.
- */
 export class SmsWidget extends EmojisTextField {
     static template = "sms.SmsWidget";
     setup() {
@@ -38,10 +33,6 @@ export class SmsWidget extends EmojisTextField {
     get nbrSMS() {
         return this._countSMS(this.nbrChar, this.encoding);
     }
-
-    //--------------------------------------------------------------------------
-    // Private: SMS
-    //--------------------------------------------------------------------------
 
     /**
      * Count the number of SMS of the content
@@ -97,10 +88,6 @@ export class SmsWidget extends EmojisTextField {
     _getValueForSmsCounts(value) {
         return value;
     }
-
-    //--------------------------------------------------------------------------
-    // Handlers
-    //--------------------------------------------------------------------------
 
     /**
      * @override

@@ -15,7 +15,7 @@ export class SpreadsheetSelectorGrid extends Component {
         onSpreadsheetSelected: t.function(),
         onSpreadsheetDblClicked: t.function(),
         getThumbnailURL: t.function(),
-        selectedSpreadsheetId: t.any() /* Number | null */,
+        selectedSpreadsheetId: t.any(),
         displayBlank: t.boolean().optional(true),
         blankCardLabel: t.string().optional(),
     };
@@ -69,7 +69,6 @@ export class SpreadsheetSelectorGrid extends Component {
             (spreadsheet) => spreadsheet.id === this.props.selectedSpreadsheetId,
         );
 
-        // Navigate to the next or previous spreadsheet
         const navigateToSpreadsheet = (newSpreadsheetId) => {
             if (newSpreadsheetId === this.props.selectedSpreadsheetId) {
                 return;
@@ -80,13 +79,11 @@ export class SpreadsheetSelectorGrid extends Component {
         switch (direction) {
             case "left":
                 if (index > 0 && index < this.spreadsheets.length) {
-                    // Navigate to the previous spreadsheet
                     navigateToSpreadsheet(this.spreadsheets[index - 1].id);
                 }
                 break;
             case "right":
                 if (index < this.spreadsheets.length - 1) {
-                    // Navigate to the next spreadsheet
                     navigateToSpreadsheet(this.spreadsheets[index + 1].id);
                 }
                 break;

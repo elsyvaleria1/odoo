@@ -25,7 +25,6 @@ import { PlanningGanttRowProgressBar } from "./planning_gantt_row_progress_bar.j
 import { PlanningResourceName } from "./planning_resource_name.js";
 import { PlanningSplitTool } from "./planning_split_tool.js";
 
-/** Hours from milliseconds, rounded to five minutes. */
 function roundedHours(millis) {
     const minutes = Math.round(millis / 60_000 / 5) * 5;
     return minutes / 60;
@@ -93,9 +92,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
             super.onPillClicked(...arguments);
             return;
         }
-        // Decided from the click's own position, not from the rendered split
-        // tool: the tool is painted a frame after the pointer reaches the
-        // border, so a click in between would open the popover instead.
         const cellEl =
             ev.clientX === undefined
                 ? null
@@ -135,7 +131,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
         }
     }
 
-    /** The column a pointer at `x` over `cellEl` splits `pill` at: a border of the cell inside the pill, or none. */
     getSplitColumn(pill, cellEl, x) {
         const rtl = localization.direction === "rtl";
         const { x: cellX, width } = cellEl.getBoundingClientRect();
@@ -218,7 +213,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
         return { resModel: "hr.employee", resId, displayName };
     }
 
-    /** The allocated hours of a shift with no work intervals, spread evenly over its columns. */
     spreadAllocatedHours(pill) {
         const { record } = pill;
         for (
@@ -243,12 +237,8 @@ export class PlanningGanttRenderer extends GanttRenderer {
         }
     }
 
-    /** The allocated hours of a shift per column, from its work intervals. */
     intersectAllocatedHours(pill, percentage) {
         const { record } = pill;
-        // An employee working outside their work intervals (no work hours) has
-        // none to intersect: the shift itself is the interval, at the ratio of
-        // its allocated hours to its length.
         let recordIntervals = this.getRecordIntervals(record);
         if (!recordIntervals.length) {
             recordIntervals = [[record.start_datetime, record.end_datetime]];
@@ -417,30 +407,24 @@ export class PlanningGanttRenderer extends GanttRenderer {
             return false;
         }
 
-        // These checks only make sense if the gantt view is grouped by the resource
         if (row.groupedBy && row.groupedBy[0] !== "resource_id") {
             return wouldAggregate;
         }
 
-        // A row not having work intervals could mean that a resource doesn't have a contract or the row is the "Total" row
         const workIntervals =
             this.model.data.progressBars?.resource_id?.[row.resId]?.work_intervals;
         if (!workIntervals) {
             if (row.groupedByField === "resource_id") {
-                // If there is no contract, don't show aggregate info
                 return false;
             } else if (!row.groupedByField) {
-                // If it's not grouped by anything, its the total row, follow default behaviour
                 return wouldAggregate;
             }
         }
 
-        // We show aggregation info in all columns for flexible-hour employees and when there are pills in that day
         if ((row.resId && !row.unavailabilities) || wouldAggregate) {
             return true;
         }
 
-        // We do not show aggregate info on non-working days
         const group = this.getSubColumnFromColNumber(g.grid.column[0]);
         const groupWorkOverlap = getUnionOfIntersections(
             [group.start, group.stop],
@@ -450,7 +434,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
             return false;
         }
 
-        // We do not show aggregate info on days with time-off
         const unavailabilities = Object.entries(row.unavailabilities).map(
             ([key, { start, stop }]) => [start, stop],
         );
@@ -497,7 +480,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
             return workHours;
         }
         const resource_id = row.resId;
-        // If flexible hour contract, colour the gantt view group based on whether the aggregate value > the "average work hours" per day.
         if (this.isFlexibleHours(resource_id)) {
             workHours =
                 this.model.data.progressBars.resource_id[resource_id]?.avg_hours;
@@ -505,7 +487,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
             workHours = this.model.data.progressBars.resource_id[
                 resource_id
             ]?.work_intervals.reduce((sum, [intervalStart, intervalEnd]) => {
-                // Check whether the work interval is of the same date as the grouping pill
                 if (
                     compareDates(intervalStart, pill.date_start) >= 0 &&
                     compareDates(intervalEnd, pill.date_end) <= 0
@@ -636,7 +617,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
      * @param {Pill} pill
      * @param {number} startColumnId - column where to split the pill
      */
-    /** Where a shift splits at a column: at the resource's availability limits, or at the work day's. */
     splitBounds(pill, startColumnId) {
         const resourceId = pill.record.resource_id.id || false;
         const splitRightPill = this.getColumnStartStop(startColumnId, startColumnId);
@@ -674,7 +654,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
     async onPillSplitToolClicked(pill, startColumnId) {
         const { start, stop } = this.splitBounds(pill, startColumnId);
         const copiedShiftId = await this.model.splitPill(start, stop, pill.record);
-        // Close the last split notification if any and show a new split notification with an Undo button
         this.closeNotificationFn?.();
         this.closeNotificationFn = this.notificationService.add(
             markup`<i class="fa-solid fa-check"></i><span class="ms-1">${_t(
@@ -694,7 +673,6 @@ export class PlanningGanttRenderer extends GanttRenderer {
         );
     }
 
-    /** Merge the two halves of a split back, on the schedule the shift had before it. */
     async undoSplit(record, copiedShiftId) {
         const result = await this.model.orm.call(
             this.model.metaData.resModel,

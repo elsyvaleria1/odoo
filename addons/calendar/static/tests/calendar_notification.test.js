@@ -13,10 +13,6 @@ import {
 defineCalendarModels();
 preloadFullCalendar();
 
-/**
- * Send a calendar.alarm bus notification with the given overrides, sharing
- * the default payload across the tests below.
- */
 function sendAlarm(pyEnv, overrides = {}) {
     pyEnv["bus.bus"]._sendone(serverState.partnerId, "calendar.alarm", [
         {
@@ -73,9 +69,6 @@ test("can listen on bus and display notifications in DOM and click Snooze", asyn
 });
 
 test("alarm body renders as markup, not as escaped text", async () => {
-    // The server sends the formatted time and the alarm body as HTML; the
-    // notification renders `props.message` with `t-out`, which escapes a plain
-    // string. This payload is verbatim from GET /calendar/notify.
     const pyEnv = await startServer();
     await start();
     sendAlarm(pyEnv, {

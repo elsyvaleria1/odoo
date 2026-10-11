@@ -941,8 +941,6 @@ export class GeoengineModel extends RelationalModel {
             fields.push(layerConfig.heatmap_weight_field_name);
         }
 
-        // A foreign layer's popup renders that model's own info_box, so its
-        // rows must carry the fields that template reads.
         const foreign = this.relatedModels?.get(layerConfig.model);
         for (const name of Object.keys(foreign?.archInfo?.fieldNodes || {})) {
             if (!fields.includes(name)) {

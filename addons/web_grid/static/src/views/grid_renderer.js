@@ -58,9 +58,6 @@ export class GridRenderer extends Component {
     setup() {
         this.config = useViewConfig();
         this.ui = useService("ui");
-        // Subscribe to the model rather than reading it off the raw prop, so a
-        // `notify()` re-renders the grid on its own instead of relying on the
-        // controller's blanket deep render.
         this.model = useReactiveModel(this.props.model);
         this.rendererRef = elementRef();
         this.actionService = useService("action");
@@ -79,7 +76,6 @@ export class GridRenderer extends Component {
         onWillUpdateProps(this.onWillUpdateProps);
         onMounted(this._focusOnToday);
         onPatched(this._focusOnToday);
-        // This property is used to avoid refocus on today whenever a cell value is updated.
         this.shouldFocusOnToday = true;
         this.onMouseOver = useDebounced(this._onMouseOver.bind(this), 10);
         this.onMouseOut = useDebounced(this._onMouseOut.bind(this), 10);
@@ -129,7 +125,7 @@ export class GridRenderer extends Component {
             return 0;
         }
         if (!item.isSection && this.displayAddLine(item)) {
-            height *= 2; // to include the Add a line row
+            height *= 2;
         }
         return height;
     }
@@ -140,11 +136,6 @@ export class GridRenderer extends Component {
 
     get rowHeight() {
         const baseHeight = this.isMobile ? 48 : 32;
-        /*
-         * On mobile devices, grouped by fields are stacked vertically.
-         * By default, the base height accommodates up to 2 fields.
-         * For each additional field beyond the first 2, we add 20px to maintain proper spacing.
-         */
         const extraHeight = this.isMobile
             ? Math.max(0, this.model.rowFields.length - 2) * 20
             : 0;
@@ -309,7 +300,6 @@ export class GridRenderer extends Component {
                 totalRows += 1;
             }
         }
-        // Row height must be hard-coded for the virtual hook to work properly.
         return `auto repeat(${this.rowsCount + totalRows}, ${this.rowHeight}px)`;
     }
 
@@ -504,13 +494,10 @@ export class GridRenderer extends Component {
             this.hoveredElement ||
             ev.relatedTarget?.classList?.contains("dropdown-item")
         ) {
-            // As mouseout is call prior to mouseover, if hoveredElement is set this means
-            // that we haven't left it. So it's a mouseover inside it.
             return;
         }
         const highlightableElement = ev.target.closest(".o_grid_highlightable");
         if (!highlightableElement) {
-            // We are not in an element that should trigger a highlight.
             return;
         }
         const { column, gridRow, gridColumn, row } = highlightableElement.dataset;
@@ -562,10 +549,7 @@ export class GridRenderer extends Component {
             return;
         }
         while (relatedTarget) {
-            // Go up the parent chain
             if (relatedTarget === this.hoveredElement) {
-                // Check that we are still inside hoveredElement.
-                // If so it means it is a transition between child elements so ignore it.
                 return;
             }
             relatedTarget = relatedTarget.parentElement;
@@ -668,9 +652,7 @@ export class GridRenderer extends Component {
             this._onKeyDown(ev);
             return;
         }
-        // Purpose: prevent browser defaults
         ev.preventDefault();
-        // Purpose: stop other window keydown listeners (e.g. home menu)
         ev.stopImmediatePropagation();
         let rowId = cell.row.id;
         let columnId = cell.column.id;
@@ -746,8 +728,6 @@ export class GridRenderer extends Component {
             }
             this.props.contentRef.el.scrollTop = offset;
         }
-        // Two frames: one for the scroll event to reach useVirtualGrid's
-        // throttled recompute, one for the resulting re-render to commit.
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 this.hoveredCellProps.reactive.cell =
@@ -768,7 +748,6 @@ export class GridRenderer extends Component {
                 context,
             });
         } else {
-            // retrieve form and list view ids from the action
             const { views = [] } = this.config;
             const openRecordsViews = ["list", "form"].map((viewType) => {
                 const view = views.find((view) => view[1] === viewType);
@@ -786,7 +765,6 @@ export class GridRenderer extends Component {
         }
     }
 
-    /** Return grid cell action helper when no records are found. */
     _getNoContentHelper() {
         const noRecordsFound = _t("No records found");
         return markup`<p class='o_view_nocontent_smiling_face'>${noRecordsFound}</p>`;

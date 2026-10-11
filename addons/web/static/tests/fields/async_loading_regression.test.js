@@ -181,7 +181,6 @@ test("reference: name response before next observer frame", async () => {
     expect(requested.includes(2)).toBe(true);
     await controller.model.root.update({ reference: "audit.option,3" });
     pending.resolve({ length: 1, records: [{ id: 2, display_name: "Second" }] });
-    // Drain service/update promise continuations without running the next RAF.
     for (let i = 0; i < 15; i++) {
         await Promise.resolve();
     }
@@ -547,7 +546,6 @@ for (const { name, ComponentClass, field, selector, invoke } of [
     });
 }
 
-// Keep this file in the mobile lane's discovery set as well as the desktop lane.
 test.tags("mobile");
 test("replacement selection choices work with touch input", async () => {
     await mountView({

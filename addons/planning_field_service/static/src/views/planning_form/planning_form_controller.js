@@ -13,8 +13,6 @@ patch(PlanningFormController.prototype, {
     },
 
     async beforeExecuteActionButton(clickParams) {
-        // Only the visit's own employee says where the visit happened: a manager
-        // clicking from the office would log the office.
         if (
             GEOLOCATED_ACTIONS.includes(clickParams.name) &&
             this.model.root.data.user_id?.id === user.userId

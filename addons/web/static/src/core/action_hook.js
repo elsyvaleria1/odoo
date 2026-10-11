@@ -38,11 +38,6 @@ export class CallbackRecorder {
     }
 }
 
-/**
- * What an action controller holds beyond its component: a controller in the
- * breadcrumbs outlives every component it mounts, and ends only once nothing
- * can restore it.
- */
 export class ControllerLifetime {
     /** @type {(() => void)[]} */
     _releases = [];

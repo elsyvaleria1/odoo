@@ -10,7 +10,6 @@ import {
     skillsX2ManyField,
 } from "../skills_one2many/skills_one2many.js";
 
-// the timeline and line cells the resume header declares before its actions column
 const RESUME_LINE_COLUMNS = 2;
 
 export class ResumeListRenderer extends CommonSkillsListRenderer {

@@ -104,7 +104,6 @@ export class OdooChartFeaturePlugin extends OdooUIPlugin {
             figureId: this.getters.getFigureIdFromChartId(chartId),
             definition: {
                 ...definition,
-                // I don't know why it's in both searchParams and metaData.
                 searchParams: {
                     ...definition.searchParams,
                     groupBy: newGroupBy,

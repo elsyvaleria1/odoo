@@ -2,8 +2,6 @@
 
 import { termPhrases } from "@voice/interpreter/terms";
 
-// voice/data/speech_vocabulary_form_data.xml, row for row (test_voice_term checks it):
-// phrases as the administrator writes them, what they mean, their kind
 const SEED = [
     [
         "checa; checar; checalo; checala; checalos; checalas; checame; chequea; chequear",

@@ -1,8 +1,4 @@
 /** @odoo-module native */
-/**
- * reconstruction of a customizable_css_variable:
- * --optionName-propertyLikeName (i.e. --button-padding-x, --button-padding-y
- */
 
 import { BASE_CONTAINER_CLASS } from "@html_editor/utils/base_container";
 import { ICON_CLASS_SELECTOR } from "@web/core/utils/icons";
@@ -29,9 +25,8 @@ function generateSimpleMailingVariables(prefix, selectors, properties) {
     return variables;
 }
 
-// Properties and default values:
 
- 
+
 const wrapperProperties = [
     "background-color",
 ];
@@ -69,7 +64,7 @@ const separatorProperties = [
     "border-color",
     "width",
 ];
- 
+
 
 export const CUSTOMIZE_MAILING_VARIABLES = Object.assign(
     generateSimpleMailingVariables("wrapper", ["> [data-snippet]"], wrapperProperties),

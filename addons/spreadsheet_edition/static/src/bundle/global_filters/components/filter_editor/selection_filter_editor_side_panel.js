@@ -15,9 +15,6 @@ import { AbstractFilterEditorSidePanel } from "./filter_editor_side_panel.js";
 
 const { SelectionInput } = components;
 
-/**
- * This is the side panel to define/edit a global filter of type "selection".
- */
 export class SelectionFilterEditorSidePanel extends AbstractFilterEditorSidePanel {
     static template = "spreadsheet_edition.SelectionFilterEditorSidePanel";
     static components = {

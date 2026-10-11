@@ -90,7 +90,6 @@ test.tags("desktop");
 test("x2many table never claims more height than its rows occupy", async () => {
     seedLines(LINE_COUNT);
     await mountView({ resModel: "parent", type: "form", resId: 1, arch: ARCH });
-    // the rows are measured once mounted; the geometry follows one render later
     await animationFrame();
 
     const rows = queryAll(".o_field_x2many .o_data_row");

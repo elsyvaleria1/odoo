@@ -6,8 +6,6 @@ import { ListRenderer } from "@web/views/list";
 
 import { PayslipActionHelper } from "../../components/payslip_action_helper/payslip_action_helper.js";
 
-// How many of a structure's benefits are worth a column before the list gets
-// too wide to read.
 const VISIBLE_BENEFIT_COLUMNS = 4;
 
 export class PayslipListRenderer extends ListRenderer {
@@ -77,12 +75,10 @@ export class PayslipListRenderer extends ListRenderer {
         return helperProps;
     }
 
-    /** utils **/
     get inPayrun() {
         return this.props.payrunId;
     }
 
-    /** overrides **/
     /**
      * @override
      */

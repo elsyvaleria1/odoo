@@ -51,7 +51,6 @@ test("copy link immediatly after entering the amount", async () => {
         resId: 1,
     });
 
-    // not awaiting the events
     await click(".o_field_widget[name=amount] input");
     await edit("13");
     await click(".o_clipboard_button");

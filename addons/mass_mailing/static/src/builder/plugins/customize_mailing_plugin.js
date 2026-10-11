@@ -58,8 +58,6 @@ export class CustomizeMailingPlugin extends Plugin {
 
     setup() {
         this.iframeWindow = this.document.defaultView;
-        // To have priority over some rules from style assets, the `cssPrefix` is intentionally made
-        // very specific (3 depth level).
         this.cssPrefix = ".o_layout .o_mail_wrapper .o_mail_wrapper_td";
         this.styleSheet = new this.iframeWindow.CSSStyleSheet();
         const styleEl = this.editable.querySelector("#design-element");
@@ -194,9 +192,6 @@ export class CustomizeMailingPlugin extends Plugin {
         }
     }
 
-    /**
-     * Ensure that FontAwesome icons are not impacted by font-family selectors
-     */
     transformFontFamilySelector(selector) {
         const excluding = withoutIconExclusion(selector.trim());
         if (excluding !== null) {

@@ -62,11 +62,6 @@ export class DocModel extends Component {
             methods: [],
             fields: { data: { items: [] } },
             modules: [],
-            // Every module a model contributes to is shown until the reader
-            // says otherwise. Seeding this with {core: true, base: false} left
-            // res.partner rendering 2 of its 75 fields on arrival, because
-            // every module absent from the literal read as undefined, i.e.
-            // hidden -- the page opened on an all-but-empty table.
             activeModules: {},
             showModulesFilter: true,
         });
@@ -134,8 +129,6 @@ export class DocModel extends Component {
         this.modelStore
             .loadModel(modelId)
             .then((model) => {
-                // null means the fetch failed; the store holds the error and
-                // the client renders it.
                 if (!model || this.state.model.model !== model.model) {
                     return;
                 }

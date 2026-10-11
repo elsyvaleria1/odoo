@@ -8,7 +8,6 @@ import { useService } from "@web/core/utils/hooks";
 import { registerField } from "@web/fields/_registry";
 import { CharField, charField } from "@web/fields/basic/char/char_field";
 
-/** The scan wizard's code, with a button that reads it with the phone camera. */
 export class TripScanCodeField extends CharField {
     static template = "stock_fleet_route.TripScanCodeField";
 
@@ -29,7 +28,6 @@ export class TripScanCodeField extends CharField {
         if (!(await record.save())) {
             return;
         }
-        // Same as pressing "Record Scan": the wizard answers with its next step.
         await this.action.doActionButton({
             type: "object",
             name: "action_scan",

@@ -20,7 +20,6 @@ patch(BankRecButtonList.prototype, {
     },
 
     get availableSaleOrder() {
-        // No need to compute if the statement line has no partner
         if (!this.statementLineData.partner_id) {
             return [];
         }

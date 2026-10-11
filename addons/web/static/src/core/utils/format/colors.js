@@ -436,7 +436,6 @@ const BARE_HEX_REGEX = /^(?:[a-f\d]{3}|[a-f\d]{6})$/i;
  * @returns {RgbaColor | false}
  */
 function toRgba(color = "") {
-    // Company colors may contain surrounding whitespace; keep kiosk parsing tolerant.
     color = color.trim();
     return convertCSSColorToRgba(BARE_HEX_REGEX.test(color) ? `#${color}` : color);
 }

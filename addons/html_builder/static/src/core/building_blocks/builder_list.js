@@ -29,7 +29,6 @@ export class BuilderList extends Component {
                     ]),
                 ),
                 (value) =>
-                    // is not empty object and doesn't include reserved fields
                     Object.keys(value).length > 0 &&
                     !Object.keys(value).includes("_id"),
             )
@@ -84,7 +83,6 @@ export class BuilderList extends Component {
     }
 
     validateProps() {
-        // keys match
         const itemShapeKeys = Object.keys(this.props.itemShape);
         const defaultKeys = Object.keys(this.props.default);
         const allKeys = new Set([...itemShapeKeys, ...defaultKeys]);

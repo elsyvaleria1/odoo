@@ -8,7 +8,6 @@ import { normalize } from "@web/core/l10n/utils";
  * @returns {string}
  */
 export function cleanPhoneNumber(phoneNumber) {
-    // U+00AD is the “soft hyphen” character
     return phoneNumber.replace(/[-()\s/.\u00AD]/g, "");
 }
 

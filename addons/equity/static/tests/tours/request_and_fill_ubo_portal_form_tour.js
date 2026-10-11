@@ -10,7 +10,6 @@ async function uploadTestFile(inputId) {
 
 function fillDate(anchor, value) {
     anchor.value = value;
-    // to trigger t-model updating component state
     anchor.dispatchEvent(new Event("input"));
     anchor.dispatchEvent(new Event("change"));
 }
@@ -45,7 +44,6 @@ function editHolder(newValues) {
         ...Object.keys(newValues).map((key) => {
             let trigger = `.o_holder_edit_dialog #${key}Input :is(input, select)`;
             if (key === "doc") {
-                // file input has special treatment as the input element is hidden
                 trigger = `.o_holder_edit_dialog #${key}Input input:not(:visible)`;
             }
             const run = newValues[key];
@@ -107,7 +105,7 @@ registry.category("web_tour.tours").add("fill_ubo_portal_form_tour", {
                 fillDate(this.anchor, "2001-11-24");
             },
             id: "edit 1234552",
-            pep: "click", // to set it to true
+            pep: "click",
             async doc() {
                 await uploadTestFile("doc");
             },
@@ -120,8 +118,6 @@ registry.category("web_tour.tours").add("fill_ubo_portal_form_tour", {
             controlMethod: "select co_1",
             async ownership(helpers) {
                 await helpers.edit("43");
-                // because ownership value affects voting rights
-                // it needs to lose focus then before overwriting voting rights
                 await helpers.press("Enter");
             },
             votingRights: "edit 45",
@@ -162,7 +158,7 @@ registry.category("web_tour.tours").add("fill_ubo_portal_form_tour", {
             run: "click",
         },
         ...editHolder({
-            pep: "click", // to set it to false
+            pep: "click",
         }),
         {
             content: "Sign the form",

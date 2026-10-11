@@ -11,10 +11,6 @@ import { patch } from "@web/core/utils/patch";
 patch(ErrorDialog.prototype, {
     setup() {
         super.setup();
-        /* The server names the occurrence on every unexpected error a request
-         * raises (`ir.http._capture_request_error`); an error the browser
-         * raised on its own is reported from here. Internal users only: the
-         * routes refuse the rest anyway. */
         const internal = user.isInternalUser;
         const occurrence = internal
             ? (this.props.data?.context?.error_incident?.occurrence ?? null)

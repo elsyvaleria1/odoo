@@ -23,7 +23,6 @@ test("totalTicketSeats: tickets with seats_max=0 show unlimited when event not l
             imageUrl: false,
         },
     });
-    // When ticket has seats_max=0 and event is not limited, should return 0 (unlimited)
     expect(comp.totalTicketSeats).toBe(0);
 });
 
@@ -43,8 +42,6 @@ test("totalTicketSeats: tickets with seats_max=0 respect event limit when event 
             imageUrl: false,
         },
     });
-    // When ticket has seats_max=0 but event is limited, should use event's seats_available
-    // This ensures it doesn't show as "Sold out" (-1) but shows available seats
     expect(comp.totalTicketSeats).toBe(5);
 });
 
@@ -64,7 +61,6 @@ test("totalTicketSeats: tickets with seats_max=0 show sold out only when event h
             imageUrl: false,
         },
     });
-    // When event has no seats available, should return -1 (sold out)
     expect(comp.totalTicketSeats).toBe(-1);
 });
 
@@ -82,6 +78,5 @@ test("totalTicketSeats: tickets with seats_max>0 work normally", async () => {
             imageUrl: false,
         },
     });
-    // Normal case: should sum ticket seats_available
     expect(comp.totalTicketSeats).toBe(3);
 });

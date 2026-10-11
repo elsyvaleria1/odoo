@@ -6,7 +6,6 @@ patch(PosOrderline.prototype, {
         super.setup(...arguments);
         this.note = this.note || "";
     },
-    //@override
     clone() {
         const orderline = super.clone(...arguments);
         orderline.note = this.note;
@@ -24,12 +23,10 @@ patch(PosOrderline.prototype, {
                 return false;
             }
         } else if (orderline.course_id?.uuid) {
-            // In case of order merge
             return false;
         }
         return super.canBeMergedWith(orderline);
     },
-    // To be overriden by other modules (eg: pos_discount)
     isGlobalDiscountApplicable() {
         return true;
     },

@@ -301,7 +301,6 @@ describe("field flushes on unload", () => {
             queryOne("div.o_field_widget[name=timmy] div.form-check input")
         );
 
-        // clicked right before the tab closes: the debounced commit is still due
         const { requested, beaconsSent } = await unloadForm(form, () =>
             checkbox.click(),
         );

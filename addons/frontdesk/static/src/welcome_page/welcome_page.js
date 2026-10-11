@@ -25,10 +25,9 @@ export class WelcomePage extends Component {
             1000,
         );
         this.props.resetData();
-        // Make the qr code only when self_check_in field is true from backend.
         if (this.props.stationInfo.self_check_in) {
             this._getQrCodeData();
-            this.qrCodeInterval = setInterval(() => this._getQrCodeData(), 3600000); // 1 hour
+            this.qrCodeInterval = setInterval(() => this._getQrCodeData(), 3600000);
         }
         onWillUnmount(() => {
             clearInterval(this.timeInterval);

@@ -153,7 +153,7 @@ test("click on the minus/plus_buttons to decrease/increase the quantity of a pro
     await click(
         ".o_kanban_record:nth-of-type(2) .o_product_catalog_quantity button:has(i.fa-plus)",
     );
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
     expect(
         ".o_kanban_record:nth-of-type(2) .o_product_catalog_quantity .o_input",
     ).toHaveValue(2, {
@@ -162,7 +162,7 @@ test("click on the minus/plus_buttons to decrease/increase the quantity of a pro
     });
 
     await click(".o_kanban_record.o_product_added");
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
     expect(
         ".o_kanban_record:nth-of-type(2) .o_product_catalog_quantity .o_input",
     ).toHaveValue(3, {
@@ -173,7 +173,7 @@ test("click on the minus/plus_buttons to decrease/increase the quantity of a pro
     await click(
         ".o_kanban_record:nth-of-type(3) .o_product_catalog_quantity button:has(i.fa-minus)",
     );
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
     expect(
         ".o_kanban_record:nth-of-type(3) .o_product_catalog_quantity .o_input",
     ).toHaveValue(2, {
@@ -214,15 +214,15 @@ test("check the debounce delay", async () => {
     await click(
         ".o_kanban_record:nth-of-type(2) .o_product_catalog_quantity button:has(i.fa-plus)",
     );
-    await advanceTime(100); // click again before the debounce takes effect
+    await advanceTime(100);
     await click(
         ".o_kanban_record:nth-of-type(2) .o_product_catalog_quantity button:has(i.fa-plus)",
     );
-    await advanceTime(100); // click again before the debounce takes effect
+    await advanceTime(100);
     await click(
         ".o_kanban_record:nth-of-type(2) .o_product_catalog_quantity button:has(i.fa-plus)",
     );
-    await advanceTime(510); // wait until the debounce takes effect
+    await advanceTime(510);
 
     expect(
         ".o_kanban_record:nth-of-type(2) .o_product_catalog_quantity .o_input",
@@ -266,7 +266,7 @@ test("edit manually the product quantity and check Unit price update", async () 
     await contains(
         ".o_kanban_record:nth-child(2) .o_product_catalog_quantity .o_input",
     ).edit(12);
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
 
     expect(
         ".o_kanban_record:nth-child(2) .o_product_catalog_quantity .o_input",
@@ -313,7 +313,7 @@ test("edit manually a wrong product quantity", async () => {
     await contains(
         ".o_kanban_record:nth-child(2) .o_product_catalog_quantity .o_input",
     ).fill("12a");
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
 
     expect(
         ".o_kanban_record:nth-child(2) .o_product_catalog_quantity button:has(i.fa-plus)",
@@ -337,7 +337,7 @@ test("edit manually a wrong product quantity", async () => {
     await contains(
         ".o_kanban_record:nth-child(3) .o_product_catalog_quantity .o_input",
     ).clear();
-    await runAllTimers(); // for skipping the debounce delay
+    await runAllTimers();
 
     expect(
         ".o_kanban_record:nth-child(2) .o_product_catalog_quantity button:has(i.fa-plus)",

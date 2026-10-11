@@ -44,7 +44,7 @@ test("pivot dialog with row date field (day)", async function (assert) {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /*xml*/ `
+                "partner,false,pivot": `
                     <pivot>
                         <field name="date" interval="day" type="row"/>
                         <field name="probability" type="measure"/>
@@ -64,7 +64,7 @@ test("pivot dialog with col date field (day)", async function (assert) {
         serverData: {
             models: getBasicData(),
             views: {
-                "partner,false,pivot": /*xml*/ `
+                "partner,false,pivot": `
                     <pivot>
                         <field name="date" interval="day" type="col"/>
                         <field name="probability" type="measure"/>

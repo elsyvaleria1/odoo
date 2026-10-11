@@ -13,11 +13,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_expiration_date", {
                 helper.assertLineQty(line, "0/20");
             },
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)00000076543210    > product barcode (76543210)
-        //      - (10)b1-b001           > lot (b1-b001)
-        //      - (30)00000008          > quantity (8)
-        //      - (17)220520            > expiration date (5/20/2022)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 010000007654321010b1-b001\x1D300000000817220520",
@@ -34,11 +29,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_expiration_date", {
                 helper.assertLineQty(line, "8/20");
             },
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)00000076543210    > product barcode (76543210)
-        //      - (10)b1-b002           > lot (b1-b002)
-        //      - (30)00000004          > quantity (4)
-        //      - (15)220520            > best before date (5/20/2022) -> expiration date (5/21/2022)
         {
             trigger: ".o_barcode_client_action",
             run: "scan 010000007654321010b1-b002\x1D300000000415220520",
@@ -69,12 +59,6 @@ registry.category("web_tour.tours").add("test_gs1_receipt_expiration_date", {
                 helper.assert(lot_with_date_2, `b1-b002 (${date2})`, "lot line");
             },
         },
-        // The following scanned barcode should be decomposed like that:
-        //      - (01)00000076543210    > product barcode (76543210)
-        //      - (10)b1-b003           > lot (b1-b003)
-        //      - (30)00000008          > quantity (8)
-        //      - (15)220520            > best before date (5/20/2022)  not used
-        //      - (17)220522            > expiration date (5/22/2022)   used
         {
             trigger: ".o_barcode_client_action",
             run: "scan 010000007654321010b1-b003\x1D30000000081522052017220522",

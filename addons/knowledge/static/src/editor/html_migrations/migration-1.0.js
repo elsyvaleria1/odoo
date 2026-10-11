@@ -77,8 +77,6 @@ const migrations = {
         for (const el of elements) {
             const oldProps = decodeDataBehaviorProps(el.dataset.behaviorProps);
             if (!oldProps?.article_id || !oldProps?.display_name) {
-                // Abort the conversion if data can not be recovered.
-                // Element will still exist in the DOM as raw data.
                 continue;
             }
             delete el.dataset.behaviorProps;
@@ -125,10 +123,7 @@ const migrations = {
                     props.articles = articles;
                     el.dataset.embeddedProps = JSON.stringify(props);
                 }
-            } catch {
-                // ignore the existing article index if the parsing fails, it will
-                // have to be refreshed manually.
-            }
+            } catch {}
             el.removeAttribute("class");
             el.removeAttribute("tabindex");
             el.dataset.embedded = "articleIndex";
@@ -189,7 +184,6 @@ const migrations = {
         const resId = env.model?.root?.resId;
         const resModel = env.model?.root?.resModel;
         if (resId && resModel) {
-            // Only create new comment beacons if the env has a record.
             const comments = groupComments(elements);
             for (const threadId in comments) {
                 createBeacons({
@@ -200,7 +194,6 @@ const migrations = {
                 });
             }
         }
-        // Remove old comments anchors (not a big deal if there is no replacement for some)
         for (const el of [...elements]) {
             if (el.nodeName === "SPAN") {
                 const childNodes = [];
@@ -224,8 +217,6 @@ const migrations = {
         for (const el of elements) {
             const oldProps = decodeDataBehaviorProps(el.dataset.behaviorProps);
             if (!oldProps || !oldProps.source) {
-                // Abort the conversion if data can not be recovered.
-                // Element will still exist in the DOM as raw data.
                 continue;
             }
             const props = {
@@ -261,7 +252,6 @@ const migrations = {
                 viewProps.additionalViewProps = oldProps.additionalViewProps;
             }
             if (oldProps.favorites) {
-                // favorites was an array, is now an object
                 for (const filter of oldProps.favorites) {
                     viewProps.favoriteFilters[filter.name] = filter;
                 }
@@ -305,14 +295,11 @@ const migrations = {
             const fileName = htmlFileName || oldProps?.fileName || _t("Untitled");
             const extension = htmlFileExtension || oldProps?.fileExtension;
             let fileData = oldProps?.fileData;
-            // accessToken has been renamed in file_model
             if (fileData?.accessToken) {
                 fileData.access_token = fileData.accessToken;
                 delete fileData.accessToken;
             }
             if (!id && !url && !fileData) {
-                // Abort the conversion if data can not be recovered.
-                // Element will still exist in the DOM as raw data.
                 continue;
             }
             if (!fileData) {
@@ -370,8 +357,6 @@ const migrations = {
         for (const el of elements) {
             const oldProps = decodeDataBehaviorProps(el.dataset.behaviorProps);
             if (!oldProps || !oldProps.platform || !oldProps.videoId) {
-                // Abort the conversion if data can not be recovered.
-                // Element will still exist in the DOM as raw data.
                 continue;
             }
             delete el.dataset.behaviorProps;

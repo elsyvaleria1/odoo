@@ -13,9 +13,6 @@ const { toCartesian, toZone, lettersToNumber, deepCopy } = spreadsheet.helpers;
  * @typedef {import("@odoo/o-spreadsheet").UID} UID
  */
 
-/**
- * Select a cell
- */
 export function selectCell(model, xc, sheetId = model.getters.getActiveSheetId()) {
     const { col, row } = toCartesian(xc);
     if (sheetId !== model.getters.getActiveSheetId()) {
@@ -44,18 +41,13 @@ export function setGlobalFilterValueWithoutReload(model, payload) {
  */
 export async function addGlobalFilter(model, filter, fieldMatchings = {}) {
     const result = model.dispatch("ADD_GLOBAL_FILTER", { filter, ...fieldMatchings });
-    // Wait for the fetch of DisplayNames
     await animationFrame();
     await waitForDataLoaded(model);
     return result;
 }
 
-/**
- * Remove a global filter and ensure the data sources are completely reloaded
- */
 export async function removeGlobalFilter(model, id) {
     const result = model.dispatch("REMOVE_GLOBAL_FILTER", { id });
-    // Wait for the fetch of DisplayNames
     await animationFrame();
     await waitForDataLoaded(model);
     return result;
@@ -68,19 +60,13 @@ export async function removeGlobalFilter(model, id) {
  */
 export async function editGlobalFilter(model, filter) {
     const result = model.dispatch("EDIT_GLOBAL_FILTER", { filter });
-    // Wait for the fetch of DisplayNames
     await animationFrame();
     await waitForDataLoaded(model);
     return result;
 }
 
-/**
- * Set the value of a global filter and ensure the data sources are completely
- * reloaded
- */
 export async function setGlobalFilterValue(model, payload) {
     const result = model.dispatch("SET_GLOBAL_FILTER_VALUE", payload);
-    // Wait for the fetch of DisplayNames
     await animationFrame();
     await waitForDataLoaded(model);
     return result;
@@ -90,26 +76,17 @@ export function moveGlobalFilter(model, id, delta) {
     return model.dispatch("MOVE_GLOBAL_FILTER", { id, delta });
 }
 
-/**
- * Set the selection
- */
 export function setSelection(model, xc) {
     const zone = toZone(xc);
     model.selection.selectZone({ cell: { col: zone.left, row: zone.top }, zone });
 }
 
-/**
- * Autofill from a zone to a cell
- */
 export function autofill(model, from, to) {
     setSelection(model, from);
     model.dispatch("AUTOFILL_SELECT", toCartesian(to));
     model.dispatch("AUTOFILL");
 }
 
-/**
- * Set the content of a cell
- */
 export function setCellContent(
     model,
     xc,
@@ -119,9 +96,6 @@ export function setCellContent(
     model.dispatch("UPDATE_CELL", { ...toCartesian(xc), sheetId, content });
 }
 
-/**
- * Set the format of a cell
- */
 export function setCellFormat(
     model,
     xc,
@@ -131,9 +105,6 @@ export function setCellFormat(
     model.dispatch("UPDATE_CELL", { ...toCartesian(xc), sheetId, format });
 }
 
-/**
- * Set the style of a cell
- */
 export function setCellStyle(
     model,
     xc,
@@ -201,7 +172,6 @@ export function deleteColumns(
     });
 }
 
-/** Create a test chart in the active sheet*/
 export function createBasicChart(
     model,
     chartId,
@@ -232,7 +202,6 @@ export function createBasicChart(
     });
 }
 
-/** Create a test scorecard chart in the active sheet*/
 export function createScorecardChart(
     model,
     chartId,
@@ -258,7 +227,6 @@ export function createScorecardChart(
     });
 }
 
-/** Create a test scorecard chart in the active sheet*/
 export function createGaugeChart(
     model,
     chartId,
@@ -324,25 +292,16 @@ export function updatePivot(model, pivotId, pivotData) {
     return model.dispatch("UPDATE_PIVOT", { pivotId, pivot });
 }
 
-/**
- * Copy a zone
- */
 export function copy(model, xc) {
     setSelection(model, xc);
     return model.dispatch("COPY");
 }
 
-/**
- * Cut a zone
- */
 export function cut(model, xc) {
     setSelection(model, xc);
     return model.dispatch("CUT");
 }
 
-/**
- * Paste on a zone
- */
 export function paste(model, range, pasteOption) {
     return model.dispatch("PASTE", { target: [toZone(range)], pasteOption });
 }

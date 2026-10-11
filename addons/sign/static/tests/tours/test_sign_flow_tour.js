@@ -80,7 +80,6 @@ registry.category("web_tour.tours").add("test_sign_flow_tour", {
             content: "Click on style button",
             trigger: ".o_web_sign_auto_select_style .dropdown-toggle",
             async run({ click, waitUntil }) {
-                // Select a style but wait before the response of rpc get_fonts/
                 for (let i = 0; i < 50; i++) {
                     await click();
                     const items = document.querySelectorAll(

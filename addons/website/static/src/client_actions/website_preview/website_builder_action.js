@@ -81,8 +81,6 @@ export class WebsiteBuilderClientAction extends Component {
 
     setup() {
         this.debug = useDebugMode();
-        // html_builder.snippets registers with website.website_builder_assets,
-        // after setup: it is looked up once that bundle has loaded.
         this.appServices = useServices();
         useLifecycleLog(log);
         this.target = null;
@@ -600,8 +598,6 @@ export class WebsiteBuilderClientAction extends Component {
         this.preparePublicRootReady();
         this.setIframeLoaded();
         this.websiteService.websitePublicEnv = undefined;
-        // until the new document commits, the old one keeps saying it is ready,
-        // and whatever waits for is-ready acts on a page about to be replaced
         this.websiteContent.el.contentDocument.body?.setAttribute("is-ready", "false");
         if (url) {
             const urlObj = new URL(url, this.websiteContent.el.contentWindow.location);
@@ -687,10 +683,6 @@ export class WebsiteBuilderClientAction extends Component {
             );
             if (wrapEl && !wrapEl.innerHTML.trim()) {
                 log.logic("addWelcomeMessage: empty homepage for restricted editor");
-                // a node the web client creates keeps the web client's JS
-                // wrapper in the page, and every ancestor reached from it
-                // whose wrapper the GC dropped is rewrapped there too: the
-                // page's own body then fails its `instanceof HTMLElement`
                 this.welcomeMessageEl = wrapEl.ownerDocument.importNode(
                     renderToElement("website.homepage_editor_welcome_message"),
                     true,
@@ -718,8 +710,6 @@ export class WebsiteBuilderClientAction extends Component {
                 this.websiteContent.el.contentWindow.addEventListener(
                     "pagehide",
                     () => {
-                        // until the next page loads, what describes the page
-                        // (translatable, main object) is the previous one's
                         this.websiteService.context.isPageLoading = true;
                     },
                     { once: true },

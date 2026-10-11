@@ -19,12 +19,6 @@ async function mountSelectionFilterValue(env, props) {
     await mountWithCleanup(SelectionFilterValue, { props, env, getTemplate });
 }
 
-/**
- * res.currency.position is a selection field with 2 options:
- * - after (A)
- * - before (B)
- */
-
 test("basic selection filter value", async function () {
     const env = await makeMockEnv();
     await mountSelectionFilterValue(env, {

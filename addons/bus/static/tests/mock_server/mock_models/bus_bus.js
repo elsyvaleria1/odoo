@@ -7,12 +7,6 @@ export class BusBus extends models.Model {
     /** @type {Record<number, string[]>} */
     channelsByUser = {};
     lastBusNotificationId = 0;
-    // Minimal server-like store: every dispatched notification is kept as
-    // `{ id, target, value }` so a (re)subscribe carrying a `last` cursor can
-    // replay the gap (see `_replayForSubscribe`). The real `bus.bus` persists
-    // rows and re-sends everything after `last` on subscribe; this mirrors the
-    // essential behavior needed to test reconnect id-gap recovery without a
-    // full DB.
     /** @type {{ id: number, target: any, value: any }[]} */
     _notificationStore = [];
 

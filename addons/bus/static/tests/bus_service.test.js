@@ -111,7 +111,6 @@ test("second tab still receives notifications after main pagehide", async () => 
     const mainEnv = await makeMockEnv();
     stepWorkerActions("BUS:LEAVE");
     mainEnv.services.bus_service.addChannel("lambda");
-    // Prevent second tab from receiving pagehide event.
     patchWithCleanup(browser, {
         addEventListener(eventName, callback) {
             if (eventName !== "pagehide") {
@@ -122,8 +121,6 @@ test("second tab still receives notifications after main pagehide", async () => 
     const worker = getWebSocketWorker();
     patchWithCleanup(worker, {
         _unregisterClient(client) {
-            // Ensure that the worker does not receive any messages from the main tab
-            // after pagehide, mimicking real-world behavior.
             client.onmessage = null;
             super._unregisterClient(client);
         },
@@ -137,7 +134,6 @@ test("second tab still receives notifications after main pagehide", async () => 
         [mainEnv, "notifType", "beta"],
         [secondEnv, "notifType", "beta"],
     );
-    // simulate unloading main
     await manuallyDispatchProgrammaticEvent(window, "pagehide");
     await waitForSteps(["BUS:LEAVE"]);
     MockServer.env["bus.bus"]._sendone("lambda", "notifType", "gamma");
@@ -175,14 +171,10 @@ test("channel management from multiple tabs", async () => {
     const secondTabEnv = await makeMockEnv(null, { makeNew: true });
     const releaseFirst = firstTabEnv.services.bus_service.addChannel("channel1");
     await waitForSteps(["subscribe - [channel1]"]);
-    // Already known: no subscription.
     const releaseSecond = secondTabEnv.services.bus_service.addChannel("channel1");
-    // Remove from tab1, but tab2 still listens: no subscription.
     releaseFirst();
-    // New channel: subscription.
     secondTabEnv.services.bus_service.addChannel("channel2");
     await waitForSteps(["subscribe - [channel1,channel2]"]);
-    // Removing last listener of channel1: subscription.
     releaseSecond();
     await waitForSteps(["subscribe - [channel2]"]);
 });
@@ -235,13 +227,11 @@ test("websocket disconnects when user logs out", async () => {
     const firstTabEnv = await makeMockEnv();
     await startBusService(firstTabEnv);
     await waitForSteps(["BUS:CONNECT"]);
-    // second tab connects to the worker, omitting the DB name. Consider same DB.
     patchWithCleanup(session, { db: undefined });
     restoreRegistry(registry);
     const env2 = await makeMockEnv(null, { makeNew: true });
     await startBusService(env2);
     await waitForSteps([]);
-    // third tab connects to the worker after disconnection: userId is now false.
     patchWithCleanup(user, { userId: false });
     restoreRegistry(registry);
     const env3 = await makeMockEnv(null, { makeNew: true });
@@ -269,9 +259,6 @@ test("websocket reconnects upon user log in", async () => {
 test("websocket connects with URL corresponding to given serverURL", async () => {
     const serverURL = "http://random-website.com";
     mockService("bus.parameters", { serverURL });
-    // A server on another host: the worker service reads its anonymous
-    // bundle to start the worker from a Blob URL (see worker_service.js). The
-    // content is irrelevant since HOOT mocks (Shared)Worker anyway.
     onRpc("/bus/websocket_worker_bundle/anonymous", () => "", { pure: true });
     await makeMockEnv();
     mockWebSocket((ws) => asyncStep(ws.url));
@@ -330,30 +317,21 @@ test("can reconnect after late close event", async () => {
     await waitForSteps(["BUS:CONNECT"]);
     patchWithCleanup(getWebSocketWorker().websocket, {
         async close(code = WEBSOCKET_CLOSE_CODES.CLEAN, reason) {
-            this._readyState = 2; // WebSocket.CLOSING
+            this._readyState = 2;
             if (code === WEBSOCKET_CLOSE_CODES.CLEAN) {
-                // Simulate that the connection could not be closed cleanly.
                 await closeDeferred;
                 code = WEBSOCKET_CLOSE_CODES.ABNORMAL_CLOSURE;
             }
             return super.close(code, reason);
         },
     });
-    // Connection will be closed when passing offline. But the close event will
-    // be delayed to come after the next open event. The connection will thus be
-    // in the closing state in the meantime (Simulates pending TCP closing
-    // handshake).
     manuallyDispatchProgrammaticEvent(window, "offline");
-    // Worker reconnects upon the reception of the online event.
     manuallyDispatchProgrammaticEvent(window, "online");
     await waitForSteps(["online"]);
     await runAllTimers();
     await waitForSteps(["BUS:DISCONNECT", "BUS:RECONNECT"]);
-    // Trigger the close event, it shouldn't have any effect since it is
-    // related to an old connection that is no longer in use.
     closeDeferred.resolve();
     await waitForSteps([]);
-    // Server closes the connection, the worker should reconnect.
     MockServer.env["bus.bus"]._simulateDisconnection(
         WEBSOCKET_CLOSE_CODES.KEEP_ALIVE_TIMEOUT,
     );
@@ -362,7 +340,6 @@ test("can reconnect after late close event", async () => {
 
 test("fallback on simple worker when shared worker failed to initialize", async () => {
     addBusServiceListeners(["BUS:CONNECT", () => asyncStep("BUS:CONNECT")]);
-    // Starting the server first, the following patch would be overwritten otherwise.
     await makeMockServer();
     patchWithCleanup(browser, {
         SharedWorker: class extends browser.SharedWorker {
@@ -441,8 +418,6 @@ test("do not reconnect when worker version is outdated", async () => {
     startBusService();
     await runAllTimers();
     await waitForSteps(["BUS:START"]);
-    // Verify the worker state instead of the steps as the connect event is
-    // asynchronous and may not be fired at this point.
     expect(worker.state).toBe(CONNECTION_STATE.DISCONNECTED);
 });
 
@@ -494,8 +469,6 @@ test("remove from main tab candidates when version is outdated", async () => {
 });
 
 test("show notification when version is outdated", async () => {
-    // Auto-removed (`after`) so this listener on the shared `browser.location`
-    // mock does not leak a stray "reload" step into later suites.
     after(on(browser.location, "reload", () => asyncStep("reload")));
     addBusServiceListeners(
         ["BUS:CONNECT", () => asyncStep("BUS:CONNECT")],
@@ -523,7 +496,6 @@ test("show notification when version is outdated", async () => {
 
 test("subscribe message is sent first", async () => {
     addBusServiceListeners(["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")]);
-    // Starting the server first, the following patch would be overwritten otherwise.
     await makeMockServer();
     const ogSocket = window.WebSocket;
     patchWithCleanup(window, {
@@ -557,11 +529,6 @@ test("subscribe message is sent first", async () => {
 });
 
 test("subscribe is re-sent before queued messages after offline/online", async () => {
-    // Regression: a `_stop()`/`_start()` cycle (offline→online) removes the
-    // socket listeners, so `_onWebsocketClose` (which resets
-    // `firstSubscribeDeferred`) never runs. If the deferred stays
-    // stale-resolved, queued app messages flush before the reconnection's
-    // `subscribe`. The worker resets the deferred on open so `subscribe` wins.
     browser.addEventListener("online", () => asyncStep("online"));
     addBusServiceListeners(["BUS:DISCONNECT", () => asyncStep("BUS:DISCONNECT")]);
     await makeMockServer();
@@ -584,7 +551,6 @@ test("subscribe is re-sent before queued messages after offline/online", async (
     await waitForSteps(["subscribe"]);
     manuallyDispatchProgrammaticEvent(window, "offline");
     await waitForSteps(["BUS:DISCONNECT"]);
-    // Enqueued while stopped; must be sent AFTER the reconnection's subscribe.
     getService("bus_service").send("queued_event");
     manuallyDispatchProgrammaticEvent(window, "online");
     await waitForSteps(["online"]);
@@ -593,12 +559,6 @@ test("subscribe is re-sent before queued messages after offline/online", async (
 });
 
 test("bus service does not hang when the worker fails to initialize", async () => {
-    // Regression: when worker_service degrades to FAILED (e.g. cross-origin
-    // bundle fetch failure), it resolves its own init deferred and no-ops all
-    // sends/handlers, so no BUS:INITIALIZED is ever emitted. bus_service must
-    // detect FAILED and unblock its callers instead of awaiting that signal
-    // forever. Force that terminal state (and never create a real worker, so
-    // it stays FAILED) by stubbing worker_service's entry point.
     patchWithCleanup(WorkerService.prototype, {
         async ensureWorkerStarted() {
             this._state = WORKER_SERVICE_STATE.FAILED;
@@ -667,21 +627,14 @@ test("a channel is kept until every claim on it is released", async () => {
 });
 
 test("channels are replayed after a bfcache restore", async () => {
-    // A tab frozen in the bfcache cannot answer the worker's liveness pings
-    // and may get evicted (losing its channel list worker-side). On
-    // `pageshow` with `persisted: true`, bus_service must re-send its
-    // channels so the subscription recovers.
     await makeMockEnv();
     getService("bus_service").addChannel("lambda");
     await waitForChannels(["lambda"]);
     const worker = getWebSocketWorker();
-    // Simulate the liveness sweep having evicted this tab while frozen.
     for (const client of worker.channelsByClient.keys()) {
         worker._unregisterClient(client);
     }
     await runAllTimers();
-    // `channelsByClient` values are now `Map<channel, refcount>`; aggregate the
-    // claimed channels via the worker helper instead of flattening string[].
     expect(worker._getAllChannels()).not.toInclude("lambda");
     browser.dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true }));
     await waitForChannels(["lambda"]);
@@ -689,10 +642,6 @@ test("channels are replayed after a bfcache restore", async () => {
 });
 
 test("offline does not resurrect a stopped tab (no BUS:STOP after stop())", async () => {
-    // After stop() this tab is inactive and was dropped worker-side. An
-    // unconditional `offline` BUS:STOP, combined with the worker re-registering
-    // on some actions, would silently resurrect it. The handler is guarded by
-    // isActive, like `online`/`pageshow`.
     await makeMockEnv();
     const bus = getService("bus_service");
     bus.addChannel("a");
@@ -702,15 +651,10 @@ test("offline does not resurrect a stopped tab (no BUS:STOP after stop())", asyn
     await waitForSteps(["BUS:LEAVE"]);
     manuallyDispatchProgrammaticEvent(window, "offline");
     await runAllTimers();
-    // Inactive tab: no BUS:STOP is forwarded to the worker.
     await waitForSteps([]);
 });
 
 test("visibilitychange to visible resends BUS:START while active", async () => {
-    // A tab frozen by Page Lifecycle (Chromium Memory Saver) or system suspend
-    // resumes via visibilitychange, never `pageshow`. BUS:START lets the worker
-    // re-register it if it was evicted while frozen (answered with BUS:RESYNC);
-    // the worker no-ops when the socket is already connected.
     await makeMockEnv();
     const bus = getService("bus_service");
     bus.addChannel("a");
@@ -726,11 +670,9 @@ test("J2: stop() then start() replays this tab's channels", async () => {
     const bus = getService("bus_service");
     bus.addChannel("a");
     await waitForChannels(["a"]);
-    // Observe only the stop/start replay (the setup snapshot is not stepped).
     stepWorkerActions(["BUS:SET_CHANNELS", "BUS:LEAVE"]);
     bus.stop();
     await waitForSteps(["BUS:LEAVE"]);
-    // The worker dropped this client on BUS:LEAVE; start() must replay the map.
     bus.start();
     await waitForSteps(["BUS:SET_CHANNELS"]);
     await waitForChannels(["a"]);
@@ -744,8 +686,6 @@ test("J2: stop() then addChannel() replays the whole channel map", async () => {
     stepWorkerActions(["BUS:SET_CHANNELS", "BUS:ADD_CHANNEL", "BUS:LEAVE"]);
     bus.stop();
     await waitForSteps(["BUS:LEAVE"]);
-    // First channel activity after stop(): the whole map (a + b) is replayed as
-    // one SET_CHANNELS snapshot, not an incremental ADD_CHANNEL.
     bus.addChannel("b");
     await waitForSteps(["BUS:SET_CHANNELS"]);
     await waitForChannels(["a", "b"]);
@@ -763,15 +703,11 @@ test("J2: add/delete/add racing worker init resolves via one atomic snapshot", a
         },
     });
     const bus = getService("bus_service");
-    // All three run before BUS:INITIALIZED: they must NOT be sent as
-    // incremental add/delete (which can reach the worker out of balance), only
-    // folded into the atomic BUS:SET_CHANNELS snapshot sent on init.
     const releaseA = bus.addChannel("a");
     releaseA();
     bus.addChannel("b");
     await runAllTimers();
     expect(incrementalOps).toEqual([]);
-    // Net result is applied via the snapshot: only "b" ends up subscribed.
     await waitForChannels(["b"]);
 });
 
@@ -800,7 +736,6 @@ test("J7: non-BUS:* worker broadcasts never reach the public bus; unknown BUS:* 
     worker.broadcast("SOMETHING:ELSE", {});
     worker.broadcast("BUS:CUSTOM_EVENT", {});
     await runAllTimers();
-    // Only the application-level BUS: event surfaced on the public bus.
     await waitForSteps(["BUS:CUSTOM_EVENT"]);
 });
 
@@ -812,8 +747,6 @@ test("J8: duplicate subscribe fires the callback once; unsubscribe fully silence
     const bus = getService("bus_service");
     const callback = (payload) => asyncStep(`msg ${payload}`);
     bus.subscribe("t", callback);
-    // Idempotent: subscribing the same (type, callback) again must not add a
-    // second live listener.
     bus.subscribe("t", callback);
     MockServer.env["bus.bus"]._sendone("ch", "t", "a");
     await waitForSteps(["msg a"]);
@@ -841,10 +774,8 @@ test("J14: several batches within the debounce window write the watermark at mos
     MockServer.env["bus.bus"]._sendone("ch", "t", "b");
     MockServer.env["bus.bus"]._sendone("ch", "t", "c");
     await waitNotifications(["t", "a"], ["t", "b"], ["t", "c"]);
-    // Flush the debounced (500ms) watermark write.
     await runAllTimers();
     expect(writes.length).toBeLessThanOrEqual(1);
-    // The stored watermark is the highest id seen (never rewound).
     expect(getService("shared_storage").getSharedValue(lastNotificationIdKey())).toBe(
         3,
     );
@@ -858,8 +789,6 @@ test("J1: a re-subscribe replays notifications missed since the worker's waterma
     await waitForChannels(["ch"]);
     busBus._sendone("ch", "t", "seen");
     await waitNotifications(["t", "seen"]);
-    // A notification committed on the server while this worker was not
-    // listening: stored with a higher id, but never delivered to the worker.
     busBus.lastBusNotificationId += 1;
     const missedId = busBus.lastBusNotificationId;
     busBus._notificationStore.push({
@@ -867,10 +796,6 @@ test("J1: a re-subscribe replays notifications missed since the worker's waterma
         target: "ch",
         value: { id: missedId, message: { type: "t", payload: "missed" } },
     });
-    // A fresh subscribe (as sent on any reconnect) carries the worker's low
-    // watermark; the mock bus replays store entries with id > last that match
-    // the channel. Force it deterministically instead of racing the reconnect
-    // backoff timer.
     getService("bus_service").forceUpdateChannels();
     await runAllTimers();
     await waitNotifications(["t", "missed"]);

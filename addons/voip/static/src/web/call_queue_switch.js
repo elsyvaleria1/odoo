@@ -5,23 +5,11 @@ import { _t } from "@web/core/translation";
 import { useService } from "@web/core/utils/hooks";
 import { standardFieldProps } from "@web/fields/standard_field_props";
 
-/**
- * Represents a button in CRM leads Kanban view cards that deletes or creates
- * call activity from the related record. Call activities created this way are
- * included in the "Next activities" tab of the softphone.
- *
- * The term "call queue" refers to the list of the elements in the "Next
- * activities" tab.
- */
 export class CallQueueSwitch extends Component {
     static props = standardFieldProps;
     static template = "voip.CallQueueSwitch";
     props = useProps(this.constructor.props);
 
-    /**
-     * Useful to prevent other unnecessary requests to the ORM being sent if one
-     * is already in progress.
-     */
     _hasPendingRequest = false;
 
     setup() {
@@ -30,8 +18,6 @@ export class CallQueueSwitch extends Component {
         });
         this.orm = useService("orm");
         this.voip = useService("voip");
-        // useful to update the state of this view when the record is deleted
-        // from the "Next Activities" tab of the softphone
         useListener(
             this.voip.bus,
             "on-call-activity-removed",
@@ -102,8 +88,6 @@ export class CallQueueSwitch extends Component {
      * @param {integer} param0.detail The resId of the deleted record.
      */
     _onCallActivityRemoved({ detail: resId }) {
-        // note: the resId is enough to identify the record as long as only
-        // crm.lead uses the CallQueueSwitch field widget.
         if (this.props.record.resId !== resId) {
             return;
         }

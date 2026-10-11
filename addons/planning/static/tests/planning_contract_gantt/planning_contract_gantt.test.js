@@ -45,12 +45,6 @@ beforeEach(async () => {
         contract_date_end: "2024-03-28 23:50:59",
     });
 
-    // Registered HERE, not at module level: `web_gantt`'s own test mock installs
-    // its `get_gantt_data` handler from a global `beforeEach`, which runs after
-    // any module-level `onRpc` and therefore wins. Module-level, this handler
-    // was simply never reached -- `parent()` went uncalled and the view received
-    // web_gantt's default `{ resource_id: {} }` instead of the unavailabilities
-    // below, so nothing was ever shaded.
     onRpc("get_gantt_data", function getGanttData({ parent, kwargs }) {
         const result = parent();
         result.unavailabilities = {
@@ -121,27 +115,6 @@ onRpc("gantt_resource_work_interval", () => [
     { false: 0, [resourceId]: 9 },
 ]);
 
-/*
-    The following cases are to be checked/tested.
-╔══════════╦══════════╦══════════════════╦══════════════════════════════════════════════════════╗
-║ Employee ║ Contract ║ Status           ║ Behaviour                                            ║
-╠══════════╬══════════╬══════════════════╬══════════════════════════════════════════════════════╣
-║ 1        ║ No       ║ None             ║ White it in working days and grey according          ║
-║          ║          ║                  ║ to the employee calendar                             ║
-╠══════════╬══════════╬══════════════════╬══════════════════════════════════════════════════════╣
-║ 2        ║ Yes      ║ Running          ║ White & grey during the contract period according to ║
-║          ║          ║                  ║ the employee calendar, and grey everywhere outside   ║
-║          ║          ║                  ║ of the contract period                               ║
-╠══════════╬══════════╬══════════════════╬══════════════════════════════════════════════════════╣
-║ 3        ║ Yes      ║ Expired          ║ White & grey during the contract period according to ║
-║          ║          ║                  ║ the employee calendar, and grey everywhere outside   ║
-║          ║          ║                  ║ of the contract period                               ║
-╠══════════╬══════════╬══════════════════╬══════════════════════════════════════════════════════╣
-║ 4        ║ Yes      ║ Cancelled        ║ White & grey during the contract period according to ║
-║          ║          ║                  ║ the employee calendar, and grey everywhere outside   ║
-║          ║          ║                  ║ of the contract period                               ║
-╚══════════╩══════════╩══════════════════╩══════════════════════════════════════════════════════╝
-*/
 test("check gantt shading for employee without contract (case-1)", async () => {
     await mountView(ganttViewParams);
     await unfoldAllColumns();

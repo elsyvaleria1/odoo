@@ -10,7 +10,6 @@ import {
 import { download } from "@web/core/network";
 import { WebClient } from "@web/webclient/webclient";
 
-// Due to dependency with mail module, we have to define their models for our tests.
 defineModels(mailModels);
 
 const getOptionMockResponse = {
@@ -209,7 +208,6 @@ test("Test unfold loaded line", async () => {
     await click(".btn_foldable");
     await contains(".unfolded", { count: 1 });
 
-    // Only one call to get_expanded_lines, as we unfolded/folded/unfolded the same line
     expect(mockRpcReport.getExpandedLineCallCount).toEqual(1);
 });
 

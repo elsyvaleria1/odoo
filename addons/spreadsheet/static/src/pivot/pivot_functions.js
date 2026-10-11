@@ -12,12 +12,6 @@ const { functionRegistry } = spreadsheet.registries;
  * @typedef {import("@odoo/o-spreadsheet").FPayload} FPayload
  */
 
-//--------------------------------------------------------------------------
-// Spreadsheet functions
-//--------------------------------------------------------------------------
-
-// ODOO.FILTER.VALUE
-
 const ODOO_FILTER_VALUE = /** @satisfies {CustomFunctionDescription} */ ({
     description: _t("Return the current value of a spreadsheet filter."),
     args: [
@@ -35,8 +29,6 @@ const ODOO_FILTER_VALUE = /** @satisfies {CustomFunctionDescription} */ ({
         return this.getters.getFilterDisplayValue(unEscapedFilterName);
     },
 });
-
-// ODOO.FILTER.VALUE.V18
 
 const ODOO_FILTER_VALUE_V18 = /** @satisfies {CustomFunctionDescription} */ ({
     description: _t(

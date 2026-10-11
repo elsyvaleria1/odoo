@@ -7,9 +7,6 @@ import { Dropdown, DropdownItem } from "@web/components/dropdown";
 import { browser } from "@web/core/browser/browser";
 import { _t } from "@web/core/translation";
 
-/**
- * Share button to share a spreadsheet
- */
 export class SpreadsheetShareButton extends Component {
     static template = "spreadsheet.ShareButton";
     static components = { Dropdown, DropdownItem, CopyButton };
@@ -47,16 +44,10 @@ export class SpreadsheetShareButton extends Component {
         });
     }
 
-    /**
-     * Check whether the locale/global filters/contents have changed
-     * compared to the last time of sharing (in the same session)
-     */
     isChanged(data) {
         const contentsChanged = data.revisionId !== this.lastRevisionId;
         let globalFilterChanged = this.lastGlobalFilters === undefined;
         const newCells = {};
-        // The exported "Active Filters" sheet takes a fresh id on every export,
-        // so cells are keyed by the sheet's position, which the session keeps.
         for (const [index, sheet] of data.sheets.entries()) {
             for (const [cellId, cellValue] of Object.entries(sheet.cells)) {
                 newCells[`${index}:${cellId}`] = cellValue;

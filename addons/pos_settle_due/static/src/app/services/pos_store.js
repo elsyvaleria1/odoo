@@ -86,7 +86,6 @@ patch(PosStore.prototype, {
                 (p) => p["res.partner"][0].id === partner.id,
             );
             if (!updatedPartnerRecord) {
-                // the partner has been deleted from the server
                 partner.delete();
                 continue;
             }
@@ -140,7 +139,6 @@ patch(PosStore.prototype, {
             title: _t("Select the payment method to deposit money"),
             list: selectionList,
             getPayload: async (selectedPaymentMethod) => {
-                // Reuse an empty order that has no partner or has partner equal to the selected partner.
                 let newOrder;
                 const emptyOrder = this.getOpenOrders().find(
                     (order) =>
@@ -150,7 +148,6 @@ patch(PosStore.prototype, {
                 );
                 if (emptyOrder) {
                     newOrder = emptyOrder;
-                    // Set the empty order as the current order.
                     this.setOrder(newOrder);
                 } else {
                     newOrder = this.addNewOrder();

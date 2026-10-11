@@ -98,7 +98,6 @@ export class EmbeddedViewComponent extends ReadonlyEmbeddedViewComponent {
             this.model.root.update({ full_width: true });
         }
         this.id = uuid();
-        // duplicate optional fields with new unique key
         const keyOptionalFields = this.props.viewProps.context.keyOptionalFields;
         if (keyOptionalFields) {
             const optionalFields = localStorage.getItem(keyOptionalFields);
@@ -114,16 +113,12 @@ export class EmbeddedViewComponent extends ReadonlyEmbeddedViewComponent {
             defaultName: this.displayName,
             viewType: this.props.viewProps.viewType,
             save: (name) => {
-                // TODO ABD: make collaborative setDisplayName reactive. It should be possible since
-                // the embeddedState of collaborators receive the new name.
                 this.displayName = name;
             },
         });
     }
 
     saveFavoriteFilter(filter) {
-        // favorite filters are saved in an object to allow collaborative writes: multiple users
-        // can create a new filter at the same time and all of them should be kept.
         this.favoriteFilters[filter.name] = filter;
     }
 }

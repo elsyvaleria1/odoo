@@ -38,7 +38,6 @@ for (const preset of ["desktop", "mobile"]) {
             });
             const { printer, notifications } = await mountPrinter();
             const printing = printer.onClick();
-            // Do not await the duplicate: a broken implementation starts a second fetch.
             const duplicate = printer.onClick();
             await animationFrame();
             expect(requests).toBe(1);

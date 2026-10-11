@@ -34,7 +34,6 @@ export class PaymentAdyen extends PaymentInterface {
     }
 
     _handleOdooConnectionFailure(data = {}) {
-        // handle timeout
         const line = this.pendingAdyenline();
         if (line) {
             line.setPaymentStatus("retry");
@@ -45,7 +44,7 @@ export class PaymentAdyen extends PaymentInterface {
             ),
         );
 
-        return Promise.reject(data); // prevent subsequent onFullFilled's from being called
+        return Promise.reject(data);
     }
 
     _callAdyen(data, operation = false) {
@@ -67,8 +66,8 @@ export class PaymentAdyen extends PaymentInterface {
         const config = this.pos.config;
         this.most_recent_service_id = Math.floor(
             Math.random() * Math.pow(2, 64),
-        ).toString(); // random ID to identify request/response pairs
-        this.most_recent_service_id = this.most_recent_service_id.substring(0, 10); // max length is 10
+        ).toString();
+        this.most_recent_service_id = this.most_recent_service_id.substring(0, 10);
 
         return {
             ProtocolVersion: "3.0",
@@ -96,7 +95,7 @@ export class PaymentAdyen extends PaymentInterface {
                             TimeStamp: formatWithTokens(
                                 now(),
                                 "yyyy-MM-dd'T'HH:mm:ssZZ",
-                            ), // iso format: '2018-01-10T11:30:15+00:00'
+                            ),
                         },
                     },
                     PaymentTransaction: {
@@ -153,8 +152,6 @@ export class PaymentAdyen extends PaymentInterface {
         };
 
         return this._callAdyen(data).then((data) => {
-            // Only valid response is a 200 OK HTTP response which is
-            // represented by true.
             if (!ignore_error && data !== true) {
                 this._show_error(
                     _t(
@@ -179,10 +176,6 @@ export class PaymentAdyen extends PaymentInterface {
         }, "");
     }
 
-    /**
-     * This method handles the response that comes from Adyen
-     * when we first make a request to pay.
-     */
     _adyenHandleResponse(response) {
         const line = this.pendingAdyenline();
 
@@ -253,10 +246,6 @@ export class PaymentAdyen extends PaymentInterface {
         delete this.pollingIntervals[line.uuid];
     }
 
-    /**
-     * This method is called from pos_bus when the payment
-     * confirmation from Adyen is received via the webhook.
-     */
     async handleAdyenStatusResponse() {
         const notification = await this._fetchLatestAdyenStatus();
         if (!notification) {
@@ -321,8 +310,6 @@ export class PaymentAdyen extends PaymentInterface {
         this._settleLine(line, isPaymentSuccessful);
     }
 
-    // The terminal may have charged the card: retrying would charge it again,
-    // so only the cashier, looking at the terminal, settles the line.
     _handleUnconfirmedApproval(line, additional_response) {
         const reference = additional_response.get("pspReference") || "";
         line.transaction_id = reference;
@@ -339,10 +326,6 @@ export class PaymentAdyen extends PaymentInterface {
         this._settleLine(line, false);
     }
 
-    // when starting to wait for the payment response we create a promise
-    // that will be resolved when the payment response is received.
-    // In case this resolver is lost (for example on a refresh)
-    // we use the handlePaymentResponse method on the payment line
     _settleLine(line, isPaymentSuccessful) {
         this._stopPolling(line);
         const resolver = this.paymentLineResolvers[line.uuid];

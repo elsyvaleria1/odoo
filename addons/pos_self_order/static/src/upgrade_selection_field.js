@@ -6,10 +6,6 @@ import {
     selectionField,
 } from "@web/fields/selection/selection/selection_field";
 import { UpgradeDialog } from "@web/views/settings/fields/upgrade_dialog";
-/**
- *  The upgrade selection field is intended to be used in config settings.
- *  When selection changed, an upgrade popup is showed to the user.
- */
 
 export class UpgradeSelectionField extends SelectionField {
     setup() {

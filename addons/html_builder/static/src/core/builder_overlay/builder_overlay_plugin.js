@@ -36,30 +36,22 @@ export class BuilderOverlayPlugin extends Plugin {
     };
 
     setup() {
-        // TODO find how to not overflow the mobile preview.
         this.iframe = this.editable.ownerDocument.defaultView.frameElement;
         this.overlayContainer = this.dependencies.localOverlay.makeLocalOverlay(
             "builder-overlay-container",
         );
-        // If the user scrolls the mouse wheel while hovering overlayContainer,
-        // no scroll will happen to the page. We need to manually process
-        // wheel events happening on overlayContainer.
         this.overlayContainer.addEventListener(
             "wheel",
             (ev) => (this.document.documentElement.scrollTop += ev.deltaY),
         );
         /** @type {[BuilderOverlay]} */
         this.overlays = [];
-        // Refresh the overlays position everytime their target size changes.
         this.resizeObserver = new ResizeObserver(() => this.refreshPositions());
 
         this._refreshOverlays = throttleForAnimation(this.refreshOverlays.bind(this));
 
-        // Recompute the overlay when the window is resized.
         this.addDomListener(window, "resize", this._refreshOverlays);
 
-        // On keydown, hide the overlay and then show it again when the mouse
-        // moves.
         const onMouseMoveOrDown = throttleForAnimation(() => {
             this.toggleOverlaysVisibility(true);
             this.refreshPositions();
@@ -72,8 +64,6 @@ export class BuilderOverlayPlugin extends Plugin {
             this.editable.addEventListener("mousedown", onMouseMoveOrDown);
         });
 
-        // Hide the overlay when scrolling. Show it again when the scroll is
-        // over and recompute its position.
         const scrollingElement = getScrollingElement(this.document);
         const scrollingTarget = getScrollingTarget(scrollingElement);
         this.addDomListener(
@@ -102,7 +92,6 @@ export class BuilderOverlayPlugin extends Plugin {
             return;
         }
 
-        // Create the overlays.
         optionsContainer.forEach((option) => {
             const overlay = new BuilderOverlay(option.element, {
                 iframe: this.iframe,
@@ -120,11 +109,9 @@ export class BuilderOverlayPlugin extends Plugin {
             this.resizeObserver.observe(overlay.overlayTarget, { box: "border-box" });
         });
 
-        // Activate the last overlay.
         const innermostOverlay = this.overlays.at(-1);
         innermostOverlay.toggleOverlay(true);
 
-        // Also activate the closest overlay that should have overlay options.
         if (!innermostOverlay.hasOverlayOptions) {
             for (let i = this.overlays.length - 2; i >= 0; i--) {
                 const parentOverlay = this.overlays[i];
@@ -165,9 +152,7 @@ export class BuilderOverlayPlugin extends Plugin {
     }
 
     showOverlayPreview(el) {
-        // Hide all the active overlays.
         this.toggleOverlaysVisibility(false);
-        // Show the preview of the one corresponding to the given element.
         const overlayToShow = this.overlays.find(
             (overlay) => overlay.overlayTarget === el,
         );
@@ -179,7 +164,6 @@ export class BuilderOverlayPlugin extends Plugin {
     }
 
     hideOverlayPreview(el) {
-        // Remove the preview.
         const overlayToHide = this.overlays.find(
             (overlay) => overlay.overlayTarget === el,
         );
@@ -187,7 +171,6 @@ export class BuilderOverlayPlugin extends Plugin {
             return;
         }
         overlayToHide.toggleOverlayPreview(false);
-        // Show back the active overlays.
         this.toggleOverlaysVisibility(true);
     }
 }

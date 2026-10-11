@@ -288,9 +288,6 @@ export class GeoengineMapTools {
         this._interactions.push(dragBox);
 
         dragBox.on("boxend", () => {
-            // A WebGL map has no click Select (it cannot restyle a feature),
-            // so the box keeps its own collection there: counting and the
-            // single-feature popup still work, only the highlight does not.
             const selection =
                 this.renderer.selectClick?.getFeatures() ??
                 (this._boxSelection ??= new ol.Collection());

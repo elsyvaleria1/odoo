@@ -43,13 +43,11 @@ WebGLImageFilter - MIT Licensed
 
         gl.useProgram(this.id);
 
-        // Collect attributes
         _collect(vertexSource, "attribute", this.attribute);
         for (var a in this.attribute) {
             this.attribute[a] = gl.getAttribLocation(this.id, a);
         }
 
-        // Collect uniforms
         _collect(vertexSource, "uniform", this.uniform);
         _collect(fragmentSource, "uniform", this.uniform);
         for (var u in this.uniform) {
@@ -79,7 +77,6 @@ WebGLImageFilter - MIT Licensed
             _currentProgram = null,
             _canvas = params.canvas || document.createElement("canvas");
 
-        // key is the shader program source, value is the compiled program
         var _shaderProgramCache = {};
 
         var gl = _canvas.getContext("webgl") || _canvas.getContext("experimental-webgl");
@@ -102,7 +99,6 @@ WebGLImageFilter - MIT Licensed
             _resize(image.width, image.height);
             _drawCount = 0;
 
-            // Create the texture for the input image if we haven't yet
             if (!_sourceTexture) {
                 _sourceTexture = gl.createTexture();
             }
@@ -114,7 +110,6 @@ WebGLImageFilter - MIT Licensed
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
-            // No filters? Just draw
             if (_filterChain.length == 0) {
                 var program = _compileShader(SHADER.FRAGMENT_IDENTITY);
                 _draw();
@@ -132,7 +127,6 @@ WebGLImageFilter - MIT Licensed
         };
 
         var _resize = function (width, height) {
-            // Same width/height? Nothing to do here
             if (width == _width && height == _height) {
                 return;
             }
@@ -140,23 +134,18 @@ WebGLImageFilter - MIT Licensed
             _canvas.width = _width = width;
             _canvas.height = _height = height;
 
-            // Create the context if we don't have it yet
             if (!_vertexBuffer) {
-                // Create the vertex buffer for the two triangles [x, y, u, v] * 6
                 var vertices = new Float32Array([
                     -1, -1, 0, 1, 1, -1, 1, 1, -1, 1, 0, 0, -1, 1, 0, 0, 1, -1, 1, 1, 1, 1, 1, 0,
                 ]);
                 (_vertexBuffer = gl.createBuffer()), gl.bindBuffer(gl.ARRAY_BUFFER, _vertexBuffer);
                 gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
-                // Note sure if this is a good idea; at least it makes texture loading
-                // in Ejecta instant.
                 gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
             }
 
             gl.viewport(0, 0, _width, _height);
 
-            // Delete old temp framebuffers
             _tempFramebuffers = [null, null];
         };
 
@@ -212,29 +201,21 @@ WebGLImageFilter - MIT Licensed
                 target = null,
                 flipY = false;
 
-            // Set up the source
             if (_drawCount == 0) {
-                // First draw call - use the source texture
                 source = _sourceTexture;
             } else {
-                // All following draw calls use the temp buffer last drawn to
                 source = _getTempFramebuffer(_currentFramebufferIndex).texture;
             }
             _drawCount++;
 
-            // Set up the target
             if (_lastInChain && !(flags & DRAW.INTERMEDIATE)) {
-                // Last filter in our chain - draw directly to the WebGL Canvas. We may
-                // also have to flip the image vertically now
                 target = null;
                 flipY = _drawCount % 2 == 0;
             } else {
-                // Intermediate draw call - get a temp buffer to draw to
                 _currentFramebufferIndex = (_currentFramebufferIndex + 1) % 2;
                 target = _getTempFramebuffer(_currentFramebufferIndex).fbo;
             }
 
-            // Bind the source and target and draw the two triangles
             gl.bindTexture(gl.TEXTURE_2D, source);
             gl.bindFramebuffer(gl.FRAMEBUFFER, target);
 
@@ -249,7 +230,6 @@ WebGLImageFilter - MIT Licensed
                 return _currentProgram;
             }
 
-            // Compile shaders
             _currentProgram = new WebGLProgram(gl, SHADER.VERTEX_IDENTITY, fragmentSource);
 
             var floatSize = Float32Array.BYTES_PER_ELEMENT;
@@ -305,19 +285,15 @@ WebGLImageFilter - MIT Licensed
 
         var _filter = {};
 
-        // -------------------------------------------------------------------------
-        // Color Matrix Filter
 
         _filter.colorMatrix = function (matrix, amount = 1) {
             matrix = matrix.map((coef, index) => weightedAvg(coef, identityMatrix[index], amount));
-            // Create a Float32 Array and normalize the offset component to 0-1
             var m = new Float32Array(matrix);
             m[4] /= 255;
             m[9] /= 255;
             m[14] /= 255;
             m[19] /= 255;
 
-            // Can we ignore the alpha value? Makes things a bit faster.
             var shader =
                 1 == m[18] &&
                 0 == m[3] &&
@@ -508,8 +484,6 @@ WebGLImageFilter - MIT Licensed
             );
         };
 
-        // -------------------------------------------------------------------------
-        // Convolution Filter
 
         _filter.convolution = function (matrix) {
             var m = new Float32Array(matrix);
@@ -530,17 +504,17 @@ WebGLImageFilter - MIT Licensed
             "uniform float m[9];",
 
             "void main(void) {",
-            "vec4 c11 = texture2D(texture, vUv - px);", // top left
-            "vec4 c12 = texture2D(texture, vec2(vUv.x, vUv.y - px.y));", // top center
-            "vec4 c13 = texture2D(texture, vec2(vUv.x + px.x, vUv.y - px.y));", // top right
+            "vec4 c11 = texture2D(texture, vUv - px);",
+            "vec4 c12 = texture2D(texture, vec2(vUv.x, vUv.y - px.y));",
+            "vec4 c13 = texture2D(texture, vec2(vUv.x + px.x, vUv.y - px.y));",
 
-            "vec4 c21 = texture2D(texture, vec2(vUv.x - px.x, vUv.y) );", // mid left
-            "vec4 c22 = texture2D(texture, vUv);", // mid center
-            "vec4 c23 = texture2D(texture, vec2(vUv.x + px.x, vUv.y) );", // mid right
+            "vec4 c21 = texture2D(texture, vec2(vUv.x - px.x, vUv.y) );",
+            "vec4 c22 = texture2D(texture, vUv);",
+            "vec4 c23 = texture2D(texture, vec2(vUv.x + px.x, vUv.y) );",
 
-            "vec4 c31 = texture2D(texture, vec2(vUv.x - px.x, vUv.y + px.y) );", // bottom left
-            "vec4 c32 = texture2D(texture, vec2(vUv.x, vUv.y + px.y) );", // bottom center
-            "vec4 c33 = texture2D(texture, vUv + px );", // bottom right
+            "vec4 c31 = texture2D(texture, vec2(vUv.x - px.x, vUv.y + px.y) );",
+            "vec4 c32 = texture2D(texture, vec2(vUv.x, vUv.y + px.y) );",
+            "vec4 c33 = texture2D(texture, vUv + px );",
 
             "gl_FragColor = ",
             "c11 * m[0] + c12 * m[1] + c22 * m[2] +",
@@ -572,8 +546,6 @@ WebGLImageFilter - MIT Licensed
             _filter.convolution.call(this, [-2 * s, -1 * s, 0, -1 * s, 1, 1 * s, 0, 1 * s, 2 * s]);
         };
 
-        // -------------------------------------------------------------------------
-        // Blur Filter
 
         _filter.blur = function (size) {
             var blurSizeX = size / 7 / _width;
@@ -581,11 +553,9 @@ WebGLImageFilter - MIT Licensed
 
             var program = _compileShader(_filter.blur.SHADER);
 
-            // Vertical
             gl.uniform2f(program.uniform.px, 0, blurSizeY);
             _draw(DRAW.INTERMEDIATE);
 
-            // Horizontal
             gl.uniform2f(program.uniform.px, blurSizeX, 0);
             _draw();
         };
@@ -616,8 +586,6 @@ WebGLImageFilter - MIT Licensed
             "}",
         ].join("\n");
 
-        // -------------------------------------------------------------------------
-        // Pixelate Filter
 
         _filter.pixelate = function (size) {
             var blurSizeX = size / _width;
@@ -625,7 +593,6 @@ WebGLImageFilter - MIT Licensed
 
             var program = _compileShader(_filter.pixelate.SHADER);
 
-            // Horizontal
             gl.uniform2f(program.uniform.size, blurSizeX, blurSizeY);
             _draw();
         };

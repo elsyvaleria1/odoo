@@ -6,9 +6,6 @@ import {
 import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 
-// `service_tracking` is read here, not by sale, so it is declared here. Declaring it
-// twice (event_booth_sale does the same) is harmless: `addFieldDependencies` keys on the
-// field name and merges rather than duplicating.
 Object.assign(saleOrderLineProductField, {
     fieldDependencies: [
         ...saleOrderLineProductField.fieldDependencies,
@@ -64,9 +61,7 @@ patch(SaleOrderLineProductField.prototype, {
                     closeInfo.special ||
                     closeInfo.dismiss
                 ) {
-                    // wizard popup closed or 'Cancel' button triggered
                     if (!this.props.record.data.event_ticket_id) {
-                        // remove product if event configuration was cancelled.
                         this.props.record.update({
                             [this.props.name]: undefined,
                         });

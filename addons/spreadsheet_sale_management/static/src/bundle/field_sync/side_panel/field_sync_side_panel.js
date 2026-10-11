@@ -92,9 +92,6 @@ export class FieldSyncSidePanel extends Component {
         return this.env.model.getters.getFieldSync(this.props.position);
     }
 
-    /**
-     * Filter writable fields
-     */
     filterField(field) {
         return (
             !field.readonly &&

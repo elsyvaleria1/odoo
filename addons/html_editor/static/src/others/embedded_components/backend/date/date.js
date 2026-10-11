@@ -33,10 +33,6 @@ export class EmbeddedDateComponent extends ReadonlyEmbeddedDateComponent {
         return this.state.date;
     }
 
-    /**
-     * A `time` chip has no picker to open: our `web` has no time-picker
-     * popover, so the hour is the one it was inserted with.
-     */
     get isEditable() {
         return this.props.type !== "time";
     }
@@ -51,8 +47,6 @@ export class EmbeddedDateComponent extends ReadonlyEmbeddedDateComponent {
                 type: this.props.type,
                 value: readEmbeddedDate(this.date, this.props.type),
                 rounding: 1,
-                // Our popover always renders the Clear button; here it means
-                // "leave the date as it was".
                 onReset: () => this.picker.close(),
                 onSelect: (date) => {
                     if (!date) {

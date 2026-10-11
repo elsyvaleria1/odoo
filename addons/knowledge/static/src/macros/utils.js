@@ -66,7 +66,7 @@ export function pasteElements(dataTransfer, target) {
  * @param {HTMLElement} editable
  */
 export function replaceHtmlFieldContentWith(dataTransfer, editable) {
-    editable.replaceChildren(); // Hack to avoid having a paragraph after the user's signature
+    editable.replaceChildren();
     const event = new Event("paste", {
         bubbles: true,
         cancelable: true,

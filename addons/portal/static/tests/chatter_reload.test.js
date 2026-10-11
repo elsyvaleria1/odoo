@@ -18,7 +18,6 @@ async function prepareChatter(fetchMessages) {
             this.store = { Thread: { get: () => thread } };
         },
     });
-    // Mount the real event subscriber without the independently tested mail UI.
     patchWithCleanup(PortalChatter, { template: xml`<div/>` });
     const chatter = await mountWithCleanup(PortalChatter, {
         env,

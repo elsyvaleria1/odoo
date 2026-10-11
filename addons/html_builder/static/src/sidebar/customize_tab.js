@@ -38,9 +38,6 @@ export class CustomizeTab extends Component {
                 containerIds(nextProps.currentOptionsContainers) !==
                 containerIds(this.props.currentOptionsContainers)
             ) {
-                // The options of the previous selection stay on screen until
-                // every option of the next one has loaded: acting on them
-                // would change the element the user just left.
                 this.setBlocked(true);
             }
             if (
@@ -49,7 +46,6 @@ export class CustomizeTab extends Component {
                 nextProps.currentOptionsContainers !==
                     this.props.currentOptionsContainers
             ) {
-                // Force a reconsideration of `content`
                 this.state.hasContent = true;
             }
         });

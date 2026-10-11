@@ -11,9 +11,6 @@ export class JournalReportLine extends AccountReportLine {
         this.reportContext = useAccountReportContext();
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Classes
-    // -----------------------------------------------------------------------------------------------------------------
     get lineClasses() {
         let classes = super.lineClasses;
 
@@ -28,9 +25,6 @@ export class JournalReportLine extends AccountReportLine {
         return classes;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    // Actions
-    // -----------------------------------------------------------------------------------------------------------------
     async openTaxJournalItems(ev, name, taxType) {
         return this.controller.reportAction(
             ev,

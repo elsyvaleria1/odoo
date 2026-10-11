@@ -17,12 +17,10 @@ registry.category("web_tour.tours").add("sale_renting_combo_configurator", {
         },
         ...tourUtils.selectCustomer("Test Partner"),
         ...tourUtils.addProduct("Combo product"),
-        // Assert that the rental price and duration are correct.
         configuratorTourUtils.assertPrice("15.00"),
         configuratorTourUtils.assertPriceInfo("1 Day"),
         configuratorTourUtils.selectComboItem("Test Product"),
         ...configuratorTourUtils.saveConfigurator(),
-        // Don't end the tour with a form in edition mode.
         ...stepUtils.saveForm(),
     ],
 });

@@ -12,7 +12,6 @@ class AppointmentInsertLinkFormController extends FormController {
     async beforeExecuteActionButton(clickParams) {
         if (clickParams.special) {
             if (clickParams.special === "save") {
-                // Insert Link button
                 const saved = await this.model.root.save();
                 if (saved) {
                     this.props.insertLink(this.model.root.data.book_url);

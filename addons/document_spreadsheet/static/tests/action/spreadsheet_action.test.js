@@ -258,11 +258,11 @@ test("ask confirmation when merging", async function () {
 
     await contains(".o-menu-item-button[title='Merge cells']").click();
     expect(".o_dialog").toHaveCount(1, { message: "Dialog should be open" });
-    await contains(".o_dialog .btn-secondary").click(); // cancel
+    await contains(".o_dialog .btn-secondary").click();
     expect(model.getters.isSingleCellOrMerge(sheetId, toZone("A1:A2"))).toBe(false);
 
     await contains(".o-menu-item-button[title='Merge cells']").click();
-    await contains(".o_dialog .btn-primary").click(); // confirm
+    await contains(".o_dialog .btn-primary").click();
     expect(model.getters.isSingleCellOrMerge(sheetId, toZone("A1:A2"))).toBe(true);
 });
 

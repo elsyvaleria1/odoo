@@ -27,7 +27,6 @@ export function getBridgeModuleSource(specifier, exportNames) {
         `  odoo.loader.bus.removeEventListener("registered", _s);`,
         `  return true;`,
         `}`,
-        // a listener only while unresolved, or it copies again on every registration
         `if (!_s()) { odoo.loader.bus.addEventListener("registered", _s); }`,
         `export { ${["_d as default", ...names.map((n, i) => `_e${i} as ${n}`)].join(", ")} };`,
     ];

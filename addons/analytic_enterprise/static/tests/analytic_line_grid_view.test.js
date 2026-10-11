@@ -136,8 +136,6 @@ test("the fiscal year is asked once per year, not once per load", async () => {
             <field name="unit_amount" type="measure"/>
         </grid>`,
     });
-    // The only range declared, so a scale another test left in localStorage
-    // cannot open this grid on a week.
     expect.verifySteps(["year range"]);
     await model.reload();
     expect.verifySteps([], { message: "a reload on the same anchor asks nothing" });
