@@ -438,6 +438,21 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
         self.assertEqual(document._get_thumbnail_source(), b"%PDF- Fake PDF content")
         self.assertEqual(document.thumbnail_source_checksum, document.checksum)
 
+    def test_embedded_pdf_rejects_xml_entities(self):
+        document = self.env["document.document"].create(
+            {
+                "name": "entity.xml",
+                "folder_id": self.folder_a.id,
+                "datas": base64.b64encode(
+                    b'<?xml version="1.0"?>'
+                    b'<!DOCTYPE test [<!ENTITY pdf "JVBERi0gRmFrZSBQREYgY29udGVudA==">]>'
+                    b"<test><Attachment>&pdf;</Attachment></test>"
+                ),
+            }
+        )
+        self.assertFalse(document._extract_pdf_from_xml())
+        self.assertFalse(document.has_embedded_pdf)
+
     @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
     def test_an_embedded_pdf_is_rendered_as_the_thumbnail(self):
         embedded = base64.b64encode(make_pdf())

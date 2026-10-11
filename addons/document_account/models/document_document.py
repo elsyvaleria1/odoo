@@ -3,9 +3,10 @@ import binascii
 import contextlib
 from datetime import datetime
 from itertools import chain
-from xml.etree import (
-    ElementTree,
-)
+from xml.etree.ElementTree import ParseError
+
+from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
@@ -77,8 +78,8 @@ class DocumentsDocument(models.Model):
             return False
 
         try:
-            tree = ElementTree.fromstring(xml_file_content)
-        except ElementTree.ParseError:
+            tree = ET.fromstring(xml_file_content)
+        except ParseError, DefusedXmlException:
             _debug.logic("embedded_pdf_skipped", reason="unparseable", document=self)
             return False
 

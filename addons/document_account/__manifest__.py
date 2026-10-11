@@ -10,6 +10,11 @@
         "document",
         "account",
     ],
+    "external_dependencies": {
+        "python": [
+            "defusedxml",
+        ],
+    },
     "data": [
         "security/security.xml",
         "security/ir.access.csv",
