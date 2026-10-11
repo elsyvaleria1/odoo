@@ -233,7 +233,8 @@ class AccountAnalyticAccount(models.Model):
         self, distribution, amount, unit_amount, lines, obj, additive=False
     ):
         if not distribution:
-            lines.unlink()
+            if lines:
+                lines.unlink()
             return []
 
         distribution = {

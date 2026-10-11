@@ -64,6 +64,15 @@ class TestBudgetFlows(TestAccountBudgetCommon):
                 }
             )
 
+    def test_an_empty_analytic_change_keeps_the_budget_figures(self):
+        expense_line = self.budget_analytic_expense.budget_line_ids[0]
+        self.assertBudgetLine(expense_line, achieved=500.0)
+        lines = self.env["account.analytic.line"]
+        lines.write({"name": "nothing"})
+        lines.unlink()
+        with self.assertQueryCount(0):
+            self.assertEqual(expense_line.achieved_amount, 500.0)
+
     def test_achieved_amount_and_above_budget(self):
         expense_line = self.budget_analytic_expense.budget_line_ids[0]
         self.assertBudgetLine(expense_line, achieved=500.0)

@@ -12,9 +12,11 @@ class AccountAnalyticLine(models.Model):
 
     def write(self, vals):
         result = super().write(vals)
-        self.env["budget.line"]._invalidate_budget_cache()
+        if self:
+            self.env["budget.line"]._invalidate_budget_cache()
         return result
 
     def unlink(self):
-        self.env["budget.line"]._invalidate_budget_cache()
+        if self:
+            self.env["budget.line"]._invalidate_budget_cache()
         return super().unlink()
