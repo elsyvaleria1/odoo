@@ -1,22 +1,16 @@
 import { accountTourSteps } from "@account/js/tours/account";
 import { registry } from "@web/core/registry";
+import { stepUtils } from "@web_tour/tour_utils";
 
 registry.category("web_tour.tours").add("account_merge_wizard_tour", {
     url: "/odoo",
     steps: () => [
         ...accountTourSteps.goToAccountMenu("Go to Accounting"),
-        {
-            content: "Go to Configuration",
-            trigger:
-                '.o_main_navbar button[data-menu-xmlid="account.menu_finance_configuration"]',
-            run: "click",
-        },
-        {
-            content: "Go to Chart of Accounts",
-            trigger:
-                '.o-dropdown--menu a[data-menu-xmlid="account.menu_action_account_form"]',
-            run: "click",
-        },
+        ...stepUtils.goToMenuSteps(
+            "account.menu_finance_configuration",
+            "account.menu_action_account_form",
+            "Go to Chart of Accounts",
+        ),
         {
             trigger: '.o_breadcrumb .text-truncate:contains("Chart of Accounts")',
         },
