@@ -346,6 +346,7 @@ export class Store extends BaseStore {
         return ["init_messaging"];
     }
 
+    /** @returns {Promise<void>} */
     _nextBusConnection() {
         // A connection the browser reported lost (offline, then online) comes
         // back as BUS:CONNECT, one the server dropped as BUS:RECONNECT.
